@@ -10,7 +10,9 @@
 <p align="center">
   <img alt="iOS 26+" src="https://img.shields.io/badge/iOS-26%2B-3F8DF5?style=flat-square&logo=apple&logoColor=white">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white">
-  <img alt="License" src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-14C8F5?style=flat-square"></p>
+  <img alt="License" src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-14C8F5?style=flat-square">
+  <img alt="QQ 群 1136576646" src="https://img.shields.io/badge/QQ%E7%BE%A4-1136576646-12B7F5?style=flat-square&logo=qq&logoColor=white">
+  <a href="https://t.me/Lilitexxx"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-Lilitexxx-26A5E4?style=flat-square&logo=telegram&logoColor=white"></a></p>
 
 ---
 
@@ -42,6 +44,13 @@
 ## 安装
 
 目前不提供 App Store 或 TestFlight 版本，请自行构建并用个人开发者证书签名安装。
+
+## 交流
+
+| 渠道 | 地址 |
+|---|---|
+| QQ 群 | 1136576646 |
+| Telegram 群 | [t.me/Lilitexxx](https://t.me/Lilitexxx) |
 
 ## 构建
 
