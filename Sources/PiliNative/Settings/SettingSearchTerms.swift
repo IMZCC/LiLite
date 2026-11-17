@@ -149,7 +149,7 @@ TypographyPanel/字号	textScale
 TypographyPanel/字重	appFontWeightV2
 VODLineSettings/进入时测速	cdnSpeedTest CDN 测速 测速通过模拟加载视频实现，注意流量消耗，结果仅供参考	vod.speedTest	true
 VODLineSettings/音频单独选线	disableAudioCDN 直接采用备用 URL，可解决部分视频无声 音频不跟随 CDN 设置	vod.independentAudio	false
-VersionPanel/提醒原版更新	autoUpdate 检查更新 每次启动时检查是否需要更新	updates.automatic	true
+VersionPanel/提醒新版本	autoUpdate 检查更新 每次启动时检查是否需要更新	updates.automatic	true
 ViewportSettings/双指允许缩小画面	enableShrinkVideoSize 启用双指缩小视频	player.shrink	true
 ViewportSettings/底部进度条	btmProgressBehavior 底部进度条展示	player.bottomProgress	0
 ViewportSettings/延长播放控件显示时间	enableLongShowControl 延长播放控件显示时间 开启后延长至30秒，便于屏幕阅读器滑动切换控件焦点	player.longControls	false

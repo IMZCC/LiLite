@@ -305,9 +305,8 @@ VODLineSettings/优先线路
 VODLineSettings/进入时测速
 VODLineSettings/选择最快
 VODLineSettings/音频单独选线
-VersionPanel/基于 PiliPlus
-VersionPanel/提醒原版更新
-VersionPanel/检查原版更新
+VersionPanel/提醒新版本
+VersionPanel/检查更新
 ViewportSettings/双指允许缩小画面
 ViewportSettings/底部进度条
 ViewportSettings/延长播放控件显示时间

@@ -395,11 +395,11 @@ struct SettingsView: View {
         Section {
           NavigationLink { AboutPanel() } label: { Label("关于与数据管理", systemImage: "info.circle.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/关于与数据管理")
           NavigationLink { OpenSourceNotices() } label: { Label("开源许可", systemImage: "doc.text.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/开源许可")
-          Link(destination: URL(string: "https://github.com/bggRGjQaUbCoE/PiliPlus")!) {
-            Label("PiliPlus 上游项目", systemImage: "chevron.left.forwardslash.chevron.right").labelStyle(SettingsIconLabelStyle(color: .gray))
+          Link(destination: UpstreamRelease.lilite) {
+            Label("项目源码", systemImage: "chevron.left.forwardslash.chevron.right").labelStyle(SettingsIconLabelStyle(color: .gray))
           }
         } header: { Text("关于") } footer: {
-          Text("轻哩 LiLite · 基于 PiliPlus 2.2.0.2").frame(maxWidth: .infinity).padding(.vertical, 8)
+          Text("轻哩 LiLite").frame(maxWidth: .infinity).padding(.vertical, 8)
         }
       }
     }.formStyle(.grouped).navigationTitle("设置").searchable(text: $filter, prompt: "搜索设置")

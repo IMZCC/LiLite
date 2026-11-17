@@ -10,15 +10,13 @@
 <p align="center">
   <img alt="iOS 26+" src="https://img.shields.io/badge/iOS-26%2B-3F8DF5?style=flat-square&logo=apple&logoColor=white">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white">
-  <img alt="License" src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-14C8F5?style=flat-square">
-  <img alt="Noncommercial" src="https://img.shields.io/badge/%E7%A6%81%E6%AD%A2-%E5%95%86%E7%94%A8-0A55E8?style=flat-square">
-</p>
+  <img alt="License" src="https://img.shields.io/badge/License-PolyForm%20Noncommercial-14C8F5?style=flat-square"></p>
 
 ---
 
 ## 简介
 
-轻哩是一个第三方哔哩哔哩 iOS 客户端。它以开源项目 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的功能和交互为蓝本，用 Swift 从头重写：界面完全原生，跟随系统的 Liquid Glass 材质、导航手势、画中画和辅助功能，不依赖 Flutter。
+轻哩是一个第三方哔哩哔哩 iOS 客户端，用 Swift 从头编写：界面完全原生，跟随系统的 Liquid Glass 材质、导航手势、画中画和辅助功能。
 
 名字里的"轻"是目标：启动快、滑动跟手、播放不卡、界面不打扰内容。
 
@@ -33,7 +31,7 @@
 | 互动 | 评论楼中楼、表情与图片评论、点赞投币收藏、动态、私信 |
 | 系统 | 画中画、DLNA 投屏、后台听视频与歌词、离线缓存 |
 | 账号 | 扫码 / 网页 / Cookie 登录、多账号切换 |
-| 数据 | WebDAV 备份、与 PiliPlus 兼容的数据包导入导出 |
+| 数据 | WebDAV 备份、数据包导入导出 |
 
 ## 截图
 
@@ -73,7 +71,6 @@
 | [Wire](Wire/README.md) | 协议生成的 Swift 消息 |
 | [Checks](Checks) | 媒体、弹幕、路由与功能对照检查 |
 | [Resources/Brand](Resources/Brand) | 图标与品牌素材 |
-| [PORTING.md](PORTING.md) · [AUDIT.md](AUDIT.md) | 功能对照范围与核查记录 |
 
 ## 品牌
 
@@ -88,18 +85,10 @@
 
 ## 许可证
 
-本项目以 [PolyForm Noncommercial License 1.0.0](LICENSE) 发布：
-
-- ✅ 个人学习、研究、自用、修改和非商业分发
-- ❌ **任何形式的商业使用**，包括付费分发、上架收费、内置广告牟利、作为商业产品的一部分
-
-需要商业授权请先联系作者。
-
-本项目使用的第三方组件（mpv、FFmpeg、libass、SwiftProtobuf 等）各自遵循其原有许可证，详见应用内"开源许可"页面。
+本项目以 [PolyForm Noncommercial License 1.0.0](LICENSE) 发布。使用的第三方组件（mpv、FFmpeg、libass、SwiftProtobuf 等）各自遵循其原有许可证，详见应用内"开源许可"页面。
 
 ## 致谢
 
-- [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)：功能与交互的蓝本
 - [mpv](https://mpv.io)、[FFmpeg](https://ffmpeg.org)、[libass](https://github.com/libass/libass)、[Anime4K](https://github.com/bloc97/Anime4K)
 - [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 

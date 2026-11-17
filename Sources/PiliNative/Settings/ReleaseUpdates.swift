@@ -3,10 +3,11 @@ import SwiftUI
 struct UpstreamRelease: Codable, Identifiable {
   let tag_name: String, created_at: Date, body: String?, draft: Bool?, prerelease: Bool?
   var id: String { tag_name }
-  static let project = URL(string: "https://github.com/bggRGjQaUbCoE/PiliPlus")!
-  /// This app's own repository (轻哩 LiLite): source and issue reports go here.
+  /// This app's own repository (轻哩 LiLite): source, releases and issue reports.
   static let lilite = URL(string: "https://github.com/liuliuya2333/LiLite")!
-  static let pinned = "2.2.0.2"
+  static let project = lilite
+  /// The installed version; a release tagged above it is offered as an update.
+  static let pinned = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
   static let pinnedDate = Date(timeIntervalSince1970: 1793691286)
   var page: URL { Self.project.appendingPathComponent("releases/tag").appendingPathComponent(tag_name) }
   var newer: Bool {
@@ -35,7 +36,7 @@ struct UpstreamRelease: Codable, Identifiable {
   @Published private(set) var issue: String?
   @Published var offer: UpstreamRelease?
   private var attempted = false
-  private let cache = "updates.lastRelease"
+  private let cache = "updates.lastRelease.lilite"
   private init() {
     let key = cache
     Task {
@@ -63,9 +64,9 @@ struct UpstreamRelease: Codable, Identifiable {
   }
   // AsyncBytes iteration can resume thousands of times; none of it belongs on MainActor.
   nonisolated private static func fetchRelease(cache: String) async throws -> UpstreamRelease {
-      let endpoint = URL(string: "https://api.github.com/repos/bggRGjQaUbCoE/PiliPlus/releases?per_page=1")!
+      let endpoint = URL(string: "https://api.github.com/repos/liuliuya2333/LiLite/releases?per_page=1")!
       var req = URLRequest(url: endpoint, timeoutInterval: 15)
-      req.setValue("PiliNative", forHTTPHeaderField: "User-Agent")
+      req.setValue("LiLite", forHTTPHeaderField: "User-Agent")
       req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
       let config = URLSessionConfiguration.ephemeral
       config.httpCookieStorage = nil; config.httpShouldSetCookies = false; config.urlCredentialStorage = nil; config.urlCache = nil
@@ -82,7 +83,7 @@ struct UpstreamRelease: Codable, Identifiable {
       let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
       guard let found = try decoder.decode([UpstreamRelease].self, from: bytes).first,
         found.draft != true, !found.tag_name.isEmpty, found.tag_name.utf8.count <= 100,
-        !found.tag_name.contains("/"), !found.tag_name.contains("..") else { throw ServiceError("没有找到可用的版本信息") }
+        !found.tag_name.contains("/"), !found.tag_name.contains("..") else { throw ServiceError("暂时还没有发布版本") }
       try Task.checkCancellation()
       UserDefaults.standard.set(try JSONEncoder().encode(found), forKey: cache)
       return found
@@ -94,25 +95,24 @@ struct VersionPanel: View {
   var body: some View {
     Form {
       Section {
-        LabeledContent("PiliNative", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
-        LabeledContent("基于 PiliPlus", value: UpstreamRelease.pinned).settingAnchor("VersionPanel/基于 PiliPlus")
+        LabeledContent("轻哩 LiLite", value: UpstreamRelease.pinned)
       }
       Section {
-        Toggle("提醒原版更新", isOn: $automatic).settingAnchor("VersionPanel/提醒原版更新")
+        Toggle("提醒新版本", isOn: $automatic).settingAnchor("VersionPanel/提醒新版本")
         Button { Task { await updates.check(automatic: false) } } label: {
           HStack {
-            Text("检查原版更新")
+            Text("检查更新")
             Spacer()
             if updates.checking { ProgressView().transition(.opacity) }
           }
-        }.settingAnchor("VersionPanel/检查原版更新").disabled(updates.checking)
+        }.settingAnchor("VersionPanel/检查更新").disabled(updates.checking)
       } footer: {
-        if let issue = updates.issue { Text(issue) } else { Text("打开后，原版发布新版本时会提醒你。") }
+        if let issue = updates.issue { Text(issue) } else { Text("打开后，轻哩发布新版本时会提醒你。") }
       }
       if let release = updates.latest {
-        Section(release.newer ? "原版有新版本" : "原版发布记录") {
+        Section(release.newer ? "有新版本" : "最新发布") {
           HStack {
-            Text("PiliPlus " + release.tag_name).font(.headline)
+            Text("轻哩 " + release.tag_name).font(.headline)
             Spacer()
             if release.newer {
               Text("新版本").font(.caption.weight(.semibold)).foregroundStyle(.white)
@@ -140,7 +140,7 @@ struct UpdatePrompt: ViewModifier {
   @Environment(\.openURL) private var openURL
   func body(content: Content) -> some View {
     content.task(id: enabled) { if enabled { await updates.check(automatic: true) } }
-      .alert("PiliPlus 原版有新版本", isPresented: Binding(get: { updates.offer != nil }, set: { if !$0 { updates.offer = nil } }), presenting: updates.offer) { item in
+      .alert("轻哩有新版本", isPresented: Binding(get: { updates.offer != nil }, set: { if !$0 { updates.offer = nil } }), presenting: updates.offer) { item in
         Button("查看版本") { openURL(item.page) }
         Button("关闭自动提醒") { enabled = false }
         Button("稍后", role: .cancel) {}

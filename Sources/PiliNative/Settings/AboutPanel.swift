@@ -12,7 +12,6 @@ struct AboutPanel: View {
   @State private var message: String?
   @State private var reset: AboutReset.Scope?
   @State private var resetting = false
-  private let source = "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a"
   private var version: String {
     (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
       + "+" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1")
@@ -73,14 +72,10 @@ struct AboutPanel: View {
         }
         if let rev = Bundle.main.object(forInfoDictionaryKey: "PiliNativeSourceRevision") as? String
         {
-          LabeledContent("原生源码修订", value: String(rev.prefix(12))).monospacedDigit().contextMenu {
+          LabeledContent("源码修订", value: String(rev.prefix(12))).monospacedDigit().contextMenu {
             Button("复制完整修订") { UIPasteboard.general.string = rev }
           }
         }
-        Link(destination: UpstreamRelease.project.appendingPathComponent("commit/" + source)) {
-          LabeledContent("原版源码修订", value: String(source.prefix(12))).foregroundStyle(.primary)
-        }
-        .contextMenu { Button("复制完整修订") { UIPasteboard.general.string = source } }
       }
       Section("诊断") {
         NavigationLink { DiagnosticView() } label: {
