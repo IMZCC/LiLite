@@ -144,17 +144,33 @@ struct MessageComposer: View {
   @State private var busy = false
   @State private var issue: String?
   var body: some View {
-    VStack(alignment: .leading) {
-      if selection != nil { Button("已选择一张图片 · 移除") { selection = nil } }
-      HStack {
-        PhotosPicker(selection: $selection, matching: .images) { Label("图片", systemImage: "photo") }
-          .labelStyle(.iconOnly).disabled(!text.isEmpty)
-        EmoteInput(text: $text, prompt: "写私信", compact: true).disabled(selection != nil)
-        Button("发送") { Task { await send() } }.disabled(
-          selection == nil && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    VStack(alignment: .leading, spacing: 6) {
+      if selection != nil {
+        HStack(spacing: 6) {
+          Label("已选择一张图片", systemImage: "photo").foregroundStyle(.secondary)
+          Button { selection = nil } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
+            .buttonStyle(.plain).accessibilityLabel("移除图片")
+        }
+        .piliFont(.caption)
       }
-      if let issue { Text(issue).piliFont(.caption).foregroundStyle(.secondary) }
-    }.padding().background(.bar).disabled(busy)
+      HStack(alignment: .bottom, spacing: 10) {
+        PhotosPicker(selection: $selection, matching: .images) {
+          Image(systemName: "photo").font(.title3).foregroundStyle(.secondary).frame(width: 34, height: 38)
+        }
+        .accessibilityLabel("图片").disabled(!text.isEmpty)
+        EmoteInput(text: $text, prompt: "发个消息聊聊呗~", compact: true).disabled(selection != nil)
+          .padding(.horizontal, 12)
+          .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 19, style: .continuous))
+        Button { Task { await send() } } label: {
+          if busy { ProgressView().tint(.white) } else { Image(systemName: "paperplane.fill") }
+        }
+        .buttonStyle(.glassProminent).buttonBorderShape(.circle)
+        .accessibilityLabel("发送")
+        .disabled(selection == nil && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+      }
+      if let issue { Text(issue).piliFont(.caption).foregroundStyle(.red) }
+    }
+    .padding(.horizontal, 12).padding(.vertical, 8).background(.bar).disabled(busy)
   }
   private func send() async {
     guard let finished = try? SleepExitFence.shared.enter() else { return }; defer { finished() }

@@ -114,27 +114,47 @@ struct EpisodeCacheView: View {
   @State private var revision = 0
   var body: some View {
     Form {
-      Text(episode.label)
-      if let issue {
-        Text(issue).foregroundStyle(.secondary)
-        Button("重试") { revision += 1 }
-      } else if owner == nil {
-        ProgressView()
-      } else {
-        Picker("画质", selection: $q) {
-          Text(OfflineQuality.video(qualities).map { "默认 · " + StreamQuality.name($0) } ?? "默认").tag(0)
-          ForEach(qualities, id: \.self) { x in Text(StreamQuality.name(x)).tag(x) }
+      Section {
+        HStack(spacing: 12) {
+          SiteThumbnail(url: episode.cover.flatMap(httpsURL)) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+            .frame(width: 96, height: 54).background(.quaternary)
+            .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
+          Text(episode.label).font(.subheadline.weight(.medium)).lineLimit(2)
         }
-        if !audioChoices.isEmpty {
-          Picker("音质", selection: $audio) {
-            Text(OfflineQuality.audio(audioChoices).map { "默认 · " + PlaybackOption.audioName($0) } ?? "默认").tag(0)
-            ForEach(audioChoices, id: \.self) { x in Text(PlaybackOption.audioName(x)).tag(x) }
-          }
-        }
-        Toggle("同时缓存字幕和弹幕", isOn: $extras)
-        Button("开始缓存") { Task { await add() } }.disabled(busy)
       }
-    }.navigationTitle("缓存本集").task(id: revision) {
+      if let issue {
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          Button("重试") { revision += 1 }
+        }
+      } else if owner == nil {
+        ProgressView().frame(maxWidth: .infinity)
+      } else {
+        Section {
+          Picker(selection: $q) {
+            Text(OfflineQuality.video(qualities).map { "默认 · " + StreamQuality.name($0) } ?? "默认").tag(0)
+            ForEach(qualities, id: \.self) { x in Text(StreamQuality.name(x)).tag(x) }
+          } label: { SettingsRowLabel(title: "画质", symbol: "sparkles.tv", color: .blue) }
+          if !audioChoices.isEmpty {
+            Picker(selection: $audio) {
+              Text(OfflineQuality.audio(audioChoices).map { "默认 · " + PlaybackOption.audioName($0) } ?? "默认").tag(0)
+              ForEach(audioChoices, id: \.self) { x in Text(PlaybackOption.audioName(x)).tag(x) }
+            } label: { SettingsRowLabel(title: "音质", symbol: "waveform", color: .orange) }
+          }
+          SettingToggle(title: "同时缓存字幕和弹幕", symbol: "captions.bubble", color: .teal, isOn: $extras)
+        }
+        Section {
+          Button { Task { await add() } } label: {
+            HStack {
+              Spacer()
+              if busy { ProgressView() }
+              Text("开始缓存").fontWeight(.semibold)
+              Spacer()
+            }
+          }.disabled(busy)
+        }
+      }
+    }.navigationTitle("缓存本集").navigationBarTitleDisplayMode(.inline).task(id: revision) {
       issue = nil
       owner = nil
       do {

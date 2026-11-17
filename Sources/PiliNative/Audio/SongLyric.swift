@@ -8,33 +8,48 @@ struct SongLyric: View {
   @State private var retry = 0
   private var current: Bool { songID != nil && queue.current?.songID == songID }
   var body: some View {
-    List {
-      if let issue {
-        Text(issue)
-        Button("重试") { retry += 1 }
-      } else if let lyrics {
-        if lyrics.lines.isEmpty { Text("暂无歌词") }
-        let active = current ? lyrics.active(at: queue.clock) : nil
-        ForEach(lyrics.lines) { l in
-          if let t = l.seconds, current {
-            Button {
-              queue.seek(t)
-            } label: {
-              HStack {
-                Text(l.text)
-                Spacer()
-                Text(clockText(t)).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+    ScrollViewReader { proxy in
+      ScrollView {
+        if let issue {
+          ContentUnavailableView {
+            Label("歌词未能载入", systemImage: "quote.bubble")
+          } description: { Text(issue) } actions: { Button("重试") { retry += 1 } }
+            .padding(.top, 60)
+        } else if let lyrics {
+          let active = current ? lyrics.active(at: queue.clock) : nil
+          LazyVStack(spacing: 18) {
+            if lyrics.lines.isEmpty {
+              Text("暂无歌词").foregroundStyle(.secondary).padding(.top, 60)
+            }
+            ForEach(lyrics.lines) { l in
+              let on = active == l.id
+              Group {
+                if let t = l.seconds, current {
+                  Button { queue.seek(t) } label: { Text(l.text) }.buttonStyle(.plain)
+                } else {
+                  Text(l.text).textSelection(.enabled)
+                }
               }
-            }.fontWeight(active == l.id ? .bold : .regular).foregroundStyle(
-              active == l.id ? Color.accentColor : Color.primary)
-          } else {
-            Text(l.text).textSelection(.enabled)
+              .font(on ? .title3.weight(.bold) : .body)
+              .foregroundStyle(on ? Color.primary : Color.secondary)
+              .multilineTextAlignment(.center)
+              .scaleEffect(on ? 1.04 : 1)
+              .animation(.snappy(duration: 0.25), value: on)
+              .id(l.id)
+            }
           }
+          .padding(.horizontal, 24).padding(.vertical, 120)
+          .frame(maxWidth: .infinity)
+          .onChange(of: active) { _, id in
+            guard let id else { return }
+            withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo(id, anchor: .center) }
+          }
+        } else {
+          ProgressView().padding(.top, 60)
         }
-      } else {
-        ProgressView()
       }
-    }.navigationTitle("歌词").task(id: retry) {
+    }
+    .navigationTitle("歌词").navigationBarTitleDisplayMode(.inline).task(id: retry) {
       issue = nil
       let config = URLSessionConfiguration.ephemeral
       config.httpCookieStorage = nil

@@ -14,37 +14,57 @@ struct SpacePrivacy: View {
   @State private var reload = 0
   private var dirty: Bool { ready && values != original }
   var body: some View {
-    Form {
-      if !ready && busy { ProgressView() }
-      if let issue { Text(issue); Button("重新载入") { reload += 1 }.disabled(busy) }
+    List {
+      if let issue {
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          Button("重新载入") { reload += 1 }.disabled(busy)
+        }
+      }
       if ready {
         ForEach(SpacePrivacyValues.sections.indices, id: \.self) { ix in
-          Section(SpacePrivacyValues.sections[ix].0) {
+          Section {
             ForEach(SpacePrivacyValues.sections[ix].1) { field in
               Toggle(isOn: Binding(
                 get: { values[field.id] == (field.reverse ? 0 : 1) },
                 set: { values[field.id] = $0 != field.reverse ? 1 : 0 })) {
-                  VStack(alignment: .leading) {
+                  VStack(alignment: .leading, spacing: 2) {
                     Text(field.label)
                     if values[field.id] == nil { Text("未指定").font(.caption).foregroundStyle(.secondary) }
                   }
                 }
             }
-          }.disabled(busy)
+          } header: {
+            Text(SpacePrivacyValues.sections[ix].0)
+          }
+          .disabled(busy)
         }
+      } else if issue == nil {
+        ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear)
       }
-    }.navigationTitle("空间隐私").navigationBarBackButtonHidden(dirty)
-      .toolbar {
-        if dirty {
-          ToolbarItem(placement: .cancellationAction) { Button("返回") { leaving = true }.disabled(busy) }
+    }
+    .listStyle(.insetGrouped)
+    .navigationTitle("空间设置").navigationBarTitleDisplayMode(.inline)
+    .safeAreaInset(edge: .bottom) {
+      if dirty {
+        HStack(spacing: 12) {
+          Text("更改将在离开时自动保存").font(.footnote).foregroundStyle(.secondary)
+          Spacer()
+          Button(busy ? "保存中" : "立即保存") { Task { await save() } }.disabled(busy)
+            .buttonStyle(.glassProminent)
         }
-        ToolbarItem(placement: .confirmationAction) { Button("保存") { Task { await save() } }.disabled(busy || !dirty) }
+        .padding(.leading, 20).padding(.trailing, 8).padding(.vertical, 8)
+        .glassEffect(.regular, in: Capsule())
+        .padding(.horizontal, 16).padding(.bottom, 4)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
       }
-      .confirmationDialog("保存空间隐私更改？", isPresented: $leaving, titleVisibility: .visible) {
-        Button("保存并返回") { Task { await save(returning: true) } }
-        Button("放弃更改", role: .destructive) { dismiss() }
-      }
-      .task(id: "\(uid):\(accounts.state.active ?? ""):\(reload)") { await load() }
+    }
+    .animation(.snappy, value: dirty)
+    .onDisappear {
+      // Like the original page, leaving saves what was changed.
+      if dirty { Task { await save() } }
+    }
+    .task(id: "\(uid):\(accounts.state.active ?? ""):\(reload)") { await load() }
   }
   private func read() async throws -> [String: Int] {
     let r = try await BiliAPI.shared.read("/x/space/setting/app", ["mid": uid], expectedAccount: uid, as: Payload.self)

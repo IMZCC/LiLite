@@ -15,30 +15,51 @@ struct IMMessageReport: View {
   var body: some View {
     Form {
       if submitted {
-        Label("举报已提交", systemImage: "checkmark.circle")
+        Section {
+          VStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill").font(.system(size: 44)).foregroundStyle(.green)
+            Text("举报已提交").font(.headline)
+          }
+          .frame(maxWidth: .infinity).padding(.vertical, 12)
+        }
       } else {
         Section("举报原因") {
           ForEach(Self.reasons, id: \.0) { id, title in
             Button {
               reason = id
             } label: {
-              HStack {
-                Text(title)
+              HStack(spacing: 12) {
+                Image(systemName: reason == id ? "largecircle.fill.circle" : "circle")
+                  .foregroundStyle(reason == id ? Color.accentColor : Color.secondary)
+                Text(title).foregroundStyle(.primary)
                 Spacer()
-                if reason == id { Image(systemName: "checkmark") }
               }
+              .contentShape(Rectangle())
             }
+            .accessibilityAddTraits(reason == id ? .isSelected : [])
           }
         }
-        Section(reason == 0 ? "问题说明" : "补充说明") {
+        Section(reason == 0 ? "问题说明" : "补充说明（选填）") {
           TextField("描述这条消息的问题", text: $note, axis: .vertical).lineLimit(2...6)
         }
-        if let error { Text(error).foregroundStyle(.secondary) }
-        Button("提交举报", role: .destructive) { confirm = true }.disabled(
-          reason == nil
-            || (reason == 0 && note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+        Section {
+          Button {
+            confirm = true
+          } label: {
+            HStack {
+              Text("提交举报").fontWeight(.semibold)
+              if busy { Spacer(); ProgressView() }
+            }
+          }
+          .foregroundStyle(.red)
+          .disabled(
+            reason == nil
+              || (reason == 0 && note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+        } footer: {
+          if let error { Text(error).foregroundStyle(.red) }
+        }
       }
-    }.navigationTitle("举报私信").disabled(busy).toolbar {
+    }.navigationTitle("举报私信").navigationBarTitleDisplayMode(.inline).disabled(busy).toolbar {
       ToolbarItem(placement: .cancellationAction) {
         Button(submitted ? "完成" : "取消") { dismiss() }.disabled(busy)
       }

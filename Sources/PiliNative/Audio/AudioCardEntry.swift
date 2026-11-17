@@ -11,10 +11,9 @@ struct ArchiveListenEntry: View {
       if open {
         ListenView()
       } else if let issue {
-        VStack {
-          Text(issue)
-          Button("重试") { retry += 1 }
-        }
+        ContentUnavailableView {
+          Label("无法开始播放", systemImage: "headphones")
+        } description: { Text(issue) } actions: { Button("重试") { retry += 1 } }
       } else {
         ProgressView()
       }

@@ -16,12 +16,21 @@ struct SitePage: View {
     if !external || inside || noteOID != nil || role != .main {
       EmbeddedSitePage(url:url,noteOID:noteOID,role:role).id("\(role.rawValue):\(accounts.state.owner(.role(role)) ?? "")")
     } else {
-      VStack(spacing: 14) {
+      VStack(spacing: 16) {
+        Image(systemName: "safari").font(.system(size: 48)).foregroundStyle(.tint)
         Text(url.host ?? "网页").piliFont(.headline)
-        if let issue { Text(issue).foregroundStyle(.secondary) }
-        Button("用浏览器打开") { launch() }
-        Button("在应用内打开") { inside = true }
-      }.navigationTitle("网页").task(id: url) { if attempted != url { launch() } }
+        if let issue { Text(issue).font(.footnote).foregroundStyle(.secondary) }
+        VStack(spacing: 10) {
+          Button { launch() } label: { Text("用浏览器打开").frame(maxWidth: 240) }
+            .buttonStyle(.glassProminent)
+          Button { inside = true } label: { Text("在应用内打开").frame(maxWidth: 240) }
+            .buttonStyle(.glass)
+        }
+        .controlSize(.large)
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .navigationTitle("网页").navigationBarTitleDisplayMode(.inline)
+      .task(id: url) { if attempted != url { launch() } }
     }
   }
   private func launch() {
@@ -49,10 +58,12 @@ private struct EmbeddedSitePage: View {
       if browser.loading { ProgressView(value: browser.progress).progressViewStyle(.linear) }
       if let error = browser.issue {
         HStack {
-          Text(error).font(.footnote)
+          Label(error, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(.secondary)
           Spacer()
-          Button("重试") { browser.reload() }
-        }.padding(8)
+          Button("重试") { browser.reload() }.font(.footnote.weight(.semibold))
+        }
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .background(Color(uiColor: .secondarySystemBackground))
       }
       NativeWebSurface(browser: browser).id(ObjectIdentifier(browser.web))
     }.navigationTitle(browser.title.isEmpty ? (url.host ?? "网页") : browser.title)

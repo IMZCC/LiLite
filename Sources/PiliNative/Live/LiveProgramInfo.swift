@@ -47,7 +47,11 @@ struct LiveProgramInfo: View {
           }
         }
       }
-      NavigationLink("播放器音量") { AudioLevelSettings() }
-    }.navigationTitle("播放信息")
+      Section {
+        NavigationLink { AudioLevelSettings() } label: {
+          SettingsRowLabel(title: "播放器音量", symbol: "speaker.wave.2", color: .pink)
+        }
+      }
+    }.navigationTitle("播放信息").navigationBarTitleDisplayMode(.inline).monospacedDigit()
   }
 }

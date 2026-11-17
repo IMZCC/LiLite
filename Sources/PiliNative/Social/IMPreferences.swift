@@ -15,18 +15,27 @@ struct IMPreferences: View {
 
   var body: some View {
     Form {
-      if !loaded && issue == nil { ProgressView() }
       if let issue {
         Section {
-          Text(issue)
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
           Button("重试") { Task { await reload() } }
         }
       }
-      if loaded && values.isEmpty { Text("暂无设置").foregroundStyle(.secondary) }
       ForEach(values.keys.sorted(), id: \.self) { key in
-        if let value = values[key] { setting(key, value).disabled(saving) }
+        if let value = values[key] {
+          if case .select = value.content {
+            Section { setting(key, value).disabled(saving) }
+          } else {
+            setting(key, value).disabled(saving)
+          }
+        }
       }
-    }.navigationTitle(title).task(id: type.rawValue) { await reload() }
+    }
+    .overlay {
+      if !loaded && issue == nil { ProgressView() }
+      else if loaded && values.isEmpty { ContentUnavailableView("暂无设置", systemImage: "gearshape") }
+    }
+    .navigationTitle(title).navigationBarTitleDisplayMode(.inline).task(id: type.rawValue) { await reload() }
   }
   @MainActor private func reload() async {
     guard !saving else { return }
@@ -51,11 +60,17 @@ struct IMPreferences: View {
     } catch { issue = error.localizedDescription }
   }
   private func label(_ title: String, _ subtitle: String, _ summary: String = "") -> some View {
-    VStack(alignment: .leading, spacing: 4) {
-      Text(title)
-      if !subtitle.isEmpty { Text(subtitle).piliFont(.caption).foregroundStyle(.secondary) }
-      if !summary.isEmpty { Text(summary).piliFont(.subheadline).foregroundStyle(.secondary) }
+    HStack(spacing: 12) {
+      VStack(alignment: .leading, spacing: 3) {
+        Text(title).foregroundStyle(.primary)
+        if !subtitle.isEmpty { Text(subtitle).piliFont(.caption).foregroundStyle(.secondary) }
+      }
+      if !summary.isEmpty {
+        Spacer(minLength: 8)
+        Text(summary).piliFont(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+      }
     }
+    .padding(.vertical, 2)
   }
   @ViewBuilder private func setting(_ key: Int32, _ value: PiliIM_Setting) -> some View {
     switch value.content {
@@ -174,9 +189,9 @@ struct IMPreferences: View {
         Task { await save(key, copy) }
       } label: {
         HStack {
-          Text(item.text)
+          Text(item.text).foregroundStyle(.primary)
           Spacer()
-          if item.selected { Image(systemName: "checkmark") }
+          if item.selected { Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(.tint) }
         }
       }
     }
@@ -205,31 +220,49 @@ struct IMKeywordBlocking: View {
   }
   var body: some View {
     Form {
-      if busy { ProgressView() }
       if let issue {
-        Text(issue)
-        Button("重新载入") { Task { await reload() } }.disabled(busy)
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          Button("重新载入") { Task { await reload() } }.disabled(busy)
+        }
       }
       if let state {
         Section {
-          TextField("输入要屏蔽的词", text: $draft)
-          Button("添加") { Task { await change(term, add: true) } }.disabled(
-            busy || addProblem != nil)
+          HStack {
+            TextField("输入要屏蔽的词", text: $draft).onSubmit { Task { await change(term, add: true) } }
+            Button("添加") { Task { await change(term, add: true) } }
+              .buttonStyle(.glassProminent).controlSize(.small)
+              .disabled(busy || addProblem != nil)
+          }
         } footer: {
           if !term.isEmpty, let reason = addProblem {
-            Text(reason)
+            Text(reason).foregroundStyle(.red)
           } else if !state.listLimitText.isEmpty {
             Text(state.listLimitText)
           }
         }
-        Section("已屏蔽") {
+        Section {
           if state.items.isEmpty { Text("暂无屏蔽词").foregroundStyle(.secondary) }
           ForEach(state.items.map(\.keyword), id: \.self) { word in
-            Text(word).swipeActions { Button("删除", role: .destructive) { removal = word } }
+            HStack {
+              Text(word)
+              Spacer()
+              Button { removal = word } label: { Image(systemName: "trash") }
+                .buttonStyle(.borderless).foregroundStyle(.secondary).accessibilityLabel("删除 " + word)
+            }
+            .swipeActions { Button("删除", role: .destructive) { removal = word } }
+          }
+        } header: {
+          HStack {
+            Text("已屏蔽")
+            Spacer()
+            if state.listLimit > 0 { Text("\(state.items.count)/\(state.listLimit)").monospacedDigit() }
           }
         }
       }
-    }.navigationTitle("消息屏蔽词").task(id: uid) { await reload() }
+    }
+    .overlay { if busy && state == nil { ProgressView() } }
+    .navigationTitle("消息屏蔽词").navigationBarTitleDisplayMode(.inline).task(id: uid) { await reload() }
       .confirmationDialog(
         "删除这个屏蔽词？",
         isPresented: Binding(get: { removal != nil }, set: { if !$0 { removal = nil } }),

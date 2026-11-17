@@ -17,39 +17,55 @@ struct MomentOwnerSettings: View {
   var body: some View {
     Form {
       if let issue {
-        Text(issue).foregroundStyle(.secondary)
-        Button("重试") { reload += 1 }
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          Button("重试") { reload += 1 }
+        }
       }
       if available {
-        Section("可见范围") {
+        Section {
           if let visibility {
-            Button(visibility ? "改为公开" : "改为仅自己可见") {
-              if visibility {
-                confirmPublic = true
-              } else {
-                Task { await publish(privateOnly: true) }
-              }
-            }
+            SettingToggle(
+              title: "仅自己可见", symbol: "eye.slash", color: .orange,
+              isOn: Binding(get: { visibility }, set: { on in
+                if on { Task { await publish(privateOnly: true) } } else { confirmPublic = true }
+              }))
+          } else if issue == nil {
+            ProgressView().frame(maxWidth: .infinity)
           }
+        } header: {
+          Text("可见范围")
+        } footer: {
+          Text("仅自己可见的动态不会出现在粉丝的动态页")
         }
         if entry.replyOID != nil, entry.replyType != nil {
-          Section("评论") {
+          Section {
             if let p = permissions {
-              Button(p.up_reply_selection.status == 1 ? "关闭评论精选" : "开启评论精选") {
-                Task { await modify(p.up_reply_selection.status == 1 ? 2 : 1) }
-              }.disabled(!p.up_reply_selection.can_modify)
-              Button(p.up_reply.status == 1 ? "关闭评论" : "恢复评论") {
-                Task { await modify(p.up_reply.status == 1 ? 3 : 4) }
-              }.disabled(!p.up_reply.can_modify)
+              SettingToggle(
+                title: "评论精选", symbol: "star.bubble", color: .yellow,
+                isOn: Binding(get: { p.up_reply_selection.status == 1 }, set: { on in
+                  Task { await modify(on ? 1 : 2) }
+                })
+              ).disabled(!p.up_reply_selection.can_modify)
+              SettingToggle(
+                title: "关闭评论", symbol: "bubble.left.and.exclamationmark.bubble.right", color: .red,
+                isOn: Binding(get: { p.up_reply.status != 1 }, set: { on in
+                  Task { await modify(on ? 3 : 4) }
+                })
+              ).disabled(!p.up_reply.can_modify)
             } else if issue == nil {
-              ProgressView()
+              ProgressView().frame(maxWidth: .infinity)
             }
+          } header: {
+            Text("评论")
+          } footer: {
+            Text("开启精选后，只有你选中的评论会公开显示")
           }
         }
       } else {
-        Text("账号已切换")
+        ContentUnavailableView("账号已切换", systemImage: "person.crop.circle.badge.exclamationmark")
       }
-    }.disabled(busy).navigationTitle("动态管理")
+    }.disabled(busy).navigationTitle("动态管理").navigationBarTitleDisplayMode(.inline)
       .confirmationDialog("让所有人查看这条动态？", isPresented: $confirmPublic) {
         Button("改为公开") { Task { await publish(privateOnly: false) } }
       }

@@ -7,8 +7,12 @@ struct PictureLocationSettings: View {
   @State private var issue: String?
   var body: some View {
     Form {
-      Section("保存原图和实况") {
-        LabeledContent("当前位置", value: chosen?.name ?? "系统照片")
+      Section {
+        LabeledContent {
+          Text(chosen?.name ?? "系统照片")
+        } label: {
+          SettingsRowLabel(title: "当前位置", symbol: chosen == nil ? "photo.on.rectangle" : "folder", color: .blue)
+        }
         Button("选择文件夹") { pick = true }
         if chosen != nil {
           Button("使用系统照片") {
@@ -20,9 +24,13 @@ struct PictureLocationSettings: View {
             }
           }
         }
+      } header: {
+        Text("保存原图和实况")
+      } footer: {
+        if let issue { Text(issue).foregroundStyle(.red) }
+        else { Text("选择文件夹后，原图和实况照片会以文件形式保存") }
       }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-    }.navigationTitle("图片保存位置")
+    }.navigationTitle("图片保存位置").navigationBarTitleDisplayMode(.inline)
       .task {
         do { chosen = try await FolderGrants.shared.current(.pictures) } catch {
           issue = error.localizedDescription
@@ -66,8 +74,12 @@ struct OfflineLocationPanel: View {
   private var wanted: OfflinePlace { chosen.map { .folder($0.id) } ?? .app }
   var body: some View {
     Form {
-      Section("新缓存保存到") {
-        LabeledContent("当前位置", value: name(wanted))
+      Section {
+        LabeledContent {
+          Text(name(wanted))
+        } label: {
+          SettingsRowLabel(title: "当前位置", symbol: chosen == nil ? "iphone" : "folder", color: .blue)
+        }
         Button("选择或重新授权文件夹") { pick = true }
         if chosen != nil {
           Button("使用应用内存储") {
@@ -80,28 +92,37 @@ struct OfflineLocationPanel: View {
             }
           }
         }
+      } header: {
+        Text("新缓存保存到")
+      } footer: {
+        if let issue { Text(issue).foregroundStyle(.red) }
       }
-      NavigationLink("恢复原版缓存清单") { LegacyCacheImportView() }
-      Section("已有缓存") {
+      Section {
+        NavigationLink { LegacyCacheImportView() } label: {
+          SettingsRowLabel(title: "恢复原版缓存清单", symbol: "arrow.triangle.2.circlepath", color: .green)
+        }
+      }
+      Section {
         ForEach(
           Array(Set(rows.map(\.location)).union(bytes.keys).union(unavailable)).sorted {
             name($0) < name($1)
           }, id: \.self
         ) { place in
           let n = rows.filter { $0.location == place }.count
-          LabeledContent(name(place)) {
+          LabeledContent {
             if unavailable.contains(place) {
-              Text("\(n) 项 · 暂时不可访问")
+              Text("\(n) 项 · 暂时不可访问").foregroundStyle(.orange)
             } else {
               Text(
                 "\(n) 项 · "
                   + (bytes[place].map {
                     ByteCountFormatter.string(fromByteCount: $0, countStyle: .file)
-                  } ?? "计算中"))
+                  } ?? "计算中")).monospacedDigit()
             }
+          } label: {
+            Label(name(place), systemImage: place == .app ? "iphone" : "folder")
           }
         }
-        if measuring { ProgressView() }
         Button("移动已完成缓存到当前位置") { confirmMove = true }
           .disabled(
             !rows.contains {
@@ -121,9 +142,14 @@ struct OfflineLocationPanel: View {
             Text(v.storageIssue ?? "").font(.caption).foregroundStyle(.secondary)
           }
         }
+      } header: {
+        HStack {
+          Text("已有缓存")
+          Spacer()
+          if measuring { ProgressView().controlSize(.small) }
+        }
       }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-    }.navigationTitle("缓存位置")
+    }.navigationTitle("缓存位置").navigationBarTitleDisplayMode(.inline)
       .confirmationDialog("移动到「\(name(wanted))」？", isPresented: $confirmMove) {
         Button("移动已完成的缓存") {
           let target = wanted

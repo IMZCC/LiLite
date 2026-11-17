@@ -22,39 +22,52 @@ struct AvatarEditor: View {
     let h = image.size.height * factor
     return CGRect(x: (side - w) * horizontal, y: (side - h) * vertical, width: w, height: h)
   }
+  @State private var dragStart: (Double, Double)?
+  @State private var pinchStart: Double?
   var body: some View {
-    Form {
-      PhotosPicker(selection: $picker, matching: .images) {
-        Label(photo == nil ? "选择照片" : "重新选择", systemImage: "photo")
-      }
-      if let photo {
-        if gif != nil { Toggle("保留动图", isOn: $keepAnimation) }
-        if gif != nil && keepAnimation {
-          Image(uiImage: photo).resizable().scaledToFit().frame(maxHeight: side)
-        } else {
-          let frame = rect(photo, side: side)
-          HStack {
-            Spacer()
-            ZStack(alignment: .topLeading) {
-              Color.white
-              Image(uiImage: photo).resizable().frame(width: frame.width, height: frame.height)
-                .offset(x: frame.minX, y: frame.minY)
-            }.frame(width: side, height: side).clipped().accessibilityLabel("头像预览")
-            Spacer()
+    ScrollView {
+      VStack(spacing: 22) {
+        cropper.padding(.top, 20)
+        if let photo, !(gif != nil && keepAnimation) {
+          Text("拖动调整位置，双指缩放").font(.footnote).foregroundStyle(.secondary)
+          HStack(spacing: 12) {
+            Image(systemName: "minus.magnifyingglass").foregroundStyle(.secondary)
+            Slider(value: $scale, in: 1...4).accessibilityLabel("缩放")
+            Image(systemName: "plus.magnifyingglass").foregroundStyle(.secondary)
           }
-          LabeledContent("缩放") { Slider(value: $scale, in: 1...4) }
-          if frame.width > side + 0.5 {
-            LabeledContent("水平位置") { Slider(value: $horizontal, in: 0...1) }
+          .padding(.horizontal, 32)
+          .onChange(of: scale) { _, _ in clamp(photo) }
+        }
+        if gif != nil {
+          Toggle("保留动图", isOn: $keepAnimation).padding(.horizontal, 32)
+        }
+        if let issue {
+          Text(issue).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+            .padding(.horizontal, 24)
+        }
+        VStack(spacing: 12) {
+          PhotosPicker(selection: $picker, matching: .images) {
+            Label(photo == nil ? "从相册选择" : "重新选择", systemImage: "photo.on.rectangle")
+              .frame(maxWidth: 260).padding(.vertical, 4)
           }
-          if frame.height > side + 0.5 {
-            LabeledContent("垂直位置") { Slider(value: $vertical, in: 0...1) }
+          .buttonStyle(.glass)
+          .controlSize(.large)
+          if let photo {
+            Button { Task { await save(photo) } } label: {
+              HStack {
+                if busy { ProgressView().tint(.white) }
+                Text(busy ? "正在上传" : "保存头像")
+              }
+              .frame(maxWidth: 260).padding(.vertical, 4)
+            }
+            .buttonStyle(.glassProminent).controlSize(.large).disabled(busy)
           }
         }
-        Button("保存头像") { Task { await save(photo) } }.disabled(busy)
+        Text("支持 JPG、PNG 与 5 MB 以内的 GIF 动图").font(.caption).foregroundStyle(.tertiary)
       }
-      if busy { ProgressView() }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-    }.navigationTitle("修改头像").disabled(busy)
+      .frame(maxWidth: .infinity)
+    }
+    .navigationTitle("修改头像").navigationBarTitleDisplayMode(.inline).disabled(busy)
       .task(id: picker) {
         guard let picker else { return }
         photo = nil
@@ -85,6 +98,64 @@ struct AvatarEditor: View {
           keepAnimation = true
         } catch { if !Task.isCancelled { issue = error.localizedDescription } }
       }
+  }
+  /// Square crop stage with the circular avatar mask; drag moves, pinch zooms.
+  @ViewBuilder private var cropper: some View {
+    let stage: CGFloat = 280
+    ZStack {
+      RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.quaternary)
+      if let photo {
+        if gif != nil && keepAnimation {
+          Image(uiImage: photo).resizable().scaledToFill().frame(width: side, height: side)
+            .clipShape(Circle())
+        } else {
+          let frame = rect(photo, side: side)
+          ZStack(alignment: .topLeading) {
+            Color.white
+            Image(uiImage: photo).resizable().frame(width: frame.width, height: frame.height)
+              .offset(x: frame.minX, y: frame.minY)
+          }
+          .frame(width: side, height: side).clipShape(Circle())
+          .overlay { Circle().stroke(.white.opacity(0.9), lineWidth: 2) }
+          .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+          .contentShape(Rectangle())
+          .gesture(drag(photo).simultaneously(with: pinch(photo)))
+          .accessibilityLabel("头像预览")
+        }
+      } else {
+        VStack(spacing: 10) {
+          Image(systemName: "person.crop.circle.badge.plus").font(.system(size: 54))
+            .foregroundStyle(.secondary)
+          Text("选择一张照片作为头像").font(.subheadline).foregroundStyle(.secondary)
+        }
+      }
+    }
+    .frame(width: stage, height: stage)
+  }
+  private func drag(_ photo: UIImage) -> some Gesture {
+    DragGesture(minimumDistance: 1)
+      .onChanged { g in
+        let start = dragStart ?? (horizontal, vertical)
+        dragStart = start
+        let frame = rect(photo, side: side)
+        let spareX = frame.width - side, spareY = frame.height - side
+        if spareX > 0.5 { horizontal = min(1, max(0, start.0 - Double(g.translation.width / spareX))) }
+        if spareY > 0.5 { vertical = min(1, max(0, start.1 - Double(g.translation.height / spareY))) }
+      }
+      .onEnded { _ in dragStart = nil }
+  }
+  private func pinch(_ photo: UIImage) -> some Gesture {
+    MagnifyGesture()
+      .onChanged { g in
+        let start = pinchStart ?? scale
+        pinchStart = start
+        scale = min(4, max(1, start * Double(g.magnification)))
+      }
+      .onEnded { _ in pinchStart = nil }
+  }
+  private func clamp(_ photo: UIImage) {
+    horizontal = min(1, max(0, horizontal))
+    vertical = min(1, max(0, vertical))
   }
   @MainActor private func save(_ image: UIImage) async {
     guard !busy else { return }

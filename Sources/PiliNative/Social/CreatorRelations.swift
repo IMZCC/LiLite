@@ -60,42 +60,41 @@ struct CreatorGroupEditor: View {
   @State private var issue: String?
   var body: some View {
     Form {
-      if !loaded && issue == nil { ProgressView() }
       if let issue {
-        Text(issue)
-        if !loaded { Button("重试") { Task { await load() } } }
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          if !loaded { Button("重试") { Task { await load() } } }
+        }
       }
       if loaded {
-        if selected.isEmpty { Label("默认分组", systemImage: "checkmark.circle.fill") }
-        ForEach(groups) { g in
-          Button {
-            if !selected.insert(g.tagid).inserted { selected.remove(g.tagid) }
-          } label: {
-            HStack {
-              VStack(alignment: .leading) {
-                Text(g.name ?? "分组")
-                if let tip = g.tip, !tip.isEmpty { Text(tip).piliFont(.caption).foregroundStyle(.secondary) }
-              }
-              Spacer()
-              if let count = g.count {
-                Text(
-                  String(
-                    max(
-                      0,
-                      count + (selected.contains(g.id) ? 1 : 0) - (original.contains(g.id) ? 1 : 0))
-                  )
-                ).foregroundStyle(.secondary)
-              }
-              Image(systemName: selected.contains(g.id) ? "checkmark.circle.fill" : "circle")
+        Section {
+          Button { selected = [] } label: {
+            groupRow("默认分组", tip: nil, count: nil, on: selected.isEmpty)
+          }
+          ForEach(groups) { g in
+            Button {
+              if !selected.insert(g.tagid).inserted { selected.remove(g.tagid) }
+            } label: {
+              groupRow(g.name ?? "分组", tip: g.tip,
+                count: g.count.map { max(0, $0 + (selected.contains(g.id) ? 1 : 0) - (original.contains(g.id) ? 1 : 0)) },
+                on: selected.contains(g.id))
             }
           }
+          Button { name = ""; naming = true } label: {
+            Label("新建分组", systemImage: "plus.circle.fill")
+          }
+          .disabled(busy)
+        } footer: {
+          Text("可同时加入多个分组，不选择则放入默认分组")
         }
-        if !selected.isEmpty { Button("移至默认分组") { selected = [] } }
       }
-    }.navigationTitle("设置关注分组").disabled(busy)
+    }
+    .overlay { if !loaded && issue == nil { ProgressView() } }
+    .navigationTitle("设置关注分组").navigationBarTitleDisplayMode(.inline).disabled(busy)
       .toolbar {
-        Button("新建分组") { name = ""; naming = true }.disabled(!loaded || busy)
-        Button(selected.isEmpty ? "保存至默认分组" : "保存") { Task { await save() } }.disabled(!loaded || busy)
+        ToolbarItem(placement: .confirmationAction) {
+          Button("保存") { Task { await save() } }.buttonStyle(.glassProminent).disabled(!loaded || busy)
+        }
       }
       .alert("新建分组", isPresented: $naming) {
         TextField("分组名称", text: $name)
@@ -103,6 +102,20 @@ struct CreatorGroupEditor: View {
         Button("创建") { Task { await add() } }.disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 16)
       }
       .task(id: uid) { await load() }
+  }
+  private func groupRow(_ title: String, tip: String?, count: Int?, on: Bool) -> some View {
+    HStack(spacing: 12) {
+      Image(systemName: on ? "checkmark.square.fill" : "square")
+        .font(.title3).foregroundStyle(on ? Color.accentColor : Color.secondary)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(title).foregroundStyle(.primary)
+        if let tip, !tip.isEmpty { Text(tip).piliFont(.caption).foregroundStyle(.secondary) }
+      }
+      Spacer()
+      if let count { Text(String(count)).monospacedDigit().foregroundStyle(.secondary) }
+    }
+    .contentShape(Rectangle())
+    .accessibilityAddTraits(on ? .isSelected : [])
   }
   @MainActor private func load() async {
     guard !busy else { return }

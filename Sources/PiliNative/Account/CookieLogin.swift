@@ -8,15 +8,30 @@ struct CookieLogin: View {
   @EnvironmentObject var accounts: AccountContext
   @Environment(\.dismiss) var dismiss
   var body: some View {
-    Form {
-      Section("哔哩哔哩 Cookie") {
-        SecureField("粘贴自己的登录 Cookie", text: $input).textInputAutocapitalization(.never)
-          .autocorrectionDisabled().privacySensitive()
-        Button("登录") { request = Task { await login() } }.disabled(busy || input.isEmpty)
+    LoginPane(headline: "使用 Cookie 登录", note: "使用 App 端接口实现的功能将不可用", footnote: LoginCopy.trusted) {
+      HStack(alignment: .top, spacing: 12) {
+        Image(systemName: "birthday.cake").font(.body.weight(.medium)).foregroundStyle(.secondary)
+          .frame(width: 24).padding(.top, 14)
+        TextField("Cookie", text: $input, axis: .vertical).lineLimit(1...10)
+          .font(.callout.monospaced()).textInputAutocapitalization(.never).autocorrectionDisabled()
+          .privacySensitive().padding(.vertical, 13)
+          .onChange(of: input) { _, value in
+            let stripped = value.filter { !$0.isWhitespace || $0 == " " }
+            if stripped != value { input = stripped }
+          }
+        if !input.isEmpty {
+          Button { input = "" } label: {
+            Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+          }.buttonStyle(.plain).padding(.top, 14).accessibilityLabel("清除")
+        }
       }
-      if busy { ProgressView() }
-      if let error { Text(error).foregroundStyle(.secondary) }
-    }.navigationTitle("Cookie 登录").onDisappear { request?.cancel(); input = "" }
+      .overlay(alignment: .bottom) { Rectangle().fill(.separator).frame(height: 1) }
+      if let error {
+        Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+      }
+      LoginSubmit(busy: busy) { request = Task { await login() } }.disabled(busy || input.isEmpty)
+    }
+    .onDisappear { request?.cancel(); input = "" }
   }
   private func login() async {
     guard !busy else { return }

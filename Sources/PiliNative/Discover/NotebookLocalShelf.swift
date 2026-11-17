@@ -9,17 +9,20 @@ struct NotebookLocalShelf: View {
   @State private var issue: String?
   var body: some View {
     List {
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-      if entries.isEmpty { ContentUnavailableView("没有本机草稿", systemImage: "note.text") }
+      if let issue { Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
       ForEach(entries) { row in
         NavigationLink {
           NativeNotebook(
             oid: row.oid, owner: owner, suppliedTitle: row.title, requested: row.note,
             startLocal: true)
         } label: {
-          VStack(alignment: .leading) {
-            Text(row.title)
-            Text(row.time.formatted()).font(.caption).foregroundStyle(.secondary)
+          HStack(spacing: 12) {
+            Image(systemName: "note.text").font(.title3).foregroundStyle(.tint).frame(width: 30)
+            VStack(alignment: .leading, spacing: 2) {
+              Text(row.title).lineLimit(2)
+              Text(MediaStats.published(Int64(row.time.timeIntervalSince1970)) ?? row.time.formatted())
+                .font(.caption).foregroundStyle(.secondary)
+            }
           }
         }
         .swipeActions {
@@ -32,7 +35,9 @@ struct NotebookLocalShelf: View {
           }
         }
       }
-    }.navigationTitle("本机草稿").onAppear { read() }.onChange(of: accounts.state.active) { _, _ in
+    }
+    .overlay { if entries.isEmpty && issue == nil { ContentUnavailableView("没有本机草稿", systemImage: "note.text") } }
+    .navigationTitle("本机草稿").navigationBarTitleDisplayMode(.inline).onAppear { read() }.onChange(of: accounts.state.active) { _, _ in
       read()
     }
     .confirmationDialog(

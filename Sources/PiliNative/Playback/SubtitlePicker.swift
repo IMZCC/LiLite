@@ -71,20 +71,34 @@ private struct SubtitlePanel: View {
   var body: some View {
     Form {
       Section {
-        Picker("字幕", selection: binding(false)) {
-          Text("关闭").tag(nil as String?)
-          ForEach(session.tracks) { r in Text(r.name).tag(Optional(r.id)) }
+        choice("关闭字幕", selected: session.first == nil) { binding(false).wrappedValue = nil }
+        ForEach(session.tracks) { r in
+          choice(r.name, selected: session.first == r.id) { binding(false).wrappedValue = r.id }
         }
-        if session.first != nil, session.tracks.count > 1 {
-          Picker("第二字幕", selection: binding(true)) {
-            Text("关闭").tag(nil as String?)
-            ForEach(session.tracks.filter { $0.id != session.first }) { r in
-              Text(r.name).tag(Optional(r.id))
-            }
+      } header: {
+        Text("字幕")
+      } footer: {
+        if session.tracks.isEmpty { Text("这个视频没有可用字幕，可以加载本地字幕文件") }
+      }
+      if session.first != nil, session.tracks.count > 1 {
+        Section("第二字幕") {
+          choice("不显示", selected: session.second == nil) { binding(true).wrappedValue = nil }
+          ForEach(session.tracks.filter { $0.id != session.first }) { r in
+            choice(r.name, selected: session.second == r.id) { binding(true).wrappedValue = r.id }
           }
         }
-        Button("加载字幕文件") { importing = true }
-        if let refresh { Button("刷新字幕列表", action: refresh) }
+      }
+      Section {
+        Button { importing = true } label: {
+          SettingsRowLabel(title: "加载字幕文件", symbol: "doc.badge.plus", color: .blue)
+        }
+        if let refresh {
+          Button(action: refresh) {
+            SettingsRowLabel(title: "刷新字幕列表", symbol: "arrow.clockwise", color: .gray)
+          }
+        }
+      } footer: {
+        Text("支持 " + SubtitleFileFormat.allCases.map { $0.rawValue.uppercased() }.joined(separator: "、"))
       }
       if !session.tracks.isEmpty {
         Section("保存字幕") {
@@ -95,12 +109,21 @@ private struct SubtitlePanel: View {
           Picker("文件格式", selection: $format) {
             ForEach(SubtitleFileFormat.exports) { f in Text(f.label).tag(f) }
           }
-          Button("保存到文件") { save() }.disabled(working)
+          Button { save() } label: {
+            HStack {
+              Text("保存到文件")
+              if working { Spacer(); ProgressView() }
+            }
+          }.disabled(working)
         }
       }
-      if let issue = message ?? session.issue { Text(issue).foregroundStyle(.secondary) }
-      if working { ProgressView() }
-    }.navigationTitle("字幕").toolbar { Button("完成") { dismiss() } }
+      if let issue = message ?? session.issue {
+        Section { Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+      }
+    }
+    .navigationTitle("字幕").navigationBarTitleDisplayMode(.inline)
+    .presentationDetents([.medium, .large])
+    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
       .fileImporter(isPresented: $importing, allowedContentTypes: allowed) { answer in
         do {
           let url = try answer.get()
@@ -144,6 +167,17 @@ private struct SubtitlePanel: View {
         }
         output = nil
       }
+  }
+  private func choice(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      HStack {
+        Text(title).foregroundStyle(.primary)
+        Spacer()
+        if selected { Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(.tint) }
+      }
+      .contentShape(Rectangle())
+    }
+    .accessibilityAddTraits(selected ? .isSelected : [])
   }
   private func save() {
     let chosen = selected ?? session.first ?? session.tracks.first?.id

@@ -43,32 +43,63 @@ struct VoteView: View {
         if let v = info {
           let ended = Int64(now.date.timeIntervalSince1970) >= (v.end_time ?? .max)
           let options = v.options ?? []
+          let limit = max(1, v.choice_cnt ?? 1)
           Section {
-            Text(v.title ?? "投票").piliFont(.headline)
-            if let s = v.desc, !s.isEmpty { Text(s) }
-            if let end = v.end_time { Text("截止：\(Date(timeIntervalSince1970: Double(end)).formatted())").piliFont(.caption) }
-            Text("\(v.join_num ?? 0) 人参与").foregroundStyle(.secondary)
-            if ended { Text("已结束") } else if voted { Text("已投票") }
+            VStack(alignment: .leading, spacing: 8) {
+              Text(v.title ?? "投票").piliFont(.headline)
+              if let s = v.desc, !s.isEmpty { Text(s).piliFont(.subheadline).foregroundStyle(.secondary) }
+              HStack(spacing: 6) {
+                Text(limit == 1 ? "单选" : "最多选 \(limit) 项")
+                Text("·")
+                Text("\(v.join_num ?? 0) 人参与")
+                if let end = v.end_time {
+                  Text("·")
+                  Text(ended ? "已结束" : Date(timeIntervalSince1970: Double(end)).formatted(date: .abbreviated, time: .shortened) + " 截止")
+                }
+              }
+              .piliFont(.caption).foregroundStyle(.secondary)
+              if voted && !ended {
+                Label("已投票", systemImage: "checkmark.seal.fill").piliFont(.caption).foregroundStyle(.green)
+              }
+            }
+            .padding(.vertical, 4)
           }
           Section {
             ForEach(options) { o in option(o, vote: v, locked: voted || ended) }
           }
+          .listRowSeparator(.hidden)
           if !voted && !ended {
-            Toggle("显示比例", isOn: $percentages)
-            Toggle("匿名投票", isOn: $anonymous)
-            Button("提交投票") { Task { await send() } }
+            Section {
+              HStack(spacing: 20) {
+                Toggle(isOn: $percentages) { Text("显示比例") }.toggleStyle(LoginCheckbox())
+                Toggle(isOn: $anonymous) { Text("匿名投票") }.toggleStyle(LoginCheckbox())
+              }
+              .piliFont(.subheadline)
+              Button { Task { await send() } } label: {
+                HStack {
+                  if busy { ProgressView() }
+                  Text(chosen.isEmpty ? "请选择选项" : "提交投票").fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+              }
               .disabled(busy || chosen.isEmpty || accounts.state.active == nil)
+            }
           }
           if let owner = accounts.state.active {
-            FolloweeBallots(vote: id, owner: owner, options: options)
-              .id("\(id):\(owner)")
+            Section {
+              FolloweeBallots(vote: id, owner: owner, options: options)
+                .id("\(id):\(owner)")
+            }
           }
-        } else if issue == nil { ProgressView() }
+        } else if issue == nil { ProgressView().frame(maxWidth: .infinity) }
         if let issue {
-          Text(issue); Button("重试") { reload += 1 }
+          Section {
+            Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+            Button("重试") { reload += 1 }
+          }
         }
       }
-    }.navigationTitle("投票")
+    }.navigationTitle("投票").navigationBarTitleDisplayMode(.inline)
       .task(id: LoadKey(vote: id, owner: accounts.state.active, reload: reload)) {
         let uid = accounts.state.active
         info = nil; issue = nil; chosen = []; voted = false; percentages = false; anonymous = false
@@ -85,10 +116,16 @@ struct VoteView: View {
   private func option(_ o: Option, vote: Vote, locked: Bool) -> some View {
     let options = vote.options ?? []
     let pictures = options.compactMap { $0.img_url.flatMap(GalleryPicture.source).map { GalleryPicture($0) } }
-    return HStack {
+    let total = options.reduce(0.0) { $0 + Double(max(0, $1.cnt ?? 0)) }
+    let count = max(0, o.cnt ?? 0)
+    let share = total > 0 ? Double(count) / total : 0
+    let reveal = locked || percentages
+    let on = chosen.contains(o.id)
+    return HStack(spacing: 10) {
       if let url = o.img_url.flatMap(GalleryPicture.source), let index = pictures.firstIndex(where: { $0.url == url }) {
         GalleryLink(pictures, index: index) {
-          SiteThumbnail(url: url) { $0.resizable().scaledToFit() } placeholder: { Color.clear }.frame(width: 44, height: 44)
+          SiteThumbnail(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+            .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }.accessibilityLabel("预览选项图片").buttonStyle(.borderless)
       }
       Button {
@@ -97,17 +134,32 @@ struct VoteView: View {
         else if limit == 1 { chosen = [o.id] }
         else if chosen.count < limit { chosen.insert(o.id) }
       } label: {
-        HStack {
-          Image(systemName: chosen.contains(o.id) ? "checkmark.circle.fill" : "circle")
-          Text(o.opt_desc ?? "")
-          Spacer()
-          if locked || percentages {
-            let total = options.reduce(0.0) { $0 + Double(max(0, $1.cnt ?? 0)) }
-            let count = max(0, o.cnt ?? 0)
-            Text("\(count) 票 · \((total > 0 ? Double(count) / total : 0).formatted(.percent.precision(.fractionLength(0...1))))")
-              .piliFont(.caption)
+        HStack(spacing: 8) {
+          if !locked || on {
+            Image(systemName: on ? "checkmark.circle.fill" : "circle")
+              .foregroundStyle(on ? Color.accentColor : Color.secondary)
           }
-        }.contentShape(Rectangle())
+          Text(o.opt_desc ?? "").piliFont(.subheadline).foregroundStyle(.primary).lineLimit(2)
+          Spacer(minLength: 6)
+          if reveal {
+            Text("\(count)票 \(share.formatted(.percent.precision(.fractionLength(0...1))))")
+              .piliFont(.caption).monospacedDigit().foregroundStyle(.secondary)
+          }
+        }
+        .padding(.horizontal, 12).frame(minHeight: 42)
+        .background(alignment: .leading) {
+          GeometryReader { g in
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+              .fill(Color.accentColor.opacity(on ? 0.22 : 0.12))
+              .frame(width: reveal ? max(0, g.size.width * share) : 0)
+          }
+        }
+        .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+          if on { RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.accentColor, lineWidth: 1) }
+        }
+        .contentShape(Rectangle())
+        .animation(.snappy, value: reveal)
       }.disabled(locked || busy).buttonStyle(.plain)
     }
   }

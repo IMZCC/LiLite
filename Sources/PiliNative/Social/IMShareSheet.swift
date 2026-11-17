@@ -72,36 +72,53 @@ struct IMShareSheet: View {
           Button {
             if selected.contains(p.mid) { selected.remove(p.mid) } else { selected.insert(p.mid) }
           } label: {
-            HStack {
-              Text(p.uname ?? String(p.mid))
+            HStack(spacing: 12) {
+              ProfileAvatar(url: p.face.flatMap(httpsURL), size: 36)
+              Text(p.uname ?? String(p.mid)).foregroundStyle(.primary)
               Spacer()
               if done.contains(p.mid) {
-                Label("已发送", systemImage: "checkmark")
-              } else if selected.contains(p.mid) {
-                Image(systemName: "checkmark.circle.fill")
+                Label("已发送", systemImage: "checkmark").font(.footnote).foregroundStyle(.green)
+              } else {
+                Image(systemName: selected.contains(p.mid) ? "checkmark.circle.fill" : "circle")
+                  .font(.title3).foregroundStyle(selected.contains(p.mid) ? Color.accentColor : Color.secondary)
               }
             }
+            .contentShape(Rectangle())
           }.disabled(started)
           if let failure = failures[p.mid] {
             Text(failure).foregroundStyle(.secondary).font(.footnote)
           }
         }
         if let recentIssue { Text(recentIssue).font(.footnote).foregroundStyle(.secondary) }
-        Button("从通讯录添加") { picker = true }.disabled(started)
+        Button { picker = true } label: {
+          Label("从通讯录添加", systemImage: "person.crop.circle.badge.plus")
+        }.disabled(started)
       }
       Section("附言") {
-        TextField("说点什么（可选）", text: $note, axis: .vertical).disabled(started).onChange(of: note) {
+        TextField("说点什么（可选）", text: $note, axis: .vertical).lineLimit(1...4).disabled(started).onChange(of: note) {
           _, s in if s.count > 100 { note = String(s.prefix(100)) }
         }
       }
-      if !selected.isEmpty, done == selected {
-        Button("完成") { dismiss() }
-      } else {
-        Button(busy ? "发送中" : started ? "重试未完成的发送" : "发送给 " + String(selected.count) + " 人") {
-          Task { await send() }
-        }.disabled(selected.isEmpty || busy || accounts.state.active != uid)
+    }
+    .safeAreaInset(edge: .bottom) {
+      Group {
+        if !selected.isEmpty, done == selected {
+          Button { dismiss() } label: { Text("完成").frame(maxWidth: .infinity).padding(.vertical, 4) }
+        } else {
+          Button { Task { await send() } } label: {
+            HStack {
+              if busy { ProgressView().tint(.white) }
+              Text(busy ? "发送中" : started ? "重试未完成的发送" : selected.isEmpty ? "选择收件人" : "发送给 \(selected.count) 人")
+            }
+            .fontWeight(.semibold).frame(maxWidth: .infinity).padding(.vertical, 4)
+          }
+          .disabled(selected.isEmpty || busy || accounts.state.active != uid)
+        }
       }
-    }.navigationTitle("分享至私信").navigationBarBackButtonHidden(busy)
+      .buttonStyle(.glassProminent).controlSize(.large)
+      .padding(.horizontal, 20).padding(.bottom, 8)
+    }
+    .navigationTitle("分享至私信").navigationBarTitleDisplayMode(.inline).navigationBarBackButtonHidden(busy)
       .piliSheet(isPresented: $picker) {
         PiliNavigationStack {
           IMContactBook(uid: uid) { p in add(p, select: true) }.toolbar {

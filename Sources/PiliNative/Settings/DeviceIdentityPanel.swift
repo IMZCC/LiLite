@@ -9,15 +9,29 @@ struct DeviceIdentityPanel: View {
   @State private var busy = false
   var body: some View {
     Form {
-      Section("游客") { field("设备标识", text: $guest) }
+      Section {
+        field("设备标识", text: $guest)
+      } header: {
+        Label("游客", systemImage: "person.crop.circle.dashed")
+      } footer: {
+        Text("App 端接口使用的设备标识（buvid）。每个账号可单独设置，留空的账号无法保存")
+      }
       ForEach(accounts.state.accounts) { user in
-        Section(user.label) {
+        Section {
           field("设备标识", text: Binding(get: { values[user.id] ?? "" }, set: { values[user.id] = $0 }))
+        } header: {
+          Label(user.label + " · UID " + user.id, systemImage: "person.crop.circle")
         }
       }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-    }.navigationTitle("客户端设备标识").toolbar {
-      Button("保存") { Task { await save() } }.disabled(busy || guest.isEmpty)
+      if let issue {
+        Section { Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+      }
+    }
+    .navigationTitle("客户端设备标识").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        Button("保存") { Task { await save() } }.disabled(busy || guest.isEmpty)
+      }
     }.task(id: accounts.state.accounts.map(\.id)) {
       guest = MobileDeviceID.guest()
       values = Dictionary(uniqueKeysWithValues: accounts.state.accounts.map { ($0.id, MobileDeviceID.use($0.archiveDevice)) })

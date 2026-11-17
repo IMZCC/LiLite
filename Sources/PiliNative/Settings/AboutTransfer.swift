@@ -42,22 +42,39 @@ struct AboutTransfer: View {
   private var limit: Int { kind == .accounts ? PortableArchive.limit : BackupFormat.limit }
   var body: some View {
     Form {
-      Section("导出") {
-        Button("保存 JSON 文件") { startExport(.file) }
-        Button("复制到剪贴板") { startExport(.clipboard) }
-        if kind == .accounts { Text("导出的登录信息未加密").foregroundStyle(.secondary) }
+      Section {
+        Button { startExport(.file) } label: {
+          SettingsRowLabel(title: "保存 JSON 文件", symbol: "square.and.arrow.down", color: .blue)
+        }
+        Button { startExport(.clipboard) } label: {
+          SettingsRowLabel(title: "复制到剪贴板", symbol: "doc.on.clipboard", color: .blue)
+        }
+      } header: {
+        Text("导出")
+      } footer: {
+        if kind == .accounts { Text("导出的登录信息未加密，请妥善保管") }
       }
       Section("导入") {
-        Button("选择文件") { readFile = true }
-        Button("从剪贴板导入") { Task { await captureClipboard() } }
-        Button("手动输入") {
+        Button { readFile = true } label: {
+          SettingsRowLabel(title: "选择文件", symbol: "folder", color: .green)
+        }
+        Button { Task { await captureClipboard() } } label: {
+          SettingsRowLabel(title: "从剪贴板导入", symbol: "list.clipboard", color: .green)
+        }
+        Button {
           text = ""
           manual = true
+        } label: {
+          SettingsRowLabel(title: "手动输入", symbol: "keyboard", color: .green)
         }
       }
-      if busy { ProgressView() }
-      if let message { Text(message).textSelection(.enabled) }
-    }.disabled(busy).navigationTitle(kind.rawValue + "导入与导出")
+      if busy || message != nil {
+        Section {
+          if busy { ProgressView().frame(maxWidth: .infinity) }
+          if let message { Text(message).font(.footnote).foregroundStyle(.secondary).textSelection(.enabled) }
+        }
+      }
+    }.disabled(busy).navigationTitle(kind.rawValue + "导入与导出").navigationBarTitleDisplayMode(.inline)
       .confirmationDialog(
         "导出未加密的登录信息？",
         isPresented: Binding(get: { destination != nil }, set: { if !$0 { destination = nil } }),
@@ -69,7 +86,7 @@ struct AboutTransfer: View {
       }
       .fileExporter(
         isPresented: $saveFile, document: output, contentType: .json,
-        defaultFilename: "piliplus_" + (kind == .accounts ? "account" : "setting_phone")
+        defaultFilename: "lilite_" + (kind == .accounts ? "account" : "setting_phone")
       ) { result in
         output = nil
         if case .failure(let e) = result { message = e.localizedDescription }

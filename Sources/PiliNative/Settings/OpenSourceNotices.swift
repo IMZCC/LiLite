@@ -27,20 +27,43 @@ struct OpenSourceNotices: View {
       source: "https://github.com/weichsel/ZIPFoundation/tree/0.9.20"),
   ]
   var body: some View {
-    List(entries) { entry in
-      NavigationLink(entry.component) {
-        ScrollView {
-          VStack(alignment: .leading, spacing: 12) {
-            if let u = URL(string: entry.source) { Link("项目主页", destination: u) }
-            if let url = Bundle.module.url(
-              forResource: entry.id, withExtension: "txt", subdirectory: "Notices"),
-              let text = try? String(contentsOf: url, encoding: .utf8)
-            {
-              Text(verbatim: text).textSelection(.enabled).piliFont(.footnote)
+    List {
+      Section {
+        ForEach(entries) { entry in
+          NavigationLink {
+            ScrollView {
+              VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 6) {
+                  Text(entry.component).font(.title3.weight(.semibold))
+                  if let u = URL(string: entry.source) {
+                    Link(destination: u) {
+                      Label(u.host ?? entry.source, systemImage: "arrow.up.right.square")
+                        .font(.subheadline)
+                    }
+                  }
+                }
+                if let url = Bundle.module.url(
+                  forResource: entry.id, withExtension: "txt", subdirectory: "Notices"),
+                  let text = try? String(contentsOf: url, encoding: .utf8)
+                {
+                  Text(verbatim: text).textSelection(.enabled).piliFont(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+              }.padding()
+            }.navigationTitle(entry.component).navigationBarTitleDisplayMode(.inline)
+          } label: {
+            VStack(alignment: .leading, spacing: 2) {
+              Text(entry.component)
+              Text(URL(string: entry.source)?.host ?? entry.source).font(.caption).foregroundStyle(.secondary)
             }
-          }.padding()
-        }.navigationTitle(entry.component)
+          }
+        }
+      } footer: {
+        Text("轻哩使用了以上开源组件，各组件遵循其各自的许可证")
       }
-    }.navigationTitle("开源许可")
+    }
+    .navigationTitle("开源许可")
   }
 }

@@ -10,17 +10,24 @@ struct SeasonEpisodeSelection: View {
   var body: some View {
     ScrollViewReader { proxy in
       VStack {
-        HStack {
-          Menu("定位", systemImage: "scope") {
+        HStack(spacing: 14) {
+          Text("共 \(episodes.count) 集").font(.subheadline.weight(.semibold))
+          Spacer()
+          Menu {
             Button("第一项") { if let e = visible.first { proxy.scrollTo(e.id, anchor: .top) } }
             Button("最后一项") { if let e = visible.last { proxy.scrollTo(e.id, anchor: .bottom) } }
             Button("正在播放") { proxy.scrollTo(current, anchor: .center) }
+          } label: {
+            Label("定位", systemImage: "scope")
           }
-          Spacer()
-          Button(reversed ? "倒序" : "正序", systemImage: reversed ? "arrow.up" : "arrow.down") {
+          Button {
             reversed.toggle()
+          } label: {
+            Label(reversed ? "倒序" : "正序", systemImage: "arrow.up.arrow.down")
           }
-        }.padding(.horizontal)
+        }
+        .font(.subheadline).labelStyle(.titleAndIcon).buttonStyle(.borderless)
+        .padding(.horizontal, 16).padding(.vertical, 6)
         List(visible) { e in
           Button {
             guard e.id != current, resolving == nil else { return }
@@ -38,7 +45,8 @@ struct SeasonEpisodeSelection: View {
               if resolving == e.id {
                 ProgressView()
               } else if e.id == current {
-                Image(systemName: "speaker.wave.2.fill").accessibilityLabel("正在播放")
+                Image(systemName: "waveform").symbolEffect(.variableColor.iterative).foregroundStyle(.tint)
+                  .accessibilityLabel("正在播放")
               }
             }
           }.disabled(resolving != nil || !(course ? e.canRequestPlayback : e.catalogPlayable)).id(

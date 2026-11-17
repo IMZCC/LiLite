@@ -145,6 +145,8 @@ private struct OwnedDynamicComposer: View {
   @State private var originReady = false
   @State private var originError: String?
   @State private var originAttempt = 0
+  @State private var choosingTopic = false
+  @State private var reserving = false
   @AppStorage("social.verifyPost") private var verify = false
   private let disk = DynamicDraftDisk.app
   init(
@@ -173,68 +175,73 @@ private struct OwnedDynamicComposer: View {
   }
   var body: some View {
     PiliNavigationStack {
-      Form {
-        if ready {
-          if let resource {
-            HStack {
-              if let url = resource.cover.flatMap(GalleryPicture.source) {
-                SiteThumbnail(url: url) {
-                  $0.resizable().scaledToFill()
-                } placeholder: {
-                  Color.clear
-                }
-                .frame(width: 70, height: 48).clipped().clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
-              }
-              VStack(alignment: .leading) {
-                Text(resource.title).font(.headline)
-                if let name = resource.author, !name.isEmpty {
-                  Text(name).font(.caption).foregroundStyle(.secondary)
-                }
-              }
+      ScrollView {
+        VStack(alignment: .leading, spacing: 14) {
+          if ready {
+            if scope.key == "new" {
+              ComposerTopicChip(name: record.topic?.name, choose: { choosingTopic = true },
+                clear: { record.topic = nil })
+              ComposerTitleField(text: $record.title)
             }
-          }
-          if scope.key == "new" { TextField("标题（选填，最多 20 字）", text: $record.title) }
-          Section {
             DynamicEntityInput(
               draft: $draft, cursor: $cursor, uid: scope.owner, allowVote: scope.key == "new",
               suggested: resource.flatMap { r in
                 guard let mid = r.mentionID, let name = r.author else { return nil }
                 return .init(id: mid, name: name)
-              })
-          }
-          if scope.key == "new" {
-            Section("图片") {
-              DynamicPhotoDraft(
-                scope: scope, images: $record.pictures, limit: 9, importing: $importing,
-                issue: $note)
+              }
+            ) {
+              if scope.key == "new" {
+                ComposerToolButton(title: "直播预约", symbol: "calendar.badge.clock",
+                  active: record.reserve != nil) { reserving = true }
+              }
             }
-            extras
-          }
-          if scope.key != "new", origin.oid != nil && origin.kind != nil {
-            Toggle(
-              "同时评论",
-              isOn: Binding(get: { record.alsoComment ?? false }, set: { record.alsoComment = $0 }))
-          }
-          if scope.key == "new" {
-            Picker("评论设置", selection: $record.comments) {
-              Text("允许评论").tag(0)
-              Text("关闭评论").tag(1)
-              Text("精选评论").tag(2)
+            if let resource { sharedCard(resource) }
+            if let reserve = record.reserve {
+              ComposerReserveCard(title: reserve.title, start: reserve.start) { record.reserve = nil }
             }
+            if scope.key == "new" {
+              HStack(alignment: .top) {
+                ComposerScheduleButton(date: $record.scheduled, disabled: record.privateOnly)
+                Spacer()
+                VStack(alignment: .leading, spacing: 4) {
+                  ComposerReplyMenu(selection: $record.comments)
+                  ComposerPrivacyMenu(isPrivate: $record.privateOnly, lockPrivate: record.scheduled != nil)
+                }
+              }
+              ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                  DynamicPhotoDraft(
+                    scope: scope, images: $record.pictures, limit: 9, importing: $importing,
+                    issue: $note)
+                }
+                .padding(.horizontal, 16)
+              }
+              .scrollClipDisabled().padding(.horizontal, -16)
+            } else if origin.oid != nil && origin.kind != nil {
+              Toggle(isOn: Binding(get: { record.alsoComment ?? false }, set: { record.alsoComment = $0 })) {
+                Text("同时评论")
+              }
+              .toggleStyle(LoginCheckbox()).font(.subheadline)
+            }
+          } else if note == nil {
+            ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
           }
-        } else if note == nil {
-          ProgressView()
+          if let originError {
+            HStack {
+              Label(originError, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+              Spacer()
+              Button("重新读取原动态") { originAttempt += 1 }
+            }
+            .font(.footnote)
+          }
+          if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
         }
-        if let originError {
-          Text(originError)
-          Button("重新读取原动态") { originAttempt += 1 }
-        }
-        if let note { Text(note).foregroundStyle(.secondary) }
-        if !ready || snapshot.hasContent {
-          Button("丢弃草稿", role: .destructive) { confirmClear = true }
-        }
-      }.disabled(busy || importing || sent)
+        .padding(.horizontal, 16).padding(.vertical, 12)
+      }
+      .scrollDismissesKeyboard(.interactively)
+      .disabled(busy || importing || sent)
         .navigationTitle(scope.key == "new" ? "发布动态" : "转发动态")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
           ToolbarItem(placement: .cancellationAction) {
             Button("关闭") { if !ready || persist(clean: true) { dismiss() } }.disabled(
@@ -244,11 +251,28 @@ private struct OwnedDynamicComposer: View {
             if busy || importing {
               ProgressView()
             } else {
-              Button(record.scheduled == nil ? "发布" : "定时发布") { submit() }.disabled(!canPost)
+              Button(record.scheduled == nil ? "发布" : "定时发布") { submit() }
+                .buttonStyle(.glassProminent).disabled(!canPost)
             }
           }
-          if ready && !record.pictures.isEmpty {
-            ToolbarItem(placement: .bottomBar) { EditButton() }
+          if ready && snapshot.hasContent {
+            ToolbarItem(placement: .bottomBar) {
+              Button("丢弃草稿", role: .destructive) { confirmClear = true }
+            }
+          }
+        }
+        .navigationDestination(isPresented: $choosingTopic) {
+          TopicChooser { topic in
+            if accounts.state.active == scope.owner {
+              record.topic = .init(id: topic.id, name: topic.name)
+            }
+          }
+        }
+        .navigationDestination(isPresented: $reserving) {
+          ReservationEditor(uid: scope.owner, original: record.reserve?.reservation) { v in
+            if accounts.state.active == scope.owner {
+              record.reserve = .init(id: v.id, title: v.title, start: v.start, subtype: v.subtype)
+            }
           }
         }
         .confirmationDialog("丢弃这份草稿？", isPresented: $confirmClear) {
@@ -300,37 +324,28 @@ private struct OwnedDynamicComposer: View {
         } catch {}
       }
   }
-  @ViewBuilder private var extras: some View {
-    Section {
-      NavigationLink(record.topic?.name ?? "添加话题") {
-        TopicChooser { topic in
-          if accounts.state.active == scope.owner {
-            record.topic = .init(id: topic.id, name: topic.name)
-          }
+  /// The shared video, article or other resource being posted, as a quoted card.
+  private func sharedCard(_ resource: DynamicShareResource) -> some View {
+    HStack(spacing: 10) {
+      if let url = resource.cover.flatMap(GalleryPicture.source) {
+        SiteThumbnail(url: url) {
+          $0.resizable().scaledToFill()
+        } placeholder: {
+          Color.clear
+        }
+        .frame(width: 96, height: 60).background(.quaternary).clipped()
+        .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
+      }
+      VStack(alignment: .leading, spacing: 4) {
+        Text(resource.title).font(.subheadline.weight(.medium)).lineLimit(2)
+        if let name = resource.author, !name.isEmpty {
+          Text(name).font(.caption).foregroundStyle(.secondary)
         }
       }
-      if record.topic != nil { Button("移除话题") { record.topic = nil } }
-      NavigationLink(record.reserve?.title ?? "添加直播预约") {
-        ReservationEditor(uid: scope.owner, original: record.reserve?.reservation) { v in
-          if accounts.state.active == scope.owner {
-            record.reserve = .init(id: v.id, title: v.title, start: v.start, subtype: v.subtype)
-          }
-        }
-      }
-      if record.reserve != nil { Button("移除预约") { record.reserve = nil } }
-      Toggle("仅自己可见", isOn: $record.privateOnly).disabled(record.scheduled != nil)
-      Toggle(
-        "定时发布",
-        isOn: Binding(
-          get: { record.scheduled != nil },
-          set: { record.scheduled = $0 ? Date().addingTimeInterval(3600) : nil })
-      ).disabled(record.privateOnly)
-      if record.scheduled != nil {
-        DatePicker(
-          "发布时间",
-          selection: Binding(get: { record.scheduled ?? .now }, set: { record.scheduled = $0 }))
-      }
+      Spacer(minLength: 0)
     }
+    .padding(10)
+    .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
   }
   private func load() {
     guard !ready else { return }

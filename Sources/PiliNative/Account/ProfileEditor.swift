@@ -130,8 +130,9 @@ struct ProfileEditor: View {
   @State private var issue: String?
   @State private var epoch = 0
   @State private var field: EditableProfile.Field?
+  @State private var savingGender = false
   var body: some View {
-    Form {
+    List {
       if let info {
         Section {
           NavigationLink {
@@ -140,45 +141,57 @@ struct ProfileEditor: View {
             HStack {
               Text("头像")
               Spacer()
-              if let url = info.face.flatMap(httpsURL) {
-                RemoteArtwork(url: url) {
-                  $0.resizable().scaledToFill()
-                } placeholder: {
-                  Color.clear
-                }.frame(width: 45, height: 45).clipShape(Circle())
-              }
+              ProfileAvatar(url: info.face.flatMap(httpsURL), size: 56)
             }
+            .padding(.vertical, 4)
           }
-          ForEach(EditableProfile.Field.allCases) { f in
-            Button {
-              field = f
-            } label: {
-              LabeledContent(
-                f.rawValue, value: info.value(f) == "0000-00-00" ? "未填写" : info.value(f))
+          editRow(.nickname, info)
+          Menu {
+            Picker("性别", selection: Binding(get: { info.sex }, set: { saveGender($0, from: info.sex) })) {
+              ForEach(["男", "保密", "女"], id: \.self) { Text($0).tag($0) }
             }
+          } label: {
+            ProfileValueRow(title: "性别", value: info.sex.isEmpty ? "未知" : info.sex, busy: savingGender)
           }
+          .disabled(savingGender)
+          editRow(.birth, info)
+          editRow(.bio, info)
+        }
+        Section {
+          NavigationLink {
+            SitePage(url: URL(string: "https://www.bilibili.com/h5/mall/pendant/home")!)
+          } label: { Text("头像挂件") }
+        }
+        Section {
           Button {
             UIPasteboard.general.string = uid
+            AppToast.show("已复制 UID")
           } label: {
-            LabeledContent("UID", value: uid)
+            HStack {
+              Text("UID").foregroundStyle(.primary)
+              Spacer()
+              Text(uid).monospacedDigit().foregroundStyle(.secondary)
+              Image(systemName: "doc.on.doc").font(.footnote).foregroundStyle(.tertiary)
+            }
           }
         }
         Section {
-          NavigationLink("头像挂件") {
-            SitePage(url: URL(string: "https://www.bilibili.com/h5/mall/pendant/home")!)
-          }
-          NavigationLink("哔哩哔哩认证") {
+          NavigationLink {
             SitePage(url: URL(string: "https://account.bilibili.com/official/mobile/home")!)
-          }
+          } label: { Text("哔哩哔哩认证") }
         }
-      } else if issue == nil {
-        ProgressView()
+      } else if let issue {
+        ContentUnavailableView {
+          Label("资料未能载入", systemImage: "person.crop.circle.badge.exclamationmark")
+        } description: { Text(issue) } actions: { Button("重试") { epoch += 1 } }
+          .listRowBackground(Color.clear)
+      } else {
+        ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear)
       }
-      if let issue {
-        Text(issue)
-        Button("重试") { epoch += 1 }
-      }
-    }.navigationTitle("账号资料").task(id: "\(uid):\(accounts.state.active ?? ""):\(epoch)") {
+    }
+    .listStyle(.insetGrouped).listSectionSpacing(16)
+    .navigationTitle("编辑资料").navigationBarTitleDisplayMode(.inline)
+    .task(id: "\(uid):\(accounts.state.active ?? ""):\(epoch)") {
       guard uid == accounts.state.active else { info = nil; field = nil; issue = "账号已切换"; return }
       do {
         let p = try await BiliAPI.shared.editableProfile(uid)
@@ -197,6 +210,46 @@ struct ProfileEditor: View {
   private func refresh() {
     epoch += 1
     changed()
+  }
+  private func editRow(_ f: EditableProfile.Field, _ info: EditableProfile) -> some View {
+    let value = info.value(f)
+    return Button { field = f } label: {
+      ProfileValueRow(title: f == .birth ? "出生年月" : f.rawValue,
+        value: value.isEmpty || value == "0000-00-00" ? "未填写" : value, chevron: true)
+    }
+  }
+  private func saveGender(_ value: String, from original: String) {
+    guard value != original, !savingGender else { return }
+    savingGender = true
+    Task {
+      defer { savingGender = false }
+      guard let finished = try? SleepExitFence.shared.enter() else { return }
+      defer { finished() }
+      do {
+        try await BiliAPI.shared.editProfile(uid, field: .gender, original: original, value: value, consent: nil)
+        AppToast.show("修改成功")
+        refresh()
+      } catch { AppToast.show(error.localizedDescription) }
+    }
+  }
+}
+
+/// "标题 ……… 值 ›" row of the profile editor (the original's ListTile with the value trailing).
+private struct ProfileValueRow: View {
+  let title: String
+  let value: String
+  var chevron = false
+  var busy = false
+  var body: some View {
+    HStack(spacing: 12) {
+      Text(title).foregroundStyle(.primary)
+      Spacer(minLength: 16)
+      if busy { ProgressView() }
+      Text(value).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+      Image(systemName: chevron ? "chevron.right" : "chevron.up.chevron.down")
+        .font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+    }
+    .contentShape(Rectangle())
   }
 }
 private struct ProfileFieldEditor: View {
@@ -231,28 +284,45 @@ private struct ProfileFieldEditor: View {
     Form {
       switch field {
       case .nickname:
-        TextField("昵称", text: $draft)
-        Text("\(draft.count)/16").foregroundStyle(.secondary)
-        if let terms {
-          if !terms.summary.isEmpty { Text(terms.summary) }
-          if !terms.allow || !terms.verified { official }
-        } else if issue == nil {
-          ProgressView()
+        Section {
+          TextField(initial, text: $draft).font(.body)
+        } footer: {
+          HStack(alignment: .top) {
+            if let terms, !terms.summary.isEmpty { Text(terms.summary) }
+            else if terms == nil, issue == nil { ProgressView().controlSize(.small) }
+            Spacer()
+            Text("\(draft.count)/16").monospacedDigit().foregroundStyle(draft.count > 16 ? .red : .secondary)
+          }
         }
+        if let terms, !terms.allow || !terms.verified { Section { official } }
       case .bio:
-        TextField("个性签名", text: $draft, axis: .vertical).lineLimit(3...5)
-        Text("\(draft.count)/70").foregroundStyle(.secondary)
+        Section {
+          TextField(initial.isEmpty ? "介绍一下自己" : initial, text: $draft, axis: .vertical).lineLimit(4...6)
+        } footer: {
+          HStack {
+            Spacer()
+            Text("\(draft.count)/70").monospacedDigit().foregroundStyle(draft.count > 70 ? .red : .secondary)
+          }
+        }
       case .gender:
         Picker("性别", selection: $draft) {
-          ForEach(["保密", "男", "女"], id: \.self) { Text($0).tag($0) }
-        }
-      case .birth: DatePicker("出生日期", selection: $date, in: ...Date(), displayedComponents: .date)
+          ForEach(["男", "保密", "女"], id: \.self) { Text($0).tag($0) }
+        }.pickerStyle(.inline).labelsHidden()
+      case .birth:
+        DatePicker("出生年月", selection: $date, in: ...Date(), displayedComponents: .date)
+          .datePickerStyle(.graphical)
       }
       if let issue {
-        Text(issue)
-        official
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          official
+        }
       }
-    }.navigationTitle(field.rawValue).toolbar {
+    }
+    .navigationTitle("修改" + (field == .birth ? "出生年月" : field.rawValue))
+    .navigationBarTitleDisplayMode(.inline)
+    .presentationDetents(field == .birth ? [.large] : [.medium, .large])
+    .toolbar {
       ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
       ToolbarItem(placement: .confirmationAction) {
         Button("保存") { if field == .nickname { confirm = true } else { Task { await save() } } }

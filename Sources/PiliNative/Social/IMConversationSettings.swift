@@ -108,51 +108,66 @@ struct IMConversationSettings: View {
   var body: some View {
     Form {
       if uid == accounts.state.active, conversation.session_type == 1, target > 0 {
-        NavigationLink {
-          CreatorSpace(mid: target, name: person?.name ?? name ?? "用户空间")
-        } label: {
-          VStack(alignment: .leading) {
-            Text(person?.name ?? name ?? "UID \(target)")
-            if let s = person?.sign, !s.isEmpty {
-              Text(s).piliFont(.caption).foregroundStyle(.secondary)
+        Section {
+          NavigationLink {
+            CreatorSpace(mid: target, name: person?.name ?? name ?? "用户空间")
+          } label: {
+            HStack(spacing: 14) {
+              ProfileAvatar(url: person?.face.flatMap(httpsURL), size: 52)
+              VStack(alignment: .leading, spacing: 3) {
+                Text(person?.name ?? name ?? "UID \(target)").font(.headline).lineLimit(1)
+                Text(person?.sign.flatMap { $0.isEmpty ? nil : $0 } ?? "UID \(target)")
+                  .piliFont(.caption).foregroundStyle(.secondary).lineLimit(2)
+              }
             }
+            .padding(.vertical, 4)
           }
         }
-        if let p = push, p.show_push_setting == 1, let setting = p.push_setting,
-          [0, 1].contains(setting)
-        {
-          Toggle(
-            "接收内容推送",
-            isOn: .init(
-              get: { setting == 0 },
-              set: { on in
-                if !on { pending = .disablePush } else { Task { await change(.push(true)) } }
-              }))
+        Section {
+          if let p = push, p.show_push_setting == 1, let setting = p.push_setting,
+            [0, 1].contains(setting)
+          {
+            SettingToggle(
+              title: "接收内容推送", symbol: "bell.badge", color: .orange,
+              isOn: .init(
+                get: { setting == 0 },
+                set: { on in
+                  if !on { pending = .disablePush } else { Task { await change(.push(true)) } }
+                }))
+          }
+          if let pinned {
+            SettingToggle(title: "置顶聊天", symbol: "pin", color: .blue,
+              isOn: .init(get: { pinned }, set: { v in Task { await change(.pin(v)) } }))
+          }
+          if let muted {
+            SettingToggle(title: "消息免打扰", symbol: "moon", color: .indigo,
+              isOn: .init(get: { muted }, set: { v in Task { await change(.mute(v)) } }))
+          }
         }
-        if let pinned {
-          Toggle("置顶聊天", isOn: .init(get: { pinned }, set: { v in Task { await change(.pin(v)) } }))
+        Section {
+          if let push {
+            SettingToggle(
+              title: "加入黑名单", symbol: "hand.raised", color: .red,
+              isOn: .init(
+                get: { push.follow_status == 128 },
+                set: { v in if v { pending = .block } else { Task { await change(.block(false)) } } })
+            )
+          }
+          NavigationLink { CommunityReport(target: .person(id: target), uid: uid) } label: {
+            SettingsRowLabel(title: "举报用户", symbol: "exclamationmark.bubble", color: .gray)
+          }
         }
-        if let muted {
-          Toggle(
-            "消息免打扰", isOn: .init(get: { muted }, set: { v in Task { await change(.mute(v)) } }))
-        }
-        if let push {
-          Toggle(
-            "加入黑名单",
-            isOn: .init(
-              get: { push.follow_status == 128 },
-              set: { v in if v { pending = .block } else { Task { await change(.block(false)) } } })
-          )
-        }
-        NavigationLink("举报用户") { CommunityReport(target: .person(id: target), uid: uid) }
         if let issue {
-          Text(issue)
-          Button("重新载入") { revision += 1 }
+          Section {
+            Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+            Button("重新载入") { revision += 1 }
+          }
         }
       } else {
-        Text("账号已切换")
+        ContentUnavailableView("账号已切换", systemImage: "person.crop.circle.badge.exclamationmark")
       }
-    }.disabled(busy).navigationTitle("聊天设置").task(id: "\(uid):\(target):\(revision)") {
+    }.disabled(busy).navigationTitle("聊天设置").navigationBarTitleDisplayMode(.inline)
+    .task(id: "\(uid):\(target):\(revision)") {
       await load()
     }
     .confirmationDialog(

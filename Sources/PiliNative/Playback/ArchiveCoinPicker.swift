@@ -16,19 +16,25 @@ struct ArchiveCoinPicker: View {
   }
   var body:some View{
     PiliNavigationStack{
-      Form{
-        Section {ArchiveCoinStage(amount:amount,started:drop,reduce:reduce,choose:{n in if available.contains(n){amount=n}},pay:submit)}
-        Section {
+      ScrollView{
+        VStack(spacing:18){
+          ArchiveCoinStage(amount:amount,started:drop,reduce:reduce,choose:{n in if available.contains(n){amount=n}},pay:submit)
           Picker("数量",selection:$amount){
             ForEach(1...2,id:\.self){n in if n<=maximum-already{Text("\(n) 枚").tag(n)}}
-          }.pickerStyle(.segmented)
-          Toggle("同时点赞",isOn:$withLike)
-          if let balance{LabeledContent("我的硬币",value:balance.formatted())}
-          if already>0{LabeledContent("已投",value:"\(already) 枚")}
-        }
-        Button("确认投 \(amount) 枚硬币",action:submit)
-          .disabled(drop != nil || !available.contains(amount) || accounts.state.active != owner)
-      }.disabled(drop != nil).navigationTitle("投币").toolbar{Button("取消"){cancel();dismiss()}}
+          }.pickerStyle(.segmented).frame(maxWidth:240)
+          HStack(spacing:16){
+            Toggle(isOn:$withLike){Text("同时点赞")}.toggleStyle(LoginCheckbox())
+            Spacer()
+            if let balance{Text("硬币余额 "+balance.formatted()).monospacedDigit().foregroundStyle(.secondary)}
+          }.font(.subheadline)
+          if already>0{Text("已投 \(already) 枚").font(.footnote).foregroundStyle(.secondary)}
+          Button(action:submit){
+            Text("投 \(amount) 枚硬币").font(.body.weight(.semibold)).frame(maxWidth:260).padding(.vertical,4)
+          }.buttonStyle(.glassProminent).controlSize(.large)
+            .disabled(drop != nil || !available.contains(amount) || accounts.state.active != owner)
+        }.padding(.horizontal,24).padding(.vertical,12)
+      }.disabled(drop != nil).navigationTitle("投币").navigationBarTitleDisplayMode(.inline)
+        .toolbar{ToolbarItem(placement:.cancellationAction){Button("取消"){cancel();dismiss()}}}
         .onChange(of:phase){_,v in if v != .active{cancel()}}
         .onChange(of:accounts.state.active){_,_ in cancel();dismiss()}
         .onDisappear{cancel()}

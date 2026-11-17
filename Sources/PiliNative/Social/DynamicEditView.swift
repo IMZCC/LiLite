@@ -43,6 +43,8 @@ struct DynamicEditView: View {
   @State private var issue: String?
   @State private var retry = 0
   @State private var rules: MomentOwnerSettings.Permissions?
+  @State private var choosingTopic = false
+  @State private var reserving = false
   private let disk = DynamicDraftDisk.app
   private var scope: DynamicDraftScope? { .init(owner: uid, editing: id) }
   private var snapshot: DynamicDraftFile? {
@@ -61,24 +63,34 @@ struct DynamicEditView: View {
   }
   var body: some View {
     PiliNavigationStack {
-      Form {
-        if let source, let scope, let rec = Binding($record), !conflict {
-          editor(source, scope: scope, rec: rec)
-        } else if issue == nil {
-          ProgressView()
-        }
-        if let issue {
-          Text(issue).foregroundStyle(.secondary)
-          if conflict {
-            Button("丢弃旧草稿，载入最新内容", role: .destructive) { confirm = true }
-          } else if source == nil {
-            Button("重新读取") { retry += 1 }
-            NavigationLink("打开创作中心") {
-              SitePage(url: URL(string: "https://member.bilibili.com/platform/home")!)
+      ScrollView {
+        VStack(alignment: .leading, spacing: 14) {
+          if let source, let scope, let rec = Binding($record), !conflict {
+            editor(source, scope: scope, rec: rec)
+          } else if issue == nil {
+            ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
+          }
+          if let issue {
+            VStack(alignment: .leading, spacing: 10) {
+              Text(issue).font(.footnote).foregroundStyle(.secondary)
+              if conflict {
+                Button("丢弃旧草稿，载入最新内容", role: .destructive) { confirm = true }
+              } else if source == nil {
+                HStack(spacing: 16) {
+                  Button("重新读取") { retry += 1 }
+                  NavigationLink("打开创作中心") {
+                    SitePage(url: URL(string: "https://member.bilibili.com/platform/home")!)
+                  }
+                }
+                .font(.subheadline)
+              }
             }
           }
         }
-      }.navigationTitle("编辑动态").disabled(busy || importing)
+        .padding(.horizontal, 16).padding(.vertical, 12)
+      }
+      .scrollDismissesKeyboard(.interactively)
+      .navigationTitle("编辑动态").navigationBarTitleDisplayMode(.inline).disabled(busy || importing)
         .toolbar {
           ToolbarItem(placement: .cancellationAction) {
             Button("关闭") { if persist(clean: true) { dismiss() } }.disabled(busy || importing)
@@ -87,13 +99,30 @@ struct DynamicEditView: View {
             if busy || importing {
               ProgressView()
             } else {
-              Button("保存") { submit() }.disabled(!maySave)
+              Button("保存") { submit() }.buttonStyle(.glassProminent).disabled(!maySave)
             }
           }
-          if !(record?.pictures ?? []).isEmpty || !(record?.originals ?? []).isEmpty {
-            ToolbarItem(placement: .bottomBar) { EditButton() }
+          if differs, !conflict {
+            ToolbarItem(placement: .bottomBar) {
+              Button("放弃本次修改", role: .destructive) { confirm = true }
+            }
           }
-        }.confirmationDialog("丢弃这份编辑草稿？", isPresented: $confirm) {
+        }
+        .navigationDestination(isPresented: $choosingTopic) {
+          TopicChooser { t in
+            if accounts.state.active == uid {
+              record?.topic = .init(id: t.id, name: t.name)
+            }
+          }
+        }
+        .navigationDestination(isPresented: $reserving) {
+          ReservationEditor(uid: uid, original: record?.reserve?.reservation) { v in
+            if accounts.state.active == uid {
+              record?.reserve = .init(id: v.id, title: v.title, start: v.start, subtype: v.subtype)
+            }
+          }
+        }
+        .confirmationDialog("丢弃这份编辑草稿？", isPresented: $confirm) {
           Button("丢弃", role: .destructive) {
             guard let scope else { return }
             do {
@@ -123,47 +152,38 @@ struct DynamicEditView: View {
   @ViewBuilder private func editor(
     _ source: DynamicRevision, scope: DynamicDraftScope, rec: Binding<DynamicDraftFile>
   ) -> some View {
-    if source.resourceID == nil && source.origin == nil {
-      TextField("标题（选填，最多 20 字）", text: rec.title)
+    let plain = source.resourceID == nil && source.origin == nil
+    if plain {
+      ComposerTopicChip(name: rec.wrappedValue.topic?.name, choose: { choosingTopic = true },
+        clear: { rec.wrappedValue.topic = nil })
+      ComposerTitleField(text: rec.title)
     }
-    Section {
-      DynamicEntityInput(
-        draft: $draft, cursor: $cursor, uid: uid,
-        allowVote: source.resourceID == nil && source.origin == nil)
-    }
-    if source.resourceID == nil && source.origin == nil {
-      Section("图片") {
-        DynamicEditPhotos(
-          source: source, scope: scope, record: rec, importing: $importing, issue: $issue)
+    DynamicEntityInput(draft: $draft, cursor: $cursor, uid: uid, allowVote: plain) {
+      if plain {
+        ComposerToolButton(title: "直播预约", symbol: "calendar.badge.clock",
+          active: rec.wrappedValue.reserve != nil) { reserving = true }
       }
-      Section {
-        NavigationLink(rec.wrappedValue.topic?.name ?? "选择话题") {
-          TopicChooser { t in
-            if accounts.state.active == uid {
-              rec.wrappedValue.topic = .init(id: t.id, name: t.name)
-            }
-          }
+    }
+    if plain, let reserve = rec.wrappedValue.reserve {
+      ComposerReserveCard(title: reserve.title, start: reserve.start) { rec.wrappedValue.reserve = nil }
+    }
+    HStack(alignment: .top) {
+      Spacer()
+      VStack(alignment: .leading, spacing: 4) {
+        ComposerReplyMenu(selection: rec.comments, keepOption: true) { Self.allows($0, rules) }
+        ComposerPrivacyMenu(isPrivate: rec.privateOnly)
+      }
+    }
+    if plain {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 10) {
+          DynamicEditPhotos(
+            source: source, scope: scope, record: rec, importing: $importing, issue: $issue)
         }
-        if rec.wrappedValue.topic != nil { Button("移除话题") { rec.wrappedValue.topic = nil } }
-        NavigationLink(rec.wrappedValue.reserve?.title ?? "添加直播预约") {
-          ReservationEditor(uid: uid, original: rec.wrappedValue.reserve?.reservation) { v in
-            if accounts.state.active == uid {
-              rec.wrappedValue.reserve = .init(
-                id: v.id, title: v.title, start: v.start, subtype: v.subtype)
-            }
-          }
-        }
-        if rec.wrappedValue.reserve != nil { Button("移除预约卡片") { rec.wrappedValue.reserve = nil } }
+        .padding(.horizontal, 16)
       }
+      .scrollClipDisabled().padding(.horizontal, -16)
     }
-    Toggle("仅自己可见", isOn: rec.privateOnly)
-    Picker("评论设置", selection: rec.comments) {
-      Text("保持原设置").tag(-1)
-      ForEach([0, 1, 2], id: \.self) { mode in
-        Text(["允许评论", "关闭评论", "精选评论"][mode]).tag(mode).disabled(!Self.allows(mode, rules))
-      }
-    }
-    if differs, !conflict { Button("放弃本次修改", role: .destructive) { confirm = true } }
   }
   private var differs: Bool {
     guard var s = snapshot else { return false }

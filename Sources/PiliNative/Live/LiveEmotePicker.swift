@@ -9,23 +9,27 @@ struct LiveEmotePicker: View {
   @State private var issue:String?
   @State private var retry=0
   var body:some View {
-    VStack {
+    VStack(spacing:0) {
       if let groups, groups.indices.contains(index) {
         let group=groups[index]
         ScrollView(.horizontal) {
-          HStack { ForEach(groups.indices,id:\.self){i in
+          HStack(spacing:6) { ForEach(groups.indices,id:\.self){i in
             let p=groups[i]
-            Button {index=i} label:{
-              HStack {
+            Button {withAnimation(.snappy(duration:0.2)){index=i}} label:{
+              HStack(spacing:6) {
                 if let url=p.current_cover.flatMap(GalleryPicture.source){
-                  RemoteArtwork(url:url){$0.resizable().scaledToFit()} placeholder:{Color.clear}.frame(width:26,height:26)
+                  RemoteArtwork(url:url){$0.resizable().scaledToFit()} placeholder:{Color.clear}.frame(width:24,height:24)
                 }
-                Text(p.pkg_name ?? "表情包 \(i+1)").font(.caption)
+                Text(p.pkg_name ?? "表情包 \(i+1)").font(.footnote.weight(i==index ? .semibold:.regular))
               }
-            }.buttonStyle(.bordered).tint(i==index ? .accentColor:.secondary)
-          }}.padding(.horizontal)
+              .foregroundStyle(i==index ? Color.primary:Color.secondary)
+              .padding(.horizontal,12).padding(.vertical,6)
+              .background(i==index ? Color(uiColor:.tertiarySystemFill):Color.clear,in:Capsule())
+            }.buttonStyle(.plain).accessibilityAddTraits(i==index ? .isSelected:[])
+          }}.padding(.horizontal,16).padding(.vertical,8)
         }.scrollIndicators(.hidden)
-        Text(group.insertsText ? "点按插入弹幕" : "点按发送表情").font(.footnote).foregroundStyle(.secondary)
+        Divider()
+        Text(group.insertsText ? "点按插入弹幕" : "点按发送表情").font(.caption).foregroundStyle(.tertiary).padding(.top,8)
         ScrollView {LazyVGrid(columns:[GridItem(.adaptive(minimum:62))],spacing:10){
           ForEach(group.rows){ e in
             Button { if e.available {choose(e,group.insertsText)} } label:{
@@ -43,7 +47,9 @@ struct LiveEmotePicker: View {
       } else if let issue {ContentUnavailableView{Label("表情未能加载",systemImage:"face.smiling")} description:{Text(issue)} actions:{Button("重试"){retry += 1}}}
       else if groups != nil {ContentUnavailableView("暂无可用表情",systemImage:"face.smiling")}
       else {ProgressView()}
-    }.navigationTitle("直播表情").toolbar{Button("关闭"){dismiss()}}
+    }.navigationTitle("直播表情").navigationBarTitleDisplayMode(.inline)
+      .toolbar{ToolbarItem(placement:.confirmationAction){Button("关闭"){dismiss()}}}
+      .presentationDetents([.medium,.large])
       .task(id:"\(room):\(owner):\(retry)"){
         groups=nil;issue=nil;index=0
         do {
@@ -75,7 +81,7 @@ struct LiveDraftField:UIViewRepresentable {
   }
   func makeCoordinator()->Coordinator{Coordinator(self)}
   func makeUIView(context:Context)->UITextField {
-    let field=UITextField();field.borderStyle = .roundedRect;field.placeholder="发送直播弹幕";field.delegate=context.coordinator
+    let field=UITextField();field.borderStyle = .none;field.placeholder="发个弹幕呗~";field.delegate=context.coordinator
     field.returnKeyType = .send;field.enablesReturnKeyAutomatically=true;field.clearButtonMode = .whileEditing
     field.addTarget(context.coordinator,action:#selector(Coordinator.changed(_:)),for:.editingChanged)
     field.setContentCompressionResistancePriority(.defaultLow,for:.horizontal);return field

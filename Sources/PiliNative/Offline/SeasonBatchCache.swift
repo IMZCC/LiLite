@@ -16,47 +16,99 @@ struct SeasonBatchCache: View {
   private var available: [SeasonInfo.Episode] { episodes.filter(\.allowCacheEntry) }
   private var uid: String { accounts.state.owner(.role(.video)) ?? "" }
   var body: some View {
-    List {
-      Section {
-        Text(title).piliFont(.headline)
-        Button(selection.count == available.count ? "取消全选" : "全选") {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 14) {
+        Text(title).piliFont(.headline).lineLimit(2)
+        HStack(spacing: 10) {
+          if videoChoices.isEmpty {
+            Button {
+              let viewer = uid; Task { await fetchOptions(viewer) }
+            } label: {
+              Label(fetching ? "正在读取音画质" : "选择画质", systemImage: "slider.horizontal.3")
+            }
+            .buttonStyle(.bordered).buttonBorderShape(.capsule)
+            .disabled(selection.isEmpty || fetching)
+          } else {
+            Menu {
+              Picker("画质", selection: $quality) {
+                Text(OfflineQuality.video(videoChoices).map { "默认 · " + StreamQuality.name($0) } ?? "默认").tag(0)
+                ForEach(videoChoices, id: \.self) { Text(StreamQuality.name($0)).tag($0) }
+              }
+            } label: {
+              ComposerMenuLabel(title: quality == 0 ? "默认画质" : StreamQuality.name(quality), symbol: "sparkles.tv")
+            }
+            if !audioChoices.isEmpty {
+              Menu {
+                Picker("音质", selection: $audio) {
+                  Text(OfflineQuality.audio(audioChoices).map { "默认 · " + PlaybackOption.audioName($0) } ?? "默认").tag(0)
+                  ForEach(audioChoices, id: \.self) { Text(PlaybackOption.audioName($0)).tag($0) }
+                }
+              } label: {
+                ComposerMenuLabel(title: audio == 0 ? "默认音质" : PlaybackOption.audioName(audio), symbol: "waveform")
+              }
+            }
+          }
+          Spacer()
+          Toggle(isOn: $extras) { Text("字幕与弹幕") }.toggleStyle(LoginCheckbox()).font(.subheadline)
+        }
+        if let menuIssue { Text(menuIssue).font(.caption).foregroundStyle(.red) }
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
+          ForEach(available) { e in
+            let on = selection.contains(e.id)
+            Button {
+              if !selection.insert(e.id).inserted { selection.remove(e.id) }
+            } label: {
+              VStack(alignment: .leading, spacing: 3) {
+                Text(e.label).font(.subheadline).lineLimit(2).multilineTextAlignment(.leading)
+                  .foregroundStyle(on ? Color.accentColor : Color.primary)
+                if let r = receipt[e.id] {
+                  Text(r).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
+              }
+              .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+              .padding(.horizontal, 12).padding(.vertical, 8)
+              .background(on ? Color.accentColor.opacity(0.12) : Color(uiColor: .secondarySystemBackground),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+              .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                  .stroke(on ? Color.accentColor : Color.clear, lineWidth: 1)
+              }
+              .overlay(alignment: .topTrailing) {
+                if receipt[e.id] == "已加入缓存" || receipt[e.id] == "已在缓存列表" {
+                  Image(systemName: "arrow.down.circle.fill").font(.caption).foregroundStyle(.green).padding(5)
+                }
+              }
+            }
+            .buttonStyle(.plain).accessibilityAddTraits(on ? .isSelected : [])
+          }
+        }
+      }
+      .padding(16)
+    }
+    .safeAreaInset(edge: .bottom) {
+      HStack(spacing: 12) {
+        Button(selection.count == available.count && !available.isEmpty ? "取消全选" : "全选") {
           selection = selection.count == available.count ? [] : Set(available.map(\.id))
         }
-        Button(fetching ? "正在读取可缓存音画质…" : "读取所选分集的音画质") {
-          let viewer = uid; Task { await fetchOptions(viewer) }
-        }.disabled(selection.isEmpty || fetching)
-        if !videoChoices.isEmpty {
-          Picker("画质", selection: $quality) {
-            Text(OfflineQuality.video(videoChoices).map { "默认 · " + StreamQuality.name($0) } ?? "默认").tag(0);
-            ForEach(videoChoices, id: \.self) { Text(StreamQuality.name($0)).tag($0) }
-          }
-        }
-        if !audioChoices.isEmpty {
-          Picker("音质", selection: $audio) {
-            Text(OfflineQuality.audio(audioChoices).map { "默认 · " + PlaybackOption.audioName($0) } ?? "默认").tag(0);
-            ForEach(audioChoices, id: \.self) { Text(PlaybackOption.audioName($0)).tag($0) }
-          }
-        }
-        if let menuIssue { Text(menuIssue).font(.caption).foregroundStyle(.secondary) }
-        Toggle("同时缓存字幕和弹幕", isOn: $extras)
         NavigationLink("查看缓存") { DownloadsView() }
-      }
-      ForEach(available) { e in
+        Spacer()
         Button {
-          if !selection.insert(e.id).inserted { selection.remove(e.id) }
+          let owner = uid
+          Task { await run(owner) }
         } label: {
-          VStack(alignment: .leading) {
-            Label(
-              e.label, systemImage: selection.contains(e.id) ? "checkmark.circle.fill" : "circle")
-            if let r = receipt[e.id] { Text(r).piliFont(.caption).foregroundStyle(.secondary) }
+          HStack {
+            if busy { ProgressView().tint(.white) }
+            Text(selection.isEmpty ? "缓存" : "缓存 \(selection.count) 集").fontWeight(.semibold)
           }
         }
+        .buttonStyle(.glassProminent).disabled(selection.isEmpty)
       }
-      Button("缓存所选 \(selection.count) 集") {
-        let owner = uid
-        Task { await run(owner) }
-      }.disabled(selection.isEmpty)
-    }.disabled(busy).navigationTitle("选择缓存").onChange(of: uid) { _, _ in
+      .font(.subheadline)
+      .padding(.leading, 20).padding(.trailing, 8).padding(.vertical, 8)
+      .glassEffect(.regular, in: Capsule())
+      .padding(.horizontal, 16).padding(.bottom, 4)
+    }
+    .disabled(busy).navigationTitle("离线缓存").navigationBarTitleDisplayMode(.inline).onChange(of: uid) { _, _ in
       selection = []
       receipt = [:]; videoChoices = []; audioChoices = []; quality = 0; audio = 0; menuIssue = nil
     }

@@ -24,26 +24,44 @@ struct OfflineCollectionSelection: View {
     loaded[bv]?.pages ?? entry.pages ?? []
   }
   var body: some View {
+    let ids = Set(all.compactMap(\.archive))
+    let count = whole.count + picked.values.filter { !$0.isEmpty }.count
     List {
-      let ids = Set(all.compactMap(\.archive))
-      Button(whole.isSuperset(of: ids) ? "取消全选" : "全选") {
-        if whole.isSuperset(of: ids) {
-          whole = []
-          picked = [:]
-        } else {
-          whole = ids
-          picked = [:]
-        }
-      }
       ForEach(collection.sections ?? []) { s in
         Section(s.title ?? "合集") {
           ForEach(s.episodes ?? []) { e in if let bv = e.archive { row(e, bv) } }
         }
       }
-      Button("缓存所选") { confirm = true }.disabled(
-        whole.isEmpty && picked.values.allSatisfy(\.isEmpty))
-      NavigationLink("查看缓存") { DownloadsView() }
-    }.navigationTitle(collection.title ?? "合集缓存").disabled(busy || !sameOwner)
+    }
+    .safeAreaInset(edge: .bottom) {
+      HStack(spacing: 12) {
+        Button(whole.isSuperset(of: ids) && !ids.isEmpty ? "取消全选" : "全选") {
+          if whole.isSuperset(of: ids) {
+            whole = []
+            picked = [:]
+          } else {
+            whole = ids
+            picked = [:]
+          }
+        }
+        NavigationLink("查看缓存") { DownloadsView() }
+        Spacer()
+        Button { confirm = true } label: {
+          HStack {
+            if busy { ProgressView().tint(.white) }
+            Text(count == 0 ? "缓存" : "缓存 \(count) 个稿件").fontWeight(.semibold)
+          }
+        }
+        .buttonStyle(.glassProminent)
+        .disabled(whole.isEmpty && picked.values.allSatisfy(\.isEmpty))
+      }
+      .font(.subheadline)
+      .padding(.leading, 20).padding(.trailing, 8).padding(.vertical, 8)
+      .glassEffect(.regular, in: Capsule())
+      .padding(.horizontal, 16).padding(.bottom, 4)
+    }
+    .navigationTitle(collection.title ?? "合集缓存").navigationBarTitleDisplayMode(.inline)
+    .disabled(busy || !sameOwner)
       .confirmationDialog("缓存所选稿件和分 P？", isPresented: $confirm, titleVisibility: .visible) {
         Button("加入缓存队列") { Task { await submit() } }
       }
@@ -62,14 +80,16 @@ struct OfflineCollectionSelection: View {
           if !ids.insert(part.cid).inserted { ids.remove(part.cid) }
           picked[bv] = ids
         } label: {
-          Label(
-            part.part ?? "P\(part.page ?? 1)",
-            systemImage: whole.contains(bv) || picked[bv]?.contains(part.cid) == true
-              ? "checkmark.circle.fill" : "circle")
+          let on = whole.contains(bv) || picked[bv]?.contains(part.cid) == true
+          HStack(spacing: 10) {
+            Image(systemName: on ? "checkmark.circle.fill" : "circle")
+              .foregroundStyle(on ? Color.accentColor : Color.secondary)
+            Text(part.part ?? "P\(part.page ?? 1)").font(.subheadline).foregroundStyle(.primary)
+          }
         }
       }
     } label: {
-      HStack {
+      HStack(spacing: 10) {
         Button {
           if !whole.insert(bv).inserted { whole.remove(bv) }
           picked[bv] = nil
@@ -78,10 +98,18 @@ struct OfflineCollectionSelection: View {
             systemName: whole.contains(bv)
               ? "checkmark.circle.fill"
               : (picked[bv]?.isEmpty == false ? "minus.circle.fill" : "circle")
-          ).accessibilityLabel("选择整稿")
+          )
+          .font(.title3)
+          .foregroundStyle(whole.contains(bv) || picked[bv]?.isEmpty == false ? Color.accentColor : Color.secondary)
+          .accessibilityLabel("选择整稿")
         }.buttonStyle(.borderless)
-        VStack(alignment: .leading) {
-          Text(e.title ?? bv)
+        if let pic = e.arc?.pic, let url = httpsURL(pic) {
+          SiteThumbnail(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+            .frame(width: 80, height: 45).background(.quaternary)
+            .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
+        }
+        VStack(alignment: .leading, spacing: 2) {
+          Text(e.title ?? bv).font(.subheadline).lineLimit(2)
           if let note = receipts[bv] { Text(note).font(.caption).foregroundStyle(.secondary) }
         }
       }

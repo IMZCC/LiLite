@@ -11,7 +11,7 @@ struct DAVLibrary: View {
     List {
       if !connection.target.folders.isEmpty {
         Section {
-          Button("保存一份当前设置") {
+          Button {
             Task {
               await perform {
                 let data = try NativePrefs.current().archive()
@@ -20,16 +20,20 @@ struct DAVLibrary: View {
                 message = "已保存设置备份"
               }
             }
+          } label: {
+            SettingsRowLabel(title: "保存一份当前设置", symbol: "icloud.and.arrow.up", color: .blue)
           }
-          NavigationLink("上传加密数据包") {
+          NavigationLink {
             DataPackPanel(upload: { bytes in
               guard DataPackCipher.sealed(bytes) else { throw ServiceError("请使用加密数据包") }
               try await connection.withStore { try await $0.snapshot(bytes, encrypted: true) }
             })
+          } label: {
+            SettingsRowLabel(title: "上传加密数据包", symbol: "lock.doc", color: .indigo)
           }
         }
       }
-      Section("备份文件") {
+      Section {
         ForEach(files) { f in
           Group {
             NavigationLink {
@@ -49,12 +53,24 @@ struct DAVLibrary: View {
           }
         }
         if loaded && files.isEmpty { Text("没有备份文件").foregroundStyle(.secondary) }
-        Button("刷新列表") { Task { await perform { try await refresh() } } }
+      } header: {
+        HStack {
+          Text("备份文件")
+          Spacer()
+          if busy { ProgressView().controlSize(.small) }
+        }
+      } footer: {
+        if let message { Text(message) }
       }
-      if busy { ProgressView() }
-      if let message { Text(message).foregroundStyle(.secondary) }
-    }.navigationTitle("远程备份").disabled(busy)
-      .task { await perform { try await refresh() } }
+    }
+    .navigationTitle("远程备份").navigationBarTitleDisplayMode(.inline).disabled(busy)
+    .refreshable { await perform { try await refresh() } }
+    .toolbar {
+      Button { Task { await perform { try await refresh() } } } label: {
+        Label("刷新列表", systemImage: "arrow.clockwise")
+      }
+    }
+    .task { await perform { try await refresh() } }
       .confirmationDialog(
         "删除远程备份？",
         isPresented: Binding(
@@ -75,12 +91,15 @@ struct DAVLibrary: View {
       }
   }
   private func row(_ f: DAVEntry) -> some View {
-    VStack(alignment: .leading) {
-      Text(f.name).lineLimit(2)
-      if let size = f.size {
-        Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)).font(
-          .caption
-        ).foregroundStyle(.secondary)
+    HStack(spacing: 12) {
+      Image(systemName: f.name.hasSuffix(".json") ? "doc.text" : "shippingbox")
+        .font(.title3).foregroundStyle(.tint).frame(width: 30)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(f.name).lineLimit(2)
+        if let size = f.size {
+          Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)).font(.caption)
+            .foregroundStyle(.secondary)
+        }
       }
     }
   }

@@ -18,16 +18,15 @@ struct BubbleCommunity: View {
     }
   }
   var body: some View {
-    VStack(alignment:.leading,spacing:6) {
-      if !summary.isEmpty {Text(summary).lineLimit(3).piliFont(.caption).padding(.horizontal)}
+    VStack(alignment:.leading,spacing:0) {
+      if !summary.isEmpty {
+        Text(summary).lineLimit(3).piliFont(.footnote).foregroundStyle(.secondary)
+          .padding(.horizontal,16).padding(.bottom,6)
+      }
       if tabs.count > 1 {
-        ScrollView(.horizontal) { HStack {
-          ForEach(tabs,id:\.0){ tab in
-            Button { if category == tab.0 { top[category,default:0] &+= 1 } else {visited.insert(tab.0);category=tab.0} } label:{
-              Text(tab.1).fontWeight(category==tab.0 ? .semibold:.regular)
-            }.buttonStyle(.bordered).accessibilityAddTraits(category==tab.0 ? .isSelected:[])
-          }
-        }.padding(.horizontal) }.scrollIndicators(.hidden)
+        ChipBar(items:tabs.map(\.0),selection:Binding(get:{category},set:{visited.insert($0);category=$0}),
+          title:{ id in tabs.first{$0.0==id}?.1 ?? id },reselect:{ top[category,default:0] &+= 1 })
+          .padding(.vertical,6)
       }
       ZStack {
         ForEach(tabs,id:\.0) { tab in
@@ -42,7 +41,8 @@ struct BubbleCommunity: View {
           }
         }
       }
-    }.navigationTitle(title).id("\(id):\(accounts.state.active ?? "")")
+    }.navigationTitle(title == "泡泡社区" ? title : title + "小站").navigationBarTitleDisplayMode(.inline)
+      .id("\(id):\(accounts.state.active ?? "")")
       .onChange(of:"\(id):\(accounts.state.active ?? "")"){_,_ in
         title="泡泡社区";summary="";categories=[];category="";visited=[""];top=[:]
       }
@@ -56,13 +56,8 @@ private struct BubblePosts:View {
   @State private var sort:Int?
   @State private var serviceSort:Int?
   var body:some View {
-    VStack(alignment:.leading) {
-      if !options.isEmpty {
-        Picker("帖子排序",selection:Binding(get:{sort ?? serviceSort ?? options[0].id},set:{if $0 != (sort ?? serviceSort) {sort=$0}})){
-          ForEach(options){o in Text(o.text ?? "排序 \(o.id)").tag(o.id)}
-        }.padding(.horizontal)
-      }
-      PageList(empty:"暂无帖子",grid:true,autoMore:true,active:active,scrollToTopRequest:top){ cursor in
+    let current = sort ?? serviceSort ?? options.first?.id
+    PageList(empty:"暂无帖子",grid:true,autoMore:true,active:active,scrollToTopRequest:top){ cursor in
         let page=Int(cursor ?? "1") ?? 1
         var q=["tribee_id":String(tribe),"page_num":String(page),"page_size":"20","web_location":"333.40165",
           "x-bili-device-req-json":#"{"platform":"web","device":"pc","spmid":"333.40165"}"#]
@@ -81,12 +76,33 @@ private struct BubblePosts:View {
         return Page(items:rows,next: !rows.isEmpty && (total.map{page*20<$0} ?? (rows.count>=20)) ? String(page+1):nil)
       } row:{ r in
         NavigationLink {ArticleReader(opus:r.dyn_id)} label:{
-          VStack(alignment:.leading,spacing:4) {Text(r.title ?? "帖子").lineLimit(2)
-            Text([r.meta?.author,r.meta?.time_text,r.meta?.view_stat,r.meta?.reply_count].compactMap{$0}.joined(separator:" · "))
-              .font(.caption).foregroundStyle(.secondary)
+          HStack(alignment:.firstTextBaseline,spacing:10) {
+            VStack(alignment:.leading,spacing:3) {
+              Text(r.title ?? "帖子").font(.subheadline).lineLimit(1).foregroundStyle(.primary)
+              let meta=[r.meta?.author,r.meta?.view_stat,r.meta?.reply_count].compactMap{$0}.filter{!$0.isEmpty}
+              if !meta.isEmpty {
+                Text(meta.joined(separator:" · ")).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+              }
+            }
+            Spacer(minLength:0)
+            if let time=r.meta?.time_text {Text(time).font(.footnote).foregroundStyle(.secondary)}
           }
+          .padding(.vertical,4)
         }
       }.id("\(tribe):\(owner):\(category):\(sort ?? -1)")
-    }
+      .overlay(alignment:.bottomTrailing) {
+        if active, !options.isEmpty, let current {
+          Menu {
+            Picker("排序",selection:Binding(get:{current},set:{if $0 != (sort ?? serviceSort) {sort=$0}})){
+              ForEach(options){o in Text(o.text ?? "排序 \(o.id)").tag(o.id)}
+            }
+          } label: {
+            Label(options.first{$0.id==current}?.text ?? "排序",systemImage:"arrow.up.arrow.down")
+              .font(.subheadline.weight(.semibold)).padding(.horizontal,16).padding(.vertical,12)
+          }
+          .glassEffect(.regular.interactive(),in:Capsule())
+          .padding(.trailing,20).padding(.bottom,16)
+        }
+      }
   }
 }

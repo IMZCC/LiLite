@@ -65,26 +65,59 @@ struct ReservationEditor: View {
   @State private var issue: String?
   @State private var attempt = 0
   var body: some View {
-    Form {
-      Picker("类型", selection: $subtype) {
-        Text("公开直播").tag(0)
-        Text("大航海直播").tag(1)
-      }
-      TextField("预约标题", text: $title)
-      Text("\(title.count)/14").font(.caption).foregroundStyle(.secondary)
-      DatePicker(
-        "开播时间", selection: $date, in: Date()...Date().addingTimeInterval(90 * 86400),
-        displayedComponents: [.date, .hourAndMinute])
-      if busy { ProgressView() }
-      Button(original == nil ? "创建并添加预约" : "保存预约") { Task { await save() } }
+    ScrollView {
+      VStack(alignment: .leading, spacing: 0) {
+        row("类型") {
+          Menu {
+            Picker("类型", selection: $subtype) {
+              Text("公开直播").tag(0)
+              Text("大航海直播").tag(1)
+            }
+          } label: {
+            HStack(spacing: 4) {
+              Text(subtype == 0 ? "公开直播" : "大航海直播")
+              Image(systemName: "chevron.up.chevron.down").font(.caption2)
+            }.foregroundStyle(.primary)
+          }
+          Spacer(minLength: 0)
+        }
+        Divider()
+        row("时间") {
+          DatePicker(
+            "开播时间", selection: $date, in: Date().addingTimeInterval(300)...Date().addingTimeInterval(90 * 86400),
+            displayedComponents: [.date, .hourAndMinute]).labelsHidden()
+          Spacer(minLength: 0)
+        }
+        Divider()
+        row("标题") {
+          TextField("请填写标题，最多 14 字", text: Binding(get: { title }, set: { title = String($0.prefix(14)) }))
+          Text("\(title.count)/14").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+        }
+        Divider()
+        Button { Task { await save() } } label: {
+          HStack {
+            if busy { ProgressView() }
+            Text(original == nil ? "添加预约" : "保存预约")
+          }
+          .font(.body.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 6)
+        }
+        .buttonStyle(.glassProminent).controlSize(.large)
         .disabled(
           busy || !ready || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || title.count > 14 || date.timeIntervalSinceNow < 300)
-      if let issue {
-        Text(issue)
-        if !ready { Button("重试") { attempt += 1 } }
+        .padding(.top, 36)
+        if let issue {
+          VStack(alignment: .leading, spacing: 8) {
+            Label(issue, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.red)
+            if !ready { Button("重试") { attempt += 1 } }
+          }
+          .padding(.top, 16)
+        }
       }
-    }.navigationTitle("直播预约").onChange(of: accounts.state.active) { _, active in
+      .padding(.horizontal, 16).padding(.top, 8)
+    }
+    .navigationTitle(original == nil ? "添加直播预约" : "编辑直播预约").navigationBarTitleDisplayMode(.inline)
+    .onChange(of: accounts.state.active) { _, active in
       if active != uid { dismiss() }
     }.task(id: attempt) {
       guard let original else {
@@ -102,6 +135,13 @@ struct ReservationEditor: View {
         issue = nil
       } catch { if !Task.isCancelled { issue = error.localizedDescription } }
     }
+  }
+  private func row<Content: View>(_ label: String, @ViewBuilder _ content: () -> Content) -> some View {
+    HStack(spacing: 12) {
+      Text(label).font(.subheadline).foregroundStyle(.secondary).frame(width: 50, alignment: .leading)
+      content()
+    }
+    .frame(minHeight: 52)
   }
   @MainActor private func save() async {
     guard !busy, accounts.state.active == uid else { return }

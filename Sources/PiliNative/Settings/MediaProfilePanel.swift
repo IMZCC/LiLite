@@ -12,78 +12,84 @@ struct MediaProfilePanel: View {
   var body: some View {
     Form {
       Section("默认清晰度") {
-        Picker("视频", selection: cellular ? $draft.cellVideo : $draft.wifiVideo) {
+        Picker(selection: cellular ? $draft.cellVideo : $draft.wifiVideo) {
           ForEach(NetworkMediaRules.videoIDs, id: \.self) {
             Text($0 == 0 ? "自动" : StreamQuality.name($0)).tag($0)
           }
-        }
-        Picker("音质", selection: cellular ? $draft.cellAudio : $draft.wifiAudio) {
+        } label: { SettingsRowLabel(title: "视频", symbol: "play.rectangle", color: .blue) }
+        Picker(selection: cellular ? $draft.cellAudio : $draft.wifiAudio) {
           ForEach(NetworkMediaRules.audioIDs, id: \.self) {
             Text(PlaybackOption.audioName($0)).tag($0)
           }
-        }.settingAnchor("MediaProfilePanel/音质")
-        Picker("直播", selection: cellular ? $draft.cellLive : $draft.wifiLive) {
+        } label: { SettingsRowLabel(title: "音质", symbol: "waveform", color: .orange) }
+          .settingAnchor("MediaProfilePanel/音质")
+        Picker(selection: cellular ? $draft.cellLive : $draft.wifiLive) {
           ForEach(NetworkMediaRules.liveIDs, id: \.self) {
             Text(PlaybackOption.liveName($0)).tag($0)
           }
-        }.settingAnchor("MediaProfilePanel/直播")
+        } label: { SettingsRowLabel(title: "直播", symbol: "dot.radiowaves.left.and.right", color: .pink) }
+          .settingAnchor("MediaProfilePanel/直播")
       }.settingAnchor("MediaProfilePanel/默认清晰度")
-      Section("视频编码优先顺序") {
+      Section {
         if cellular {
-          Toggle(
-            "与 Wi-Fi 相同",
+          SettingToggle(
+            title: "与 Wi-Fi 相同", symbol: "wifi", color: .blue,
             isOn: Binding(
               get: { draft.cellCodecs == nil },
               set: { draft.cellCodecs = $0 ? nil : draft.wifiCodecs })).settingAnchor("MediaProfilePanel/与 Wi-Fi 相同")
         }
         if !cellular || draft.cellCodecs != nil {
-          ForEach(codecs, id: \.self) { item in
-            HStack {
+          ForEach(Array(codecs.enumerated()), id: \.element) { index, item in
+            HStack(spacing: 12) {
+              Text("\(index + 1)").font(.footnote.weight(.bold).monospacedDigit()).foregroundStyle(.white)
+                .frame(width: 22, height: 22).background(Color.accentColor.gradient, in: Circle())
               Text(PlaybackOption.familyLabel(item))
-              Spacer()
-              Menu {
-                if let i = codecs.firstIndex(of: item) {
-                  if i > 0 {
-                    Button("上移") {
-                      var a = codecs
-                      a.swapAt(i, i - 1)
-                      update(a)
-                    }
-                  }
-                  if i + 1 < codecs.count {
-                    Button("下移") {
-                      var a = codecs
-                      a.swapAt(i, i + 1)
-                      update(a)
-                    }
-                  }
-                  if codecs.count > 1 {
-                    Button("移除", role: .destructive) { update(codecs.filter { $0 != item }) }
-                  }
-                }
-              } label: {
-                Image(systemName: "ellipsis.circle").accessibilityLabel("调整 " + item)
-              }
             }
+            .accessibilityLabel("第\(index + 1)位 " + PlaybackOption.familyLabel(item))
           }
+          .onMove { from, to in
+            var a = codecs
+            a.move(fromOffsets: from, toOffset: to)
+            update(a)
+          }
+          .onDelete { offsets in
+            guard codecs.count - offsets.count >= 1 else { return }
+            var a = codecs
+            a.remove(atOffsets: offsets)
+            update(a)
+          }
+          .deleteDisabled(codecs.count <= 1)
           let missing = NetworkMediaRules.families.filter { !codecs.contains($0) }
           if !missing.isEmpty {
-            Menu("添加编码") {
+            Menu {
               ForEach(missing, id: \.self) { c in
                 Button(PlaybackOption.familyLabel(c)) { update(codecs + [c]) }
               }
+            } label: {
+              Label("添加编码", systemImage: "plus.circle.fill")
             }.settingAnchor("MediaProfilePanel/添加编码")
           }
         }
-      }.settingAnchor("MediaProfilePanel/视频编码优先顺序")
-      if let issue { Text(issue) }
-    }.navigationTitle(cellular ? "蜂窝网络" : "Wi-Fi 与有线网络")
+      } header: {
+        Text("视频编码优先顺序")
+      } footer: {
+        Text("拖动排序，靠前的编码优先使用")
+      }
+      .settingAnchor("MediaProfilePanel/视频编码优先顺序")
+      if let issue {
+        Section { Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+      }
+    }
+    .environment(\.editMode, .constant(.active))
+    .navigationTitle(cellular ? "蜂窝网络" : "Wi-Fi 与有线网络").navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        Button("保存") {
-          do {
-            try draft.save()
-            dismiss()
-          } catch { issue = error.localizedDescription }
+        ToolbarItem(placement: .confirmationAction) {
+          Button("保存") {
+            do {
+              try draft.save()
+              dismiss()
+            } catch { issue = error.localizedDescription }
+          }
         }
       }
   }

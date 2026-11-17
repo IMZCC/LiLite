@@ -65,11 +65,28 @@ struct CreatorDisclosure: View {
   }
   var body: some View {
     Form {
-      if let text { Text(text).textSelection(.enabled) }
-      if let uid = accounts.state.active {
-        Button("查看创作者公示信息") { Task { await read(owner:uid) } }.disabled(busy)
-      } else { NavigationLink("登录后查看") { QRLoginView() } }
-    }.navigationTitle("创作者公示").onChange(of: accounts.state.active) { _,_ in text = nil }
+      Section {
+        if let text {
+          Text(text).textSelection(.enabled)
+        } else {
+          Text("创作者公示包含经过认证的实名或机构信息").foregroundStyle(.secondary)
+        }
+      }
+      Section {
+        if let uid = accounts.state.active {
+          Button { Task { await read(owner:uid) } } label: {
+            HStack {
+              SettingsRowLabel(title: "查看创作者公示信息", symbol: "person.text.rectangle", color: .blue)
+              if busy { Spacer(); ProgressView() }
+            }
+          }.disabled(busy)
+        } else {
+          NavigationLink { QRLoginView() } label: {
+            SettingsRowLabel(title: "登录后查看", symbol: "person.crop.circle", color: .gray)
+          }
+        }
+      }
+    }.navigationTitle("创作者公示").navigationBarTitleDisplayMode(.inline).onChange(of: accounts.state.active) { _,_ in text = nil }
   }
   @MainActor private func read(owner: String) async {
     guard !busy else { return }

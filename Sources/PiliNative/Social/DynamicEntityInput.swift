@@ -1,10 +1,13 @@
 import SwiftUI
 
-struct DynamicEntityInput: View {
+/// Dynamic body editor with the original's tool row under it (@, vote, then caller tools).
+struct DynamicEntityInput<Accessory: View>: View {
   @Binding var draft: ReplyDraft
   @Binding var cursor: NSRange?
   let uid: String, allowVote: Bool
   var suggested: DynamicDraftFile.Tag? = nil
+  let accessory: () -> Accessory
+  @State private var voting = false
   @EnvironmentObject private var accounts: AccountContext
   @State private var hint: (NSRange, String)?
   @State private var showingMention = false
@@ -41,13 +44,39 @@ struct DynamicEntityInput: View {
   }
   var body: some View {
     EmoteInput(
-      text: text, prompt: "动态正文", cursor: $cursor, willEdit: { hint = ($0, $1) },
+      text: text, prompt: "说点什么吧", cursor: $cursor, willEdit: { hint = ($0, $1) },
       insertEmote: { token in
         cursor = draft.replace(cursor, with: token, url: token, kind: 9, addSpace: false)
       }, entityRanges: entityRanges)
-    Button("提到用户", systemImage: "at") {
-      typedAt = nil
-      showingMention = true
+    HStack(spacing: 8) {
+      ComposerToolButton(title: "提到用户", symbol: "at") {
+        typedAt = nil
+        showingMention = true
+      }
+      if allowVote {
+        ComposerToolButton(title: existingVote == nil ? "添加投票" : "编辑投票", symbol: "chart.bar.xaxis",
+          active: existingVote != nil) { voting = true }
+        if let (range, _) = draft.momentRange(kind: 4) {
+          Button { cursor = draft.replace(range, with: "") } label: {
+            Label("移除投票", systemImage: "xmark").font(.caption)
+          }
+          .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small)
+        }
+      }
+      accessory()
+      Spacer(minLength: 0)
+    }
+    .navigationDestination(isPresented: $voting) {
+      NewVote(existing: existingVote) { v in
+        guard accounts.state.active == uid else { return }
+        let original = draft.momentRange(kind: 4)?.0
+        if original == nil {
+          cursor = draft.replace(cursor, with: "我发起了一个投票", addSpace: false)
+        }
+        cursor = draft.replace(
+          original ?? cursor, with: v.title, url: v.title, kind: 4, business: String(v.id),
+          addSpace: original == nil)
+      }
     }
     .piliSheet(isPresented: $showingMention) {
       PiliNavigationStack {
@@ -59,20 +88,15 @@ struct DynamicEntityInput: View {
         }.toolbar { Button("取消") { showingMention = false } }
       }
     }
-    if allowVote {
-      NavigationLink(existingVote?.title ?? "添加投票") {
-        NewVote(existing: existingVote) { v in
-          guard accounts.state.active == uid else { return }
-          let original = draft.momentRange(kind: 4)?.0
-          cursor = draft.replace(
-            original ?? cursor, with: v.title, url: v.title, kind: 4, business: String(v.id),
-            addSpace: original == nil)
-        }
-      }
-      if let (range, _) = draft.momentRange(kind: 4) {
-        Button("移除投票") { cursor = draft.replace(range, with: "") }
-      }
-    }
+  }
+  init(draft: Binding<ReplyDraft>, cursor: Binding<NSRange?>, uid: String, allowVote: Bool,
+    suggested: DynamicDraftFile.Tag? = nil, @ViewBuilder accessory: @escaping () -> Accessory) {
+    _draft = draft
+    _cursor = cursor
+    self.uid = uid
+    self.allowVote = allowVote
+    self.suggested = suggested
+    self.accessory = accessory
   }
   private func insertMentions(_ people: [Creator]) {
     guard accounts.state.active == uid else { return }

@@ -56,33 +56,55 @@ struct DecoderSettings: View {
   }
   var body: some View {
     List {
-      Toggle("使用硬件解码", isOn: $hardware).settingAnchor("DecoderSettings/使用硬件解码")
+      Section {
+        SettingToggle(title: "使用硬件解码", symbol: "cpu", color: .blue, isOn: $hardware)
+          .settingAnchor("DecoderSettings/使用硬件解码")
+      } footer: {
+        Text("关闭后全部使用软件解码，耗电更多")
+      }
       if hardware {
-        Section("优先顺序") {
-          ForEach(ordered, id: \.self) { Text(label($0)) }
-            .onDelete {
-              var v = ordered
-              v.remove(atOffsets: $0)
-              write(v)
+        Section {
+          ForEach(Array(ordered.enumerated()), id: \.element) { index, id in
+            HStack(spacing: 12) {
+              Text("\(index + 1)").font(.footnote.weight(.bold).monospacedDigit()).foregroundStyle(.white)
+                .frame(width: 22, height: 22).background(Color.accentColor.gradient, in: Circle())
+              Text(label(id))
+              Spacer()
+              Text(id).font(.caption.monospaced()).foregroundStyle(.tertiary)
             }
-            .onMove {
-              var v = ordered
-              v.move(fromOffsets: $0, toOffset: $1)
-              write(v)
-            }
+          }
+          .onDelete {
+            var v = ordered
+            v.remove(atOffsets: $0)
+            write(v)
+          }
+          .onMove {
+            var v = ordered
+            v.move(fromOffsets: $0, toOffset: $1)
+            write(v)
+          }
           ForEach(DecoderPreference.local.filter { !ordered.contains($0) }, id: \.self) { id in
             Button {
               write(ordered + [id])
             } label: {
-              Label(label(id), systemImage: "plus.circle")
+              Label(label(id), systemImage: "plus.circle.fill")
             }
           }
-        }.settingAnchor("DecoderSettings/优先顺序")
+        } header: {
+          Text("优先顺序")
+        } footer: {
+          Text("拖动排序，依次尝试直到成功解码")
+        }
+        .settingAnchor("DecoderSettings/优先顺序")
       }
-      Button("恢复默认") {
-        hardware = true
-        raw = "auto"
+      Section {
+        Button("恢复默认") {
+          hardware = true
+          raw = "auto"
+        }
       }
-    }.navigationTitle("视频解码").toolbar { if hardware { EditButton() } }
+    }
+    .environment(\.editMode, .constant(hardware ? .active : .inactive))
+    .navigationTitle("视频解码").navigationBarTitleDisplayMode(.inline)
   }
 }

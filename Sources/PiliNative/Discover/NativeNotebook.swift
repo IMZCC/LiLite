@@ -45,18 +45,22 @@ struct NativeNotebook: View {
   }
   var body: some View {
     Form {
-      if !ready && issue == nil { ProgressView() }
-      if !ready && issue != nil && requested == nil && accounts.state.active == owner {
-        Button("先写本机草稿") { beginLocal() }
-      }
+      if !ready && issue == nil { ProgressView().frame(maxWidth: .infinity) }
       if let issue {
         Section {
-          Text(issue).foregroundStyle(.secondary)
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
           Button("重新读取云端") { refresh += 1 }
+          if !ready && requested == nil && accounts.state.active == owner {
+            Button("先写本机草稿") { beginLocal() }
+          }
         }
       }
-      if let receipt { Text(receipt).foregroundStyle(.secondary) }
-      if let message { Text(message).foregroundStyle(.secondary) }
+      if receipt != nil || message != nil {
+        Section {
+          if let receipt { Label(receipt, systemImage: "checkmark.circle").foregroundStyle(.green) }
+          if let message { Text(message).font(.footnote).foregroundStyle(.secondary) }
+        }
+      }
       if let remote, remote.locked {
         Section {
           Label(
@@ -64,8 +68,8 @@ struct NativeNotebook: View {
         }
       }
       if let value = Binding($draft) {
-        Section("笔记") {
-          TextField("笔记标题", text: value.title).disabled(!editing)
+        Section {
+          TextField("笔记标题", text: value.title).font(.headline).disabled(!editing)
           ForEach(value.blocks) { $block in
             NotebookBlockEditor(
               block: $block, owner: owner, disk: disk, editable: editing,
@@ -86,20 +90,20 @@ struct NativeNotebook: View {
             draft?.blocks.move(fromOffsets: from, toOffset: to)
           }
         }
-        if editing {
-          Section {
-            Button("添加文字", systemImage: "text.append") { draft?.blocks.append(.init()) }
-            PhotosPicker(selection: $pick, matching: .images) {
-              Label("从照片添加", systemImage: "photo")
-            }
-            if activePlayback, part != nil { Button("插入当前时间", systemImage: "clock") { addTime() } }
-            if activePlayback { Button("插入当前画面", systemImage: "camera") { frame = true } }
-          }
-        }
         if editableRemote {
           Section {
-            Button("保存到云笔记") { Task { await send(publish: false) } }.disabled(!canSend)
-            Button("公开笔记") { publishing = true }.disabled(!canSend)
+            HStack(spacing: 10) {
+              Button { Task { await send(publish: false) } } label: {
+                Label("保存到云笔记", systemImage: "icloud.and.arrow.up").frame(maxWidth: .infinity)
+              }
+              .buttonStyle(.glass).disabled(!canSend)
+              Button { publishing = true } label: {
+                Label("公开笔记", systemImage: "globe").frame(maxWidth: .infinity)
+              }
+              .buttonStyle(.glassProminent).disabled(!canSend)
+            }
+            .font(.subheadline.weight(.semibold)).controlSize(.large)
+            .listRowBackground(Color.clear).listRowInsets(.init())
           }
         }
         if note == nil && !ids.isEmpty && checkpoint != nil && draft?.uncertain != true {
@@ -123,10 +127,29 @@ struct NativeNotebook: View {
           }
         }
       }
-      NavigationLink("使用官方编辑器") {
-        SitePage(url: NoteEditorBridge.url(oid: oid, interactive: interactive), noteOID: oid)
+      Section {
+        NavigationLink {
+          SitePage(url: NoteEditorBridge.url(oid: oid, interactive: interactive), noteOID: oid)
+        } label: {
+          SettingsRowLabel(title: "使用官方编辑器", symbol: "safari", color: .blue)
+        }
       }
-    }.navigationTitle("记笔记").toolbar { if editing { EditButton() } }
+    }.navigationTitle("记笔记").navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        if editing {
+          ToolbarItem(placement: .primaryAction) { EditButton() }
+          ToolbarItemGroup(placement: .bottomBar) {
+            Button { draft?.blocks.append(.init()) } label: { Label("添加文字", systemImage: "text.append") }
+            PhotosPicker(selection: $pick, matching: .images) { Label("从照片添加", systemImage: "photo") }
+            if activePlayback, part != nil {
+              Button { addTime() } label: { Label("插入当前时间", systemImage: "clock") }
+            }
+            if activePlayback {
+              Button { frame = true } label: { Label("插入当前画面", systemImage: "camera") }
+            }
+          }
+        }
+      }
       .task(id: refresh) { await load() }
       .task(id: cid) { await loadPart() }
       .task(id: pick) {

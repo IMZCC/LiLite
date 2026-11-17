@@ -3,24 +3,42 @@ import SwiftUI
 struct APIProxyPanel: View {
   @State private var draft = APIProxy.current()
   @State private var message: String?
+  @State private var failed = false
   var body: some View {
     Form {
       Section {
-        Toggle("使用 HTTP 代理", isOn: $draft.enabled).settingAnchor("APIProxyPanel/使用 HTTP 代理")
-        TextField("主机名或 IP 地址", text: $draft.host).textInputAutocapitalization(.never)
-          .autocorrectionDisabled().keyboardType(.URL)
-        TextField("端口", text: $draft.port).keyboardType(.numberPad)
+        SettingToggle(title: "使用 HTTP 代理", symbol: "network.badge.shield.half.filled", color: .blue,
+          isOn: $draft.enabled).settingAnchor("APIProxyPanel/使用 HTTP 代理")
       } footer: {
         Text("用于哔哩哔哩接口和图片。关闭后使用系统网络设置")
       }
-      Button("保存") {
-        do {
-          try draft.save()
-          draft = APIProxy.current()
-          message = "已保存"
-        } catch { message = error.localizedDescription }
+      Section {
+        LabeledContent("主机") {
+          TextField("主机名或 IP 地址", text: $draft.host).multilineTextAlignment(.trailing)
+            .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+        }
+        LabeledContent("端口") {
+          TextField("端口", text: $draft.port).multilineTextAlignment(.trailing).keyboardType(.numberPad)
+            .monospacedDigit()
+        }
+      } header: {
+        Text("代理服务器")
+      } footer: {
+        if let message { Text(message).foregroundStyle(failed ? .red : .secondary) }
       }
-      if let message { Text(message).foregroundStyle(.secondary) }
-    }.navigationTitle("接口代理")
+      .disabled(!draft.enabled)
+    }
+    .navigationTitle("接口代理").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        Button("保存") {
+          do {
+            try draft.save()
+            draft = APIProxy.current()
+            message = "已保存"; failed = false
+          } catch { message = error.localizedDescription; failed = true }
+        }
+      }
+    }
   }
 }

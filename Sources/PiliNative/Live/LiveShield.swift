@@ -63,47 +63,62 @@ struct LiveShieldView: View {
   @State private var loading = true
   @State private var issue: String?
   @State private var reload = 0
+  @State private var adding = false
+  @State private var removing: (Bool, String, String)?
   var body: some View {
-    Form {
-      Picker("屏蔽范围", selection: $people) {
-        Text("关键词").tag(false)
-        Text("用户").tag(true)
-      }.pickerStyle(.segmented).onChange(of: people) { _, _ in draft = "" }
-      HStack {
-        TextField(people ? "输入 UID" : "输入关键词", text: $draft).keyboardType(
-          people ? .numberPad : .default)
-        Button("添加") {
-          let s = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-          Task { await change(people, s, adding: true) }
-        }.disabled(
-          draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || (people && (Int64(draft) ?? 0) <= 0))
-      }
-      if let issue {
-        Text(issue)
-        Button("重新载入") { reload += 1 }
-      }
-      if busy || loading { ProgressView() }
-      if people {
-        ForEach(rules?.shield_user_list ?? []) { u in
+    let keywords = rules?.keyword_list ?? []
+    let users = rules?.shield_user_list ?? []
+    let empty = people ? users.isEmpty : keywords.isEmpty
+    ScrollView {
+      VStack(alignment: .leading, spacing: 12) {
+        if let issue {
           HStack {
-            Text(u.uname ?? "用户")
+            Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
             Spacer()
-            Text(String(u.uid)).foregroundStyle(.secondary)
-          }.swipeActions {
-            Button("移除", role: .destructive) {
-              Task { await change(true, String(u.uid), adding: false) }
+            Button("重新载入") { reload += 1 }
+          }
+          .font(.footnote)
+        }
+        WrappingActions(spacing: 10, rowSpacing: 10) {
+          if people {
+            ForEach(users) { u in
+              chip(u.uname ?? String(u.uid)) { removing = (true, String(u.uid), u.uname ?? String(u.uid)) }
+            }
+          } else {
+            ForEach(keywords, id: \.self) { word in
+              chip(word) { removing = (false, word, word) }
             }
           }
         }
-      } else {
-        ForEach(rules?.keyword_list ?? [], id: \.self) { word in
-          Text(word).swipeActions {
-            Button("移除", role: .destructive) { Task { await change(false, word, adding: false) } }
-          }
-        }
       }
-    }.disabled(busy || loading).navigationTitle("直播弹幕屏蔽").task(id: reload) {
+      .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .overlay {
+      if loading && rules == nil { ProgressView() }
+      else if empty && !loading { ContentUnavailableView(people ? "暂无屏蔽用户" : "暂无屏蔽关键词", systemImage: "text.badge.xmark") }
+    }
+    .pinnedHeader {
+      ChipBar(items: [false, true], selection: $people) {
+        $0 ? "用户(\(users.count))" : "关键词(\(keywords.count))"
+      }
+    }
+    .floatingAction("添加", systemImage: "plus", disabled: busy || loading) { draft = ""; adding = true }
+    .onChange(of: people) { _, _ in draft = "" }
+    .alert(people ? "用户屏蔽" : "关键词屏蔽", isPresented: $adding) {
+      TextField(people ? "UID" : "关键词", text: $draft).keyboardType(people ? .numberPad : .default)
+      Button("取消", role: .cancel) {}
+      Button("确定") {
+        let s = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task { await change(people, s, adding: true) }
+      }.disabled(
+        draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+          || (people && (Int64(draft) ?? 0) <= 0))
+    }
+    .confirmationDialog("确定删除该规则？", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
+      titleVisibility: .visible, presenting: removing) { r in
+      Button("删除 " + r.2, role: .destructive) { Task { await change(r.0, r.1, adding: false) } }
+    }
+    .disabled(busy || loading).navigationTitle("弹幕屏蔽").navigationBarTitleDisplayMode(.inline).task(id: reload) {
       loading = true
       defer { if !Task.isCancelled { loading = false } }
       do {
@@ -113,6 +128,17 @@ struct LiveShieldView: View {
         issue = nil
       } catch { if !Task.isCancelled { issue = error.localizedDescription } }
     }
+  }
+  private func chip(_ text: String, remove: @escaping () -> Void) -> some View {
+    Button(action: remove) {
+      HStack(spacing: 6) {
+        Text(text).lineLimit(1)
+        Image(systemName: "xmark").font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
+      }
+      .font(.subheadline).padding(.horizontal, 12).padding(.vertical, 7)
+      .background(Color(uiColor: .secondarySystemFill), in: Capsule())
+    }
+    .buttonStyle(.plain).accessibilityHint("删除这条规则")
   }
   @MainActor private func change(_ people: Bool, _ value: String, adding: Bool) async {
     guard !busy, !value.isEmpty else { return }

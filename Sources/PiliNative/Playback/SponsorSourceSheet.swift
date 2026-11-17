@@ -13,17 +13,40 @@ struct SponsorSourceSheet: View {
   @State private var refresh=0
   var body:some View {
     PiliNavigationStack { Form {
-      LabeledContent("YouTube 视频",value:source.youtube)
-      NavigationLink("打开原视频"){SitePage(url:source.original)}
-      if verified {
-        if current == source.youtube {Label("已绑定这个原视频",systemImage:"checkmark.circle")}
-        else {
-          if let current {LabeledContent("现有绑定",value:current)}
-          Button(current == nil ? "绑定原视频":"更换原视频"){confirm=true}.disabled(!enabled || busy)
+      Section {
+        LabeledContent {
+          Text(source.youtube).font(.callout.monospaced()).textSelection(.enabled)
+        } label: {
+          SettingsRowLabel(title: "YouTube 视频", symbol: "play.rectangle.fill", color: .red)
         }
-      } else if issue == nil {ProgressView("读取绑定信息")}
-      if let issue { Text(issue).foregroundStyle(.secondary); Button("重新读取"){refresh += 1}.disabled(busy) }
-    }.navigationTitle("空降标记同步").toolbar{Button("完成"){dismiss()}}
+        NavigationLink { SitePage(url: source.original) } label: {
+          SettingsRowLabel(title: "打开原视频", symbol: "safari", color: .blue)
+        }
+      } footer: {
+        Text("绑定后，这条分 P 会使用原视频的空降标记")
+      }
+      Section {
+        if verified {
+          if current == source.youtube {
+            Label("已绑定这个原视频", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+          } else {
+            if let current {
+              LabeledContent("现有绑定") { Text(current).font(.callout.monospaced()) }
+            }
+            Button(current == nil ? "绑定原视频" : "更换原视频") { confirm = true }.disabled(!enabled || busy)
+          }
+        } else if issue == nil {
+          HStack { ProgressView(); Text("读取绑定信息").foregroundStyle(.secondary) }
+        }
+        if let issue {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          Button("重新读取") { refresh += 1 }.disabled(busy)
+        }
+      } header: {
+        Text("绑定状态")
+      }
+    }.navigationTitle("空降标记同步").navigationBarTitleDisplayMode(.inline)
+      .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
       .task(id:"\(source.id):\(server):\(enabled):\(refresh)") {
         let address=server; verified=false;current=nil;issue=nil
         guard enabled else{dismiss();return}

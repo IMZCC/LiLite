@@ -59,40 +59,69 @@ struct CommunityFilterPanel: View {
   @State private var issue: String?
   var body: some View {
     Form {
-      Section("发布后检查公开可见性") {
-        Toggle("评论", isOn: $verifyReply).settingAnchor("CommunityFilterPanel/评论")
-        Toggle("公开动态和转发", isOn: $verifyPost).settingAnchor("CommunityFilterPanel/公开动态和转发")
-      }.settingAnchor("CommunityFilterPanel/发布后检查公开可见性")
       Section("动态") {
-        Picker("UP 主面板", selection: $position) {
+        Picker(selection: $position) {
           ForEach(FeedPanelPosition.allCases) { Text($0.label).tag($0.rawValue) }
+        } label: {
+          SettingsRowLabel(title: "UP 主面板", symbol: "person.2.crop.square.stack", color: .blue)
         }.settingAnchor("CommunityFilterPanel/UP 主面板")
-        Toggle("瀑布流布局", isOn: Binding(get: { waterfall ?? horizontal }, set: { waterfall = $0 })).settingAnchor("CommunityFilterPanel/瀑布流布局")
-        if waterfall != nil { Button("布局跟随横屏设置") { waterfall = nil }.settingAnchor("CommunityFilterPanel/布局跟随横屏设置") }
-        Picker("默认分类", selection: $defaultFeed) {
+        Picker(selection: $defaultFeed) {
           ForEach(FeedScope.allCases) { Text($0.label).tag($0.rawValue) }
+        } label: {
+          SettingsRowLabel(title: "默认分类", symbol: "line.3.horizontal.decrease", color: .blue)
         }.settingAnchor("CommunityFilterPanel/默认分类")
-        Toggle("显示关注的全部 UP 主", isOn: $allFollowed).settingAnchor("CommunityFilterPanel/显示关注的全部 UP 主")
-        Toggle("展开正在直播的 UP 主", isOn: $expandLive).settingAnchor("CommunityFilterPanel/展开正在直播的 UP 主")
-        Toggle("显示互动摘要", isOn: $showInteraction).settingAnchor("CommunityFilterPanel/显示互动摘要")
-        Toggle("显示争议信息", isOn: $showDispute).settingAnchor("CommunityFilterPanel/显示争议信息")
-        Toggle("显示动态详情操作栏", isOn: $actionBar).settingAnchor("CommunityFilterPanel/显示动态详情操作栏")
-        Toggle("隐藏带货动态", isOn: $goods).settingAnchor("CommunityFilterPanel/隐藏带货动态")
-      }.settingAnchor("CommunityFilterPanel/动态")
-      Section("屏蔽动态关键词（正则表达式）") {
-        TextField("输入表达式", text: $draft).settingAnchor("CommunityFilterPanel/输入表达式").textInputAutocapitalization(.never)
-          .autocorrectionDisabled()
-        Button("保存") {
-          do {
-            if !draft.isEmpty {
-              _ = try NSRegularExpression(pattern: draft, options: .caseInsensitive)
-            }
-            regex = draft
-            issue = nil
-          } catch { issue = "表达式无效" }
+        SettingToggle(title: "瀑布流布局", symbol: "square.grid.2x2", color: .teal,
+          isOn: Binding(get: { waterfall ?? horizontal }, set: { waterfall = $0 }))
+          .settingAnchor("CommunityFilterPanel/瀑布流布局")
+        if waterfall != nil {
+          Button("布局跟随横屏设置") { waterfall = nil }.settingAnchor("CommunityFilterPanel/布局跟随横屏设置")
         }
-        if let issue { Text(issue).foregroundStyle(.secondary) }
-      }.settingAnchor("CommunityFilterPanel/屏蔽动态关键词（正则表达式）")
-    }.navigationTitle("动态筛选").onAppear { draft = regex }
+        SettingToggle(title: "显示关注的全部 UP 主", symbol: "person.3", color: .indigo, isOn: $allFollowed)
+          .settingAnchor("CommunityFilterPanel/显示关注的全部 UP 主")
+        SettingToggle(title: "展开正在直播的 UP 主", symbol: "dot.radiowaves.left.and.right", color: .pink, isOn: $expandLive)
+          .settingAnchor("CommunityFilterPanel/展开正在直播的 UP 主")
+        SettingToggle(title: "显示互动摘要", symbol: "hand.thumbsup", color: .orange, isOn: $showInteraction)
+          .settingAnchor("CommunityFilterPanel/显示互动摘要")
+        SettingToggle(title: "显示争议信息", symbol: "exclamationmark.bubble", color: .yellow, isOn: $showDispute)
+          .settingAnchor("CommunityFilterPanel/显示争议信息")
+        SettingToggle(title: "显示动态详情操作栏", symbol: "rectangle.bottomthird.inset.filled", color: .gray, isOn: $actionBar)
+          .settingAnchor("CommunityFilterPanel/显示动态详情操作栏")
+        SettingToggle(title: "隐藏带货动态", symbol: "cart.badge.minus", color: .red, isOn: $goods)
+          .settingAnchor("CommunityFilterPanel/隐藏带货动态")
+      }.settingAnchor("CommunityFilterPanel/动态")
+      Section {
+        SettingToggle(title: "评论", symbol: "text.bubble", color: .green, isOn: $verifyReply)
+          .settingAnchor("CommunityFilterPanel/评论")
+        SettingToggle(title: "公开动态和转发", symbol: "square.and.pencil", color: .green, isOn: $verifyPost)
+          .settingAnchor("CommunityFilterPanel/公开动态和转发")
+      } header: {
+        Text("发布后检查公开可见性")
+      } footer: {
+        Text("发布后用游客身份确认内容是否公开可见")
+      }
+      .settingAnchor("CommunityFilterPanel/发布后检查公开可见性")
+      Section {
+        HStack {
+          TextField("输入表达式", text: $draft).settingAnchor("CommunityFilterPanel/输入表达式")
+            .font(.callout.monospaced()).textInputAutocapitalization(.never).autocorrectionDisabled()
+          Button("保存") {
+            do {
+              if !draft.isEmpty {
+                _ = try NSRegularExpression(pattern: draft, options: .caseInsensitive)
+              }
+              regex = draft
+              issue = nil
+            } catch { issue = "表达式无效" }
+          }
+          .buttonStyle(.glassProminent).controlSize(.small).disabled(draft == regex)
+        }
+      } header: {
+        Text("屏蔽动态关键词（正则表达式）")
+      } footer: {
+        if let issue { Text(issue).foregroundStyle(.red) }
+        else { Text("匹配到的动态不会显示，例如 抽奖|转发") }
+      }
+      .settingAnchor("CommunityFilterPanel/屏蔽动态关键词（正则表达式）")
+    }.navigationTitle("动态设置").navigationBarTitleDisplayMode(.inline).onAppear { draft = regex }
   }
 }

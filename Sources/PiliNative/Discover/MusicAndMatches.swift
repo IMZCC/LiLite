@@ -38,43 +38,61 @@ struct MatchDetailView: View {
     }.task(id: "\(id):\(retry):\(accounts.state.active ?? "")") { await load() }
   }
   private func matchHeader(_ d: Payload.Contest) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-        Group {
-          Text(d.season?.title ?? "赛事").font(.headline)
-          if let stage = d.game_stage { Text(stage) }
-          HStack {
-            club(d.home_team, fallback: "主队")
-            Spacer()
-            Text(d.contest_status == 1 ? "VS" : "\(d.home_score ?? 0) : \(d.away_score ?? 0)").monospacedDigit().bold()
-            Spacer()
-            club(d.away_team, fallback: "客队")
-          }
-          if let status = d.contest_status, let text = [1:"未开始", 2:"进行中", 3:"已结束"][status] { Text(text).font(.subheadline) }
-          if let date = d.stime {
-            Text(
-              Date(timeIntervalSince1970: Double(date)),
-              format: .dateTime.year().month().day().hour().minute())
+    VStack(spacing: 14) {
+      VStack(spacing: 3) {
+        Text(d.season?.title ?? "赛事").font(.subheadline.weight(.semibold)).multilineTextAlignment(.center)
+        if let stage = d.game_stage, !stage.isEmpty {
+          Text(stage).font(.caption).foregroundStyle(.secondary)
+        }
+      }
+      HStack(alignment: .center) {
+        club(d.home_team, fallback: "主队")
+        VStack(spacing: 6) {
+          Text(d.contest_status == 1 ? "VS" : "\(d.home_score ?? 0) : \(d.away_score ?? 0)")
+            .font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
+          if let status = d.contest_status, let text = [1:"未开始", 2:"进行中", 3:"已结束"][status] {
+            Text(text).font(.caption.weight(.semibold))
+              .foregroundStyle(status == 2 ? Color.white : Color.secondary)
+              .padding(.horizontal, 8).padding(.vertical, 2)
+              .background(status == 2 ? Color.pink : Color(uiColor: .tertiarySystemFill), in: Capsule())
           }
         }
+        .frame(minWidth: 100)
+        club(d.away_team, fallback: "客队")
+      }
+      if let date = d.stime {
+        Text(Date(timeIntervalSince1970: Double(date)), format: .dateTime.year().month().day().hour().minute())
+          .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+      }
+      HStack(spacing: 10) {
         if let room = d.live_room, room > 0 {
-          NavigationLink(d.contest_status == 2 ? "观看直播" : "直播间") { LivePlayer(id: room, title: d.season?.title ?? "比赛直播") }
+          NavigationLink { LivePlayer(id: room, title: d.season?.title ?? "比赛直播") } label: {
+            Label(d.contest_status == 2 ? "观看直播" : "直播间", systemImage: "dot.radiowaves.left.and.right")
+          }
+          .buttonStyle(.glassProminent)
         }
         if d.contest_status != 2, let p = d.playback, !p.isEmpty {
           if let r = SharedLink.parse(p) {
-            NavigationLink("观看回放") { LinkDestination(item: r) }
+            NavigationLink { LinkDestination(item: r) } label: { Label("观看回放", systemImage: "play.rectangle") }
+              .buttonStyle(.glass)
           } else if let url = httpsURL(p) {
-            Link("观看回放", destination: url)
+            Link(destination: url) { Label("观看回放", systemImage: "play.rectangle") }.buttonStyle(.glass)
           }
         }
-    }.padding(.vertical)
+      }
+      .font(.subheadline.weight(.medium)).buttonBorderShape(.capsule)
+    }
+    .padding(16).frame(maxWidth: .infinity)
+    .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: NativeGlass.cardRadius, style: .continuous))
+    .padding(.vertical, 8)
   }
   private func club(_ record: Payload.Contest.Club?, fallback: String) -> some View {
-    VStack {
-      if let logo = record?.imageURL {
-        SiteThumbnail(url: logo) { $0.resizable().scaledToFit() } placeholder: { Color.clear }
-          .frame(width: 48, height: 48).accessibilityHidden(true)
+    VStack(spacing: 6) {
+      SiteThumbnail(url: record?.imageURL) { $0.resizable().scaledToFit() } placeholder: {
+        Image(systemName: "shield.lefthalf.filled").resizable().scaledToFit().foregroundStyle(.quaternary)
       }
-      Text(record?.title ?? fallback).font(.subheadline).multilineTextAlignment(.center)
+      .frame(width: 52, height: 52).accessibilityHidden(true)
+      Text(record?.title ?? fallback).font(.subheadline.weight(.medium)).lineLimit(2).multilineTextAlignment(.center)
     }.frame(maxWidth: .infinity)
   }
   @MainActor private func load() async {

@@ -26,10 +26,9 @@ struct HistoryCourseLink: View {
           ContentUnavailableView("此课时暂不可播放", systemImage: "lock")
         }
       } else if let issue {
-        VStack {
-          Text(issue)
-          Button("重试") { refresh += 1 }
-        }
+        ContentUnavailableView {
+          Label("课程未能载入", systemImage: "book.closed")
+        } description: { Text(issue) } actions: { Button("重试") { refresh += 1 } }
       } else {
         ProgressView()
       }

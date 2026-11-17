@@ -34,35 +34,64 @@ struct VODLineSettings: View {
   var body: some View {
     Form {
       Section {
-        Toggle("音频单独选线", isOn: $independent).settingAnchor("VODLineSettings/音频单独选线")
-        Toggle("进入时测速", isOn: $testing).settingAnchor("VODLineSettings/进入时测速")
+        SettingToggle(title: "音频单独选线", symbol: "waveform", color: .orange, isOn: $independent)
+          .settingAnchor("VODLineSettings/音频单独选线")
+        SettingToggle(title: "进入时测速", symbol: "speedometer", color: .green, isOn: $testing)
+          .settingAnchor("VODLineSettings/进入时测速")
         if testing {
-          if let issue { Text(issue).foregroundStyle(.secondary) }
-          Button(busy ? "停止测速" : "重新测速") { run = busy ? -1 : max(1, run + 1) }
-          if !busy, let fastest { Button("选择最快：\(fastest.label)") { selected = fastest.rawValue }.settingAnchor("VODLineSettings/选择最快") }
+          Button {
+            run = busy ? -1 : max(1, run + 1)
+          } label: {
+            HStack {
+              Text(busy ? "停止测速" : "重新测速")
+              if busy { Spacer(); ProgressView() }
+            }
+          }
+          if !busy, let fastest {
+            Button("选择最快：\(fastest.label)") { selected = fastest.rawValue }
+              .settingAnchor("VODLineSettings/选择最快")
+          }
         }
       } footer: {
-        Text("音频单独选线时优先使用服务提供的地址。测速每条线路最多读取 256 KB")
+        if testing, let issue { Text(issue).foregroundStyle(.red) }
+        else { Text("音频单独选线时优先使用服务提供的地址。测速每条线路最多读取 256 KB") }
       }
       Section("优先线路") {
+        let peak = states.values.compactMap { if case .measured(let n) = $0 { n } else { nil } }.max() ?? 0
         ForEach(VODLine.allCases) { line in
           Button {
             selected = line.rawValue
           } label: {
-            HStack {
-              Text(line.label).foregroundStyle(.primary)
-              Spacer()
-              if testing, let result = states[line] {
-                Text(result.text).font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+              VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 6) {
+                  Text(line.label).foregroundStyle(.primary)
+                  if line == fastest {
+                    Text("最快").font(.caption2.weight(.semibold)).foregroundStyle(.green)
+                      .padding(.horizontal, 6).padding(.vertical, 1.5)
+                      .background(.green.opacity(0.14), in: Capsule())
+                  }
+                }
+                if testing, let result = states[line] {
+                  HStack(spacing: 8) {
+                    if case .measured(let n) = result, peak > 0 {
+                      Capsule().fill(Color.accentColor.gradient)
+                        .frame(width: max(6, 90 * n / peak), height: 4)
+                    }
+                    Text(result.text).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                  }
+                }
               }
+              Spacer()
               if selected == line.rawValue {
-                Image(systemName: "checkmark").accessibilityLabel("已选")
+                Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(.tint)
+                  .accessibilityLabel("已选")
               }
             }
           }
         }
       }.settingAnchor("VODLineSettings/优先线路")
-    }.navigationTitle("视频线路")
+    }.navigationTitle("视频线路").navigationBarTitleDisplayMode(.inline)
       .onChange(of: testing) { _, enabled in if enabled { run = 0 } }
       .task(id: "\(testing):\(run):\(accounts.state.owner(.role(.video)) ?? "")") {
         busy = false

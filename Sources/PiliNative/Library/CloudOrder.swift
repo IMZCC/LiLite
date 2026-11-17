@@ -15,16 +15,42 @@ struct CloudOrder: View {
   @Environment(\.dismiss) var dismiss
   var body: some View {
     List {
-      ForEach(locked) { fixed in Label(fixed.name, systemImage: "lock") }
-      ForEach(rows) { r in Text(r.name) }.onMove { rows.move(fromOffsets: $0, toOffset: $1) }
-      if busy { ProgressView() }
-      if let issue {
-        Text(issue).foregroundStyle(.secondary)
-        Button("重试") { retry += 1 }
+      Section {
+        ForEach(locked) { fixed in
+          HStack(spacing: 12) {
+            Image(systemName: "lock.fill").foregroundStyle(.tertiary).frame(width: 24)
+            Text(fixed.name).foregroundStyle(.secondary)
+          }
+        }
+      } footer: {
+        if !locked.isEmpty { Text("以上项目位置固定") }
       }
-    }.navigationTitle(uid == nil ? "关注分组排序" : "收藏夹排序").environment(\.editMode, .constant(.active))
+      Section {
+        ForEach(rows) { r in
+          HStack(spacing: 12) {
+            Image(systemName: uid == nil ? "person.2" : "folder").foregroundStyle(.tint).frame(width: 24)
+            Text(r.name)
+          }
+        }
+        .onMove { rows.move(fromOffsets: $0, toOffset: $1) }
+      } footer: {
+        Text("拖动右侧把手调整顺序")
+      }
+      if let issue {
+        Section {
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
+          Button("重试") { retry += 1 }
+        }
+      }
+    }
+    .overlay { if busy && rows.isEmpty && locked.isEmpty { ProgressView() } }
+    .navigationTitle(uid == nil ? "关注分组排序" : "收藏夹排序").navigationBarTitleDisplayMode(.inline)
+    .environment(\.editMode, .constant(.active))
       .toolbar {
-        Button("保存") { Task { await save() } }.disabled(busy || rows.map(\.id) == original)
+        ToolbarItem(placement: .confirmationAction) {
+          Button("完成") { Task { await save() } }.buttonStyle(.glassProminent)
+            .disabled(busy || rows.map(\.id) == original)
+        }
       }.task(id: retry) {
         busy = true
         defer { busy = false }

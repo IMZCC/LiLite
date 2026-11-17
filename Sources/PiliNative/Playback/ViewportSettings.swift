@@ -9,19 +9,30 @@ struct ViewportSettings: View {
   var body: some View {
     Form {
       Section {
-        Picker("底部进度条", selection: $progress) {
+        Picker(selection: $progress) {
           ForEach(ViewportProgress.allCases, id: \.rawValue) { Text($0.name).tag($0.rawValue) }
+        } label: {
+          SettingsRowLabel(title: "底部进度条", symbol: "minus", color: .pink)
         }.settingAnchor("ViewportSettings/底部进度条")
-        Toggle("延长播放控件显示时间", isOn: $longer).settingAnchor("ViewportSettings/延长播放控件显示时间")
+        SettingToggle(title: "延长播放控件显示时间", symbol: "timer", color: .orange, isOn: $longer)
+          .settingAnchor("ViewportSettings/延长播放控件显示时间")
+      } header: {
+        Text("播放控件")
       } footer: {
         Text("延长至 30 秒，便于切换控件焦点")
       }
-      Section {
-        Picker("番剧与国创超分辨率", selection: $upscaleMode) { ForEach(UpscaleMode.allCases) { Text($0.label).tag($0.rawValue) } }.settingAnchor("ViewportSettings/番剧与国创超分辨率")
-        Toggle("双指允许缩小画面", isOn: $shrink).settingAnchor("ViewportSettings/双指允许缩小画面")
-        Toggle("播放画面延伸到屏幕边缘", isOn: $edges).settingAnchor("ViewportSettings/播放画面延伸到屏幕边缘")
+      Section("画面") {
+        Picker(selection: $upscaleMode) {
+          ForEach(UpscaleMode.allCases) { Text($0.label).tag($0.rawValue) }
+        } label: {
+          SettingsRowLabel(title: "番剧与国创超分辨率", symbol: "wand.and.stars", color: .purple)
+        }.settingAnchor("ViewportSettings/番剧与国创超分辨率")
+        SettingToggle(title: "双指允许缩小画面", symbol: "arrow.down.right.and.arrow.up.left", color: .teal, isOn: $shrink)
+          .settingAnchor("ViewportSettings/双指允许缩小画面")
+        SettingToggle(title: "播放画面延伸到屏幕边缘", symbol: "rectangle.expand.vertical", color: .blue, isOn: $edges)
+          .settingAnchor("ViewportSettings/播放画面延伸到屏幕边缘")
       }
-    }.navigationTitle("画面与控件")
+    }.navigationTitle("画面与控件").navigationBarTitleDisplayMode(.inline)
   }
 }
 

@@ -16,31 +16,62 @@ struct LegacyCacheImportView: View {
   private var owner: String { accounts.state.owner(.role(.video)) ?? "" }
   var body: some View {
     List {
-      Button("选择原版缓存目录") { pick = true }
-      if let source { Text(source.lastPathComponent).font(.caption) }
-      if let issue { Text(issue) }
-      if skipped > 0 { Text("已跳过 \(skipped) 个无效条目").font(.caption) }
-      if !list.isEmpty {
-        Toggle("沿用原缓存音画质", isOn: $preserve)
-        Button(checked.count == list.count ? "取消全选" : "全选") {
-          checked = checked.count == list.count ? [] : Set(list.map(\.id))
-        }
-        ForEach(list) { v in
-          Button {
-            if !checked.insert(v.id).inserted { checked.remove(v.id) }
+      Section {
+        Button { pick = true } label: {
+          LabeledContent {
+            if busy { ProgressView() } else if let source { Text(source.lastPathComponent).lineLimit(1) }
           } label: {
-            VStack(alignment: .leading) {
-              Label(
-                v.title, systemImage: checked.contains(v.id) ? "checkmark.circle.fill" : "circle")
-              Text(result[v.id] ?? (v.part + " · " + (v.complete ? "原缓存已完成" : "原缓存未完成"))).font(
-                .caption
-              ).foregroundStyle(.secondary)
+            SettingsRowLabel(title: "选择原版缓存目录", symbol: "folder.badge.plus", color: .blue)
+          }
+        }
+        if !list.isEmpty {
+          SettingToggle(title: "沿用原缓存音画质", symbol: "sparkles.tv", color: .purple, isOn: $preserve)
+        }
+      } footer: {
+        VStack(alignment: .leading, spacing: 4) {
+          if let issue { Text(issue).foregroundStyle(.red) }
+          if skipped > 0 { Text("已跳过 \(skipped) 个无效条目") }
+          if list.isEmpty && issue == nil { Text("选择原版客户端的下载目录，按当前账号重新缓存其中的视频") }
+        }
+      }
+      if !list.isEmpty {
+        Section("找到 \(list.count) 项") {
+          ForEach(list) { v in
+            Button {
+              if !checked.insert(v.id).inserted { checked.remove(v.id) }
+            } label: {
+              HStack(spacing: 12) {
+                Image(systemName: checked.contains(v.id) ? "checkmark.circle.fill" : "circle")
+                  .font(.title3).foregroundStyle(checked.contains(v.id) ? Color.accentColor : Color.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(v.title).font(.subheadline).foregroundStyle(.primary).lineLimit(2)
+                  Text(result[v.id] ?? (v.part + " · " + (v.complete ? "原缓存已完成" : "原缓存未完成")))
+                    .font(.caption).foregroundStyle(.secondary)
+                }
+              }
+              .contentShape(Rectangle())
             }
           }
         }
-        Button("重新缓存所选 \(checked.count) 项") { confirm = true }.disabled(checked.isEmpty)
       }
-    }.navigationTitle("恢复原版缓存清单").disabled(busy)
+    }
+    .safeAreaInset(edge: .bottom) {
+      if !list.isEmpty {
+        HStack {
+          Button(checked.count == list.count ? "取消全选" : "全选") {
+            checked = checked.count == list.count ? [] : Set(list.map(\.id))
+          }
+          Spacer()
+          Button("重新缓存 \(checked.count) 项") { confirm = true }
+            .buttonStyle(.glassProminent).disabled(checked.isEmpty)
+        }
+        .font(.subheadline)
+        .padding(.leading, 20).padding(.trailing, 8).padding(.vertical, 8)
+        .glassEffect(.regular, in: Capsule())
+        .padding(.horizontal, 16).padding(.bottom, 4)
+      }
+    }
+    .navigationTitle("恢复原版缓存清单").navigationBarTitleDisplayMode(.inline).disabled(busy)
       .fileImporter(isPresented: $pick, allowedContentTypes: [.folder]) { res in
         do { source = try res.get() } catch {
           if (error as NSError).code != NSUserCancelledError { issue = error.localizedDescription }

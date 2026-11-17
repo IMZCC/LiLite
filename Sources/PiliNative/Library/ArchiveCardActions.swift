@@ -19,31 +19,44 @@ struct CardVideoSummary: View {
   @EnvironmentObject private var accounts: AccountContext
   private var reader: String { accounts.state.owner(.role(.heartbeat)) ?? "" }
   var body: some View {
-    List {
-      if pending {
-        ProgressView()
-      } else if let issue {
-        Text(issue)
-        Button("重试") { attempt += 1 }
-      } else {
-        if let s = model?.summary, !s.isEmpty { Section("摘要") { Text(s).textSelection(.enabled) } }
-        ForEach(Array((model?.outline ?? []).enumerated()), id: \.offset) { _, section in
-          Section(section.title ?? "要点") {
-            ForEach(Array((section.part_outline ?? []).enumerated()), id: \.offset) { _, p in
-              HStack {
-                if let t = p.timestamp, t >= 0 {
-                  Text(clockText(Double(t))).monospacedDigit().foregroundStyle(.secondary)
+    ScrollView {
+      VStack(alignment: .leading, spacing: 18) {
+        if pending {
+          ProgressView("正在读取总结").frame(maxWidth: .infinity).padding(.top, 60)
+        } else if let issue {
+          ContentUnavailableView {
+            Label("总结未能载入", systemImage: "sparkles")
+          } description: { Text(issue) } actions: { Button("重试") { attempt += 1 } }
+        } else if model?.summary?.isEmpty != false && model?.outline?.isEmpty != false {
+          ContentUnavailableView("这个视频暂无总结", systemImage: "sparkles")
+        } else {
+          if let s = model?.summary, !s.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+              Label("AI 总结", systemImage: "sparkles").font(.footnote.weight(.semibold)).foregroundStyle(.tint)
+              Text(s).font(.subheadline).lineSpacing(3).textSelection(.enabled)
+            }
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+          }
+          ForEach(Array((model?.outline ?? []).enumerated()), id: \.offset) { _, section in
+            VStack(alignment: .leading, spacing: 10) {
+              Text(section.title ?? "要点").font(.subheadline.weight(.semibold))
+              ForEach(Array((section.part_outline ?? []).enumerated()), id: \.offset) { _, p in
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                  if let t = p.timestamp, t >= 0 {
+                    Text(clockText(Double(t))).font(.footnote.monospacedDigit()).foregroundStyle(.secondary)
+                  }
+                  Text(p.content ?? "").font(.subheadline).textSelection(.enabled)
                 }
-                Text(p.content ?? "").textSelection(.enabled)
               }
             }
           }
-        }
-        if model?.summary?.isEmpty != false && model?.outline?.isEmpty != false {
-          Text("这个视频暂无总结").foregroundStyle(.secondary)
+          Text("内容由 AI 生成，仅供参考").font(.caption2).foregroundStyle(.tertiary)
         }
       }
-    }.navigationTitle("视频总结").task(id: "\(reader):\(attempt)") {
+      .padding(.horizontal, 16).padding(.vertical, 12)
+    }
+    .navigationTitle("AI 视频总结").navigationBarTitleDisplayMode(.inline).task(id: "\(reader):\(attempt)") {
       model = nil
       issue = nil
       pending = true

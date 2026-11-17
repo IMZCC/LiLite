@@ -23,31 +23,46 @@ private struct RuleList: View {
   private let labels = ["关键词", "正则", "用户"]
   private var rows: [CloudBulletRule] { store.rows(owner) }
   var body: some View {
+    let filtered = rows.filter { $0.type == type }
     List {
-      Picker("类别", selection: $type) {
-        ForEach(0..<3) { index in Text(labels[index] + " (\(rows.filter { $0.type == index }.count))").tag(index) }
-      }.pickerStyle(.segmented)
-      let filtered = rows.filter { $0.type == type }
-      if filtered.isEmpty && !busy { Text("暂无规则").foregroundStyle(.secondary) }
+      if let issue, !issue.isEmpty {
+        Label(issue, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.secondary)
+      }
       ForEach(filtered) { row in
-        HStack {
-          Text(row.display).textSelection(.enabled)
-          Spacer()
+        HStack(spacing: 14) {
+          Text(row.display).font(type == 1 ? .callout.monospaced() : .callout).textSelection(.enabled)
+          Spacer(minLength: 8)
           if type != 2 {
-            Button { original = row; draft = row.display; editor = true } label: { Image(systemName: "pencil") }
-              .accessibilityLabel("编辑规则").buttonStyle(.borderless)
+            Button { original = row; draft = row.display; editor = true } label: {
+              Image(systemName: "square.and.pencil")
+            }
+            .accessibilityLabel("编辑规则").buttonStyle(.borderless).foregroundStyle(.secondary)
           }
           Button(role: .destructive) { removing = row } label: { Image(systemName: "trash") }
-            .accessibilityLabel("删除规则").buttonStyle(.borderless)
+            .accessibilityLabel("删除规则").buttonStyle(.borderless).foregroundStyle(.secondary)
+        }
+        .swipeActions {
+          Button("删除", systemImage: "trash", role: .destructive) { removing = row }
         }
       }
-      if busy { ProgressView() }
-      if let issue, !issue.isEmpty { Text(issue).foregroundStyle(.secondary) }
-    }.disabled(busy).piliRefreshable { await synchronize() }.task { await synchronize() }
-      .toolbar {
-        Button { draft = ""; original = nil; editor = true } label: { Image(systemName: "plus") }
-          .accessibilityLabel("添加规则").disabled(busy)
-      }.alert(original == nil ? "添加\(labels[type])规则" : "编辑规则", isPresented: $editor) {
+    }
+    .listStyle(.plain)
+    .overlay {
+      if filtered.isEmpty {
+        if busy { ProgressView() }
+        else { ContentUnavailableView("暂无\(labels[type])规则", systemImage: "text.badge.xmark") }
+      }
+    }
+    .pinnedHeader {
+      ChipBar(items: [0, 1, 2], selection: $type) { index in
+        labels[index] + "(\(rows.filter { $0.type == index }.count))"
+      }
+    }
+    .floatingAction("添加规则", systemImage: "plus", disabled: busy) {
+      draft = ""; original = nil; editor = true
+    }
+    .disabled(busy).piliRefreshable { await synchronize() }.task { await synchronize() }
+      .alert(original == nil ? "添加新的\(labels[type])规则" : "编辑\(labels[type])规则", isPresented: $editor) {
         TextField(type == 2 ? "用户 UID" : labels[type], text: $draft)
           .keyboardType(type == 2 ? .numberPad : .default).autocorrectionDisabled()
           .textInputAutocapitalization(.never)
@@ -56,6 +71,8 @@ private struct RuleList: View {
           let value = draft, previous = original, kind = type
           Task { await perform { try await store.update(owner, type: kind, input: value, replacing: previous) } }
         }.disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+      } message: {
+        Text(type == 0 ? "输入过滤的关键词，其它类别请切换标签页后添加" : type == 1 ? "输入 // 之间的正则表达式，无需包含头尾的 /" : "输入用户 UID")
       }.confirmationDialog("删除这条屏蔽规则？", isPresented: Binding(
         get: { removing != nil }, set: { if !$0 { removing = nil } }), presenting: removing) { row in
           Button("删除", role: .destructive) { Task { await perform { try await store.remove(row, owner: owner) } } }

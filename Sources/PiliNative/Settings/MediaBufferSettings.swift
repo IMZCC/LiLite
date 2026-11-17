@@ -10,31 +10,34 @@ struct MediaBufferSettings: View {
   var body: some View {
     Form {
       Section {
-        TextField("点播缓冲（MB）", text: $videoInput).settingAnchor("MediaBufferSettings/点播缓冲（MB）").keyboardType(.decimalPad)
-      } header: {
-        Text("点播缓冲（MB）")
+        capacity("点播缓冲", symbol: "play.rectangle", color: .blue, text: $videoInput)
+          .settingAnchor("MediaBufferSettings/点播缓冲（MB）")
       } footer: {
         Text("前向和后向分别使用此容量")
       }
       Section {
-        TextField("直播缓冲（MB）", text: $liveInput).settingAnchor("MediaBufferSettings/直播缓冲（MB）").keyboardType(.decimalPad)
-      } header: {
-        Text("直播缓冲（MB）")
+        capacity("直播缓冲", symbol: "dot.radiowaves.left.and.right", color: .pink, text: $liveInput)
+          .settingAnchor("MediaBufferSettings/直播缓冲（MB）")
       } footer: {
         Text("填 0 跟随点播容量的两倍")
       }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-      Button("恢复默认") {
-        videoInput = "4"
-        liveInput = "0"
-        issue = nil
+      Section {
+        Button("恢复默认") {
+          videoInput = "4"
+          liveInput = "0"
+          issue = nil
+        }
+      } footer: {
+        if let issue { Text(issue).foregroundStyle(.red) }
       }
-    }.navigationTitle("缓冲容量")
-      .onAppear {
-        videoInput = vod.formatted(.number.grouping(.never))
-        liveInput = live.formatted(.number.grouping(.never))
-      }
-      .toolbar {
+    }
+    .navigationTitle("缓冲容量").navigationBarTitleDisplayMode(.inline)
+    .onAppear {
+      videoInput = vod.formatted(.number.grouping(.never))
+      liveInput = live.formatted(.number.grouping(.never))
+    }
+    .toolbar {
+      ToolbarItem(placement: .confirmationAction) {
         Button("保存") {
           func parse(_ text: String) -> Double? {
             // NumberFormatter.number(from:) accepts trailing garbage; parse the entire field.
@@ -53,5 +56,15 @@ struct MediaBufferSettings: View {
           dismiss()
         }
       }
+    }
+  }
+  private func capacity(_ title: String, symbol: String, color: Color, text: Binding<String>) -> some View {
+    HStack {
+      SettingsRowLabel(title: title, symbol: symbol, color: color)
+      Spacer(minLength: 12)
+      TextField("0", text: text).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+        .monospacedDigit().frame(maxWidth: 90)
+      Text("MB").foregroundStyle(.secondary)
+    }
   }
 }

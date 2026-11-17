@@ -36,7 +36,7 @@ final class Reader: SyntaxVisitor {
     let separateLabel=node.additionalTrailingClosures.first { $0.label.text == "label" }?.closure.trimmedDescription
     let insideLabel = separateLabel ?? node.trailingClosure?.trimmedDescription ?? ""
     let tex=showsOwn ? expr : insideLabel
-    let pattern=showsOwn ? #""([^"\\\n]*[\p{Han}a-zA-Z][^"\\\n]*)"# : #"(?:Text|Label|LabeledContent)\(\s*"([^"\\\n]*[\p{Han}a-zA-Z][^"\\\n]*)"#
+    let pattern=showsOwn ? #""([^"\\\n]*[\p{Han}a-zA-Z][^"\\\n]*)"# : #"(?:(?:Text|Label|LabeledContent)\(\s*|SettingsRowLabel\(\s*title:\s*)"([^"\\\n]*[\p{Han}a-zA-Z][^"\\\n]*)"#
     guard let raw=tex.range(of:pattern,options:.regularExpression),let quote=tex[raw].firstIndex(of:"\"") else{return .visitChildren}
     let r=quote..<raw.upperBound
     var title=String(tex[r].dropFirst())

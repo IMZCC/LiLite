@@ -15,13 +15,13 @@ struct PickFolder: View {
   @State private var revision = 0
   var body: some View {
     List {
-      if loading { ProgressView() }
-      if let limitIssue { Text(limitIssue).foregroundStyle(.secondary) }
+      if let limitIssue {
+        Label(limitIssue, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.orange)
+      }
       if let issue {
-        Text(issue).foregroundStyle(.secondary)
+        Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
         Button("重新加载") { revision += 1 }
       }
-      if !loading && issue == nil && folders.isEmpty { Text("暂无收藏夹").foregroundStyle(.secondary) }
       ForEach(folders) { f in
         Button {
           if selected.contains(f.id) {
@@ -34,16 +34,36 @@ struct PickFolder: View {
             selected.insert(f.id)
           }
         } label: {
-          HStack {
-            Label(f.title, systemImage: "folder")
+          let on = selected.contains(f.id)
+          HStack(spacing: 12) {
+            Image(systemName: ((f.attr ?? 0) & 1) == 1 ? "lock.fill" : "folder.fill")
+              .font(.title3).foregroundStyle(.tint).frame(width: 30)
+            VStack(alignment: .leading, spacing: 2) {
+              Text(f.title).foregroundStyle(.primary)
+              let count = max(0, (f.media_count ?? 0) + (on ? 1 : 0) - (original.contains(f.id) ? 1 : 0))
+              Text("\(count) 个内容" + (((f.attr ?? 0) & 1) == 1 ? " · 私密" : ""))
+                .font(.caption).foregroundStyle(.secondary)
+            }
             Spacer()
-            Image(systemName: selected.contains(f.id) ? "checkmark.circle.fill" : "circle")
+            Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.title3)
+              .foregroundStyle(on ? Color.accentColor : Color.secondary)
           }
+          .contentShape(Rectangle())
         }.accessibilityAddTraits(selected.contains(f.id) ? [.isSelected] : [])
       }.disabled(loading || saving)
-      Button("新建收藏夹") { creating = true }.disabled(loading || saving)
-    }.navigationTitle("收藏夹").toolbar {
-      Button("保存") { Task { await save() } }.disabled(saving || loading || folders.isEmpty)
+      Button { creating = true } label: {
+        Label("新建收藏夹", systemImage: "plus.circle.fill")
+      }.disabled(loading || saving)
+    }
+    .overlay {
+      if loading && folders.isEmpty { ProgressView() }
+      else if !loading && issue == nil && folders.isEmpty { ContentUnavailableView("暂无收藏夹", systemImage: "folder") }
+    }
+    .navigationTitle("选择收藏夹").navigationBarTitleDisplayMode(.inline).toolbar {
+      ToolbarItem(placement: .confirmationAction) {
+        Button("完成") { Task { await save() } }.buttonStyle(.glassProminent)
+          .disabled(saving || loading || folders.isEmpty)
+      }
     }
     .task(id: revision) {
       loading = true

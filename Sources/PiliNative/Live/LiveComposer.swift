@@ -83,10 +83,11 @@ struct LiveComposer: View {
     } else {
       if let reply {
         HStack {
-          Label("回复 @" + reply.name, systemImage: "arrowshape.turn.up.left")
+          Label("回复 @" + reply.name, systemImage: "arrowshape.turn.up.left").foregroundStyle(.secondary)
           Spacer()
-          Button("取消回复") { self.reply = nil }
-        }.piliFont(.caption).padding(.horizontal)
+          Button { self.reply = nil } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
+            .buttonStyle(.plain).accessibilityLabel("取消回复")
+        }.piliFont(.caption).padding(.horizontal, 20)
       }
       if let receipt { Text(receipt).font(.footnote).foregroundStyle(.secondary).padding(.horizontal) }
       let icons=inserted.keys.sorted().filter{text.contains($0)}
@@ -96,19 +97,33 @@ struct LiveComposer: View {
             .frame(width:26,height:26).accessibilityLabel(key)
         }
       }}.padding(.horizontal)}}
-      HStack {
-        Button {
-          emotes = true
-        } label: {
-          Image(systemName: "face.smiling")
-        }.accessibilityLabel("选择表情")
-        if let chosen {
-          Button((chosen.emoji ?? "表情") + " ×") { self.chosen = nil }
-        } else {
-          LiveDraftField(text:$text,selection:$selection,focusCount:focusCount,submit:{submitDraft()}).frame(height:36)
+      HStack(spacing: 10) {
+        HStack(spacing: 8) {
+          if let chosen {
+            Button { self.chosen = nil } label: {
+              HStack(spacing: 4) {
+                Text(chosen.emoji ?? "表情")
+                Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+              }
+            }.buttonStyle(.plain)
+            Spacer(minLength: 0)
+          } else {
+            LiveDraftField(text:$text,selection:$selection,focusCount:focusCount,submit:{submitDraft()}).frame(height:36)
+          }
+          Button {
+            emotes = true
+          } label: {
+            Image(systemName: "face.smiling").font(.title3).foregroundStyle(.secondary)
+          }.buttonStyle(.plain).accessibilityLabel("选择表情")
         }
-        Button("发送") { submitDraft() }.disabled(
-          chosen == nil && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        .padding(.leading, 14).padding(.trailing, 10)
+        .background(Color(uiColor: .tertiarySystemFill), in: Capsule())
+        Button { submitDraft() } label: {
+          if busy { ProgressView().tint(.white) } else { Image(systemName: "paperplane.fill") }
+        }
+        .buttonStyle(.glassProminent).buttonBorderShape(.circle).controlSize(.regular)
+        .accessibilityLabel("发送")
+        .disabled(chosen == nil && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
       }.onAppear{if focusOnEntry{focusCount += 1}}.onChange(of: reply) { _, target in
         if target != nil {
           chosen = nil

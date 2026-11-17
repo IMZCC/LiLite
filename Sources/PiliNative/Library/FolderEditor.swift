@@ -27,23 +27,44 @@ struct FolderEditor: View {
         if !isDefault {
           Section("封面") { FolderCoverPicker(cover: $cover, draft: $draftCover, editing: $cropping) }
         }
-        TextField("收藏夹名称", text: $title).disabled(isDefault)
-          .onChange(of: title) { _, value in
-            if !isDefault, value.count > 20 { title = String(value.prefix(20)) }
-          }
-        if !isDefault {
-          TextField("简介", text: $intro, axis: .vertical)
-            .onChange(of: intro) { _, value in
-              if value.count > 200 { intro = String(value.prefix(200)) }
+        Section {
+          HStack(spacing: 12) {
+            Text("名称").frame(width: 44, alignment: .leading)
+            TextField("名称", text: $title).disabled(isDefault)
+              .onChange(of: title) { _, value in
+                if !isDefault, value.count > 20 { title = String(value.prefix(20)) }
+              }
+            if !isDefault {
+              Text("\(title.count)/20").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
             }
+          }
+          if !isDefault {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+              Text("简介").frame(width: 44, alignment: .leading)
+              TextField("可填写简介", text: $intro, axis: .vertical).lineLimit(2...6)
+                .onChange(of: intro) { _, value in
+                  if value.count > 200 { intro = String(value.prefix(200)) }
+                }
+            }
+          }
+        } footer: {
+          if isDefault { Text("默认收藏夹的名称和简介不能修改") }
         }
-        Toggle("私密收藏夹", isOn: $hidden)
-        if let issue { Text(issue).foregroundStyle(.secondary) }
-      }.navigationTitle(folder == nil ? "新建收藏夹" : "编辑收藏夹")
+        Section {
+          Toggle("公开", isOn: Binding(get: { !hidden }, set: { hidden = !$0 }))
+        } footer: {
+          Text(hidden ? "仅自己可见" : "所有人都可以看到这个收藏夹")
+        }
+        if let issue {
+          Section { Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+        }
+      }
+      .overlay { if !ready && issue == nil { ProgressView() } }
+      .navigationTitle(folder == nil ? "创建收藏夹" : "编辑收藏夹").navigationBarTitleDisplayMode(.inline)
         .toolbar {
           ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
           ToolbarItem(placement: .confirmationAction) {
-            Button("保存") { Task { await store() } }.disabled(
+            Button("完成") { Task { await store() } }.buttonStyle(.glassProminent).disabled(
               !ready || saving || cropping
                 || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
           }

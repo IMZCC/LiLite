@@ -96,62 +96,103 @@ struct CommunityReport: View {
   var body: some View {
     Form {
       if submitted {
-        Label("举报已提交", systemImage: "checkmark.circle")
-        if retryBlock {
-          Button("重试加入黑名单") { Task { await finishBlock() } }.disabled(
-            busy || accounts.state.active != uid)
+        Section {
+          VStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill").font(.system(size: 44)).foregroundStyle(.green)
+            Text("举报已提交").font(.headline)
+            Text("感谢反馈，我们会尽快处理").font(.footnote).foregroundStyle(.secondary)
+          }
+          .frame(maxWidth: .infinity).padding(.vertical, 12)
         }
-        Button("完成") {
-          dismiss()
-          if hideAfter { onHide() }
+        Section {
+          if retryBlock {
+            Button("重试加入黑名单") { Task { await finishBlock() } }.disabled(
+              busy || accounts.state.active != uid)
+          }
+          Button("完成") {
+            dismiss()
+            if hideAfter { onHide() }
+          }
         }
       } else {
         if target.profile {
-          Section("举报内容") {
+          Section("举报内容（可多选）") {
             ForEach(Array(ReportReason.profileItems.enumerated()), id: \.offset) { i, label in
               Toggle(
-                label,
                 isOn: Binding(
                   get: { items.contains(i + 1) },
                   set: { value in
                     if value { items.insert(i + 1) } else { items.remove(i + 1) }
-                  }))
+                  })) { Text(label) }
+                .toggleStyle(LoginCheckbox())
+            }
+          }
+          Section("举报原因（选填）") {
+            ForEach(Array(ReportReason.profileReasons.enumerated()), id: \.offset) { i, label in
+              radio(label, i + 1)
+            }
+          }
+        } else if target.comment {
+          ForEach(ReportReason.comments, id: \.0) { section in
+            Section(section.0) { ForEach(section.1) { r in radio(r.label, r.id) } }
+          }
+        } else {
+          Section("举报原因") { ForEach(ReportReason.moments) { r in radio(r.label, r.id) } }
+        }
+        if showDetails || (!target.profile && target.author.map { String($0) != uid } == true) {
+          Section {
+            if showDetails {
+              TextField(needsDetails ? "请填写说明" : "补充说明（选填）", text: $details, axis: .vertical)
+                .lineLimit(2...5)
+            }
+            if !target.profile, let mid = target.author, String(mid) != uid {
+              Toggle(isOn: $block) { Text("同时将作者加入黑名单") }.toggleStyle(LoginCheckbox())
             }
           }
         }
-        Section("举报原因") {
-          Picker("原因", selection: $reason) {
-            Text(target.profile ? "不填写" : "请选择").tag(nil as Int?)
-            if target.profile {
-              ForEach(Array(ReportReason.profileReasons.enumerated()), id: \.offset) { i, label in
-                Text(label).tag(Optional(i + 1))
-              }
-            } else if target.comment {
-              ForEach(ReportReason.comments, id: \.0) { section in
-                Section(section.0) { ForEach(section.1) { r in Text(r.label).tag(Optional(r.id)) } }
-              }
-            } else {
-              ForEach(ReportReason.moments) { r in Text(r.label).tag(Optional(r.id)) }
+        Section {
+          Button { Task { await submit() } } label: {
+            HStack {
+              Text("提交举报").fontWeight(.semibold)
+              if busy { Spacer(); ProgressView() }
             }
           }
-          if showDetails {
-            TextField(needsDetails ? "请填写说明" : "补充说明（选填）", text: $details, axis: .vertical)
+          .foregroundStyle(.red).disabled(!allowed || busy)
+        } footer: {
+          if let error { Text(error).foregroundStyle(.red) }
+        }
+        Section {
+          if let web = target.web {
+            NavigationLink { SitePage(url: web) } label: {
+              SettingsRowLabel(title: "网页举报", symbol: "safari", color: .blue)
+            }
           }
           if !target.profile, let mid = target.author, String(mid) != uid {
-            Toggle("同时加入黑名单", isOn: $block)
-          }
-        }
-        Button("提交举报", role: .destructive) { Task { await submit() } }.disabled(!allowed || busy)
-        if let web = target.web { NavigationLink("网页举报") { SitePage(url: web) } }
-        if !target.profile, let mid = target.author, String(mid) != uid {
-          LocalMute(mid: mid) {
-            dismiss()
-            onHide()
+            LocalMute(mid: mid) {
+              dismiss()
+              onHide()
+            }
           }
         }
       }
-      if let error { Text(error).foregroundStyle(.secondary) }
-    }.navigationTitle(target.title).disabled(busy)
+      if submitted, let error {
+        Section { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+      }
+    }.navigationTitle(target.title).navigationBarTitleDisplayMode(.inline).disabled(busy)
+  }
+  private func radio(_ label: String, _ id: Int) -> some View {
+    Button {
+      reason = reason == id && target.profile ? nil : id
+    } label: {
+      HStack(spacing: 12) {
+        Image(systemName: reason == id ? "largecircle.fill.circle" : "circle")
+          .foregroundStyle(reason == id ? Color.accentColor : Color.secondary)
+        Text(label).foregroundStyle(.primary)
+        Spacer()
+      }
+      .contentShape(Rectangle())
+    }
+    .accessibilityAddTraits(reason == id ? .isSelected : [])
   }
   @MainActor private func submit() async {
     guard allowed, !busy, !submitted else { return }

@@ -71,23 +71,33 @@ struct HistorySettings: View {
   @State private var retry = 0
   var body: some View {
     Form {
-      Toggle("在此设备同步观看进度", isOn: $sync)
-      Section("观看历史 · UID " + uid) {
+      Section {
+        SettingToggle(title: "在此设备同步观看进度", symbol: "arrow.triangle.2.circlepath", color: .blue, isOn: $sync)
+      } footer: {
+        Text("关闭后播放进度只保存在本机")
+      }
+      Section {
         if let paused {
-          Toggle(
-            "暂停账号历史记录",
+          SettingToggle(
+            title: "暂停账号历史记录", symbol: "pause.circle", color: .orange,
             isOn: Binding(get: { paused }, set: { value in Task { await update(value) } })
           ).disabled(busy)
         } else if issue == nil {
-          ProgressView()
+          ProgressView().frame(maxWidth: .infinity)
         }
-        Button("清空账号观看历史", role: .destructive) { clear = true }.disabled(busy || paused == nil)
         if let issue {
-          Text(issue)
+          Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red)
           Button("重试") { retry += 1 }
         }
+      } header: {
+        Text("观看历史 · UID " + uid)
+      } footer: {
+        Text("暂停后，在任何设备观看的视频都不会记入该账号的历史")
       }
-    }.navigationTitle("观看历史设置").task(id: retry) {
+      Section {
+        Button("清空账号观看历史", role: .destructive) { clear = true }.disabled(busy || paused == nil)
+      }
+    }.navigationTitle("观看历史设置").navigationBarTitleDisplayMode(.inline).task(id: retry) {
       do {
         paused = try await BiliAPI.shared.read(
           "/x/v2/history/shadow", ["jsonp": "jsonp"], expectedAccount: uid, as: Bool.self)

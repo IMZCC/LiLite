@@ -154,26 +154,47 @@ struct PrivateTrustPanel: View {
   @State private var issue: String?
   var body: some View {
     Form {
-      LabeledContent("服务器", value: origin.display)
+      Section {
+        HStack(spacing: 14) {
+          Image(systemName: current == nil ? "lock.open.trianglebadge.exclamationmark" : "lock.shield.fill")
+            .font(.system(size: 30)).foregroundStyle(current == nil ? Color.orange : Color.green)
+            .symbolRenderingMode(.hierarchical).frame(width: 40)
+          VStack(alignment: .leading, spacing: 2) {
+            Text(origin.display).font(.headline).lineLimit(2)
+            Text(current == nil ? "使用系统信任的证书" : "已信任自定义证书").font(.footnote).foregroundStyle(.secondary)
+          }
+        }
+        .padding(.vertical, 4)
+      }
       if let current {
         group(current, label: "已信任的证书")
-        Button("移除证书", role: .destructive) { removing = true }
       }
-      Button(current == nil ? "选择证书" : "选择新证书") { importing = true }
       if let pending {
         group(pending, label: "待导入证书")
-        Button("为这个服务器信任证书") {
-          do {
-            try PrivateServerTrust.set(pending, for: origin)
-            current = pending
-            self.pending = nil
-            issue = nil
-          } catch { issue = error.localizedDescription }
+        Section {
+          Button("为这个服务器信任证书") {
+            do {
+              try PrivateServerTrust.set(pending, for: origin)
+              current = pending
+              self.pending = nil
+              issue = nil
+            } catch { issue = error.localizedDescription }
+          }
+          Button("取消导入") { self.pending = nil }
         }
-        Button("取消导入") { self.pending = nil }
       }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-    }.navigationTitle("服务器证书").onAppear {
+      Section {
+        Button { importing = true } label: {
+          SettingsRowLabel(title: current == nil ? "选择证书" : "选择新证书", symbol: "doc.badge.plus", color: .blue)
+        }
+        if current != nil {
+          Button("移除证书", role: .destructive) { removing = true }
+        }
+      } footer: {
+        if let issue { Text(issue).foregroundStyle(.red) }
+        else { Text("支持 DER 或 PEM 格式的服务器证书或 CA 证书") }
+      }
+    }.navigationTitle("服务器证书").navigationBarTitleDisplayMode(.inline).onAppear {
       do { current = try PrivateServerTrust.read(origin) } catch {
         issue = error.localizedDescription
       }
@@ -212,8 +233,10 @@ struct PrivateTrustPanel: View {
         LabeledContent("类型", value: c.authority ? "证书颁发机构" : "服务器证书")
         LabeledContent("有效期至", value: c.after.formatted(date: .abbreviated, time: .omitted))
       }
-      Text("SHA-256").font(.caption)
-      Text(PrivateServerTrust.fingerprint(data)).font(.caption.monospaced()).textSelection(.enabled)
+      VStack(alignment: .leading, spacing: 4) {
+        Text("SHA-256 指纹").font(.caption).foregroundStyle(.secondary)
+        Text(PrivateServerTrust.fingerprint(data)).font(.caption.monospaced()).textSelection(.enabled)
+      }
     }
   }
 }

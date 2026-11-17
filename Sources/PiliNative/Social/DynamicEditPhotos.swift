@@ -11,42 +11,38 @@ struct DynamicEditPhotos: View {
   struct Selection: Identifiable { let id: DynamicDraftFile.Asset }
   private var disk: DynamicDraftDisk { .app }
   var body: some View {
-    ForEach(record.ordered, id: \.self) { key in
-      HStack {
+    let ordered = record.ordered
+    ForEach(Array(ordered.enumerated()), id: \.element) { index, key in
+      let live: Bool = {
+        if case .original(let id) = key { return source.pictures.first { $0.id == id }?.live != nil }
+        return false
+      }()
+      DraftImageTile(
+        live: live,
+        crop: {
+          if live { liveConfirmation = .init(id: key) } else { crop = .init(id: key) }
+        },
+        remove: { remove(key) },
+        moveLeft: index > 0 ? { move(index, to: index - 1) } : nil,
+        moveRight: index + 1 < ordered.count ? { move(index, to: index + 1) } : nil
+      ) {
         switch key {
         case .local(let id):
-          LocalDraftThumbnail(url: disk.image(id, scope: scope)).frame(width: 78, height: 58)
+          LocalDraftThumbnail(url: disk.image(id, scope: scope), fill: true)
         case .original(let id):
           let p = source.pictures.first { $0.id == id }
           SiteThumbnail(url: p.flatMap { GalleryPicture.source($0.src) }) {
-            $0.resizable().scaledToFit()
+            $0.resizable().scaledToFill()
           } placeholder: {
-            Color.clear
+            Color.secondary.opacity(0.1)
           }
-          .frame(width: 78, height: 58)
-          if p?.live != nil { Image(systemName: "livephoto").accessibilityLabel("实况照片") }
         }
-        Spacer()
-        Button("裁剪") {
-          if case .original(let name) = key,
-            source.pictures.first(where: { $0.id == name })?.live != nil
-          {
-            liveConfirmation = .init(id: key)
-          } else {
-            crop = .init(id: key)
-          }
-        }.buttonStyle(.borderless)
-        Button("移除", role: .destructive) { remove(key) }.buttonStyle(.borderless)
       }
-    }.onMove { from, to in
-      var all = record.ordered
-      all.move(fromOffsets: from, toOffset: to)
-      record.order = all
     }
     DynamicPhotoDraft(
       scope: scope, images: $record.pictures, limit: 9 - (record.originals?.count ?? 0),
       importing: $importing, issue: $issue, showRows: false)
-    Color.clear.frame(height: 0).listRowInsets(.init()).accessibilityHidden(true)
+    Color.clear.frame(width: 0, height: 0).accessibilityHidden(true)
       .confirmationDialog(
         "裁剪后将使用静态图片",
         isPresented: Binding(
@@ -69,6 +65,11 @@ struct DynamicEditPhotos: View {
           record.order = order
         }
       }
+  }
+  private func move(_ from: Int, to: Int) {
+    var all = record.ordered
+    all.swapAt(from, to)
+    record.order = all
   }
   private func remove(_ key: DynamicDraftFile.Asset) {
     switch key {

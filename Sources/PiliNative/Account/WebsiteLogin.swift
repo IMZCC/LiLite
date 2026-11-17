@@ -128,19 +128,35 @@ struct WebsiteLogin: View {
   @State private var busy = false
   @State private var request: Task<Void, Never>?
   var body: some View {
-    VStack(spacing: 4) {
-      HStack {
-        Label(flow.host, systemImage: "lock.fill").font(.footnote)
-        Spacer()
-        Button {
-          flow.browser.reload()
-        } label: {
-          Image(systemName: "arrow.clockwise")
-        }.accessibilityLabel("刷新登录页")
-      }.padding(.horizontal)
-      LoginWebPage(browser: flow.browser)
-      if let error = flow.issue { Text(error).font(.footnote).foregroundStyle(.secondary) }
-      Button(busy ? "正在验证" : "使用此账号登录") {
+    LoginWebPage(browser: flow.browser).ignoresSafeArea(edges: .bottom)
+      .toolbar {
+        ToolbarItem(placement: .principal) {
+          Label(flow.host, systemImage: "lock.fill").font(.footnote.weight(.medium))
+            .labelStyle(.titleAndIcon).foregroundStyle(.secondary)
+        }
+        ToolbarItem(placement: .primaryAction) {
+          Button { flow.browser.reload() } label: { Image(systemName: "arrow.clockwise") }
+            .accessibilityLabel("刷新登录页")
+        }
+      }
+      .safeAreaInset(edge: .bottom) {
+        VStack(spacing: 8) {
+          if let error = flow.issue {
+            Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+          }
+          Text("在网页中完成登录后，点击下方按钮保存此账号").font(.caption).foregroundStyle(.secondary)
+          LoginSubmit(title: "使用此账号登录", busy: busy) { submit() }.disabled(busy)
+        }
+        .padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: .infinity)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .padding(.horizontal, 12).padding(.bottom, 4)
+      }
+      .onDisappear {
+        request?.cancel()
+        flow.browser.stopLoading()
+      }
+  }
+  private func submit() {
         guard !busy else { return }
         busy = true
         request = Task {
@@ -154,10 +170,5 @@ struct WebsiteLogin: View {
             if !Task.isCancelled { dismiss() }
           } catch { if !Task.isCancelled { flow.issue = error.localizedDescription } }
         }
-      }.buttonStyle(.borderedProminent).disabled(busy).padding(.bottom, 6)
-    }.onDisappear {
-      request?.cancel()
-      flow.browser.stopLoading()
-    }
   }
 }

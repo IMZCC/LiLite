@@ -51,62 +51,95 @@ struct OfflineGroupView: View {
   }
   private var entries: some View {
     List {
-      if let error = downloads.issue { Text(error).foregroundStyle(.secondary) }
+      if let error = downloads.issue {
+        Label(error, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.secondary)
+      }
       if !selecting {
         let ready = rows.filter {
           $0.phase == .saved && $0.matchesOwner(accounts.state.owner(.role(.video)) ?? "")
         }
         if !ready.isEmpty {
-          HStack {
-            Button("播放全部") { play(ready.first) }
+          HStack(spacing: 10) {
+            Button { play(ready.first) } label: {
+              Label("播放全部", systemImage: "play.fill").font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.glassProminent).buttonBorderShape(.capsule)
             if let last,
               let v = ready.first(where: {
                 $0.token == last || ($0.scoped != true && $0.id == last)
               })
             {
-              Spacer()
-              Button("继续播放") { play(v) }
+              Button { play(v) } label: {
+                Label("继续播放", systemImage: "clock.arrow.circlepath").font(.subheadline)
+              }
+              .buttonStyle(.glass).buttonBorderShape(.capsule)
             }
-          }.buttonStyle(.borderless)
-        }
-      } else {
-        Button(checked.isSuperset(of: rows.map(\.token)) ? "取消全选" : "全选") {
-          let ids = Set(rows.map(\.token))
-          if checked.isSuperset(of: ids) { checked.subtract(ids) } else { checked.formUnion(ids) }
+            Spacer()
+            Text("\(ready.count) 个已缓存").font(.caption).foregroundStyle(.secondary)
+          }
+          .listRowSeparator(.hidden)
         }
       }
       trackListing
-      if selecting && !choices.isEmpty {
-        Menu("管理所选 \(choices.count) 项") {
-          Button("暂停下载") { run(.pause) }
-          Button("继续下载") { run(.resume) }
-          Button("重试失败项") { run(.retry) }
-          ForEach([OfflineAttachment.comments, .captions, .segments, .art, .all]) { m in
-            Button(m.rawValue) {
-              let r = choices.filter {
-                $0.phase == .saved && $0.matchesOwner(accounts.state.owner(.role(.video)) ?? "")
-              }; if !r.isEmpty { updater = .init(items: r, mode: m) }
-            }
+    }
+    .listStyle(.plain)
+    .overlay { if rows.isEmpty && query.isEmpty { ContentUnavailableView("暂无离线缓存", systemImage: "arrow.down.circle") } }
+    .safeAreaInset(edge: .bottom) {
+      if selecting {
+        HStack(spacing: 12) {
+          Button(checked.isSuperset(of: rows.map(\.token)) && !rows.isEmpty ? "取消全选" : "全选") {
+            let ids = Set(rows.map(\.token))
+            if checked.isSuperset(of: ids) { checked.subtract(ids) } else { checked.formUnion(ids) }
           }
-          Button("移除所选缓存", role: .destructive) { removing = choices }
+          Spacer()
+          Menu {
+            Button("暂停下载", systemImage: "pause") { run(.pause) }
+            Button("继续下载", systemImage: "play") { run(.resume) }
+            Button("重试失败项", systemImage: "arrow.clockwise") { run(.retry) }
+            Section("更新附加内容") {
+              ForEach([OfflineAttachment.comments, .captions, .segments, .art, .all]) { m in
+                Button(m.rawValue) {
+                  let r = choices.filter {
+                    $0.phase == .saved && $0.matchesOwner(accounts.state.owner(.role(.video)) ?? "")
+                  }; if !r.isEmpty { updater = .init(items: r, mode: m) }
+                }
+              }
+            }
+          } label: {
+            Label("管理", systemImage: "ellipsis.circle")
+          }
+          .disabled(choices.isEmpty)
+          Button(role: .destructive) { removing = choices } label: {
+            Label("删除", systemImage: "trash")
+          }
+          .tint(.red).disabled(choices.isEmpty)
         }
+        .labelStyle(.titleAndIcon).font(.subheadline.weight(.medium))
+        .padding(.horizontal, 20).padding(.vertical, 12)
+        .glassEffect(.regular, in: Capsule())
+        .padding(.horizontal, 16).padding(.bottom, 4)
       }
     }
   }
   var body: some View {
     entries.disabled(busy).searchable(text: $query, prompt: "搜索分集")
-      .navigationTitle(archiveFilter == nil ? (group?.title ?? initialTitle) : initialTitle)
+      .navigationTitle(selecting ? "已选 \(choices.count) 项" : archiveFilter == nil ? (group?.title ?? initialTitle) : initialTitle)
+      .navigationBarTitleDisplayMode(.inline)
       .modifier(SelectionCancelBack(active: selecting) { checked = []; selecting = false })
       .toolbar {
-        Button {
-          reverse.toggle()
-        } label: {
-          Image(systemName: reverse ? "arrow.up" : "arrow.down").accessibilityLabel(
-            reverse ? "改为正序" : "改为倒序")
+        if !selecting {
+          Button {
+            reverse.toggle()
+          } label: {
+            Image(systemName: "arrow.up.arrow.down").accessibilityLabel(
+              reverse ? "改为正序" : "改为倒序")
+          }
         }
-        Button(selecting ? "完成" : "选择") {
-          selecting.toggle()
+        Button {
+          withAnimation(.snappy) { selecting.toggle() }
           checked = []
+        } label: {
+          if selecting { Text("完成") } else { Label("多选", systemImage: "checklist") }
         }
       }.confirmationDialog(
         "移除 \(removing.count) 个离线缓存？",
@@ -141,8 +174,12 @@ struct OfflineGroupView: View {
         NavigationLink {
           OfflineGroupView(groupID: groupID, initialTitle: v.title, archiveFilter: v.bvid)
         } label: {
-          HStack {
-            OfflineCoverCell(row: v); Text(v.title)
+          HStack(spacing: 12) {
+            OfflineCoverCell(row: v)
+            VStack(alignment: .leading, spacing: 4) {
+              Text(v.title).font(.subheadline.weight(.medium)).lineLimit(2)
+              Text("\(list.filter { $0.bvid == v.bvid }.count) 个分集").font(.caption).foregroundStyle(.secondary)
+            }
           }
         }
       }
@@ -152,10 +189,14 @@ struct OfflineGroupView: View {
           Button {
             if !checked.insert(v.token).inserted { checked.remove(v.token) }
           } label: {
-            HStack {
+            HStack(spacing: 12) {
               Image(systemName: checked.contains(v.token) ? "checkmark.circle.fill" : "circle")
-              Text(v.part.isEmpty ? v.title : v.part)
+                .font(.title3).foregroundStyle(checked.contains(v.token) ? Color.accentColor : Color.secondary)
+              OfflineCoverCell(row: v)
+              Text(v.part.isEmpty ? v.title : v.part).font(.subheadline).foregroundStyle(.primary).lineLimit(2)
+              Spacer(minLength: 0)
             }
+            .contentShape(Rectangle())
           }
         } else {
           DownloadRow(v: v, play: play).swipeActions {

@@ -46,25 +46,27 @@ struct DynamicPhotoDraft: View {
   @State private var cropping: Photo?
   struct Photo: Identifiable { let id: UUID }
   private let disk = DynamicDraftDisk.app
+  /// Laid out as tiles of a horizontal strip; the caller supplies the HStack/ScrollView.
   var body: some View {
     if showRows {
-      ForEach(images, id: \.self) { id in
-        HStack {
-          LocalDraftThumbnail(url: disk.image(id, scope: scope)).frame(width: 78, height: 58)
-          Spacer()
-          Button("裁剪") { cropping = .init(id: id) }.buttonStyle(.borderless)
-          Button("移除", role: .destructive) { images.removeAll { $0 == id } }.buttonStyle(
-            .borderless)
+      ForEach(Array(images.enumerated()), id: \.element) { index, id in
+        DraftImageTile(
+          crop: { cropping = .init(id: id) },
+          remove: { images.removeAll { $0 == id } },
+          moveLeft: index > 0 ? { images.swapAt(index, index - 1) } : nil,
+          moveRight: index + 1 < images.count ? { images.swapAt(index, index + 1) } : nil
+        ) {
+          LocalDraftThumbnail(url: disk.image(id, scope: scope), fill: true)
         }
-      }.onMove { images.move(fromOffsets: $0, toOffset: $1) }
+      }
     }
     if images.count < limit {
       PhotosPicker(
         selection: $picked, maxSelectionCount: limit - images.count, selectionBehavior: .ordered,
         matching: .images
       ) {
-        Label("添加图片", systemImage: "photo.on.rectangle")
-      }.onChange(of: picked) { _, items in
+        ComposerAddPhotoLabel(busy: importing)
+      }.buttonStyle(.plain).disabled(importing).onChange(of: picked) { _, items in
         guard !items.isEmpty, !importing, accounts.state.active == scope.owner else { return }
         importing = true
         picked = []
@@ -85,8 +87,7 @@ struct DynamicPhotoDraft: View {
         }
       }
     }
-    if importing { ProgressView() }
-    Color.clear.frame(height: 0).listRowInsets(.init()).accessibilityHidden(true)
+    Color.clear.frame(width: 0, height: 0).accessibilityHidden(true)
       .piliSheet(item: $cropping) { selection in
         DynamicCrop(url: disk.image(selection.id, scope: scope)) { bytes in
           guard accounts.state.active == scope.owner, let i = images.firstIndex(of: selection.id)
@@ -98,11 +99,16 @@ struct DynamicPhotoDraft: View {
 }
 struct LocalDraftThumbnail: View {
   let url: URL
+  var fill = false
   @State private var image: UIImage?
   var body: some View {
     Group {
       if let image {
-        Image(uiImage: image).resizable().scaledToFit()
+        if fill {
+          Color.clear.overlay { Image(uiImage: image).resizable().scaledToFill() }
+        } else {
+          Image(uiImage: image).resizable().scaledToFit()
+        }
       } else {
         Color.secondary.opacity(0.1)
       }

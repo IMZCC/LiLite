@@ -73,29 +73,46 @@ private actor QRPassport {
     )
   }
 }
+/// Sign-in page laid out like the original: 密码 / 短信 / 扫码 / Cookie tabs under the title, the
+/// web-page methods tucked into the toolbar menu.
 struct QRLoginView: View {
-  private enum Method: String, CaseIterable, Identifiable {
-    case mobile = "客户端登录", web = "网页登录", cookie = "Cookie", webQR = "网页二维码"
-    var id: Self { self }
-  }
-  @State private var method = Method.mobile
+  private enum Method: Hashable { case password, sms, qr, cookie }
+  private enum Extra: Hashable { case web, webQR }
+  @State private var method = Method.password
+  @State private var extra: Extra?
   var body: some View {
-    VStack(spacing: 8) {
-      Picker("登录方式", selection: $method) { ForEach(Method.allCases) { Text($0.rawValue).tag($0) } }
-        .pickerStyle(.menu).padding(.horizontal)
-      switch method {
-      case .mobile: MobileClientLoginView()
-      case .web: WebsiteLogin()
-      case .cookie: CookieLogin()
-      case .webQR: WebQRLoginView()
-      }
-    }.navigationTitle("登录").navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        Menu("找回密码") {
-          NavigationLink("手机网页版") { SitePage(url: URL(string: "https://passport.bilibili.com/h5-app/passport/login/findPassword")!) }
-          NavigationLink("电脑网页版") { SitePage(url: URL(string: "https://passport.bilibili.com/pc/passport/findPassword")!) }
+    VStack(spacing: 0) {
+      LoginTabStrip(
+        tabs: [
+          (.password, "密码", "key"), (.sms, "短信", "message"), (.qr, "扫码", "qrcode"),
+          (.cookie, "Cookie", "birthday.cake"),
+        ],
+        selection: $method)
+      Group {
+        switch method {
+        case .password: NativeLoginForm(method: .password, expectedUID: nil).id(Method.password)
+        case .sms: NativeLoginForm(method: .sms, expectedUID: nil).id(Method.sms)
+        case .qr: NativeLoginForm(method: .qr, expectedUID: nil).id(Method.qr)
+        case .cookie: CookieLogin()
         }
       }
+      .frame(maxHeight: .infinity)
+    }
+    .navigationTitle("登录").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      Menu {
+        Button("网页登录", systemImage: "safari") { extra = .web }
+        Button("网页二维码", systemImage: "qrcode.viewfinder") { extra = .webQR }
+      } label: {
+        Label("更多登录方式", systemImage: "ellipsis")
+      }
+    }
+    .navigationDestination(item: $extra) { kind in
+      switch kind {
+      case .web: WebsiteLogin().navigationTitle("网页登录").navigationBarTitleDisplayMode(.inline)
+      case .webQR: WebQRLoginView().navigationTitle("网页二维码").navigationBarTitleDisplayMode(.inline)
+      }
+    }
   }
 }
 private struct WebQRLoginView: View {
@@ -113,40 +130,41 @@ private struct WebQRLoginView: View {
     qrPage
   }
   private var qrPage: some View {
-    VStack(spacing: 24) {
-      if let image {
-        Image(uiImage: image).interpolation(.none).resizable().frame(width: 220, height: 220)
-          .padding(14).background(.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-      } else if !stopped {
-        ProgressView()
-      }
-      Text(status).multilineTextAlignment(.center)
-      if let displayed, let expiry, !stopped {
+    LoginPane(headline: "使用哔哩哔哩 App 扫描网页登录码", footnote: LoginCopy.trusted) {
+      if let expiry, displayed != nil, !stopped {
         TimelineView(.periodic(from: .now, by: 1)) { t in
-          let left = max(0, Int(ceil(expiry.timeIntervalSince(t.date))))
-          Text("剩余 \(left) 秒").font(.caption.monospacedDigit())
+          Text("剩余有效时间：\(max(0, Int(ceil(expiry.timeIntervalSince(t.date))))) 秒")
+            .font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
         }
-        HStack {
-          Button("刷新") { epoch += 1 }
-          Menu("二维码") {
-            Button("保存到照片") { Task { await saveQR() } }
-            Button("复制登录链接") {
-              guard Date() < expiry else { return }
-              UIPasteboard.general.setItems(
-                [["public.utf8-plain-text": displayed.absoluteString]],
-                options: [.localOnly: true, .expirationDate: expiry])
-              note = "已复制登录链接"
-            }
-            Button("使用哔哩哔哩打开") {
-              guard Date() < expiry else { return }
-              OfficialAppHandoff.shared.open(displayed){note="未能打开哔哩哔哩，可保存二维码后在哔哩哔哩中扫一扫"}
-            }
+      }
+      HStack(spacing: 18) {
+        Button("刷新二维码", systemImage: "arrow.clockwise") { epoch += 1 }
+        if let displayed, let expiry, !stopped {
+          Button("保存至相册", systemImage: "square.and.arrow.down") { Task { await saveQR() } }
+          Button("其他应用打开", systemImage: "arrow.up.forward.app") {
+            guard Date() < expiry else { return }
+            OfficialAppHandoff.shared.open(displayed) { note = "未能打开哔哩哔哩，可保存二维码后在哔哩哔哩中扫一扫" }
           }
         }
-      } else if stopped {
-        Button("重新获取二维码") { epoch += 1 }
       }
-    }.padding().task(id: epoch) { await login() }.onDisappear {
+      .font(.subheadline).labelStyle(.titleAndIcon).buttonStyle(.borderless)
+      LoginQRCode(image: image, loading: image == nil && !stopped)
+      Text(status).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+      if let displayed, let expiry, !stopped {
+        Button {
+          guard Date() < expiry else { return }
+          UIPasteboard.general.setItems(
+            [["public.utf8-plain-text": displayed.absoluteString]],
+            options: [.localOnly: true, .expirationDate: expiry])
+          note = "已复制到剪贴板，可粘贴至已登录的哔哩哔哩私信处发送，然后点击已发送的链接打开"
+        } label: {
+          Text(displayed.absoluteString).font(.caption2.monospaced()).foregroundStyle(.tertiary)
+            .multilineTextAlignment(.center).lineLimit(3)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .task(id: epoch) { await login() }.onDisappear {
       displayed = nil
       expiry = nil
       image = nil

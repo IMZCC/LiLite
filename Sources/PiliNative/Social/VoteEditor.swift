@@ -31,51 +31,144 @@ struct NewVote: View {
     }
   }
   var body: some View {
-    Form {
-      if !ready && issue == nil { ProgressView() }
-      if ready {
-        Section {
-          TextField("投票标题（最多 32 字）", text: $title)
-          TextField("说明（最多 100 字）", text: $intro, axis: .vertical)
-          Picker("选项类型", selection: $imageMode) {
-            Text("文字").tag(false); Text("图片").tag(true)
-          }.pickerStyle(.segmented)
-        }
-        Section("选项") {
-          ForEach($options) { $option in
-            VStack(alignment: .leading) {
-              TextField("选项（最多 20 字）", text: $option.text)
-              if imageMode {
-                HStack {
-                  if option.chosen == nil, let url = GalleryPicture.source(option.image) {
-                    SiteThumbnail(url: url) { $0.resizable().scaledToFit() } placeholder: { Color.clear }
-                      .frame(width: 46, height: 46)
-                  }
+    ScrollView {
+      VStack(alignment: .leading, spacing: 0) {
+        if !ready && issue == nil { ProgressView().frame(maxWidth: .infinity).padding(.top, 40) }
+        if ready {
+          Text("投票类型").font(.subheadline).padding(.top, 8)
+          HStack(spacing: 16) {
+            typeCard("文字投票", on: !imageMode) { imageMode = false }
+            typeCard("图片投票", on: imageMode) { imageMode = true }
+          }
+          .padding(.top, 12)
+          Spacer().frame(height: 36)
+          inputRow("投票标题") { TextField("请填写标题", text: limited($title, 32)) }
+          Divider()
+          inputRow("投票说明") { TextField("投票说明", text: limited($intro, 100), axis: .vertical).lineLimit(1...4) }
+          Divider()
+          Spacer().frame(height: 36)
+          ForEach(Array($options.enumerated()), id: \.element.id) { index, $option in
+            inputRow("选项\(index + 1)") {
+              HStack(spacing: 10) {
+                TextField("选项内容，最多 20 字", text: limited($option.text, 20))
+                if imageMode {
                   PhotosPicker(selection: $option.chosen, matching: .images) {
-                    Label(option.chosen != nil ? "已选图片，重新选择" : option.image.isEmpty ? "选择图片" : "更换图片", systemImage: "photo")
-                  }
+                    optionImage(option)
+                  }.buttonStyle(.plain)
+                }
+                if options.count > 2 {
+                  Button {
+                    options.remove(at: index); maxChoices = min(maxChoices, options.count)
+                  } label: {
+                    Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                      .frame(width: 26, height: 26).background(.quaternary, in: Circle())
+                  }.buttonStyle(.plain).accessibilityLabel("移除选项\(index + 1)")
                 }
               }
             }
-          }.onDelete { indexes in
-            guard options.count - indexes.count >= 2 else { return }
-            options.remove(atOffsets: indexes); maxChoices = min(maxChoices, options.count)
-          }.onMove { options.move(fromOffsets: $0, toOffset: $1) }
-          if options.count < 20 { Button("添加选项") { options.append(.init()) } }
+            Divider()
+          }
+          if options.count < 20 {
+            Button { options.append(.init()) } label: {
+              Label("添加选项", systemImage: "plus").font(.footnote.weight(.medium))
+            }
+            .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small).tint(.secondary)
+            .padding(.top, 12)
+          }
+          Spacer().frame(height: 36)
+          inputRow("单选/多选", width: 100) {
+            Menu {
+              Picker("单选/多选", selection: $maxChoices) {
+                ForEach(1...max(1, options.count), id: \.self) { n in
+                  Text(n == 1 ? "单选" : "最多选\(n)项").tag(n)
+                }
+              }
+            } label: {
+              HStack(spacing: 4) {
+                Text(maxChoices == 1 ? "单选" : "最多选\(maxChoices)项")
+                Image(systemName: "chevron.up.chevron.down").font(.caption2)
+              }.foregroundStyle(.primary)
+            }
+          }
+          Divider()
+          inputRow("投票截止时间", width: 100) {
+            DatePicker("投票截止时间", selection: $until,
+              in: Date().addingTimeInterval(300)...Date().addingTimeInterval(90 * 86400))
+              .labelsHidden()
+            Spacer(minLength: 0)
+          }
+          Divider()
+          Button { Task { await save() } } label: {
+            HStack {
+              if busy { ProgressView() }
+              Text(existing == nil ? "发起投票" : "保存投票")
+            }
+            .font(.body.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 6)
+          }
+          .buttonStyle(.glassProminent).controlSize(.large).disabled(busy || !valid)
+          .padding(.top, 36)
         }
-        Stepper("最多选择 \(maxChoices) 项", value: $maxChoices, in: 1...max(1, options.count))
-        DatePicker("截止时间", selection: $until, in: Date()...Date().addingTimeInterval(90 * 86400))
+        if let issue {
+          VStack(alignment: .leading, spacing: 8) {
+            Label(issue, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.red)
+            if !ready, existing != nil { Button("重新读取") { retry += 1 } }
+          }
+          .padding(.top, 16)
+        }
       }
-      if let issue {
-        Text(issue).foregroundStyle(.secondary)
-        if !ready, existing != nil { Button("重新读取") { retry += 1 } }
-      }
-    }.navigationTitle(existing == nil ? "发起投票" : "编辑投票").toolbar {
-      Button(existing == nil ? "创建投票" : "保存") { Task { await save() } }
-        .disabled(busy || !valid)
-    }.disabled(busy).interactiveDismissDisabled(busy)
+      .padding(.horizontal, 16).padding(.bottom, 40)
+    }
+    .scrollDismissesKeyboard(.interactively)
+    .navigationTitle(existing == nil ? "发起投票" : "编辑投票").navigationBarTitleDisplayMode(.inline)
+    .disabled(busy).interactiveDismissDisabled(busy)
       .task(id: retry) { await prepare() }
       .onChange(of: accounts.state.active) { _, id in if let owner, id != owner { dismiss() } }
+  }
+  private func inputRow<Content: View>(_ label: String, width: CGFloat = 65,
+    @ViewBuilder _ content: () -> Content) -> some View {
+    HStack(spacing: 12) {
+      Text(label).font(.subheadline).foregroundStyle(.secondary).frame(width: width, alignment: .leading)
+      content()
+    }
+    .frame(minHeight: 50)
+  }
+  private func limited(_ text: Binding<String>, _ max: Int) -> Binding<String> {
+    Binding(get: { text.wrappedValue }, set: { text.wrappedValue = String($0.prefix(max)) })
+  }
+  private func typeCard(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text(title).font(.subheadline.weight(on ? .semibold : .regular))
+        .foregroundStyle(on ? Color.accentColor : Color.secondary)
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .background(on ? Color.accentColor.opacity(0.1) : Color.clear,
+          in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+          RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .stroke(on ? Color.accentColor : Color(uiColor: .separator), lineWidth: 1)
+        }
+        .overlay(alignment: .bottomTrailing) {
+          if on {
+            Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).foregroundStyle(.white)
+              .padding(3).background(Color.accentColor,
+                in: UnevenRoundedRectangle(topLeadingRadius: 5, bottomTrailingRadius: 10))
+          }
+        }
+    }
+    .buttonStyle(.plain).accessibilityAddTraits(on ? .isSelected : [])
+  }
+  @ViewBuilder private func optionImage(_ option: DraftOption) -> some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.quaternary)
+      if option.chosen != nil {
+        Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
+      } else if let url = GalleryPicture.source(option.image) {
+        SiteThumbnail(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+      } else {
+        Image(systemName: "photo.badge.plus").foregroundStyle(.secondary)
+      }
+    }
+    .frame(width: 40, height: 40).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .accessibilityLabel(option.chosen != nil ? "已选图片" : "选择图片")
   }
   private func prepare() async {
     issue = nil

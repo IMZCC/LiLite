@@ -89,22 +89,46 @@ struct MobileAuthorization: View {
   private var attached: Bool { accounts.state.accounts.first { $0.id == uid }?.mobileToken != nil }
   var body: some View {
     Form {
-      if attached {
-        Label("已授权", systemImage: "checkmark.circle")
-        Button("从此设备移除授权", role: .destructive) { revoke = true }
+      Section {
+        VStack(spacing: 10) {
+          Image(systemName: attached ? "checkmark.shield.fill" : "iphone.badge.exclamationmark")
+            .font(.system(size: 44)).foregroundStyle(attached ? Color.green : Color.orange)
+            .symbolRenderingMode(.hierarchical)
+          Text(attached ? "已授权移动端接口" : "尚未授权移动端接口").font(.headline)
+          Text("私信、动态发布与部分 App 端功能需要移动端授权").font(.footnote)
+            .foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 10)
       }
       Section {
-        NavigationLink(attached ? "重新授权" : "扫码或登录授权") { MobileClientLoginView(expectedUID: uid) }
+        NavigationLink { MobileClientLoginView(expectedUID: uid) } label: {
+          SettingsRowLabel(title: attached ? "重新授权" : "扫码或登录授权", symbol: "qrcode.viewfinder", color: .blue)
+        }
       }
-      Section("使用我的移动端令牌") {
+      Section {
         SecureField("Access Token", text: $token).autocorrectionDisabled()
           .textInputAutocapitalization(.never).privacySensitive().disabled(busy)
-        Button(attached ? "更换授权" : "绑定到当前账号") { request = Task { await validate() } }.disabled(
-          token.isEmpty || busy)
+        Button {
+          request = Task { await validate() }
+        } label: {
+          HStack {
+            Text(attached ? "更换授权" : "绑定到当前账号")
+            if busy { Spacer(); ProgressView() }
+          }
+        }
+        .disabled(token.isEmpty || busy)
+      } header: {
+        Text("使用我的移动端令牌")
+      } footer: {
+        if let error { Text(error).foregroundStyle(.red) }
       }
-      if busy { ProgressView() }
-      if let error { Text(error).foregroundStyle(.secondary) }
-    }.navigationTitle("移动端授权").confirmationDialog("移除移动端授权？", isPresented: $revoke) {
+      if attached {
+        Section {
+          Button("从此设备移除授权", role: .destructive) { revoke = true }
+        }
+      }
+    }.navigationTitle("移动端授权").navigationBarTitleDisplayMode(.inline)
+    .confirmationDialog("移除移动端授权？", isPresented: $revoke) {
       Button("移除", role: .destructive) {
         Task {
           do {

@@ -10,13 +10,25 @@ struct FavoriteOrder: View {
   @State private var issue: String?
   var body: some View {
     List {
-      ForEach(rows) { item in Text(item.displayName) }.onMove(perform: move)
-      if busy { ProgressView() }
-      if let issue { Text(issue).foregroundStyle(.secondary) }
-      if page != nil && !busy { Button(rows.isEmpty ? "载入收藏" : "加载更多") { Task { await load() } } }
-      if rows.isEmpty && page == nil { Text("收藏夹为空").foregroundStyle(.secondary) }
-    }.environment(\.editMode, .constant(.active)).navigationTitle("收藏内容排序")
-      .toolbar { Button("保存") { Task { await save() } }.disabled(busy || ops.isEmpty) }
+      ForEach(rows) { item in
+        MediaRow(cover: item.cover.flatMap(httpsURL), title: item.displayName,
+          duration: item.duration.map { clockText(Double($0)) }, subtitle: item.upper?.name,
+          dimmed: item.unavailable, thumbWidth: 112)
+      }.onMove(perform: move)
+      if busy { ProgressView().frame(maxWidth: .infinity) }
+      if let issue { Label(issue, systemImage: "exclamationmark.circle").foregroundStyle(.red) }
+      if page != nil && !busy {
+        Button(rows.isEmpty ? "载入收藏" : "加载更多") { Task { await load() } }.frame(maxWidth: .infinity)
+      }
+    }
+    .listStyle(.plain)
+    .overlay { if rows.isEmpty && page == nil { ContentUnavailableView("收藏夹为空", systemImage: "star") } }
+    .environment(\.editMode, .constant(.active)).navigationTitle("收藏内容排序").navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button("完成") { Task { await save() } }.buttonStyle(.glassProminent).disabled(busy || ops.isEmpty)
+        }
+      }
       .task(id: folder) { if rows.isEmpty && page == 1 { await load() } }
   }
   private func move(_ offsets: IndexSet, _ destination: Int) {
