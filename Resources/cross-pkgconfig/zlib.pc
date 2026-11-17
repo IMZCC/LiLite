@@ -1,0 +1,5 @@
+Name: zlib
+Description: Link the Apple SDK zlib stub selected by the compiler sysroot
+Version: 1.2.0
+Libs: -lz
+Cflags:

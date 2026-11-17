@@ -1,0 +1,1076 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "shared-page-native-actions",
+  "records": {
+    "page:common": {
+      "verdict": "implemented",
+      "ownership": "shared-page-native-actions",
+      "upstream": {
+        "file": "lib/pages/common/common_controller.dart",
+        "symbol": "CommonController"
+      },
+      "fixed_actions": "见 directories 中逐个固定源文件和原版导入方",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/PageList.swift",
+          "symbol": "func load"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "func top"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func load"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "func pin"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "struct DynamicActivityList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyEdgeDismiss.swift",
+          "symbol": "SelectionCancelBack"
+        }
+      ],
+      "behavior": "共同基类按 iOS 页面动作、服务和账户身份逐项核验",
+      "evidence": [
+        "Acceptance/evidence/common-page-actions.md",
+        "Checks/common_pages.py",
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "device_or_remaining": "跨两侧边缘的系统手势、最终排版交付总真机验收"
+    },
+    "screen:common/dyn/like_list": {
+      "verdict": "implemented",
+      "ownership": "shared-page-native-actions",
+      "upstream": {
+        "file": "lib/pages/common/dyn/like_list/view.dart",
+        "symbol": "DynLikePage"
+      },
+      "fixed_actions": "见 directories 中逐个固定源文件和原版导入方",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "func likes"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "func person"
+        }
+      ],
+      "behavior": "共同基类按 iOS 页面动作、服务和账户身份逐项核验",
+      "evidence": [
+        "Acceptance/evidence/common-page-actions.md",
+        "Checks/common_pages.py",
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "device_or_remaining": "跨两侧边缘的系统手势、最终排版交付总真机验收"
+    },
+    "screen:common/dyn/repost_list": {
+      "verdict": "implemented",
+      "ownership": "shared-page-native-actions",
+      "upstream": {
+        "file": "lib/pages/common/dyn/repost_list/view.dart",
+        "symbol": "DynRepostPage"
+      },
+      "fixed_actions": "见 directories 中逐个固定源文件和原版导入方",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "func reposts"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "init?(activity"
+        }
+      ],
+      "behavior": "共同基类按 iOS 页面动作、服务和账户身份逐项核验",
+      "evidence": [
+        "Acceptance/evidence/common-page-actions.md",
+        "Checks/common_pages.py",
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "device_or_remaining": "跨两侧边缘的系统手势、最终排版交付总真机验收"
+    }
+  },
+  "directories": {
+    "lib/pages/common": [
+      {
+        "upstream": "lib/pages/common/common_controller.dart",
+        "source_symbol": "toTopOrRefresh",
+        "source_sha256": "8d1f5cc1ca828d2998443e2dce407cdfc5d722b5c6c531665bd5bf67d60fbc2c",
+        "direct_importers": [
+          "lib/models/common/home_tab_type.dart",
+          "lib/pages/common/common_data_controller.dart",
+          "lib/pages/common/common_list_controller.dart",
+          "lib/pages/home/controller.dart",
+          "lib/pages/rank/controller.dart"
+        ],
+        "actions": "滚出顶部时重选先回顶，已在顶部时节流刷新；刷新/更多/重试分开，离开页面不拿旧结果替换新列表",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+            "symbol": "func top("
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "func load"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/common_data_controller.dart",
+        "source_symbol": "CommonDataController",
+        "source_sha256": "0cb87be5902504229d3a7fa29961a3638c3837001f150a5964a5274172d8239f",
+        "direct_importers": [
+          "lib/pages/dynamics/controller.dart",
+          "lib/pages/member/controller.dart",
+          "lib/pages/member_favorite/controller.dart",
+          "lib/pages/msg_feed_top/like_me/controller.dart",
+          "lib/pages/space_setting/controller.dart",
+          "lib/pages/whisper_settings/controller.dart"
+        ],
+        "actions": "资料页、隐私设置、会话设置、点赞通知等单回包页面保留加载、内容、失败和重试；换资源/账号抛弃旧回包",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/IMPreferences.swift",
+            "symbol": "struct IMPreferences"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/MusicAndMatches.swift",
+            "symbol": "resourceKey"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+            "symbol": "struct DynamicDetail"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/common_intro_controller.dart",
+        "source_symbol": "CommonIntroController",
+        "source_sha256": "42cc1e272269cf2bec72c540a6918e8371bd24168f78e4e69fefdc9e6946e206",
+        "direct_importers": [
+          "lib/pages/audio/controller.dart",
+          "lib/pages/episode_panel/view.dart",
+          "lib/pages/fav_panel/view.dart",
+          "lib/pages/video/introduction/local/controller.dart",
+          "lib/pages/video/introduction/pgc/controller.dart",
+          "lib/pages/video/introduction/ugc/controller.dart",
+          "lib/pages/video/view.dart",
+          "lib/pages/video/widgets/header_control.dart",
+          "lib/pages/video/widgets/player_focus.dart",
+          "lib/plugin/pl_player/view/view.dart",
+          "lib/services/audio_handler.dart",
+          "lib/utils/page_utils.dart"
+        ],
+        "actions": "UGC/PGC/本机播放器、音频共用简介：上/下一集、作品标签、在线人数、投币、加入稍后、按本账号查询收藏夹、快捷收藏/选夹及相应计数。使用不同资源类型与真实服务回执",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Discover/DiscoveryExtras.swift",
+            "symbol": "struct OnlineViewers"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+            "symbol": "func quickFavorite"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/VideoActions.swift",
+            "symbol": "struct VideoActions"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/ArchiveSharePoint.swift",
+            "symbol": "ArchiveSharePoint"
+          },
+          {
+            "file": "Sources/PiliNative/Library/LibraryPlaylist.swift",
+            "symbol": "struct LibraryPlaylist"
+          },
+          {
+            "file": "Sources/PiliNative/Audio/ListenMetadata.swift",
+            "symbol": "struct ListenMetadata"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/common_list_controller.dart",
+        "source_symbol": "CommonListController",
+        "source_sha256": "953d5d9e969c417b15b0db5a7cb205c46c20362150bcddc2d356de883785bd04",
+        "direct_importers": [
+          "lib/pages/article_list/controller.dart",
+          "lib/pages/blacklist/controller.dart",
+          "lib/pages/bubble/controller.dart",
+          "lib/pages/common/common_whisper_controller.dart",
+          "lib/pages/common/dyn/like_list/controller.dart",
+          "lib/pages/common/dyn/repost_list/controller.dart",
+          "lib/pages/common/multi_select/base.dart",
+          "lib/pages/common/multi_select/multi_select_controller.dart",
+          "lib/pages/common/page_order/page_order_mixin.dart",
+          "lib/pages/common/reply/reply_controller.dart",
+          "lib/pages/common/reply/vote/reply_vote_mixin.dart",
+          "lib/pages/common/search/common_search_controller.dart",
+          "lib/pages/dynamics_mention/controller.dart",
+          "lib/pages/dynamics_select_topic/controller.dart",
+          "lib/pages/dynamics_tab/controller.dart",
+          "lib/pages/dynamics_topic/controller.dart",
+          "lib/pages/dynamics_topic_rcmd/controller.dart",
+          "lib/pages/emote/controller.dart",
+          "lib/pages/fav/article/controller.dart",
+          "lib/pages/fav/cheese/controller.dart",
+          "lib/pages/fav/topic/controller.dart",
+          "lib/pages/fav/video/controller.dart",
+          "lib/pages/fav_detail/controller.dart",
+          "lib/pages/follow/child/child_controller.dart",
+          "lib/pages/follow_type/controller.dart",
+          "lib/pages/hot/controller.dart",
+          "lib/pages/later/controller.dart",
+          "lib/pages/live/controller.dart",
+          "lib/pages/live_area/controller.dart",
+          "lib/pages/live_area_detail/child/controller.dart",
+          "lib/pages/live_area_detail/controller.dart",
+          "lib/pages/live_emote/controller.dart",
+          "lib/pages/live_follow/controller.dart",
+          "lib/pages/live_room/contribution_rank/controller.dart",
+          "lib/pages/live_search/child/controller.dart",
+          "lib/pages/log_table/controller.dart",
+          "lib/pages/login_devices/controller.dart",
+          "lib/pages/member_article/controller.dart",
+          "lib/pages/member_audio/controller.dart",
+          "lib/pages/member_cheese/controller.dart",
+          "lib/pages/member_coin_arc/controller.dart",
+          "lib/pages/member_comic/controller.dart",
+          "lib/pages/member_dynamics/controller.dart",
+          "lib/pages/member_guard/controller.dart",
+          "lib/pages/member_like_arc/controller.dart",
+          "lib/pages/member_opus/controller.dart",
+          "lib/pages/member_pgc/controller.dart",
+          "lib/pages/member_search/child/controller.dart",
+          "lib/pages/member_season_series/controller.dart",
+          "lib/pages/member_shop/controller.dart",
+          "lib/pages/member_upower_rank/controller.dart",
+          "lib/pages/member_video/controller.dart",
+          "lib/pages/member_video_web/base/controller.dart",
+          "lib/pages/mine/controller.dart",
+          "lib/pages/msg_feed_top/at_me/controller.dart",
+          "lib/pages/msg_feed_top/like_detail/controller.dart",
+          "lib/pages/msg_feed_top/reply_me/controller.dart",
+          "lib/pages/msg_feed_top/sys_msg/controller.dart",
+          "lib/pages/music/video/controller.dart",
+          "lib/pages/pgc/controller.dart",
+          "lib/pages/pgc_index/controller.dart",
+          "lib/pages/pgc_review/child/controller.dart",
+          "lib/pages/popular_precious/controller.dart",
+          "lib/pages/popular_series/controller.dart",
+          "lib/pages/rank/zone/controller.dart",
+          "lib/pages/rcmd/controller.dart",
+          "lib/pages/search_panel/controller.dart",
+          "lib/pages/search_trending/controller.dart",
+          "lib/pages/subscription/controller.dart",
+          "lib/pages/subscription_detail/controller.dart",
+          "lib/pages/video/member/controller.dart",
+          "lib/pages/video/note/controller.dart",
+          "lib/pages/video/related/controller.dart",
+          "lib/pages/video/reply_search_item/child/controller.dart",
+          "lib/pages/whisper_block/controller.dart",
+          "lib/pages/whisper_detail/controller.dart"
+        ],
+        "actions": "按资源分页，避免重复/循环游标；刷新替换、加载更多追加和去重；空页/服务错误/重新载入/终页。可见页脚按需继续，失败重试保留原请求的刷新或翻页类型",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "func pageEdge"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageBoundary.swift",
+            "symbol": "func next"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "func load"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/common_page.dart",
+        "source_symbol": "CommonPageState",
+        "source_sha256": "cd41227bad73cce418b96756635fc5f57cf4e4d15d309a2d7e07c9bc32a5cb30",
+        "direct_importers": [
+          "lib/pages/dynamics/view.dart",
+          "lib/pages/home/view.dart",
+          "lib/pages/mine/view.dart"
+        ],
+        "actions": "首页/动态/我的三处根页的上下滚动，根据收起模式控制顶栏/底栏，返回根页恢复；横向手势不当成上下滚动",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+            "symbol": "TabRootMarker"
+          },
+          {
+            "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+            "symbol": "NavigationLayoutPanel"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/common_whisper_controller.dart",
+        "source_symbol": "CommonWhisperController",
+        "source_sha256": "1c54ab5dceac0a6751b6bb28983b6686bb89820228a20443aafd77db99e44fc4",
+        "direct_importers": [
+          "lib/pages/whisper/controller.dart",
+          "lib/pages/whisper_secondary/controller.dart",
+          "lib/utils/extension/three_dot_ext.dart"
+        ],
+        "actions": "正常/二级会话均支持置顶/移除、免打扰、分组标已读与确认删除；操作针对当前 talker 和服务器会话类型，成功后更新",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/IMSessions.swift",
+            "symbol": "func pin"
+          },
+          {
+            "file": "Sources/PiliNative/Social/IMSessions.swift",
+            "symbol": "func listAction"
+          },
+          {
+            "file": "Sources/PiliNative/Social/IMSessions.swift",
+            "symbol": "func mutate"
+          },
+          {
+            "file": "Wire/Sources/PiliWire/IMGateway.swift",
+            "symbol": "func clearUnread"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/fab_mixin.dart",
+        "source_symbol": "BaseFabMixin",
+        "source_sha256": "a470295e6d68fe2d42723f0b3695c316d4aa8c7b06d3511ecef8522c3b193e33",
+        "direct_importers": [
+          "lib/pages/common/dyn/common_dyn_page.dart",
+          "lib/pages/dynamics_topic/view.dart",
+          "lib/pages/follow/view.dart",
+          "lib/pages/main_reply/view.dart",
+          "lib/pages/member_opus/view.dart",
+          "lib/pages/member_video/view.dart",
+          "lib/pages/video/reply/view.dart"
+        ],
+        "actions": "原版浮钮按滚动方向收展，动作是回复/发布/关注等。iOS 的常驻导航栏或行内按钮保留动作且不覆盖正文；根页栏可按滚动收起。Flutter 悬浮圆钮的过渡不逐帧复制",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "func begin"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+            "symbol": "struct DynamicDetail"
+          },
+          {
+            "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+            "symbol": "NavigationChrome"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/dyn": [
+      {
+        "upstream": "lib/pages/common/dyn/common_dyn_controller.dart",
+        "source_symbol": "DynReplyLocateMixin",
+        "source_sha256": "db975e7675aae927a796ab0cae3785ab1323313e572f24dc2ccab862f758c7a6",
+        "direct_importers": [
+          "lib/pages/article/controller.dart",
+          "lib/pages/common/dyn/common_dyn_page.dart",
+          "lib/pages/dynamics_detail/controller.dart",
+          "lib/pages/match_info/controller.dart",
+          "lib/pages/music/controller.dart"
+        ],
+        "actions": "动态、文章、音乐、比赛按具体 OID/类型请求主楼，支持顺序、折叠、投票与指定主/子楼；变更资源后丢弃上一定位。匹配比赛固定 type=27",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "func load"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/MusicAndMatches.swift",
+            "symbol": "struct MatchDetailView"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/MusicPage.swift",
+            "symbol": "ReadingSplit"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+            "symbol": "linkedDiscussion"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+            "symbol": "linkedDiscussion"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/dyn/common_dyn_page.dart",
+        "source_symbol": "CommonDynPageMixin",
+        "source_sha256": "4082156f098cc4e5ba62bbfa36a4de5ee281bd9ebf56f56e6766fee4a9f9c1a7",
+        "direct_importers": [
+          "lib/pages/article/view.dart",
+          "lib/pages/common/dyn/like_list/view.dart",
+          "lib/pages/common/dyn/repost_list/view.dart",
+          "lib/pages/dynamics_detail/view.dart",
+          "lib/pages/match_info/view.dart",
+          "lib/pages/music/view.dart"
+        ],
+        "actions": "资料与讨论同页、非空/失败、回复入口、主楼/楼中楼、折叠/投票、计数及允许的动作栏。在启用侧栏的资料页使用 ReadingSplit，比赛按原版顺序放在比分下方",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+            "symbol": "readingHeader"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+            "symbol": "readingHeader"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/MusicPage.swift",
+            "symbol": "readingHeader"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/MusicAndMatches.swift",
+            "symbol": "matchHeader"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "embeddedControls"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/dyn/like_list": [
+      {
+        "upstream": "lib/pages/common/dyn/like_list/controller.dart",
+        "source_symbol": "DynLikeController",
+        "source_sha256": "c42f4a90e26d270c911eab367036cbbd42f251de430513aaaf981f9537e2ccec",
+        "direct_importers": [
+          "lib/pages/common/dyn/like_list/view.dart",
+          "lib/pages/dynamics_detail/view.dart"
+        ],
+        "actions": "LikeList 动态编号、页号 + 末 UID 双游标；成功取更新的总数，刷新从头，重复末 UID 终止",
+        "native": [
+          {
+            "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+            "symbol": "func likes"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+            "symbol": "func count"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/dyn/like_list/view.dart",
+        "source_symbol": "DynLikePage",
+        "source_sha256": "3c3ccbeb50703e75952c45c45e7b5269729bf3ae620c0fbea4ed9cc24735335d",
+        "direct_importers": [
+          "lib/pages/dynamics_detail/view.dart"
+        ],
+        "actions": "动态详情点赞标签，保持身份、数量、空页、重试和自动翻页",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+            "symbol": "MomentPanel"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "func pageEdge"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/dyn/like_list/widgets": [
+      {
+        "upstream": "lib/pages/common/dyn/like_list/widgets/item.dart",
+        "source_symbol": "DynLikeItem",
+        "source_sha256": "6e745ee4ba3f0cc7800e4649cd6cf36e7bf6dd113e5cdf11bca84cafb2a021d1",
+        "direct_importers": [
+          "lib/pages/common/dyn/like_list/view.dart"
+        ],
+        "actions": "点赞人名称、头像、挂件、认证/VIP、签名、等级/硬核会员；点击对应 UID 开空间",
+        "native": [
+          {
+            "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+            "symbol": "senior"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+            "symbol": "func person"
+          },
+          {
+            "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+            "symbol": "ReplyAuthorLabel"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/dyn/repost_list": [
+      {
+        "upstream": "lib/pages/common/dyn/repost_list/controller.dart",
+        "source_symbol": "DynRepostController",
+        "source_sha256": "5dec6cb138eb6fc9cde6309a017c8d0e425ac3477a2bc76a11c57f74989261fd",
+        "direct_importers": [
+          "lib/pages/common/dyn/repost_list/view.dart",
+          "lib/pages/dynamics_detail/view.dart"
+        ],
+        "actions": "RepostList 带动态编号与原始 offset；页数/总数按回包更新，没有 hasMore 或相同游标时停止",
+        "native": [
+          {
+            "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+            "symbol": "func reposts"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+            "symbol": "func count"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/dyn/repost_list/view.dart",
+        "source_symbol": "DynRepostPage",
+        "source_sha256": "3cf14ef80fd30d6c7250739e9e52a51bb573280f626e5750c43ff7b254fee8cb",
+        "direct_importers": [
+          "lib/pages/dynamics_detail/view.dart"
+        ],
+        "actions": "动态详情转发标签，准确打开被点的转发动态/作者、加载更多和空状态",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+            "symbol": "DynamicDetail(id: r.id)"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "func pageEdge"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/dyn/repost_list/widgets": [
+      {
+        "upstream": "lib/pages/common/dyn/repost_list/widgets/item.dart",
+        "source_symbol": "_parseSummary",
+        "source_sha256": "67ed6356ff480c8412eb777d4dda96c9d3a7452c9947bb7cc75de767c51bee30",
+        "direct_importers": [
+          "lib/pages/common/dyn/repost_list/view.dart"
+        ],
+        "actions": "优先 Opus 富文本，再取旧 description；保留文字、独立 URL、表情、投票 ID 与成组图片/实况资源，行内可打开，不用纯文本冒充交互",
+        "native": [
+          {
+            "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+            "symbol": "enum Inline"
+          },
+          {
+            "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+            "symbol": "init?(activity"
+          },
+          {
+            "file": "Sources/PiliNative/Social/MomentPictureResource.swift",
+            "symbol": "DynamicRichContent"
+          },
+          {
+            "file": "Sources/PiliNative/Social/ReplyRichText.swift",
+            "symbol": "struct ReplyRichText"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/multi_select": [
+      {
+        "upstream": "lib/pages/common/multi_select/base.dart",
+        "source_symbol": "afterDelete",
+        "source_sha256": "4727eef7ac6273f1fbddc581afe73f27611ba0a803cfbefa387beaa452191881",
+        "direct_importers": [
+          "lib/common/widgets/appbar/appbar.dart",
+          "lib/models/model_hot_video_item.dart",
+          "lib/models_new/download/bili_download_entry_info.dart",
+          "lib/models_new/download/download_info.dart",
+          "lib/models_new/dynamic/dyn_mention/item.dart",
+          "lib/models_new/fav/fav_detail/media.dart",
+          "lib/models_new/fav/fav_note/list.dart",
+          "lib/models_new/fav/fav_pgc/list.dart",
+          "lib/models_new/history/list.dart",
+          "lib/models_new/later/list.dart",
+          "lib/pages/common/multi_select/multi_select_controller.dart",
+          "lib/pages/common/search/common_search_page.dart",
+          "lib/pages/download/detail/view.dart",
+          "lib/pages/download/detail/widgets/item.dart",
+          "lib/pages/download/download/controller.dart",
+          "lib/pages/download/download/view.dart",
+          "lib/pages/download/download/widgets/page.dart",
+          "lib/pages/download/download/widgets/season.dart",
+          "lib/pages/download/download_action_mixin.dart",
+          "lib/pages/download/downloading/view.dart",
+          "lib/pages/download/page/view.dart",
+          "lib/pages/download/search/controller.dart",
+          "lib/pages/download/search/view.dart",
+          "lib/pages/fav/pgc/widget/item.dart",
+          "lib/pages/fav_detail/controller.dart",
+          "lib/pages/fav_search/controller.dart",
+          "lib/pages/history/widgets/item.dart",
+          "lib/pages/history_search/controller.dart",
+          "lib/pages/later/controller.dart",
+          "lib/pages/later_search/controller.dart",
+          "lib/utils/request_utils.dart"
+        ],
+        "actions": "普通及搜索结果的单选/多选/全选、计数、退出、部分删除与成功后刷新；返回先退出选择，保存原筛选及列表位置。未执行真实删除",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+            "symbol": "SelectionCancelBack"
+          },
+          {
+            "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+            "symbol": "SelectionCancelBack"
+          },
+          {
+            "file": "Sources/PiliNative/Library/SavedReadings.swift",
+            "symbol": "SelectionCancelBack"
+          },
+          {
+            "file": "Sources/PiliNative/Social/ReplyEdgeDismiss.swift",
+            "symbol": "struct SelectionCancelBack"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/multi_select/multi_select_controller.dart",
+        "source_symbol": "MultiSelectController",
+        "source_sha256": "c510c077851abcad9a6de9e437ca7581c424f5455f85102a92498e1f205eb6b6",
+        "direct_importers": [
+          "lib/pages/fav/note/controller.dart",
+          "lib/pages/fav/pgc/controller.dart",
+          "lib/pages/fav_detail/controller.dart",
+          "lib/pages/history/controller.dart",
+          "lib/pages/later/controller.dart"
+        ],
+        "actions": "稍后、历史、收藏、笔记等基控制器将已选 IDs 与实际列表联动；数据/账号变化清理已选，向服务提交前确认",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+            "symbol": "selection"
+          },
+          {
+            "file": "Sources/PiliNative/Library/SavedReadings.swift",
+            "symbol": "selected"
+          },
+          {
+            "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+            "symbol": "checked"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/page_order": [
+      {
+        "upstream": "lib/pages/common/page_order/page_order_btn_mixin.dart",
+        "source_symbol": "pageOrderBtn",
+        "source_sha256": "53d148a10f37877d4abff2087e2c49efd3c1934caa806dc8571f1d522f68c4ee",
+        "direct_importers": [
+          "lib/pages/fav_detail/view.dart",
+          "lib/pages/subscription_detail/view.dart"
+        ],
+        "actions": "收藏夹与订阅详情通过原生菜单/按钮选正序或倒序",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+            "symbol": "倒序浏览"
+          },
+          {
+            "file": "Sources/PiliNative/Library/Subscriptions.swift",
+            "symbol": "改为倒序"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/page_order/page_order_mixin.dart",
+        "source_symbol": "updatePageOrderOnly",
+        "source_sha256": "29e611399cd859eeede9dfc17e1526b74c372210997dd8c7606073b98d849766",
+        "direct_importers": [
+          "lib/pages/common/page_order/page_order_btn_mixin.dart",
+          "lib/pages/fav_detail/controller.dart",
+          "lib/pages/subscription_detail/controller.dart"
+        ],
+        "actions": "从总条数与 20 项页长算末页，翻页反向移动；搜索时按相应服务的搜索顺序，未知总数不假设末页",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+            "symbol": "let backwards"
+          },
+          {
+            "file": "Sources/PiliNative/Library/Subscriptions.swift",
+            "symbol": "let total"
+          },
+          {
+            "file": "Sources/PiliNative/Library/MediaPageWindow.swift",
+            "symbol": "MediaPageWindow"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/publish": [
+      {
+        "upstream": "lib/pages/common/publish/common_publish_page.dart",
+        "source_symbol": "onPublishThrottle",
+        "source_sha256": "f459ac33ec6f935e9b1a9c00d4c7c20532db273958c376150356a3d93ef1d2a8",
+        "direct_importers": [
+          "lib/pages/common/publish/common_rich_text_pub_page.dart",
+          "lib/pages/common/publish/common_text_pub_page.dart"
+        ],
+        "actions": "文字输入、系统键盘/表情面板、可发布状态、防连续重复提交；切后台/离开尽力保存对应页面的草稿，发送后按回执处理",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Compose.swift",
+            "symbol": "func submit"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "func send"
+          },
+          {
+            "file": "Sources/PiliNative/Social/MessageComposer.swift",
+            "symbol": "func send"
+          },
+          {
+            "file": "Sources/PiliNative/Danmaku/BulletComposer.swift",
+            "symbol": "struct BulletComposer"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/publish/common_rich_text_pub_page.dart",
+        "source_symbol": "onInsertText",
+        "source_sha256": "2b7da0427a6328685ebc2d08fc74d24071f6a931444c3c6bbb0d9a10baeda848",
+        "direct_importers": [
+          "lib/pages/dynamics_create/view.dart",
+          "lib/pages/dynamics_repost/view.dart",
+          "lib/pages/live_room/send_danmaku/view.dart",
+          "lib/pages/video/reply_new/view.dart",
+          "lib/pages/whisper_detail/view.dart"
+        ],
+        "actions": "动态/评论的真实富文本 selection 与实体，多选 @、原生表情插入、图片预览/裁剪/删除及业务上限；私信、直播遵循自身可用动作，上游两个类覆盖 onMention 返回 null",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/ComposePickers.swift",
+            "symbol": "MentionChooser"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Compose.swift",
+            "symbol": "func submit"
+          },
+          {
+            "file": "Sources/PiliNative/Social/ReplyComposeAssets.swift",
+            "symbol": "ReplyComposePhotos"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "insertPeople"
+          },
+          {
+            "file": "Sources/PiliNative/Social/MessageComposer.swift",
+            "symbol": "func send"
+          },
+          {
+            "file": "Sources/PiliNative/Live/LiveEmotePicker.swift",
+            "symbol": "struct LiveEmotePicker"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/publish/common_text_pub_page.dart",
+        "source_symbol": "CommonTextPubPageState",
+        "source_sha256": "af4b266822bbb3d17c17eec6bc8ba56ffe0cf4454e3ebead54ceb50be8e99254",
+        "direct_importers": [
+          "lib/pages/video/send_danmaku/view.dart"
+        ],
+        "actions": "普通视频弹幕使用文本、输入可发状态与颜色/模式等业务选项；不把动态富文本 payload 送给弹幕",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Danmaku/BulletComposer.swift",
+            "symbol": "struct BulletComposer"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/publish/publish_route.dart",
+        "source_symbol": "PublishRoute",
+        "source_sha256": "84a95a4416b07597a690b956f49f9d8e0cfe0116ceea48734ecaad985e5bc417",
+        "direct_importers": [
+          "lib/common/widgets/image/image_save.dart",
+          "lib/pages/common/reply/reply_controller.dart",
+          "lib/pages/live_room/controller.dart",
+          "lib/pages/save_panel/view.dart",
+          "lib/pages/video/controller.dart",
+          "lib/pages/video/pay_coins/view.dart",
+          "lib/pages/video/reply_reply/controller.dart",
+          "lib/utils/page_utils.dart"
+        ],
+        "actions": "编辑器、投币、弹幕等对应原生 sheet/导航上下文、遮罩/关闭、键盘避让和表单状态；提交中的页面按业务禁用意外关闭",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Compose.swift",
+            "symbol": "interactiveDismissDisabled"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "piliSheet"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+            "symbol": "piliSheet"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/reply": [
+      {
+        "upstream": "lib/pages/common/reply/reply_controller.dart",
+        "source_symbol": "ReplyController",
+        "source_sha256": "f36e0520ab8d47ea467ac495f6339dffc5fde5a5357489c609f077cb2e4c06c8",
+        "direct_importers": [
+          "lib/pages/article/controller.dart",
+          "lib/pages/common/dyn/common_dyn_controller.dart",
+          "lib/pages/common/reply/fold/reply_fold_mixin.dart",
+          "lib/pages/dynamics_detail/controller.dart",
+          "lib/pages/main_reply/controller.dart",
+          "lib/pages/video/reply/controller.dart",
+          "lib/pages/video/reply_reply/controller.dart"
+        ],
+        "actions": "主/子楼、目标评论、按热度或时间、增量分页、账号角色、去重复简介/过滤、回复/删除/置顶与回执；跳到可信来源指定的父楼/子楼",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "func load"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "func send"
+          },
+          {
+            "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+            "symbol": "ReplyGateway"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/reply/reply_footer_mixin.dart",
+        "source_symbol": "buildFooter",
+        "source_sha256": "3f4faf52330bc6d010e8815abc2d77fb18f0f4b7f8de6821d25750d9fc74efc2",
+        "direct_importers": [
+          "lib/pages/common/dyn/common_dyn_page.dart",
+          "lib/pages/main_reply/view.dart",
+          "lib/pages/video/reply/view.dart",
+          "lib/pages/video/reply_reply/view.dart"
+        ],
+        "actions": "有折叠提示时显示服务器文案和查看入口，否则页脚在可见时继续，终页/错误/空评论均可识别",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "foldCard"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "func pageEdge"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "没有更多了"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/reply/fold": [
+      {
+        "upstream": "lib/pages/common/reply/fold/reply_fold_mixin.dart",
+        "source_symbol": "loadFoldList",
+        "source_sha256": "b012f9e292715a0c9ebc221714c28006392b8d976bfa5b46c88d1217ece71a50",
+        "direct_importers": [
+          "lib/pages/common/dyn/common_dyn_controller.dart",
+          "lib/pages/common/reply/reply_footer_mixin.dart",
+          "lib/pages/main_reply/controller.dart",
+          "lib/pages/video/reply/controller.dart",
+          "lib/pages/video/reply_reply/controller.dart"
+        ],
+        "actions": "使用服务器 foldPagination 和具体主题加载折叠列表，保留原已显示评论，显示服务返回标题；刷新丢弃陈旧入口",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "folded.pagination"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "foldTitle"
+          },
+          {
+            "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+            "symbol": "folded"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/reply/vote": [
+      {
+        "upstream": "lib/pages/common/reply/vote/reply_vote_item.dart",
+        "source_symbol": "buildVoteCard",
+        "source_sha256": "34c06c8f0a43f685caeed19deee42b1d9fe61feedd89902f5cc17d8e2b36e806",
+        "direct_importers": [
+          "lib/pages/common/dyn/common_dyn_page.dart",
+          "lib/pages/video/reply/view.dart"
+        ],
+        "actions": "评论投票卡按 ballot 原 ID 与文案打开投票详情，获授权后可在原生页选择/提交",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "let ballot = voteCard"
+          },
+          {
+            "file": "Sources/PiliNative/Social/Votes.swift",
+            "symbol": "struct VoteView"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/reply/vote/reply_vote_mixin.dart",
+        "source_symbol": "ReplyVoteMixin",
+        "source_sha256": "6d67d33a544f6fa4971ba1be050e25420b01063396b778f147a70bd8c8a1bcb8",
+        "direct_importers": [
+          "lib/pages/common/dyn/common_dyn_controller.dart",
+          "lib/pages/video/reply/controller.dart"
+        ],
+        "actions": "刷新主列表时替换或清除真实 ballot 数据，不能沿用前一主题投票；无评论仍保留独立卡片",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/Discussion.swift",
+            "symbol": "voteCard = nil"
+          },
+          {
+            "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+            "symbol": "Ballot"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/search": [
+      {
+        "upstream": "lib/pages/common/search/common_search_controller.dart",
+        "source_symbol": "CommonSearchController",
+        "source_sha256": "97f3cae09aa9b875a29709ab8bf98afd5e40e6014982729220d335ff749f88fa",
+        "direct_importers": [
+          "lib/pages/common/search/common_search_page.dart",
+          "lib/pages/download/search/controller.dart",
+          "lib/pages/fav_search/controller.dart",
+          "lib/pages/follow_search/controller.dart",
+          "lib/pages/history_search/controller.dart",
+          "lib/pages/later_search/controller.dart"
+        ],
+        "actions": "收藏、关注、历史、稍后与缓存按对应资源查询；改词重置页，提供清除/取消，旧响应不得混入新关键词的列表",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+            "symbol": "query"
+          },
+          {
+            "file": "Sources/PiliNative/Offline/OfflineShelfFilter.swift",
+            "symbol": "func rows"
+          },
+          {
+            "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+            "symbol": "struct CreatorSearch"
+          },
+          {
+            "file": "Sources/PiliNative/Library/PageList.swift",
+            "symbol": "stamp == id"
+          }
+        ]
+      },
+      {
+        "upstream": "lib/pages/common/search/common_search_page.dart",
+        "source_symbol": "CommonSearchPageState",
+        "source_sha256": "2c6e4fd8211490d222f18ff0127da92ecf273b9a5ba5143febdc12778b8badb2",
+        "direct_importers": [
+          "lib/pages/download/search/view.dart",
+          "lib/pages/fav_search/view.dart",
+          "lib/pages/follow_search/view.dart",
+          "lib/pages/history_search/view.dart",
+          "lib/pages/later_search/view.dart"
+        ],
+        "actions": "原生搜索栏、搜索/清除、重试、无结果；具备多选的搜索页支持批量操作，先取消选择才离开，关注搜索不额外产生批量接口",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+            "symbol": "SelectionCancelBack"
+          },
+          {
+            "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+            "symbol": "searchable"
+          },
+          {
+            "file": "Sources/PiliNative/Social/ReplyEdgeDismiss.swift",
+            "symbol": "struct SelectionCancelBack"
+          }
+        ]
+      }
+    ],
+    "lib/pages/common/slide": [
+      {
+        "upstream": "lib/pages/common/slide/common_slide_page.dart",
+        "source_symbol": "CommonSlideMixin",
+        "source_sha256": "df8e68c93cc601d0510e4842ea3fe42ed936335919bf49f7430b6fb55b4eb9b4",
+        "direct_importers": [
+          "lib/pages/episode_panel/view.dart",
+          "lib/pages/setting/models/extra_settings.dart",
+          "lib/pages/video/ai_conclusion/view.dart",
+          "lib/pages/video/introduction/pgc/widgets/intro_detail.dart",
+          "lib/pages/video/medialist/view.dart",
+          "lib/pages/video/note/view.dart",
+          "lib/pages/video/post_panel/view.dart",
+          "lib/pages/video/reply_reply/view.dart",
+          "lib/pages/video/view_point/view.dart"
+        ],
+        "actions": "独立二级评论及选集、AI 总结、番剧资料、播放列表、视频笔记、空降提交、视频分段；左右边缘横向返回，手势与系统导航及中部拖动分隔。独立页可从 iOS sheet 根返回，内嵌两栏不开误关手势",
+        "native": [
+          {
+            "file": "Sources/PiliNative/Social/ReplyEdgeDismiss.swift",
+            "symbol": "UIScreenEdgePanGestureRecognizer"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/TheaterDrawer.swift",
+            "symbol": "ReplyEdgeDismiss"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/VideoSummary.swift",
+            "symbol": "ReplyEdgeDismiss"
+          },
+          {
+            "file": "Sources/PiliNative/Discover/Seasons.swift",
+            "symbol": "openedFromPlayback"
+          },
+          {
+            "file": "Sources/PiliNative/Library/LibraryPlaylist.swift",
+            "symbol": "ReplyEdgeDismiss"
+          },
+          {
+            "file": "Sources/PiliNative/Library/SavedReadings.swift",
+            "symbol": "ReplyEdgeDismiss"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/SponsorDraftEditor.swift",
+            "symbol": "ReplyEdgeDismiss"
+          },
+          {
+            "file": "Sources/PiliNative/Playback/ArchiveChapterPanel.swift",
+            "symbol": "ReplyEdgeDismiss"
+          }
+        ]
+      }
+    ]
+  }
+}

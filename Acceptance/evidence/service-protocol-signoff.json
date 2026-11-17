@@ -1,0 +1,52 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "service-protocols",
+  "records": {
+    "subsystem:grpc": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/grpc/grpc_req.dart",
+        "symbol": "request<T extends GeneratedMessage>"
+      },
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "public enum WireFrame"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ServiceReceiptError.swift",
+          "symbol": "static func grpc"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileCall"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list("
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ListenerGateway.swift",
+          "symbol": "func media("
+        },
+        {
+          "file": "Sources/PiliNative/Danmaku/SegmentedComments.swift",
+          "symbol": "/bilibili.community.service.dm.v1.DM/DmSegMobile"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/SpaceSearchGateway.swift",
+          "symbol": "SearchArchiveReq"
+        }
+      ],
+      "behavior": "固定 Dart 的 37 个 RPC 包装中 35 个有可执行业务调用，逐条对齐实际原生协议与 UI：评论、弹幕、听视频、私信、动态、空间和字幕。包含压缩/游标/数字标识、服务业务错误、重试与授权边界；未使用的 OpusDetail 和已注释的 ViewUnite/View 不冒充用户功能",
+      "evidence": [
+        "Acceptance/evidence/grpc-service-matrix.json",
+        "Acceptance/evidence/http-service-matrix.json",
+        "Checks/service_protocols.py",
+        "Wire/Tests/PiliWireTests/ServiceReceiptErrorTests.swift",
+        "Acceptance/evidence/service-protocol-review.md"
+      ],
+      "device_or_remaining": "需要有效账户/移动授权的写操作只用隔离夹具验证；真实授权由服务器决定，未使用真实用户写入"
+    }
+  }
+}

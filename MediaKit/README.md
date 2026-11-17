@@ -1,0 +1,32 @@
+# Native media library
+
+The app uses pinned FFmpeg 9.0.2 (LGPL 2.1+) and dav1d 1.5.4 (BSD 2-Clause). VOD supports two playback engines: libmpv (default) and AVPlayer. libmpv opens the authorized video and audio CDN URLs directly through FFmpeg HTTP/HTTPS, using Apple's SecureTransport for TLS on iOS. The AVPlayer and live routes retain their Swift HTTP loaders, cancellation, buffering and loopback HLS server
+
+## libmpv / dual engine build
+
+Run `python3 Native/MediaKit/build-mpv.py` from the repository root under WSL (Python 3.12+), or let `Native/build.sh` invoke it. The script prints the completed prefix on stdout and sends build output to stderr. It reuses the FFmpeg/dav1d and libass/freetype/harfbuzz/fribidi recipes, builds arm64 iOS static libraries, verifies pinned source SHA256 values, and records the options in `build-receipt.json`
+
+- mpv 0.41.0, LGPL 2.1+, `-Dgpl=false -Dcplayer=false -Dlibmpv=true -Dgl=enabled -Dplain-gl=enabled -Dios-gl=enabled -Daudiounit=enabled`
+- libplacebo 7.360.1, LGPL 2.1+, static color/shader support; Vulkan, its OpenGL backend, shaderc and glslang are disabled. mpv's own OpenGL ES renderer is used
+- fast_float 8.0.2 headers (MIT) supply floating-point parsing for Apple's libc++; Vulkan-Headers 1.4.321 supply headers for libplacebo's disabled-backend stubs, without linking a Vulkan runtime
+- The recipe explicitly enables Objective-C in mpv's Meson project for the iOS AudioUnit and VideoToolbox/OpenGL ES sources; no media behavior is patched
+- FFmpeg now includes HTTP/HTTPS/TCP/TLS/data/crypto protocols, SecureTransport, PNG encoding, HLS/Matroska/Ogg demuxers and the audio/video filters required for playback. Existing live/remux/decoder features remain enabled; GPL/nonfree components remain disabled
+
+`PILI_MPV_CACHE` selects the cache root (default `~/.cache/piliplus-native/tools/mpv`); `PILI_MPV_JOBS` controls compilation parallelism (default 8). `PILI_IOS_SDK` and `PILI_IOS_LINKER` follow the existing media recipes. The app remains iOS 26+, while the static media archives have an iOS 17 deployment floor. These archives target device arm64, not the simulator
+
+`CMPV` is the SwiftPM C module, with a module map, the upstream public headers, and a small loader/render bridge. `build.sh` stages `libmpv.a` and `libplacebo.a` beside the existing media libraries, and exports both archives, public mpv headers and the build receipt to `Native/dist/MPV/`
+
+See [MPV-MIGRATION.md](../MPV-MIGRATION.md) for engine selection, option mapping, threading, capabilities and device checks. The source and licenses are linked in `Sources/PiliNative/Notices/MPV-BUILD.txt`. `python3 Native/Checks/mpv_runtime.py` builds the same pinned mpv on Linux and exercises the production C loader against local HTTP video/audio fixtures; its receipt is `Native/dist/mpv-runtime-check.json`
+
+- Live FLV and clear muxed CMAF/TS HLS: use original stream copy for the direct route. When requested, continuously software-decode or copy VideoToolbox frames and encode a bounded rolling fMP4 HLS rendition, keeping the original compressed audio and its clock. Alternate renditions run separate, bounded demuxers and retain their selected compressed audio; see the [live decoder verification](../Acceptance/evidence/live-video-decoder.md) and [alternate audio clock checks](../Acceptance/evidence/live-alternate-audio.md)
+- DASH video: on request, software-decode AVC, HEVC and VP9 in FFmpeg or AV1 in dav1d. The VideoToolbox copy mode requests a hardware pixel buffer and transfers it to the pixel pipeline. On iOS the local HLS video output uses VideoToolbox to encode H.264 for SDR or ten-bit HEVC for HDR10/HLG. Audio keeps its original clock and is passed through unless sound processing was requested
+- Optional DASH and indexed movie audio: decode a clear selected track, apply the numeric volume / loudnorm / dynaudnorm chain using libavfilter, restore the original sample rate and channel layout, and encode 24-bit ALAC fMP4 for the local audio rendition. Coalesced conversions are bounded and memory-only. The [audio verification record](../Acceptance/evidence/hls-audio-processing.md) covers the supported settings and input boundaries
+- The decoder receives only an in-memory initialization segment and a bounded range of compressed video, rejects encrypted samples and external data references, and supports preroll from an earlier keyframe. Output maps/fragments are session-local; there is no media upload or persistent transcoded copy
+
+Run `bash build.sh --release` from Native under WSL. Building the native dependencies requires a C compiler, pkg-config, make, Meson and Ninja; NASM enables optimized x86 host fixture builds. The iOS target uses the configured iOS SDK and an arm64 clang toolchain. The scripts verify source archives, build static libraries into recipe-specific caches, and stage matching headers/libraries. To use a custom cache set PILI_MEDIA_CACHE and PILI_DECODER_CACHE. On this WSL installation Meson, Ninja and NASM can also run from PILI_DECODER_CACHE/hosttools (defaults to ~/.cache/piliplus-native/tools/decoder-build/hosttools)
+
+- FFmpeg: [release archive](https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz), [release signature](https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz.asc), SHA256 8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e. The original download was verified with the official signing key FCF986EA15E6E293A5644F10B4322F04D67658D8. See [upstream licensing](FFmpeg-LICENSE.md) and [bundled FFmpeg license](../Sources/PiliNative/Notices/FFmpeg-LGPL.txt)
+- dav1d: [VideoLAN release and checksum](https://downloads.videolan.org/pub/videolan/dav1d/1.5.4/), SHA256 686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5; [bundled license](../Sources/PiliNative/Notices/dav1d-BSD.txt)
+- No GPL, Version 3 or nonfree FFmpeg components are enabled. The source download, build options, adapter and app source are available to rebuild and relink the libraries
+
+Run `python3 Checks/live_remux.py`, `python3 Checks/live_decode.py`, `python3 Checks/audio_segments.py` and `python3 Checks/native_decode.py` under Native to check live remux, software decoding, seek and HLS output. Set PILI_QA_FFMPEG if the host fixture generator is outside PATH. libx264, libx265, libaom and libvpx are used by that external fixture generator only. Linux uses FFmpeg's LGPL MPEG-2 encoder to exercise the output mux/clock and Swift request lifecycle; the iOS library has the system H.264 and HEVC encoders instead

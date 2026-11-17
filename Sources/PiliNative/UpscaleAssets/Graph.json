@@ -1,0 +1,946 @@
+{
+  "presets": {
+    "quality": [
+      "Anime4K_Clamp_Highlights.glsl",
+      "Anime4K_Restore_CNN_VL.glsl",
+      "Anime4K_Upscale_CNN_x2_VL.glsl",
+      "Anime4K_AutoDownscalePre_x2.glsl",
+      "Anime4K_AutoDownscalePre_x4.glsl",
+      "Anime4K_Upscale_CNN_x2_M.glsl"
+    ],
+    "efficiency": [
+      "Anime4K_Clamp_Highlights.glsl",
+      "Anime4K_Restore_CNN_M.glsl",
+      "Anime4K_Restore_CNN_S.glsl",
+      "Anime4K_Upscale_CNN_x2_M.glsl",
+      "Anime4K_AutoDownscalePre_x2.glsl",
+      "Anime4K_AutoDownscalePre_x4.glsl",
+      "Anime4K_Upscale_CNN_x2_S.glsl"
+    ]
+  },
+  "programs": {
+    "Anime4K_AutoDownscalePre_x2.glsl": [
+      {
+        "kernel": "ak_AutoDownscalePre_x2_0",
+        "hook": "MAIN",
+        "bind": [
+          "HOOKED",
+          "NATIVE"
+        ],
+        "save": "MAIN",
+        "width": "OUTPUT.w",
+        "height": "OUTPUT.h",
+        "when": "OUTPUT.w NATIVE.w / 2.0 < OUTPUT.h NATIVE.h / 2.0 < * OUTPUT.w NATIVE.w / 1.2 > OUTPUT.h NATIVE.h / 1.2 > * *",
+        "channels": 4
+      }
+    ],
+    "Anime4K_AutoDownscalePre_x4.glsl": [
+      {
+        "kernel": "ak_AutoDownscalePre_x4_0",
+        "hook": "MAIN",
+        "bind": [
+          "HOOKED",
+          "NATIVE"
+        ],
+        "save": "MAIN",
+        "width": "OUTPUT.w 2 /",
+        "height": "OUTPUT.h 2 /",
+        "when": "OUTPUT.w NATIVE.w / 4.0 < OUTPUT.h NATIVE.h / 4.0 < * OUTPUT.w NATIVE.w / 2.4 > OUTPUT.h NATIVE.h / 2.4 > * *",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Clamp_Highlights.glsl": [
+      {
+        "kernel": "ak_Clamp_Highlights_0",
+        "hook": "MAIN",
+        "bind": [
+          "HOOKED"
+        ],
+        "save": "STATSMAX",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 1
+      },
+      {
+        "kernel": "ak_Clamp_Highlights_1",
+        "hook": "MAIN",
+        "bind": [
+          "HOOKED",
+          "STATSMAX"
+        ],
+        "save": "STATSMAX",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 1
+      },
+      {
+        "kernel": "ak_Clamp_Highlights_2",
+        "hook": "PREKERNEL",
+        "bind": [
+          "HOOKED",
+          "STATSMAX"
+        ],
+        "save": "MAIN",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Restore_CNN_M.glsl": [
+      {
+        "kernel": "ak_Restore_CNN_M_0",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_1",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf"
+        ],
+        "save": "conv2d_1_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_2",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf"
+        ],
+        "save": "conv2d_2_tf",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_3",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf"
+        ],
+        "save": "conv2d_3_tf",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_4",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_3_tf"
+        ],
+        "save": "conv2d_4_tf",
+        "width": "conv2d_3_tf.w",
+        "height": "conv2d_3_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_5",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_4_tf"
+        ],
+        "save": "conv2d_5_tf",
+        "width": "conv2d_4_tf.w",
+        "height": "conv2d_4_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_6",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_5_tf"
+        ],
+        "save": "conv2d_6_tf",
+        "width": "conv2d_5_tf.w",
+        "height": "conv2d_5_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_M_7",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN",
+          "conv2d_tf",
+          "conv2d_1_tf",
+          "conv2d_2_tf",
+          "conv2d_3_tf",
+          "conv2d_4_tf",
+          "conv2d_5_tf",
+          "conv2d_6_tf"
+        ],
+        "save": "MAIN",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Restore_CNN_S.glsl": [
+      {
+        "kernel": "ak_Restore_CNN_S_0",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_S_1",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf"
+        ],
+        "save": "conv2d_1_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_S_2",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf"
+        ],
+        "save": "conv2d_2_tf",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_S_3",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN",
+          "conv2d_2_tf"
+        ],
+        "save": "MAIN",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Restore_CNN_VL.glsl": [
+      {
+        "kernel": "ak_Restore_CNN_VL_0",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_1",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf1",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_2",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1"
+        ],
+        "save": "conv2d_1_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_3",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1"
+        ],
+        "save": "conv2d_1_tf1",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_4",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf",
+          "conv2d_1_tf1"
+        ],
+        "save": "conv2d_2_tf",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_5",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf",
+          "conv2d_1_tf1"
+        ],
+        "save": "conv2d_2_tf1",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_6",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf",
+          "conv2d_2_tf1"
+        ],
+        "save": "conv2d_3_tf",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_7",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf",
+          "conv2d_2_tf1"
+        ],
+        "save": "conv2d_3_tf1",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_8",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_3_tf",
+          "conv2d_3_tf1"
+        ],
+        "save": "conv2d_4_tf",
+        "width": "conv2d_3_tf.w",
+        "height": "conv2d_3_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_9",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_3_tf",
+          "conv2d_3_tf1"
+        ],
+        "save": "conv2d_4_tf1",
+        "width": "conv2d_3_tf.w",
+        "height": "conv2d_3_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_10",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_4_tf",
+          "conv2d_4_tf1"
+        ],
+        "save": "conv2d_5_tf",
+        "width": "conv2d_4_tf.w",
+        "height": "conv2d_4_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_11",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_4_tf",
+          "conv2d_4_tf1"
+        ],
+        "save": "conv2d_5_tf1",
+        "width": "conv2d_4_tf.w",
+        "height": "conv2d_4_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_12",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_5_tf",
+          "conv2d_5_tf1"
+        ],
+        "save": "conv2d_6_tf",
+        "width": "conv2d_5_tf.w",
+        "height": "conv2d_5_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_13",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_5_tf",
+          "conv2d_5_tf1"
+        ],
+        "save": "conv2d_6_tf1",
+        "width": "conv2d_5_tf.w",
+        "height": "conv2d_5_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_14",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_6_tf",
+          "conv2d_6_tf1"
+        ],
+        "save": "conv2d_7_tf",
+        "width": "conv2d_6_tf.w",
+        "height": "conv2d_6_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_15",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_6_tf",
+          "conv2d_6_tf1"
+        ],
+        "save": "conv2d_7_tf1",
+        "width": "conv2d_6_tf.w",
+        "height": "conv2d_6_tf.h",
+        "when": "",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Restore_CNN_VL_16",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN",
+          "conv2d_1_tf",
+          "conv2d_1_tf1",
+          "conv2d_2_tf",
+          "conv2d_2_tf1",
+          "conv2d_3_tf",
+          "conv2d_3_tf1",
+          "conv2d_4_tf",
+          "conv2d_4_tf1",
+          "conv2d_5_tf",
+          "conv2d_5_tf1",
+          "conv2d_6_tf",
+          "conv2d_6_tf1",
+          "conv2d_7_tf",
+          "conv2d_7_tf1"
+        ],
+        "save": "MAIN",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Upscale_CNN_x2_M.glsl": [
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_0",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_1",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf"
+        ],
+        "save": "conv2d_1_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_2",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf"
+        ],
+        "save": "conv2d_2_tf",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_3",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf"
+        ],
+        "save": "conv2d_3_tf",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_4",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_3_tf"
+        ],
+        "save": "conv2d_4_tf",
+        "width": "conv2d_3_tf.w",
+        "height": "conv2d_3_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_5",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_4_tf"
+        ],
+        "save": "conv2d_5_tf",
+        "width": "conv2d_4_tf.w",
+        "height": "conv2d_4_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_6",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_5_tf"
+        ],
+        "save": "conv2d_6_tf",
+        "width": "conv2d_5_tf.w",
+        "height": "conv2d_5_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_7",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_1_tf",
+          "conv2d_2_tf",
+          "conv2d_3_tf",
+          "conv2d_4_tf",
+          "conv2d_5_tf",
+          "conv2d_6_tf"
+        ],
+        "save": "conv2d_last_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_M_8",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN",
+          "conv2d_last_tf"
+        ],
+        "save": "MAIN",
+        "width": "conv2d_last_tf.w 2 *",
+        "height": "conv2d_last_tf.h 2 *",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Upscale_CNN_x2_S.glsl": [
+      {
+        "kernel": "ak_Upscale_CNN_x2_S_0",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_S_1",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf"
+        ],
+        "save": "conv2d_1_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_S_2",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf"
+        ],
+        "save": "conv2d_2_tf",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_S_3",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf"
+        ],
+        "save": "conv2d_last_tf",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_S_4",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN",
+          "conv2d_last_tf"
+        ],
+        "save": "MAIN",
+        "width": "conv2d_last_tf.w 2 *",
+        "height": "conv2d_last_tf.h 2 *",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      }
+    ],
+    "Anime4K_Upscale_CNN_x2_VL.glsl": [
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_0",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_1",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN"
+        ],
+        "save": "conv2d_tf1",
+        "width": "MAIN.w",
+        "height": "MAIN.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_2",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1"
+        ],
+        "save": "conv2d_1_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_3",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1"
+        ],
+        "save": "conv2d_1_tf1",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_4",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf",
+          "conv2d_1_tf1"
+        ],
+        "save": "conv2d_2_tf",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_5",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_1_tf",
+          "conv2d_1_tf1"
+        ],
+        "save": "conv2d_2_tf1",
+        "width": "conv2d_1_tf.w",
+        "height": "conv2d_1_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_6",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf",
+          "conv2d_2_tf1"
+        ],
+        "save": "conv2d_3_tf",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_7",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_2_tf",
+          "conv2d_2_tf1"
+        ],
+        "save": "conv2d_3_tf1",
+        "width": "conv2d_2_tf.w",
+        "height": "conv2d_2_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_8",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_3_tf",
+          "conv2d_3_tf1"
+        ],
+        "save": "conv2d_4_tf",
+        "width": "conv2d_3_tf.w",
+        "height": "conv2d_3_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_9",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_3_tf",
+          "conv2d_3_tf1"
+        ],
+        "save": "conv2d_4_tf1",
+        "width": "conv2d_3_tf.w",
+        "height": "conv2d_3_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_10",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_4_tf",
+          "conv2d_4_tf1"
+        ],
+        "save": "conv2d_5_tf",
+        "width": "conv2d_4_tf.w",
+        "height": "conv2d_4_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_11",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_4_tf",
+          "conv2d_4_tf1"
+        ],
+        "save": "conv2d_5_tf1",
+        "width": "conv2d_4_tf.w",
+        "height": "conv2d_4_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_12",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_5_tf",
+          "conv2d_5_tf1"
+        ],
+        "save": "conv2d_6_tf",
+        "width": "conv2d_5_tf.w",
+        "height": "conv2d_5_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_13",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_5_tf",
+          "conv2d_5_tf1"
+        ],
+        "save": "conv2d_6_tf1",
+        "width": "conv2d_5_tf.w",
+        "height": "conv2d_5_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_14",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1",
+          "conv2d_1_tf",
+          "conv2d_1_tf1",
+          "conv2d_2_tf",
+          "conv2d_2_tf1",
+          "conv2d_3_tf",
+          "conv2d_3_tf1",
+          "conv2d_4_tf",
+          "conv2d_4_tf1",
+          "conv2d_5_tf",
+          "conv2d_5_tf1",
+          "conv2d_6_tf",
+          "conv2d_6_tf1"
+        ],
+        "save": "conv2d_last_tf",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_15",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1",
+          "conv2d_1_tf",
+          "conv2d_1_tf1",
+          "conv2d_2_tf",
+          "conv2d_2_tf1",
+          "conv2d_3_tf",
+          "conv2d_3_tf1",
+          "conv2d_4_tf",
+          "conv2d_4_tf1",
+          "conv2d_5_tf",
+          "conv2d_5_tf1",
+          "conv2d_6_tf",
+          "conv2d_6_tf1"
+        ],
+        "save": "conv2d_last_tf1",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_16",
+        "hook": "MAIN",
+        "bind": [
+          "conv2d_tf",
+          "conv2d_tf1",
+          "conv2d_1_tf",
+          "conv2d_1_tf1",
+          "conv2d_2_tf",
+          "conv2d_2_tf1",
+          "conv2d_3_tf",
+          "conv2d_3_tf1",
+          "conv2d_4_tf",
+          "conv2d_4_tf1",
+          "conv2d_5_tf",
+          "conv2d_5_tf1",
+          "conv2d_6_tf",
+          "conv2d_6_tf1"
+        ],
+        "save": "conv2d_last_tf2",
+        "width": "conv2d_tf.w",
+        "height": "conv2d_tf.h",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      },
+      {
+        "kernel": "ak_Upscale_CNN_x2_VL_17",
+        "hook": "MAIN",
+        "bind": [
+          "MAIN",
+          "conv2d_last_tf",
+          "conv2d_last_tf1",
+          "conv2d_last_tf2"
+        ],
+        "save": "MAIN",
+        "width": "conv2d_last_tf.w 2 *",
+        "height": "conv2d_last_tf.h 2 *",
+        "when": "OUTPUT.w MAIN.w / 1.200 > OUTPUT.h MAIN.h / 1.200 > *",
+        "channels": 4
+      }
+    ]
+  },
+  "hashes": {
+    "Anime4K_AutoDownscalePre_x2.glsl": "8c58291740146bd766a4d73f132775a797fe80f7d07919b5d767e27a5dc85656",
+    "Anime4K_AutoDownscalePre_x4.glsl": "5af62d8cd844916dc1126613e13bad3beab195787f93a71200b47c6ec78f2e41",
+    "Anime4K_Clamp_Highlights.glsl": "a2a9bf7fbc1d75d09660ca2e701e4d7fb0cf5457b94da47e1825032fa2b3671a",
+    "Anime4K_Restore_CNN_M.glsl": "67ea3ed26539e8de3b7d307688535d2ff17e8d147e11dda0247da7770dbecf41",
+    "Anime4K_Restore_CNN_S.glsl": "97c24dc370ab300c108bfaa09db7f175aeff343674842c299cf3940a3d330427",
+    "Anime4K_Restore_CNN_VL.glsl": "35036722733305cd4d4e57660b883bbe2569ba2914033c254327107d7b77e35e",
+    "Anime4K_Upscale_CNN_x2_M.glsl": "716e02098a68f0d648761f2b96b4dd139e1cb09b174bb369fca3aa34328fff7e",
+    "Anime4K_Upscale_CNN_x2_S.glsl": "4c53ec2e287908f7ee7bcb266b0170421626d663576468b7d7dafc62962649a4",
+    "Anime4K_Upscale_CNN_x2_VL.glsl": "5638fe31c37c151a3443fea3451a3ef91af073f4dbb9615f6c0d1e29db11493d"
+  }
+}

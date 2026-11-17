@@ -1,0 +1,2032 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "interface-navigation-settings",
+  "records": {
+    "preference:SettingBoxKey/appFont": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/pages/font_setting.dart",
+        "symbol": "appFont"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Typography.swift",
+          "symbol": "CustomTypefaces"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/Typography.swift",
+          "symbol": "removeOnApply"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "piliTypeface"
+        }
+      ],
+      "behavior": "可浏览系统字体、搜索、自选 TTF/TTC/OTF、多字体文件、查看预览、移除、应用或恢复系统；备份只注册选中的字节",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift",
+        "Checks/BackupRecoveryCheck.swift"
+      ],
+      "device_or_remaining": "Core Text 实际字体/多字重字形及 VoiceOver 以设备验收"
+    },
+    "preference:SettingBoxKey/appFontWeightV2": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/pages/font_setting.dart",
+        "symbol": "appFontWeightV2"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/TypefaceValue.swift",
+          "symbol": "func validate"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/Typography.swift",
+          "symbol": "Self.weights"
+        }
+      ],
+      "behavior": "原枚举 0–8 与 Swift 权重 1–9 映射；提交后根环境与语义文字读取新值",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/defaultTextScale": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/pages/font_setting.dart",
+        "symbol": "defaultTextScale"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/TypefaceValue.swift",
+          "symbol": "0.85...1.6"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/Typography.swift",
+          "symbol": "size * self.scale"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "piliTypeface"
+        }
+      ],
+      "behavior": "0.85–1.6 独立于视口倍率；预览、保存；自定义字随 Dynamic Type 样式缩放",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/customColor": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "customColor"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/ThemePicker.swift",
+          "symbol": "static func preset(for"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ThemePicker.swift",
+          "symbol": "ColorPicker("
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ThemePicker.swift",
+          "symbol": "content.tint(tint)"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": ".modifier(NativeTheme())"
+        }
+      ],
+      "behavior": "旧预设索引映射到 Apple 系统色，也可选自定义不透明颜色；根视图使用所选强调色",
+      "evidence": [
+        "Checks/ThemeColorsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/schemeVariant": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "schemeVariant"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Settings.swift",
+          "symbol": "d.set(paletteStyle"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"schemeVariant\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ThemePicker.swift",
+          "symbol": "content.tint(tint)"
+        }
+      ],
+      "behavior": "备份可往返原调色板风格；当前原生外观使用系统强调色，没有 Material 风格选择器",
+      "evidence": [
+        "Checks/ThemeColorsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "旧风格索引仅用于兼容备份，旧配色算法测试不验证当前 UI"
+    },
+    "preference:SettingBoxKey/themeMode": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "themeMode"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Settings.swift",
+          "symbol": "SettingsView/外观模式"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "appearance == \"dark\" ? .dark : appearance == \"light\" ? .light : nil"
+        }
+      ],
+      "behavior": "亮、暗和跟随系统直接控制根页面的系统外观",
+      "evidence": [
+        "Checks/ThemeColorsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/isPureBlackTheme": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "isPureBlackTheme"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NightAppearance.swift",
+          "symbol": "pure && scheme == .dark"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NightAppearance.swift",
+          "symbol": "NativeNavigationBackground(black: active)"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": ".modifier(NightCanvas())"
+        }
+      ],
+      "behavior": "深色时按选项覆盖内容背景与导航背景",
+      "evidence": [
+        "Checks/ThemeColorsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "OLED 屏幕显示效果未做物理测量"
+    },
+    "preference:SettingBoxKey/reduceLuxColor": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "reduceLuxColor"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NightAppearance.swift",
+          "symbol": "struct NightImage"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/InterfacePresentation.swift",
+          "symbol": "func dimImage"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SiteThumbnail.swift",
+          "symbol": "NightImage"
+        }
+      ],
+      "behavior": "支持 ARGB 叠加及恢复无叠色，只在素材已载入且处于深色时应用；主机实测 alpha/通道和分支",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/defaultToastOp": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "defaultToastOp"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NightAppearance.swift",
+          "symbol": "struct ToastAlpha"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NightAppearance.swift",
+          "symbol": "ui.toastOpacity"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerGestures.swift",
+          "symbol": "ToastAlpha"
+        }
+      ],
+      "behavior": "提示透明度 0–1，编辑器调节保存，播放手势浮层直接读取",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "播放器外其他通知使用 iOS 原生提醒，无相同背景透明度接口"
+    },
+    "preference:SettingBoxKey/navBarSort": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "navBarSort"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+          "symbol": "draft.tabs.move"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "ForEach(contentTabs)"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "role: .search"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NavigationRules.swift",
+          "symbol": "tabs.contains(launch)"
+        }
+      ],
+      "behavior": "可重排和隐藏内容栏目；搜索若启用则单独使用系统搜索标签，隐藏启动项后回退",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/tabBarSort": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "tabBarSort"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+          "symbol": "draft.channels.move"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "ForEach(channels)"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NavigationRules.swift",
+          "symbol": "func firstChannel"
+        }
+      ],
+      "behavior": "频道排序与隐藏；只剩一项隐藏切换条。首启优先推荐，未包含推荐时才进首个可见频道，主机验证重排序",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/defaultHomePage": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "defaultHomePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+          "symbol": "默认栏目"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "NavigationLayout.current().launch"
+        }
+      ],
+      "behavior": "原始导航枚举映射实际栏目；启动进入指定可见栏目、配置删除当前项才切换",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/useSideBar": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "useSideBar"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"useSideBar\", \"sidebar\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "content.tabViewStyle(.sidebarAdaptable)"
+        }
+      ],
+      "behavior": "侧栏开关可通过备份往返；标签栏和过渡由系统布局控制",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": "原生界面不提供此旧开关"
+    },
+    "preference:SettingBoxKey/hideSideBarLabel": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "hideSideBarLabel"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"hideSideBarLabel\", \"iconOnly\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "Tab(tab.title"
+        }
+      ],
+      "behavior": "侧栏标签开关可通过备份往返；标签栏和过渡由系统布局控制",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "原生界面不提供此旧开关"
+    },
+    "preference:SettingBoxKey/optTabletNav": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "optTabletNav"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"optTabletNav\", \"tabletNav\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "content.tabViewStyle(.sidebarAdaptable)"
+        }
+      ],
+      "behavior": "旧平板导航开关可通过备份往返；标签栏和过渡由系统布局控制",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "原生界面不提供此旧开关"
+    },
+    "preference:SettingBoxKey/floatingNavBar": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "floatingNavBar"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"floatingNavBar\", \"floating\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": ".tabBarMinimizeBehavior("
+        }
+      ],
+      "behavior": "旧悬浮样式可通过备份往返；标签栏和过渡由系统布局控制",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/SettingSearchCheck.swift"
+      ],
+      "device_or_remaining": "原生界面不提供此旧开关"
+    },
+    "preference:SettingBoxKey/enableMYBar": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "enableMYBar"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"enableMYBar\", \"spaciousBar\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": ".modifier(AdaptiveTabStyle())"
+        }
+      ],
+      "behavior": "旧宽松栏样式可通过备份往返；标签栏和过渡由系统布局控制",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "原生界面不提供此旧开关"
+    },
+    "preference:SettingBoxKey/hideTopBar": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "hideTopBar"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "layout.collapseTop"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "piliHomeSearchVisibility"
+        }
+      ],
+      "behavior": "在显示首页搜索框时按滚动进度折叠；VoiceOver 下禁用折叠",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/hideBottomBar": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "hideBottomBar"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "layout.collapseBottom"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "CollapsingStrip"
+        }
+      ],
+      "behavior": "底栏单独跟随活动根页垂直滚动；深层页不处理根层手势",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/barHideType": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "barHideType"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NavigationRules.swift",
+          "symbol": "func fraction"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "NavigationRules.fraction"
+        }
+      ],
+      "behavior": "即时折叠或按实际位移渐收；回到顶部、切换栏目均复位，减少动态时不作渐移动画",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/mainTabBarView": {
+      "verdict": "partial",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "mainTabBarView"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "\"mainTabBarView\", \"animateTabs\""
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "TabView(selection: $active)"
+        }
+      ],
+      "behavior": "旧切换动画设置可通过备份往返；标签栏和过渡由系统布局控制",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": "原生界面不提供此旧开关"
+    },
+    "preference:SettingBoxKey/directExitOnBack": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "directExitOnBack"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "keyboardShortcut(.escape"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+          "symbol": "返回键切至首个栏目"
+        }
+      ],
+      "behavior": "有硬件 Esc 且处于非首个根页时，依据偏好返回第一栏；直接退出时让 iOS 系统处理。上游退回桌面仅 Android",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "系统 Home 手势不被应用截获"
+    },
+    "preference:SettingBoxKey/mineTabs": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "mineTabs"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+          "symbol": "draft.mineTabs.move"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "mineTabs"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileShelf.swift",
+          "symbol": "profileShelf"
+        }
+      ],
+      "behavior": "我的页四类预览按原索引显示、重排、全部隐藏；未设置默认收藏，显式空不回填",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/pageTransition": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "pageTransition"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MotionPreferences.swift",
+          "symbol": "func custom"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NavigationMotion.swift",
+          "symbol": "MotionAnimator"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MotionSettings.swift",
+          "symbol": "过渡效果"
+        }
+      ],
+      "behavior": "17 个索引；原生、Cupertino、交互返回和减少动态交回系统，其他模式由 UIKit 动画器执行",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift"
+      ],
+      "device_or_remaining": "政策分支实测，返回手势和摄像机录屏未做真机比对"
+    },
+    "preference:SettingBoxKey/springDescription": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "springDescription"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MotionPreferences.swift",
+          "symbol": "func state"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ScrollRebound.swift",
+          "symbol": "func tick"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MotionSettings.swift",
+          "symbol": "预览回弹"
+        }
+      ],
+      "behavior": "质量/刚度/阻尼与时长/弹性双向换算；真实滚动器松手后使用阻尼解，主机测三种阻尼初始速度与收敛",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/touchSlopH": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/extra_settings.dart",
+        "symbol": "touchSlopH"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/InteractionPolicy.swift",
+          "symbol": "func horizontalDrag"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/InteractionScaleOptions.swift",
+          "symbol": "横向滑动"
+        }
+      ],
+      "behavior": "可设置水平手势阈值；低于阈值/偏垂直方向不识别，测试涵盖角度、方向及阈值等号",
+      "evidence": [
+        "Checks/InteractionPolicyCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/refreshDisplacement": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/extra_settings.dart",
+        "symbol": "refreshDisplacement"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/NativePullRefresh.swift",
+          "symbol": "model.release"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/InteractionPolicy.swift",
+          "symbol": "func refreshThreshold"
+        }
+      ],
+      "behavior": "下拉提示位置和松手阈值读取选中距离；导航重复点击也使用同一刷新回调，停止不可见页任务",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/InteractionPolicyCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/uiScale": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "uiScale"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NativeInterfaceScale.swift",
+          "symbol": "struct InterfaceLayout"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "modifier(NativeInterfaceScale())"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/InteractionPolicy.swift",
+          "symbol": "func interfaceScale"
+        }
+      ],
+      "behavior": "独立视口缩放；布局提议反向补偿、像素比例随之变更；主窗口与应用模态共用，同系统选取器隔离",
+      "evidence": [
+        "Checks/InteractionPolicyCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/recommendCardWidth": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "recommendCardWidth"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CatalogGrid.swift",
+          "symbol": "grid.recommendWidth"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "CatalogGrid(home:"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/InterfacePresentation.swift",
+          "symbol": "func columns"
+        }
+      ],
+      "behavior": "主页推荐卡片宽度使用实际视口、间隙算列；过边界增加一列，辅助大字改一列",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/smallCardWidth": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "smallCardWidth"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CatalogGrid.swift",
+          "symbol": "grid.cardWidth"
+        },
+        {
+          "file": "Sources/PiliNative/Library/PageList.swift",
+          "symbol": "CatalogGrid"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedColumnPlan.swift",
+          "symbol": "func columns"
+        }
+      ],
+      "behavior": "其他卡片/瀑布流读取独立宽度；窄屏、分屏、最短列及辅助文字宽度有主机行为验证",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/FeedColumnCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/displayMode": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "displayMode"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/HighRefreshRate.swift",
+          "symbol": "preferredFrameRateRange"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryZoom.swift",
+          "symbol": "preferredFrameRateRange"
+        },
+        {
+          "file": "Sources/PiliNative/Danmaku/BulletLayerSurface.swift",
+          "symbol": "group.preferredFrameRateRange"
+        }
+      ],
+      "behavior": "“强制 120Hz”在前台用 CADisplayLink 请求屏幕最高刷新率；弹幕和图片浏览由系统自动选择帧率；实际频率受设备与系统调度约束",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "不承诺控制全系统刷新率；ProMotion 与降频实际表现待设备"
+    },
+    "preference:SettingBoxKey/feedBackEnable": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/extra_settings.dart",
+        "symbol": "feedBackEnable"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "UIImpactFeedbackGenerator"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "TouchFeedback.light"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "TouchFeedback.light"
+        }
+      ],
+      "behavior": "可开关原生轻触反馈；固定版本 33 个调用处逐个按动作对照，含 32 处能在 iOS 激活的路径。主动点击、拖动提交或开启开关按原时序发一次，失败与取消不在网络回包重复触发",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Acceptance/evidence/haptic-actions.json",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "实际 Taptic Engine 的触感强度、VoiceOver 与系统设置组合等待实体设备"
+    },
+    "preference:SettingBoxKey/autoUpdate": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/extra_settings.dart",
+        "symbol": "autoUpdate"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/ReleaseUpdates.swift",
+          "symbol": "func check"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ReleaseUpdates.swift",
+          "symbol": "updates.notified"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "UpdatePrompt"
+        }
+      ],
+      "behavior": "自动单次/去重提醒、手动检查、查看发布说明、错误展示和原版发布页；公共读证据见版本审计",
+      "evidence": [
+        "Acceptance/evidence/version-updates.md",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "本轮未联网查询最新版本"
+    },
+    "preference:SettingBoxKey/enableLog": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "enableLog"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/DiagnosticJournal.swift",
+          "symbol": "func add"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/DiagnosticJournal.swift",
+          "symbol": "struct DiagnosticView"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "NativeMetricSubscriber.start"
+        }
+      ],
+      "behavior": "切换日志、检索、设备/构建信息、展开、复制、清空与错误反馈；信息局限本机；不向上游上传",
+      "evidence": [
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "系统崩溃/MetricKit 投递需设备"
+    },
+    "preference:SettingBoxKey/disableLikeMsg": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/extra_settings.dart",
+        "symbol": "disableLikeMsg"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "func visibleMask"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "mask: visibleMask"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "unreadMessages"
+        }
+      ],
+      "behavior": "Inbox 过滤与首页/我的消息角标相同；即使手动启用收到的赞，隐藏后也不会计入。已运行所有 32 种掩码",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/msgUnReadTypeV2": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "msgUnReadTypeV2"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "static func label"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "msgBadge"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "func track"
+        }
+      ],
+      "behavior": "单独选择私信、回复、@、赞、系统和 6 类私信计数",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "云端未读交互与真实账号留跨域验收"
+    },
+    "preference:SettingBoxKey/msgBadgeMode": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "msgBadgeMode"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "static func label"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "msgBadge"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "func track"
+        }
+      ],
+      "behavior": "隐藏、圆点及数字 / 99+ 展示消息",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "云端未读交互与真实账号留跨域验收"
+    },
+    "preference:SettingBoxKey/dynamicBadgeMode": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "dynamicBadgeMode"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "static func label"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "dynBadge"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "func track"
+        }
+      ],
+      "behavior": "隐藏、圆点及数字 / 99+ 展示动态",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "云端未读交互与真实账号留跨域验收"
+    },
+    "preference:SettingBoxKey/dynamicPeriod": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/main/controller.dart",
+        "symbol": "dynamicPeriod"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "static func label"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "minutes"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "func track"
+        }
+      ],
+      "behavior": "1–1440 分钟周期；后台/退出账号取消上一代任务",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "云端未读交互与真实账号留跨域验收"
+    },
+    "preference:SettingBoxKey/checkDynamic": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/main/controller.dart",
+        "symbol": "checkDynamic"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "static func label"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "periodic"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "func track"
+        }
+      ],
+      "behavior": "仅启用时循环检查；进入动态页清零，旧账号结果丢弃",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "云端未读交互与真实账号留跨域验收"
+    },
+    "preference:SettingBoxKey/dynamicDetailRatio": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "dynamicDetailRatio"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReadingSplit.swift",
+          "symbol": "reading.bodyPercent"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "ReadingSplit"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "ReadingSplit"
+        }
+      ],
+      "behavior": "横屏图文/动态详情正文与互动列分配按用户比率；可见性及竖屏回单列",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "旋转和实体屏阅读体验待设备"
+    },
+    "preference:SettingBoxKey/dynamicsWaterfallFlow": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "dynamicsWaterfallFlow"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectory.swift",
+          "symbol": "social.waterfall"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedColumnPlan.swift",
+          "symbol": "func columns"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedWaterfall.swift",
+          "symbol": "FeedColumnPlan"
+        }
+      ],
+      "behavior": "开关切换动态列表/瀑布流，跨页去重后按实测高度排最短列，辅助大字退为单列",
+      "evidence": [
+        "Checks/FeedColumnCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/horizontalScreen": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "horizontalScreen"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackPanels.swift",
+          "symbol": "layout.horizontal"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingsWidePane.swift",
+          "symbol": "struct SettingsWidePane"
+        }
+      ],
+      "behavior": "iOS 横屏详情读取双列布局偏好；设置页额外按照窗口宽高和无障碍字号自动双栏",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "播放时间轴、画质和实际旋转单列验收"
+    },
+    "preference:SettingBoxKey/horizontalSeasonPanel": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/play_settings.dart",
+        "symbol": "horizontalSeasonPanel"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackPanels.swift",
+          "symbol": "layout.playlist"
+        }
+      ],
+      "behavior": "横屏用户偏好控制番剧与课程分集列表；实际视图读取，保存与原版还原映射",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "需实机检查旋转状态下组合布局"
+    },
+    "preference:SettingBoxKey/horizontalMemberPage": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/play_settings.dart",
+        "symbol": "horizontalMemberPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "layout.member"
+        }
+      ],
+      "behavior": "横屏用户偏好控制作者详情面板；实际视图读取，保存与原版还原映射",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "需实机检查旋转状态下组合布局"
+    },
+    "preference:SettingBoxKey/enableVerticalExpand": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/play_settings.dart",
+        "symbol": "enableVerticalExpand"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackPanels.swift",
+          "symbol": "layout.verticalMedia"
+        }
+      ],
+      "behavior": "横屏用户偏好控制竖版画幅放大；实际视图读取，保存与原版还原映射",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "需实机检查旋转状态下组合布局"
+    },
+    "preference:SettingBoxKey/defaultPicQa": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "defaultPicQa"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/SiteThumbnail.swift",
+          "symbol": "GalleryPicture($0).display(quality: quality)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "func display"
+        }
+      ],
+      "behavior": "缩略图质量作用于受支持图片 CDN。载入失败回原图，原图与其他站点不改；不拼接或修改签名查询串",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/previewQuality": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "previewQuality"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "photo.display(quality: quality, minimum: minimum)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "let q = min"
+        }
+      ],
+      "behavior": "查看大图有独立质量，不低于缩略图品质；100 保留原图；带已有 CDN 尺寸参数时保持参数、失败回原图",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/darkVideoPage": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "darkVideoPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoChrome.swift",
+          "symbol": "dark ? .dark : inherited"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "VideoPageAppearance"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/Seasons.swift",
+          "symbol": "VideoPageAppearance"
+        }
+      ],
+      "behavior": "视频与分集页的背景、前景和导航深色覆盖在关闭时继承应用外观；不改变其他页",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "实际屏幕动态切换待设备"
+    },
+    "preference:SettingBoxKey/removeSafeArea": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "removeSafeArea"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/ViewportSettings.swift",
+          "symbol": "struct PlaybackEdgeInsets"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "PlaybackEdgeInsets(fullscreen: true)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "PlaybackEdgeInsets()"
+        }
+      ],
+      "behavior": "全屏可用所有边缘、内嵌去除顶部与水平边缘，状态栏同步；关时按原生安全区布局",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "需设备检查各机型圆角与灵动岛"
+    },
+    "preference:SettingBoxKey/dynamicsShowAllFollowedUp": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "dynamicsShowAllFollowedUp"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "social.allFollowed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "next = all ? .following(1)"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "case .updates(let offset)"
+        }
+      ],
+      "behavior": "关闭用有更新 UP 主的游标；打开后按当前 UID 的关注列表分页，合并去重并在切换身份或模式时清旧游标",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "真实账户的关注列表返回仍需设备"
+    },
+    "preference:SettingBoxKey/expandDynLivePanel": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "expandDynLivePanel"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "social.expandLive"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "if expandedLive"
+        }
+      ],
+      "behavior": "以偏好决定进入动态页的展开初态，可随时折叠；直播 UID 与房间号按各自用途区分",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "真实在线房间留直播域"
+    },
+    "preference:SettingBoxKey/upPanelPosition": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "upPanelPosition"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "enum FeedPanelPosition"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "struct FeedPanelHost"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "social.upPanelPosition"
+        }
+      ],
+      "behavior": "五种原始位置：顶栏、左右常驻、左右抽屉。由配置决定边缘手势/侧栏宽度和滚动方向，关闭抽屉还原可访问性",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Checks/InteractionPolicyCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "边缘拖动和读屏操作待实体设备"
+    },
+    "preference:SettingBoxKey/enableEmoteTooltip": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "enableEmoteTooltip"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyRichText.swift",
+          "symbol": "preview: preview && permitsPreview"
+        },
+        {
+          "file": "Sources/PiliNative/Social/EmotePreview.swift",
+          "symbol": "static func present"
+        },
+        {
+          "file": "Sources/PiliNative/Social/EmotePopover.swift",
+          "symbol": "AnimatedEmote"
+        }
+      ],
+      "behavior": "允许时评论/私信/图文表情在文字位置弹出预览，可展示原动图、名称和允许的表情详情；禁用后不弹。点选器的系统上下文菜单独立",
+      "evidence": [
+        "Checks/ReplyDomainAudit.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "系统弹出层定位、动画与旁白待设备"
+    },
+    "preference:SettingBoxKey/memberTab": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "memberTab"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func preferred"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "space?.preferred"
+        }
+      ],
+      "behavior": "默认主页分栏按用户选项、作者推荐、首个可用栏依次回退；服务端缺失的分栏不会被硬造",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/showMemberShop": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "showMemberShop"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "creator.shop"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "kind != .shop || shop"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case"
+        }
+      ],
+      "behavior": "可显示或隐藏 UP 小店；只有服务端提供小店时才出现；隐藏后默认页选择回退",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/showDecorate": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "showDecorate"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+          "symbol": "decorate ? member?.pendant"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+          "symbol": "if decorate, let card"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "ReplyCardBadge"
+        }
+      ],
+      "behavior": "同一开关控制头像挂件、评论/动态装饰卡和粉丝编号；不关闭认证标记。原版常量实际存储名 showDynDecorate",
+      "evidence": [
+        "Checks/BackupCheck.swift",
+        "Checks/ReplyDomainAudit.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "头像装饰素材的真实显示待设备"
+    },
+    "preference:SettingBoxKey/showMedal": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "showMedal"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+          "symbol": "old.fansMedalLevel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+          "symbol": "if showMedal && !isOwner"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "ReplyAuthorLabel(member: r.member, isOwner: isOwner"
+        },
+        {
+          "file": "Sources/PiliNative/Live/SuperChatViews.swift",
+          "symbol": "SCCard(row: s"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveChatActions.swift",
+          "symbol": "live.medal"
+        }
+      ],
+      "behavior": "显示评论中非 UP 的真实粉丝牌，以及直播弹幕和醒目留言勋章；关闭时全部隐藏，UP 标记优先",
+      "evidence": [
+        "Checks/ReplyDomainAudit.swift",
+        "Checks/LiveInteractionCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "服务端实有粉丝勋章、实际颜色和字号待设备"
+    },
+    "preference:SettingBoxKey/showTrayIcon": {
+      "verdict": "not-ios",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "showTrayIcon"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "showTrayIcon showWindowTitleBar"
+        }
+      ],
+      "behavior": "原入口在 PlatformUtils.isDesktop 内，iOS 不实例化；跨平台备份仅保留对应值供桌面恢复",
+      "evidence": [
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "固定源码没有 iOS 运行入口"
+    },
+    "preference:SettingBoxKey/showWindowTitleBar": {
+      "verdict": "not-ios",
+      "upstream": {
+        "file": "lib/pages/setting/models/style_settings.dart",
+        "symbol": "showWindowTitleBar"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/BackupFormat.swift",
+          "symbol": "showTrayIcon showWindowTitleBar"
+        }
+      ],
+      "behavior": "原入口在 PlatformUtils.isDesktop 内，iOS 不实例化；跨平台备份仅保留对应值供桌面恢复",
+      "evidence": [
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "固定源码没有 iOS 运行入口"
+    },
+    "page:about": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/about/view.dart",
+        "symbol": "class AboutPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/AboutPanel.swift",
+          "symbol": "struct AboutPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/AboutTransfer.swift",
+          "symbol": "struct AboutTransfer"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/AboutReset.swift",
+          "symbol": "func apply"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ReleaseUpdates.swift",
+          "symbol": "struct VersionPanel"
+        }
+      ],
+      "behavior": "版本与构建/复制/代码链接、问题反馈、五击打开链接、日志与清缓存、独立账号/设置 JSON、整包与两类重置；独立账号文件兼容 Flutter",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupRecoveryCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "真实用户仅在自己选择时验证设备认证、粘贴与系统文件面板"
+    },
+    "page:main": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/main/controller.dart",
+        "symbol": "void setIndex"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "MainNavShell"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "func top"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/NavigationRules.swift",
+          "symbol": "RootTabReselect"
+        },
+        {
+          "file": "Sources/PiliNative/Library/NativePullRefresh.swift",
+          "symbol": "static func repeatTab"
+        }
+      ],
+      "behavior": "根标签业务绑定、主账号隔离、重复点回顶/刷新、重排、选路、退出、侧边栏、消息角标有效掩码",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": "真机多窗口、旋转、切换用户后的实网角标未运行"
+    },
+    "page:home": {
+      "verdict": "cross-domain",
+      "upstream": {
+        "file": "lib/pages/home/controller.dart",
+        "symbol": "void setTabConfig"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "firstChannel"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "collapseHomeSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Library/NativePullRefresh.swift",
+          "symbol": "static func repeatTab"
+        }
+      ],
+      "behavior": "本审覆盖首页外壳、频道顺序、启动推荐、默认词时效、搜索、活动根页回顶；频道业务以发现域验收为准",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": "推荐/热门/直播/PGC 的账号服务验收见对应域"
+    },
+    "page:setting": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/view.dart",
+        "symbol": "class SettingPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Settings.swift",
+          "symbol": "struct SettingsView"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingsWidePane.swift",
+          "symbol": "struct SettingsWidePane"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingsAccountActions.swift",
+          "symbol": "func apply"
+        }
+      ],
+      "behavior": "竖屏布局与横屏分类/详情、全局搜索、切换账号/角色、批量本地移除或服务端退出仅移除确认成功的项；备份/关于入口",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/SettingSearchCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "系统账号连接未实际撤销；各子面板业务由各自记录验收"
+    },
+    "page:settings_search": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/settings_search/view.dart",
+        "symbol": "void onValueChanged"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/SettingSearchRow.swift",
+          "symbol": "func matches"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingSearchViews.swift",
+          "symbol": "struct NativeSettingsResults"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingSearchRow.swift",
+          "symbol": "func location"
+        }
+      ],
+      "behavior": "标题/原版说明/已支持当前值搜索、清空、无结果、打开真实控件；条件隐藏时定位可用前置项、可直接修改后返回",
+      "evidence": [
+        "Checks/SettingSearchCheck.swift",
+        "Checks/InterfaceAcceptanceCheck.swift"
+      ],
+      "device_or_remaining": "系统搜索焦点、VoiceOver 及列表滚动在真机验收"
+    },
+    "route:/": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "returnHome"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/AppLinkPage.swift",
+          "symbol": "case .root"
+        }
+      ],
+      "behavior": "返回选择的首页，清理旧导航栈并重建。未配置首页时落在合法启动栏目",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/barSetting": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/barSetting'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/NavigationLayout.swift",
+          "symbol": "struct NavigationLayoutPanel"
+        }
+      ],
+      "behavior": "校验栏目和频道、编辑排序、隐藏、恢复默认并应用",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/colorSetting": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/colorSetting'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/ThemePicker.swift",
+          "symbol": "struct ThemePicker"
+        }
+      ],
+      "behavior": "预设、自选色、系统强调色与全部调色板",
+      "evidence": [
+        "Checks/ThemeColorsCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/fontSetting": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/fontSetting'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Typography.swift",
+          "symbol": "struct TypographyPanel"
+        }
+      ],
+      "behavior": "字体文件、系统列表、权重与字号、卸载和应用",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupRecoveryCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/logs": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/logs'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/DiagnosticJournal.swift",
+          "symbol": "struct DiagnosticView"
+        }
+      ],
+      "behavior": "设备/应用信息、日志详情复制、搜索、开关、清空、反馈",
+      "evidence": [
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/settingsSearch": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/settingsSearch'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/SettingSearchViews.swift",
+          "symbol": "struct NativeSettingsResults"
+        }
+      ],
+      "behavior": "设置搜索进入真实行，分 Wi-Fi/蜂窝，受依赖开关控制的项可追到前置控件",
+      "evidence": [
+        "Checks/SettingSearchCheck.swift",
+        "Checks/InterfaceAcceptanceCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/setting": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/setting'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Settings.swift",
+          "symbol": "struct SettingsView"
+        }
+      ],
+      "behavior": "完整设置页导航与分栏、独立账号/安全信息入口",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/SettingSearchCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/home": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/home'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "struct FeedView"
+        }
+      ],
+      "behavior": "发现页入口、推荐优先与频道回退",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/displayModeSetting": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "name: '/displayModeSetting'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Typography.swift",
+          "symbol": "struct DisplayPanel"
+        }
+      ],
+      "behavior": "iOS 应用节奏/刷新范围替代 Android 显示模式",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "platform:ios/Runner/AppDelegate.swift": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "ios/Runner/AppDelegate.swift",
+        "symbol": "applicationSupportsShakeToEdit"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/DeviceScene.swift",
+          "symbol": "applicationSupportsShakeToEdit"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "UIApplicationDelegateAdaptor"
+        }
+      ],
+      "behavior": "启动禁用摇动撤销，SwiftUI 绑定应用代理，后台下载与音频由原生服务管理",
+      "evidence": [
+        "Checks/inspect_ipa.py",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "物理旋转、系统窗口和相册提示需设备；第三方站点 Universal Links 不冒用他人域"
+    },
+    "platform:ios/Runner/SceneDelegate.swift": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "ios/Runner/SceneDelegate.swift",
+        "symbol": "preferredWindowingControlStyle"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/DeviceScene.swift",
+          "symbol": "preferredWindowingControlStyle"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/DeviceScene.swift",
+          "symbol": "configurationForConnecting"
+        }
+      ],
+      "behavior": "iOS 26+ 窗口控制 minimal；只替换应用窗口的 scene delegate",
+      "evidence": [
+        "Checks/inspect_ipa.py",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "物理旋转、系统窗口和相册提示需设备；第三方站点 Universal Links 不冒用他人域"
+    },
+    "platform:ios/Runner/Info.plist": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "ios/Runner/Info.plist",
+        "symbol": "UISupportedInterfaceOrientations"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/DeviceScene.swift",
+          "symbol": "configurationForConnecting"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "onOpenURL"
+        }
+      ],
+      "behavior": "四种 iPad/三种 iPhone 方向、间接输入、后台 audio、ProMotion、意图限定的相册/网络权限与本地 URL scheme",
+      "evidence": [
+        "Checks/inspect_ipa.py",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "物理旋转、系统窗口和相册提示需设备；第三方站点 Universal Links 不冒用他人域"
+    },
+    "upstream:功能/高帧率": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "高帧率"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/HighRefreshRate.swift",
+          "symbol": "preferredFrameRateRange"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryZoom.swift",
+          "symbol": "preferredFrameRateRange"
+        },
+        {
+          "file": "Sources/PiliNative/Danmaku/BulletLayerSurface.swift",
+          "symbol": "group.preferredFrameRateRange"
+        }
+      ],
+      "behavior": "“强制 120Hz”在前台用 CADisplayLink 请求屏幕最高刷新率；弹幕和图片浏览由系统自动选择帧率；实际频率受设备与系统调度约束",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "不承诺控制全系统刷新率；ProMotion 与降频实际表现待设备"
+    },
+    "upstream:功能/横屏适配": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "横屏适配"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackPanels.swift",
+          "symbol": "layout.horizontal"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingsWidePane.swift",
+          "symbol": "struct SettingsWidePane"
+        }
+      ],
+      "behavior": "导航、设置、内容详情按当前窗口宽高切换",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": "播放时间轴、画质和实际旋转单列验收"
+    },
+    "upstream:功能/震动反馈(可选)": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "震动反馈(可选)"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "UIImpactFeedbackGenerator"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "TouchFeedback.light"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "TouchFeedback.light"
+        }
+      ],
+      "behavior": "按开关和实际点击阶段覆盖 iOS 可操作路径，桌面专用旋转不在 iOS 展示",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Acceptance/evidence/haptic-actions.json",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "实际 Taptic Engine 的触感强度、VoiceOver 与系统设置组合等待实体设备"
+    },
+    "upstream:功能/主题模式：亮色/暗色/跟随系统": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "主题模式：亮色/暗色/跟随系统"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Settings.swift",
+          "symbol": "SettingsView/外观模式"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "appearance == \"dark\" ? .dark : appearance == \"light\" ? .light : nil"
+        }
+      ],
+      "behavior": "亮、暗和跟随系统直接控制根页面的系统外观",
+      "evidence": [
+        "Checks/ThemeColorsCheck.swift",
+        "Checks/BackupCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/设置相关": {
+      "verdict": "cross-domain",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "设置相关"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/Settings.swift",
+          "symbol": "struct SettingsView"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingsWidePane.swift",
+          "symbol": "struct SettingsWidePane"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/SettingsAccountActions.swift",
+          "symbol": "func apply"
+        }
+      ],
+      "behavior": "设置根入口与搜索已实现，不能代替其他域所有子项",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/SettingSearchCheck.swift",
+        "Acceptance/evidence/interface-review.md"
+      ],
+      "device_or_remaining": "系统账号连接未实际撤销；各子面板业务由各自记录验收"
+    }
+  }
+}

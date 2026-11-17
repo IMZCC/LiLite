@@ -1,0 +1,2798 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "personal-library-spaces",
+  "records": {
+    "page:blacklist": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/blacklist/view.dart",
+        "symbol": "_BlockType"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/BlacklistManagement.swift",
+          "symbol": "struct LocalCreatorBlockList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/BlacklistManagement.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum LocalCreatorBlockFile"
+        },
+        {
+          "file": "Sources/PiliNative/Library/RecommendationFilter.swift",
+          "symbol": "blockedCreators"
+        }
+      ],
+      "behavior": "本地和在线分别浏览；游客可通过文件和剪贴板导入/导出 UID JSON，预览合并、删除、去用户空间；线上列表和移除使用打开时的主账号，成功后同步本机，游客不发线上请求",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:contact": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/contact/view.dart",
+        "symbol": "ContactPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMContactBook"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "func connections"
+        }
+      ],
+      "behavior": "通讯录在关注及粉丝间切换，按用途打开空间/选择私信收件人，搜索关注与分页；本人可以确认移除粉丝，切换身份不向新账号发旧操作",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fan": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fan/view.dart",
+        "symbol": "FansPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "private func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "自己的或他人的粉丝按 vmid/pn 读取，点击进入空间，只有本人可在滑动/长按菜单确认移除并在回执后刷新；标题可取实际姓名",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/view.dart",
+        "symbol": "FavPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "enum Tab"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/AppLinkPage.swift",
+          "symbol": "FavoriteHub(uid:"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "FavoriteHub(uid:"
+        }
+      ],
+      "behavior": "我的收藏一个入口切换视频、追番、追剧、专栏、笔记、话题、课堂；分享链接可直达初始标签，再点当前标签回顶部。各类操作保留在各自列表",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav_create": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav_create/view.dart",
+        "symbol": "CreateFavPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FolderEditor.swift",
+          "symbol": "struct FolderEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderCover.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "创建或编辑标题/简介/公开状态和裁剪封面；默认夹的受限字段不允许改，上传成功取得封面地址后再提交表单",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav_detail": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav_detail/view.dart",
+        "symbol": "FavDetailPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+          "symbol": "func subscribe"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "struct CloudLibraryView"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteMedia.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "按夹主鉴权，资源分页、搜索、视频/音频/PGC 和失效条目、预览封面、作者、动态分享、订阅/取消、播放队列和所属者多选管理",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift",
+        "Checks/PersonalLibraryCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav_folder_sort": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav_folder_sort/view.dart",
+        "symbol": "FavFolderSortPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudOrder.swift",
+          "symbol": "func save"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "struct FolderList"
+        }
+      ],
+      "behavior": "加载所有创建的夹后才允许排序、固定默认夹、绑定 UID 提交其余顺序，失败能重试",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav_panel": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav_panel/view.dart",
+        "symbol": "FavPanel"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/PickFolder.swift",
+          "symbol": "func save"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderEditor.swift",
+          "symbol": "struct FolderEditor"
+        }
+      ],
+      "behavior": "按资源查询原先选中夹，允许跨多个夹增加/移除及新建，检查容量，差集加减并且失败保留选择",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav_search": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav_search/view.dart",
+        "symbol": "FavSearchPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteSearchAll.swift",
+          "symbol": "struct FavoriteSearchAll"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteSearchAll.swift",
+          "symbol": "struct FavoriteSearchOrganizer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "struct CloudLibraryView"
+        }
+      ],
+      "behavior": "跨夹和当前夹搜索，输入/清空、翻页、打开与失效项目，选择并批量删除/复制/移动；跨夹确认每个资源的真实来源，按可见顺序倒序移动",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:fav_sort": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav_sort/view.dart",
+        "symbol": "FavSortPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteOrder.swift",
+          "symbol": "func move"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteOrder.swift",
+          "symbol": "func save"
+        }
+      ],
+      "behavior": "收藏夹内拖移排序及条目操作，以真实资源 id/type 构造 move 并在已确认的变更后更新列表",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:follow": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/follow/view.dart",
+        "symbol": "FollowPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct ScopedFollowGroups"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "主账号关注的全部与自建/内置组、未分组，另一人的关注可分页、看空间、显示其真实昵称；最近/最常访问排序，搜索、分组维护和黑名单入口",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:follow_search": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/follow_search/view.dart",
+        "symbol": "FollowSearchPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "func connections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "搜索关注"
+        }
+      ],
+      "behavior": "主账号按需提交关注关键词，清除恢复原顺序和全部列表，结果分页，可打开作者及管理本人的关系",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:follow_tag_sort": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/follow_tag_sort/view.dart",
+        "symbol": "FollowTagSortPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudOrder.swift",
+          "symbol": "expectedGroupOwner"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "struct FollowGroupCommand"
+        }
+      ],
+      "behavior": "保留全部、特别、默认等固定组，展示计数/说明，仅可排序自建组；提交含完整自建组顺序且不能切账号代写",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:follow_type": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/follow_type/view.dart",
+        "symbol": "FollowTypePageState"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "struct SharedFollowing"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "共同关注与我关注的人也关注了对方两个互异服务；主账号鉴权，分页和总数，异步解析对方姓名、点人进空间",
+      "evidence": [
+        "Acceptance/evidence/personal-library-final.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:group_panel": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/group_panel/view.dart",
+        "symbol": "GroupPanel"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "struct CreatorGroupEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "func save"
+        }
+      ],
+      "behavior": "查看当前用户所属组，多选分组，创建自建组后继续选择，提交真实 tagids（含取消分配），绑定初始主账号",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:history": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/history/view.dart",
+        "symbol": "HistoryPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "struct ProfileFullHistory"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileShelfModels.swift",
+          "symbol": "struct MineHistoryPage"
+        }
+      ],
+      "behavior": "按服务分类、分页、搜索，打开视频的确切分 P 和播放时刻，PGC/直播/课程/文章走不同路由；按有效业务键删除、清已完成及全选，暂停/恢复/清空绑定历史角色",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:history_search": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/history_search/view.dart",
+        "symbol": "HistorySearchPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func fullHistory"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func setTerm"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryCourseLink.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "综合历史搜索传 business=all 按页读，不限制普通投稿；切分类/关键词清旧结果及选择，恢复播放含 0/-1/正值",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:later": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/later/view.dart",
+        "symbol": "LaterPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "private var isLater"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func fetch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/CollectionsAPI.swift",
+          "symbol": "func"
+        }
+      ],
+      "behavior": "全部和未看完、关键词、正倒序、播放/继续、查看封面、多选删除/移动、清除已看/失效或全部均按主账号与操作作用域执行",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:later_search": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/later_search/view.dart",
+        "symbol": "LaterSearchPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "private var isLater"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func fetch"
+        }
+      ],
+      "behavior": "服务侧关键词和未看完筛选贯穿翻页及队列；搜索结果支持正常打开/选择，清除搜索恢复原列表",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member/view.dart",
+        "symbol": "MemberPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct CreatorSpace"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func sections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "struct CreatorHeaderDetails"
+        }
+      ],
+      "behavior": "服务声明的主页/动态/投稿/收藏/追番/课程/店铺按可见性生成，实际默认标签、头像头图/资料、分享/快捷方式、关系/私信/拉黑、仅限本人移除粉丝、空间隐私、直播预约和排行均有入口",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_article": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_article/view.dart",
+        "symbol": "MemberArticle"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "case .articles:"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case \"article\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "origin_image_urls"
+        }
+      ],
+      "behavior": "按作者分页，专栏图像采用原作封面，显示浏览、评论和发布时间，点入原生阅读，长按封面浏览；文章正文见阅读域",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_audio": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_audio/view.dart",
+        "symbol": "MemberAudio"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "case .albums:"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case \"audio\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "firstAudio"
+        }
+      ],
+      "behavior": "定向读取该作者音乐、数量与列表翻页，封面/统计、音乐详情、播放全部与连续播放以作者和页号做队列来源",
+      "evidence": [
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_cheese": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_cheese/view.dart",
+        "symbol": "MemberCheese"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "case .cheese:"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/Courses.swift",
+          "symbol": "struct CoursesView"
+        }
+      ],
+      "behavior": "作者的课程不混入我的收藏，利用服务返回的下一页加载，点击课程或课时打开原生课程页",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_coin_arc": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_coin_arc/view.dart",
+        "symbol": "MemberCoinArcPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "case .coins:"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case .coins:"
+        }
+      ],
+      "behavior": "作者的投币视频按页读取，显示封面、播放/弹幕、合作/互动标记和日期，区分 UGC 首 CID 和 PGC 跳转",
+      "evidence": [
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_comic": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_comic/view.dart",
+        "symbol": "MemberComic"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorCatalog.swift",
+          "symbol": "struct CreatorComics"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case .comic:"
+        }
+      ],
+      "behavior": "空间漫画的分页、封面预览、标题/连载状态、官方作品链接；没有仿造离线阅读权",
+      "evidence": [
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_contribute": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_contribute/view.dart",
+        "symbol": "MemberContribute"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func contributions"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "struct CreatorContributions"
+        }
+      ],
+      "behavior": "标签类型与正有效的 season_id/series_id 去重跟随服务；视频、充电、专栏、图文、音频、漫画、合集和列表可直接打开，服务允许时补全部合集/列表",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_dynamics": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_dynamics/view.dart",
+        "symbol": "MemberDynamicsPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "case .dynamic:"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct CreatorDynamics"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "func dynamics"
+        }
+      ],
+      "behavior": "空间动态绑定指定作者，支持原生卡、翻页和刷新，原帖/转发过滤在共享列表服务中执行；发布/详情等下游归动态域",
+      "evidence": [
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_favorite": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_favorite/view.dart",
+        "symbol": "MemberFavorite"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorFavorites.swift",
+          "symbol": "struct CreatorFavorites"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorFavorites.swift",
+          "symbol": "func more"
+        }
+      ],
+      "behavior": "本人或他人空间的公开收藏按服务分组、展开与分页，根据资源类型打开夹/合集；写权限由服务 owner 决定",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_guard": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_guard/view.dart",
+        "symbol": "MemberGuard"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorCatalog.swift",
+          "symbol": "struct CreatorGuards"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "value.guards"
+        }
+      ],
+      "behavior": "舰队摘要显示头像总数，进入榜首及其他成员，分页并按稳定 mid 合并；可查看具体用户",
+      "evidence": [
+        "Acceptance/evidence/personal-library-final.md",
+        "Checks/CreatorSectionsCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_home": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_home/view.dart",
+        "symbol": "MemberHome"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func sections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "struct CreatorHomePanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "reservations"
+        }
+      ],
+      "behavior": "主页可见性、类别/条数/更多、点击 UGC/PGC/合集/漫画/音频和动态等保留真实目标，按服务给出的预约状态决定操作",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_like_arc": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_like_arc/view.dart",
+        "symbol": "MemberLikeArcPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "case .likes:"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case .likes:"
+        }
+      ],
+      "behavior": "作者点赞的档案使用独立列表接口，展示投稿时间、时长、统计；视频首 CID 和 PGC 类型分别路由，封面可预览",
+      "evidence": [
+        "Acceptance/evidence/personal-library-final.md",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_opus": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_opus/view.dart",
+        "symbol": "MemberOpus"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": "struct CreatorOpus"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case \"opus\""
+        }
+      ],
+      "behavior": "作者空间图文支持服务声明的分类、offset、封面和查看原文。图文阅读器在文章域另验",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_pgc": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_pgc/view.dart",
+        "symbol": "MemberBangumi"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "struct CreatorMobileMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "case .bangumi:"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SeasonLibrary.swift",
+          "symbol": "struct FollowedSeasons"
+        }
+      ],
+      "behavior": "空间追番/追剧按作者和状态翻页，仅本人可改追番状态；首页展示的作品、完整列表和内容详情分别直达",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorSectionsCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_profile": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_profile/view.dart",
+        "symbol": "EditProfilePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "struct CreatorIdentityView"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "struct CreatorHeaderDetails"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "struct HeaderDetails"
+        }
+      ],
+      "behavior": "头像挂件、昵称和 UID 复制、生日/签名/注册/验证/VIP，标签、活动链接、禁言、粉丝牌与舰队/充电入口；头图按昼夜、原图及预览对齐",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_search": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_search/view.dart",
+        "symbol": "MemberSearchPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "struct CreatorSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "SpaceSearchGateway.page"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum SpaceArchiveTarget"
+        }
+      ],
+      "behavior": "同步检索投稿与动态显示独立数量；投稿按 pn 和 20 项，动态按推荐角色、页和 offset。切标签保留列表、重选置顶；UGC 首 CID、PGC 与 PUGV 权限/目标独立",
+      "evidence": [
+        "Wire/Tests/PiliWireTests/SpaceSearchGatewayTests.swift",
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_season_series": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_season_series/view.dart",
+        "symbol": "SeasonSeriesPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "struct CreatorCollections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "struct CreatorArchiveBrowser"
+        }
+      ],
+      "behavior": "读取作品合集和视频列表，按 season/series 和实际编号进相应列表；按来源排序、分页、播放全部/继续",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_shop": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_shop/view.dart",
+        "symbol": "MemberShop"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorShop.swift",
+          "symbol": "func creatorGoods"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorShop.swift",
+          "symbol": "struct CreatorShop"
+        }
+      ],
+      "behavior": "服务允许且开启展示时出现店铺，以商品游标防重复翻页，图片、价格、优惠、商家提供的购买链接；购买由本人决定",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_upower_rank": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_upower_rank/view.dart",
+        "symbol": "UpowerRankPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/SupporterRanks.swift",
+          "symbol": "struct SupporterRanks"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "value.charges"
+        }
+      ],
+      "behavior": "榜单按服务等级分组，展示序号、头像、支持天数与各档人数；首档使用无 privilege_type 的原响应，其他档独立加载并保留位置，点人去空间，用户点击才打开 UID/oid 正确的官方充电入口",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_video": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_video/view.dart",
+        "symbol": "MemberVideo"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "struct CreatorArchiveBrowser"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "effectiveHint"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case \"video\""
+        }
+      ],
+      "behavior": "投稿按时间/播放/收藏和分类、关键词浏览，首尾、跳页、全部播放/继续、入队/看封面；移动和网页来源保留真实过滤条件和账号",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:member_video_web": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_video_web/archive/view.dart",
+        "symbol": "MemberVideoWeb"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "struct CreatorArchiveBrowser"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CreatorArchiveCatalog.swift",
+          "symbol": "enum CreatorArchiveCatalog"
+        }
+      ],
+      "behavior": "网页投稿/合集/列表用原生列表呈现：排序、服务端查询、分类/页码、双向队列，拒绝服务不替换成其他视频",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:mine": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/mine/view.dart",
+        "symbol": "MinePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "struct ProfileView"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileOverview.swift",
+          "symbol": "struct ProfileQuickActions"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileShelf.swift",
+          "symbol": "struct ProfileShelf"
+        }
+      ],
+      "behavior": "账号卡/统计/经验、扫码登录切换、无痕、消息、搜索和设置，四类资料架按配置排列、横向翻页且绑定各自账号，查看全部直达对应页面",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:space_setting": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/space_setting/view.dart",
+        "symbol": "SpaceSettingPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacy.swift",
+          "symbol": "struct SpacePrivacy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacyValues.swift",
+          "symbol": "static let"
+        }
+      ],
+      "behavior": "本人空间多组可见性，读取服务器当前值，已知字段按固定值编辑，提交绑定主账号；未知字段保留，失败不显示成功",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:subscription": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/subscription/view.dart",
+        "symbol": "SubPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "struct Subscriptions"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "func remove"
+        }
+      ],
+      "behavior": "已订阅夹和合集按实际类型区分，分页、失效状态、确认取消走相应端点，主账号切换不写错人",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "page:subscription_detail": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/subscription_detail/view.dart",
+        "symbol": "SubDetailPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "struct SubscriptionCollection"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+          "symbol": "struct FavoriteFolderScreen"
+        }
+      ],
+      "behavior": "订阅详情根据文件夹/合集选择真实元数据和媒体接口；创建者/封面、排序和分页，切换方向保留实际页号，进入指定视频",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/enablePlayAll": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enablePlayAll"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "@AppStorage(\"library.playAll\")"
+        },
+        {
+          "file": "Sources/PiliNative/Library/LibraryPlaylist.swift",
+          "symbol": "struct LibraryPlaylist"
+        }
+      ],
+      "behavior": "播放全部开关控制稍后/收藏队列入口；遍历真实页，保留搜索/进度/排序条件",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/enableQuickFav": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enableQuickFav"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "if quick"
+        },
+        {
+          "file": "Sources/PiliNative/Library/PickFolder.swift",
+          "symbol": "func save"
+        }
+      ],
+      "behavior": "开关决定直接收藏到选定文件夹或打开多选面板；已收藏可管理其所在夹，手选时检查容量。快捷操作以远端回执为准",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/followOrderType": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "followOrderType"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "FollowSortMenu"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "@AppStorage(\"follow.sort\")"
+        }
+      ],
+      "behavior": "默认和最常访问两种顺序，普通关注和分组的远程参数同步切换，本地保留选项",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/horizontalMemberPage": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "horizontalMemberPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "private var useMemberPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorVideoPanel.swift",
+          "symbol": "struct CreatorVideoPanel"
+        }
+      ],
+      "behavior": "横屏且启用时，点作者用侧边抽屉，关闭走标准用户空间；面板的切稿/分 P 返回原播放器",
+      "evidence": [
+        "Checks/InterfaceAcceptanceCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/memberTab": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "memberTab"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func preferred"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "struct CreatorSectionPreference"
+        }
+      ],
+      "behavior": "首选区不存在时依次退回服务端默认及第一个有效区，移动版 video 默认别名指向投稿",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/mineTabs": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "mineTabs"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": ".mineTabs"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileShelf.swift",
+          "symbol": "struct ProfileShelf"
+        }
+      ],
+      "behavior": "我的四类资料架可以隐藏/改序；观看记录跟随历史账号，其他资料架按主号，服务总数和每类下一页分别维护",
+      "evidence": [
+        "Checks/NavigationShellCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/quickFavId": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "quickFavId"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "private func quickFavorite"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "detail.quickFolder"
+        }
+      ],
+      "behavior": "保存首选收藏夹；从该账号实际返回的可选夹中按真实 ID 匹配，不存在则用首项，无夹则打开选择面板。远端拒绝不会显示已收藏",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "preference:SettingBoxKey/showMemberShop": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "showMemberShop"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func sections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorShop.swift",
+          "symbol": "struct CreatorShop"
+        }
+      ],
+      "behavior": "只对上游列出 shop 且本机允许的作者展示店铺，不解锁未开放的店铺",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/blackListPage": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/blackListPage'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/BlacklistManagement.swift",
+          "symbol": "struct LocalCreatorBlockList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/BlacklistManagement.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum LocalCreatorBlockFile"
+        },
+        {
+          "file": "Sources/PiliNative/Library/RecommendationFilter.swift",
+          "symbol": "blockedCreators"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。本地和在线分别浏览；游客可通过文件和剪贴板导入/导出 UID JSON，预览合并、删除、去用户空间；线上列表和移除使用打开时的主账号，成功后同步本机，游客不发线上请求",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/createFav": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/createFav'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FolderEditor.swift",
+          "symbol": "struct FolderEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderCover.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。创建或编辑标题/简介/公开状态和裁剪封面；默认夹的受限字段不允许改，上传成功取得封面地址后再提交表单",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/fan": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/fan'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "private func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。自己的或他人的粉丝按 vmid/pn 读取，点击进入空间，只有本人可在滑动/长按菜单确认移除并在回执后刷新；标题可取实际姓名",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/fav": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/fav'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "enum Tab"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/AppLinkPage.swift",
+          "symbol": "FavoriteHub(uid:"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "FavoriteHub(uid:"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。我的收藏一个入口切换视频、追番、追剧、专栏、笔记、话题、课堂；分享链接可直达初始标签，再点当前标签回顶部。各类操作保留在各自列表",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/favDetail": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/favDetail'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+          "symbol": "func subscribe"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "struct CloudLibraryView"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteMedia.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。按夹主鉴权，资源分页、搜索、视频/音频/PGC 和失效条目、预览封面、作者、动态分享、订阅/取消、播放队列和所属者多选管理",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/favSearch": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/favSearch'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteSearchAll.swift",
+          "symbol": "struct FavoriteSearchAll"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteSearchAll.swift",
+          "symbol": "struct FavoriteSearchOrganizer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "struct CloudLibraryView"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。跨夹和当前夹搜索，输入/清空、翻页、打开与失效项目，选择并批量删除/复制/移动；跨夹确认每个资源的真实来源，按可见顺序倒序移动",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/follow": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/follow'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct ScopedFollowGroups"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。主账号关注的全部与自建/内置组、未分组，另一人的关注可分页、看空间、显示其真实昵称；最近/最常访问排序，搜索、分组维护和黑名单入口",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/followSearch": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/followSearch'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "func connections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "搜索关注"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。主账号按需提交关注关键词，清除恢复原顺序和全部列表，结果分页，可打开作者及管理本人的关系",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/followed": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/followed'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "struct SharedFollowing"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。共同关注与我关注的人也关注了对方两个互异服务；主账号鉴权，分页和总数，异步解析对方姓名、点人进空间",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/history": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/history'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "struct ProfileFullHistory"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileShelfModels.swift",
+          "symbol": "struct MineHistoryPage"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。按服务分类、分页、搜索，打开视频的确切分 P 和播放时刻，PGC/直播/课程/文章走不同路由；按有效业务键删除、清已完成及全选，暂停/恢复/清空绑定历史角色",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/NavigationShellCheck.swift",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/historySearch": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/historySearch'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func fullHistory"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func setTerm"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryCourseLink.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。综合历史搜索传 business=all 按页读，不限制普通投稿；切分类/关键词清旧结果及选择，恢复播放含 0/-1/正值",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/NavigationShellCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/later": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/later'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "private var isLater"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func fetch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/CollectionsAPI.swift",
+          "symbol": "func"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。全部和未看完、关键词、正倒序、播放/继续、查看封面、多选删除/移动、清除已看/失效或全部均按主账号与操作作用域执行",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/laterSearch": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/laterSearch'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "private var isLater"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func fetch"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。服务侧关键词和未看完筛选贯穿翻页及队列；搜索结果支持正常打开/选择，清除搜索恢复原列表",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/member": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/member'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct CreatorSpace"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func sections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "struct CreatorHeaderDetails"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。服务声明的主页/动态/投稿/收藏/追番/课程/店铺按可见性生成，实际默认标签、头像头图/资料、分享/快捷方式、关系/私信/拉黑、仅限本人移除粉丝、空间隐私、直播预约和排行均有入口",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/memberDynamics": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/memberDynamics'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "case .dynamic:"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct CreatorDynamics"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "func dynamics"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。空间动态绑定指定作者，支持原生卡、翻页和刷新，原帖/转发过滤在共享列表服务中执行；发布/详情等下游归动态域",
+      "evidence": [
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/memberGuard": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/memberGuard'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorCatalog.swift",
+          "symbol": "struct CreatorGuards"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "value.guards"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。舰队摘要显示头像总数，进入榜首及其他成员，分页并按稳定 mid 合并；可查看具体用户",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/memberSearch": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/memberSearch'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "struct CreatorSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "SpaceSearchGateway.page"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum SpaceArchiveTarget"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。同步检索投稿与动态显示独立数量；投稿按 pn 和 20 项，动态按推荐角色、页和 offset。切标签保留列表、重选置顶；UGC 首 CID、PGC 与 PUGV 权限/目标独立",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md",
+        "Wire/Tests/PiliWireTests/SpaceSearchGatewayTests.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/sameFollowing": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/sameFollowing'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "struct SharedFollowing"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。共同关注与我关注的人也关注了对方两个互异服务；主账号鉴权，分页和总数，异步解析对方姓名、点人进空间",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/spaceSetting": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/spaceSetting'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacy.swift",
+          "symbol": "struct SpacePrivacy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacyValues.swift",
+          "symbol": "static let"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。本人空间多组可见性，读取服务器当前值，已知字段按固定值编辑，提交绑定主账号；未知字段保留，失败不显示成功",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/account-profile-settings.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/subDetail": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/subDetail'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "struct SubscriptionCollection"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+          "symbol": "struct FavoriteFolderScreen"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。订阅详情根据文件夹/合集选择真实元数据和媒体接口；创建者/封面、排序和分页，切换方向保留实际页号，进入指定视频",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/subscription": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/subscription'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "struct Subscriptions"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "func remove"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。已订阅夹和合集按实际类型区分，分页、失效状态、确认取消走相应端点，主账号切换不写错人",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/upowerRank": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/upowerRank'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/SupporterRanks.swift",
+          "symbol": "struct SupporterRanks"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "value.charges"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。榜单按服务等级分组，展示序号、头像、支持天数与各档人数；首档使用无 privilege_type 的原响应，其他档独立加载并保留位置，点人去空间，用户点击才打开 UID/oid 正确的官方充电入口",
+      "evidence": [
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "route:/videoWeb": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/videoWeb'"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "struct CreatorArchiveBrowser"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CreatorArchiveCatalog.swift",
+          "symbol": "enum CreatorArchiveCatalog"
+        }
+      ],
+      "behavior": "内部导航带原资源/目标账号进入原生页。网页投稿/合集/列表用原生列表呈现：排序、服务端查询、分类/页码、双向队列，拒绝服务不替换成其他视频",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:fav/article": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/article/view.dart",
+        "symbol": "FavArticlePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "case .article:"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "case .articles:"
+        }
+      ],
+      "behavior": "专栏收藏有连续分页、原生文章入口和取消收藏；文章内容见阅读域",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:fav/cheese": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/cheese/view.dart",
+        "symbol": "FavCheesePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "case .cheese:"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/Courses.swift",
+          "symbol": "struct CoursesView"
+        }
+      ],
+      "behavior": "课程收藏有收藏标记、课时、真实下一页和取消收藏",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:fav/note": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/note/view.dart",
+        "symbol": "FavNotePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "case .note:"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "case .published"
+        }
+      ],
+      "behavior": "未发布/公开笔记分开加载，显示本地草稿，支持单删、多选或全选已载项目并按 note_ids 或 cvids 提交；编辑见笔记域",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:fav/pgc": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/pgc/view.dart",
+        "symbol": "FavPgcPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "case .bangumi, .cinema:"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SeasonLibrary.swift",
+          "symbol": "private func move"
+        }
+      ],
+      "behavior": "追番和追剧分别传 type 1/2；每类真实服务的想看/在看/看过、批量状态及取消",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:fav/topic": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/topic/view.dart",
+        "symbol": "FavTopicPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "case .topic:"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "case .topics:"
+        }
+      ],
+      "behavior": "收藏话题分页、失效处理和取消收藏；打开带 ID 的原生话题，话题内操作归话题域",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:fav/video": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/fav/video/view.dart",
+        "symbol": "FavVideoPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "case .video:"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "struct FolderList"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudOrder.swift",
+          "symbol": "func save"
+        }
+      ],
+      "behavior": "分页打开收藏夹，查看数量和封面，搜索/创建/编辑/排序及删除非默认夹",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:follow_type/follow_same": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/follow_type/follow_same/view.dart",
+        "symbol": "FollowSamePage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "/x/relation/same/followings"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "展示我与指定用户共同关注的人，含真实昵称、总数、分页和空间入口",
+      "evidence": [
+        "Acceptance/evidence/personal-library-final.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:follow_type/followed": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/follow_type/followed/view.dart",
+        "symbol": "FollowedPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "/x/relation/followings/followed_upper"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "显示我关注的人中关注该用户的人及总数、名字，分页看用户；切换主账号中止旧请求",
+      "evidence": [
+        "Acceptance/evidence/personal-library-final.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:member_search/child": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_search/child/view.dart",
+        "symbol": "MemberSearchChildPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "SpaceSearchGateway.page"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "filter.accepts"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum SpaceArchiveTarget"
+        }
+      ],
+      "behavior": "投稿与动态分别绑定 main/recommend；上传流按普通/PGC/课堂分流，不把无效重定向当普通投稿。转发与原文执行同一过滤，拒绝保留错误",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Wire/Tests/PiliWireTests/SpaceSearchGatewayTests.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:member_video_web/archive": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_video_web/archive/view.dart",
+        "symbol": "MemberVideoWeb"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "struct CreatorArchiveBrowser"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CreatorArchiveCatalog.swift",
+          "symbol": "enum CreatorArchiveCatalog"
+        }
+      ],
+      "behavior": "Web 作者投稿分类/发布时间/播放/收藏排序、关键词、分页/跳页及播放队列",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:member_video_web/base": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_video_web/base/view.dart",
+        "symbol": "BaseVideoWebState"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "private var scope"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "effectiveHint"
+        }
+      ],
+      "behavior": "共用列表保证当前查询范围的上下页/定页、继续播放位置和播放全部，账号或查询条件变化后不串用光标",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:member_video_web/season_series": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/member_video_web/season_series/view.dart",
+        "symbol": "MemberSSWeb"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case \"season_video\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorArchiveBrowser.swift",
+          "symbol": "private var scope"
+        }
+      ],
+      "behavior": "合集或列表按不同编号和服务读取，倒/正序的顺序影响浏览和真实播放顺序",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/creator-archive-playlist.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "screen:video/member": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/video/member/view.dart",
+        "symbol": "HorizontalMemberPage"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorVideoPanel.swift",
+          "symbol": "struct CreatorVideoPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "/x/web-interface/card"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorVideoPanel.swift",
+          "symbol": "struct CreatorSpaceMetrics"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "CreatorVideoPanel(mid:"
+        }
+      ],
+      "behavior": "横屏视频作者面板以当前稿件为中心向前/后加载和切片，显示本人头像、昵称复制、年度 VIP/等级、粉丝关注/获赞；看空间、编辑本人或关注/设置对方",
+      "evidence": [
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/修改头像/用户名/签名/性别/生日": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "修改头像/用户名/签名/性别/生日"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "struct ProfileEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "ProfileEditor(uid:"
+        }
+      ],
+      "behavior": "编辑本人资料真实字段按创建时身份提交，空间、横屏作者面板和我的三个入口归到同一所有者编辑器，字段/头像上传归账号域",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/创建/修改/删除关注分组": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "创建/修改/删除关注分组"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct ScopedFollowGroups"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "主账号关注的全部与自建/内置组、未分组，另一人的关注可分页、看空间、显示其真实昵称；最近/最常访问排序，搜索、分组维护和黑名单入口",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/创建/编辑/删除收藏夹": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "创建/编辑/删除收藏夹"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FolderEditor.swift",
+          "symbol": "struct FolderEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderCover.swift",
+          "symbol": "struct"
+        }
+      ],
+      "behavior": "创建或编辑标题/简介/公开状态和裁剪封面；默认夹的受限字段不允许改，上传成功取得封面地址后再提交表单",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/取消/订阅合集": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "取消/订阅合集"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "struct Subscriptions"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveCollectionPanel.swift",
+          "symbol": "ArchiveSeasonSubscriptionButton("
+        },
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveSeasonSubscriptionButton.swift",
+          "symbol": "/x/web-interface/archive/relation"
+        },
+        {
+          "file": "Sources/PiliNative/Library/ArchiveSeasonSubscription.swift",
+          "symbol": "func toggle"
+        }
+      ],
+      "behavior": "UGC 视频合集面板根据当前 BV 的 archive/relation.season_fav 显示订阅或取消，用当前主号和真实合集 season_id、platform=web 写入相应服务；“我的订阅”也可以取消。冲突的合集编号或账户切换不提交，失败保留原状态。",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorPlaylistCheck.swift",
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/service-protocol-review.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/取消/追番，更新追番状态": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "取消/追番，更新追番状态"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "struct CreatorMobileMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "case .bangumi:"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SeasonLibrary.swift",
+          "symbol": "struct FollowedSeasons"
+        }
+      ],
+      "behavior": "空间追番/追剧按作者和状态翻页，仅本人可改追番状态；首页展示的作品、完整列表和内容详情分别直达",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/CreatorSectionsCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/复制/移动/排序收藏夹/稍后再看视频": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "复制/移动/排序收藏夹/稍后再看视频"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func transfer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteOrder.swift",
+          "symbol": "func move"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FavoriteSearchAll.swift",
+          "symbol": "LibraryCheckedOrder"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum LibraryCheckedOrder"
+        }
+      ],
+      "behavior": "收藏复制/移动按固定上游以显示列表选中顺序反序、去重；稍后/删除保留原序；拒绝已失效选中项，持久化排序到真实源",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/搜索用户动态": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "搜索用户动态"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "struct CreatorSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "SpaceSearchGateway.page"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum SpaceArchiveTarget"
+        }
+      ],
+      "behavior": "同步检索投稿与动态显示独立数量；投稿按 pn 和 20 项，动态按推荐角色、页和 offset。切标签保留列表、重选置顶；UGC 首 CID、PGC 与 PUGV 权限/目标独立",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md",
+        "Wire/Tests/PiliWireTests/SpaceSearchGatewayTests.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/收藏夹/稍后再看多选删除": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "收藏夹/稍后再看多选删除"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "LibraryCheckedOrder"
+        },
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum LibraryCheckedOrder"
+        }
+      ],
+      "behavior": "按类型加入 aid 或 rid:type，删除与跨夹转移使用不同端点，检查服务回执并绑定主账号",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/收藏夹排序": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "收藏夹排序"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudOrder.swift",
+          "symbol": "func save"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "struct FolderList"
+        }
+      ],
+      "behavior": "加载所有创建的夹后才允许排序、固定默认夹、绑定 UID 提交其余顺序，失败能重试",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/查看用户图文": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "查看用户图文"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": "struct CreatorOpus"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case \"opus\""
+        }
+      ],
+      "behavior": "作者空间图文支持服务声明的分类、offset、封面和查看原文。图文阅读器在文章域另验",
+      "evidence": [
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/article-notebook-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/移除粉丝": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "移除粉丝"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "private func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "自己的或他人的粉丝按 vmid/pn 读取，点击进入空间，只有本人可在滑动/长按菜单确认移除并在回执后刷新；标题可取实际姓名",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:feat/稍后再看 ~~`未看`~~ / `未看完` / ~~`已看完`~~ 分类": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "稍后再看 ~~`未看`~~ / `未看完` / ~~`已看完`~~ 分类"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "private var isLater"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func fetch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/CollectionsAPI.swift",
+          "symbol": "func"
+        }
+      ],
+      "behavior": "全部和未看完、关键词、正倒序、播放/继续、查看封面、多选删除/移动、清除已看/失效或全部均按主账号与操作作用域执行",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:opt/收藏面板": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "收藏面板"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/PickFolder.swift",
+          "symbol": "func save"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderEditor.swift",
+          "symbol": "struct FolderEditor"
+        }
+      ],
+      "behavior": "按资源查询原先选中夹，允许跨多个夹增加/移除及新建，检查容量，差集加减并且失败保留选择",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/关注/取关用户": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "关注/取关用户"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+          "symbol": "func press"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "private func act"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "CreatorQuickRelation(mid:"
+        }
+      ],
+      "behavior": "关注与取关依当前关系，非本人且已登录，确认后更新，避免按展示时旧状态误操作",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/屏蔽黑名单内用户视频": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "屏蔽黑名单内用户视频"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/PersonalLibraryContracts.swift",
+          "symbol": "enum LocalCreatorBlockFile"
+        },
+        {
+          "file": "Sources/PiliNative/Social/BlacklistManagement.swift",
+          "symbol": "struct OnlineCreatorBlockList"
+        },
+        {
+          "file": "Sources/PiliNative/Library/RecommendationFilter.swift",
+          "symbol": "blockedCreators"
+        }
+      ],
+      "behavior": "本地 UID 的集合与在线黑名单已读页合并，增删不覆盖其他屏蔽条件；推荐条目按真实作者 ID 匹配",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/我的收藏": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "我的收藏"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/FavoriteHub.swift",
+          "symbol": "enum Tab"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/AppLinkPage.swift",
+          "symbol": "FavoriteHub(uid:"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "FavoriteHub(uid:"
+        }
+      ],
+      "behavior": "我的收藏一个入口切换视频、追番、追剧、专栏、笔记、话题、课堂；分享链接可直达初始标签，再点当前标签回顶部。各类操作保留在各自列表",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/无痕模式（播放视为未登录）": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "无痕模式（播放视为未登录）"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountRole.swift",
+          "symbol": "func privatePlaybackCopy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileOverview.swift",
+          "symbol": "private func set"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "struct ProfileView"
+        }
+      ],
+      "behavior": "固定 mine/controller 的开关临时或永久将观看上报设游客；历史浏览在游客上报时按原版回落主号，取流及其他角色不被无关改写",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/personal-library-audit.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/用户主页查看": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "用户主页查看"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct CreatorSpace"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSections.swift",
+          "symbol": "func sections"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorHeaderDetails.swift",
+          "symbol": "struct CreatorHeaderDetails"
+        }
+      ],
+      "behavior": "服务声明的主页/动态/投稿/收藏/追番/课程/店铺按可见性生成，实际默认标签、头像头图/资料、分享/快捷方式、关系/私信/拉黑、仅限本人移除粉丝、空间隐私、直播预约和排行均有入口",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorSectionsCheck.swift",
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/用户相关": {
+      "verdict": "cross-domain",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "用户相关"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "struct ProfileView"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct CreatorSpace"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+          "symbol": "func press"
+        }
+      ],
+      "behavior": "README 小节汇总；空间、资料、关系、资料架的细项在本附件，登录、多账号、通知私信和举报还有独立域记录",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/account-profile-settings.md",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "总表按各项独立域签核"
+    },
+    "upstream:功能/稍后再看": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "稍后再看"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "private var isLater"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func fetch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/CollectionsAPI.swift",
+          "symbol": "func"
+        }
+      ],
+      "behavior": "全部和未看完、关键词、正倒序、播放/继续、查看封面、多选删除/移动、清除已看/失效或全部均按主账号与操作作用域执行",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/PersonalLibraryCheck.swift",
+        "Checks/CreatorPlaylistCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/粉丝、关注用户、拉黑用户查看": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "粉丝、关注用户、拉黑用户查看"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/BlacklistManagement.swift",
+          "symbol": "struct OnlineCreatorBlockList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct RelationsList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "func creatorCardName"
+        }
+      ],
+      "behavior": "三种列表各有真实接口，用户可看资料并在自己被允许的范围执行操作，未登录仍可使用本地黑名单",
+      "evidence": [
+        "Checks/PersonalLibraryCheck.swift",
+        "Acceptance/evidence/personal-library-final.md"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    },
+    "upstream:功能/观看记录": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "观看记录"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "struct ProfileFullHistory"
+        },
+        {
+          "file": "Sources/PiliNative/Library/HistoryLibrary.swift",
+          "symbol": "func remove"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileShelfModels.swift",
+          "symbol": "struct MineHistoryPage"
+        }
+      ],
+      "behavior": "按服务分类、分页、搜索，打开视频的确切分 P 和播放时刻，PGC/直播/课程/文章走不同路由；按有效业务键删除、清已完成及全选，暂停/恢复/清空绑定历史角色",
+      "evidence": [
+        "Acceptance/evidence/personal-library-audit.md",
+        "Checks/NavigationShellCheck.swift",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "实际账号服务的响应与最终设备交互留待授权验收"
+    }
+  }
+}

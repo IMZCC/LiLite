@@ -1,0 +1,771 @@
+{
+  "baseline": "PiliPlus 2.2.0.2",
+  "rows": [
+    {
+      "id": "upstream:feat/AI 原声翻译",
+      "line": 57,
+      "kind": "video",
+      "upstream": "lib/pages/video/controller.dart#setLanguage",
+      "native": [
+        "Playback/SpokenTrackPicker.swift#changeLanguage",
+        "Playback/DashModels.swift#production_type",
+        "Playback/PlayerModel.swift#options.selectedLanguage",
+        "Playback/DashBridge.swift#cur_language"
+      ],
+      "behavior": "服务发布的语言列表以中文优先、同种语言人工先于 AI 排序；production_type=2 标 AI，选中后在当前视频账号权限内重新取该语言音视频，保持进度；游客获授音轨也可切换",
+      "evidence": [
+        "spoken-tracks.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/三连动画",
+      "line": 110,
+      "kind": "video",
+      "upstream": "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart#tripleAnimCtr",
+      "native": [
+        "Playback/TripleTouch.swift#strokeEnd",
+        "Playback/EngagementBar.swift#commitHeldTriple"
+      ],
+      "behavior": "按住 200ms 后原生进度环开始，继续 1200ms 完成三连；中途松手、拖走、失焦或换号取消；减弱动态效果和辅助操作可用",
+      "evidence": [
+        "player-key-gestures.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/投币动画",
+      "line": 105,
+      "kind": "video",
+      "upstream": "lib/pages/video/pay_coins/view.dart#_onPayCoin",
+      "native": [
+        "Playback/ArchiveCoinStage.swift#rotation3DEffect",
+        "Playback/ArchiveCoinPicker.swift#func submit",
+        "Playback/EngagementBar.swift#private func coin"
+      ],
+      "behavior": "可选择一或两枚硬币，以按钮或向上滑动确认；原生落币与托盘反馈后仅提交一次；后台、换号或取消不扣币，减弱动画直接提交",
+      "evidence": [
+        "video-engagement.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/显示视频分段信息",
+      "line": 92,
+      "kind": "video",
+      "upstream": "lib/pages/video/view_point/view.dart#currentIndex",
+      "native": [
+        "Playback/ArchiveChapterPanel.swift#showChapterMarks",
+        "Playback/InteractiveStory.swift#imgUrl",
+        "Playback/ViewportTimeline.swift#showChapterMarks"
+      ],
+      "behavior": "显示服务分段的封面、当前区间、起止与标题，点击定位；会话开关同步到进度条",
+      "evidence": [
+        "archive-detail-audit.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/显示视频完整合集",
+      "line": 109,
+      "kind": "video",
+      "upstream": "lib/pages/video/view.dart#ugcSeasonPanel",
+      "native": [
+        "Playback/ArchiveCollectionPanel.swift#DisclosureGroup",
+        "Playback/DetailView.swift#archivePlaylist",
+        "Library/Video.swift#VideoCollection"
+      ],
+      "behavior": "跨合集各分区列出全部返回稿件与多分 P，定位当前播放项，按分区正倒序，选择实际 BV/CID",
+      "evidence": [
+        "archive-detail-audit.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/滑动跳转预览视频缩略图",
+      "line": 84,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/controller.dart#getVideoShot",
+      "native": [
+        "Playback/TimelineAssets.swift#ShotPreview",
+        "Playback/TimelineData.swift#func tile",
+        "Playback/ViewportTimeline.swift#ShotPreview",
+        "Playback/PlayerGestures.swift#ShotPreview"
+      ],
+      "behavior": "滑动或拖进度拇指按服务的时间索引裁剪对应雪碧图；横竖/全屏/内嵌共用，关掉偏好只显示时间",
+      "evidence": [
+        "playback-timeline.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/番剧三连",
+      "line": 111,
+      "kind": "video",
+      "upstream": "lib/pages/video/introduction/pgc/controller.dart#actionTriple",
+      "native": [
+        "Playback/PlaybackSocialRequest.swift#/pgc/season/episode/like/triple",
+        "Playback/EngagementBar.swift#addTriple",
+        "Discover/Seasons.swift#EngagementBar"
+      ],
+      "behavior": "ep_id 专用接口，按服务返回逐项合并点赞、投币、收藏状态；不使用追番接口替代",
+      "evidence": [
+        "video-engagement.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/视频TAG",
+      "line": 113,
+      "kind": "video",
+      "upstream": "lib/pages/video/introduction/ugc/view.dart#_buildTags",
+      "native": [
+        "Playback/VideoExtras.swift#view/detail/tag",
+        "Discover/MusicContent.swift#struct ArchiveTag"
+      ],
+      "behavior": "BGM、话题、一般标签分开进入音乐页、话题页和搜索；可复制标签，换账号或 CID 重新取",
+      "evidence": [
+        "archive-detail-audit.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/跳过番剧片头/片尾",
+      "line": 53,
+      "kind": "video",
+      "upstream": "lib/pages/video/controller.dart#clipInfoList",
+      "native": [
+        "Discover/EpisodePlayPayload.swift#clip_info_list",
+        "Playback/EpisodeClips.swift#EpisodeSkipHistory",
+        "Playback/EpisodeClipPrompt.swift#EpisodeClipPrompt",
+        "Playback/PlayerModel.swift#clipSkips",
+        "Offline/DownloadViews.swift#episodeClips"
+      ],
+      "behavior": "OP/ED 采用服务实际起止，支持一次/总是/手动/仅标记/关闭；内嵌、全屏及缓存各用相同语义，手动 Enter 可跳当前段",
+      "evidence": [
+        "season-course-detail.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:feat/高能进度条",
+      "line": 83,
+      "kind": "video",
+      "upstream": "lib/pages/video/controller.dart#_getDmTrend",
+      "native": [
+        "Playback/TimelineData.swift#struct ActivityTrend",
+        "Playback/TimelineAssets.swift#requestTrend",
+        "Playback/ArchiveTrendStrip.swift#showTrendOverlay",
+        "Playback/ViewportTimeline.swift#ArchiveTrendStrip"
+      ],
+      "behavior": "用真实活动序列按视频时间缩放画曲线；全局偏好与此会话的临时开关分开，内嵌、全屏和底部细进度均可见",
+      "evidence": [
+        "playback-timeline.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:fix/番剧分集点赞/投币/收藏",
+      "line": 140,
+      "kind": "video",
+      "upstream": "lib/pages/video/introduction/pgc/controller.dart#actionLikeVideo",
+      "native": [
+        "Playback/VideoEngagement.swift#var type",
+        "Playback/EngagementBar.swift#quickFavorite",
+        "Playback/ArchiveCoinPicker.swift#available",
+        "Discover/Seasons.swift#EngagementBar"
+      ],
+      "behavior": "分集关注、番剧分集收藏及作品追番分开，收藏类型 24；赞与投币针对本集稿件。数量、账号及回执校验与 UGC 的版权上限区分",
+      "evidence": [
+        "video-engagement.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:opt/亮度调节",
+      "line": 132,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/view/view.dart#setSystemBrightness",
+      "native": [
+        "Playback/PlayerGestures.swift#UIScreen.main.brightness",
+        "Playback/FullscreenPolicy.swift#func level",
+        "Playback/DetailView.swift#brightness"
+      ],
+      "behavior": "在左侧垂直滑动使用当前设备亮度作为起点，按三倍高度比例调节并限制到 0–1；亮度原生写入 UIScreen",
+      "evidence": [
+        "player-touch-controls.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:opt/视频staff",
+      "line": 134,
+      "kind": "video",
+      "upstream": "lib/pages/video/introduction/ugc/view.dart#_buildStaff",
+      "native": [
+        "Playback/StaffCreditRow.swift#checkmark.seal.fill",
+        "Playback/VideoExtras.swift#CreatorQuickRelation",
+        "Library/Video.swift#struct VideoStaff"
+      ],
+      "behavior": "服务头像、岗位、创作者姓名、个人/机构认证、年度会员配色和单独关注。横屏点主 UP 可进右栏，其他合作者进自己的空间",
+      "evidence": [
+        "creator-playback-sidebar.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:opt/视频播放",
+      "line": 133,
+      "kind": "video-group",
+      "upstream": "lib/plugin/pl_player/controller.dart#_initializePlayer",
+      "native": [
+        "Playback/PlayerModel.swift#reloadPlayback",
+        "Playback/ArchiveProgramInfo.swift#ArchiveProgramInfo",
+        "Playback/ArchiveSourceEditor.swift#useAddress",
+        "Playback/PlayerViewport.swift#SystemTheater"
+      ],
+      "behavior": "覆盖下述视频播放子项，另有当前轨道诊断、重载授权流、外部播放地址与独立音轨、原生输入和缓冲。未给出具体条目的泛称不扩张为额外指标",
+      "evidence": [
+        "archive-detail-audit.md",
+        "native-decode.md",
+        "media-byte-buffer.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:opt/防止bottomsheet遮挡全屏视频",
+      "line": 135,
+      "kind": "video",
+      "upstream": "lib/utils/page_utils.dart#showVideoBottomSheet",
+      "native": [
+        "Playback/TheaterDrawer.swift#TheaterWorkspace",
+        "Playback/Theater.swift#TheaterTools"
+      ],
+      "behavior": "播放工具与原有画面并排或上下排布：横屏右栏不超半屏/500pt，竖屏下栏保留上方视频；评论、选集、分段等在该栏导航。系统权限和系统分享仍用 iOS 原生呈现",
+      "evidence": [
+        "fullscreen-workspace.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/倍速选择/长按2倍速",
+      "line": 177,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/controller.dart#setLongPressStatus",
+      "native": [
+        "Settings/SpeedSettings.swift#长按时使用当前倍速的两倍",
+        "Playback/PlayerGestures.swift#endBoost",
+        "Playback/PlayerKeyboard.swift#restore"
+      ],
+      "behavior": "可选预设及自定义速度、长按默认档或当前倍速的两倍；松手恢复，暂停中不强制启动",
+      "evidence": [
+        "player-key-gestures.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/全屏方向设置",
+      "line": 176,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/controller.dart#changeOrientation",
+      "native": [
+        "Playback/FullscreenPolicy.swift#func wanted",
+        "Playback/FullscreenPresentation.swift#requestGeometryUpdate"
+      ],
+      "behavior": "按视频、保持、竖屏、横屏或依据宽高比，向实际 iOS 场景申请方向并在离开时释放",
+      "evidence": [
+        "fullscreen.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/双击播放/暂停",
+      "line": 172,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/controller.dart#onDoubleTapCenter",
+      "native": [
+        "Playback/PlayerKeySequence.swift#doubleTap",
+        "Playback/PlayerGestures.swift#model.toggle"
+      ],
+      "behavior": "中间半幅双击切换状态，关闭分区快进后任意位置均可切换，片尾从头重播",
+      "evidence": [
+        "player-key-gestures.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/垂直方向上滑全屏、下滑退出全屏",
+      "line": 174,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/view/view.dart#enableSlideFS",
+      "native": [
+        "Playback/FullscreenPolicy.swift#func swipe",
+        "Playback/PlayerGestures.swift#enterTheater"
+      ],
+      "behavior": "中间三分之一向上进全屏、向下退出，支持反向及关闭，锁定或捏合期间不抢手势",
+      "evidence": [
+        "player-touch-controls.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/垂直方向调节亮度/音量",
+      "line": 173,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/view/view.dart#maxHeight * 0.5",
+      "native": [
+        "Playback/PlayerGestures.swift#originBrightness",
+        "Playback/FullscreenPolicy.swift#func level",
+        "Playback/PlayerHeaderStatus.swift#MPVolumeView"
+      ],
+      "behavior": "左亮度、右播放会话音量，系统输出另有 MPVolumeView 原生滑条，iOS 自定义手势不冒充可写整机音量",
+      "evidence": [
+        "player-key-gestures.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/点赞、投币、收藏/取消收藏",
+      "line": 196,
+      "kind": "video",
+      "upstream": "lib/pages/common/common_intro_controller.dart#actionFavVideo",
+      "native": [
+        "Playback/EngagementBar.swift#removeFavoriteReceipt",
+        "Playback/ArchiveCoinPicker.swift#available",
+        "Playback/PlaybackSocialRequest.swift#func like"
+      ],
+      "behavior": "独立赞/取消、带数量与可选点赞的投币、单/多文件夹及快速收藏/移除；确认后刷新当前用户当前内容",
+      "evidence": [
+        "video-engagement.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/相关视频查看",
+      "line": 197,
+      "kind": "video",
+      "upstream": "lib/pages/video/related/controller.dart#relatedVideoList",
+      "native": [
+        "Playback/ArchiveIntro.swift#archive/related",
+        "Playback/ArchiveIntro.swift#discoveryCardRemoval",
+        "Library/RecommendationFilter.swift#related"
+      ],
+      "behavior": "推荐角色绑定的相关视频服务、过滤、进入详情、卡片移除及失败重载",
+      "evidence": [
+        "archive-detail-audit.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/自动全屏",
+      "line": 210,
+      "kind": "video",
+      "upstream": "lib/pages/video/controller.dart#autoFullScreenFlag",
+      "native": [
+        "Playback/FullscreenPresentation.swift#AutoTheater",
+        "Playback/DetailView.swift#AutoTheater",
+        "Discover/Seasons.swift#AutoTheater"
+      ],
+      "behavior": "已选择开始播放时进入全屏，每 CID 一次；自动退出依设置与真实播放结束事件",
+      "evidence": [
+        "fullscreen.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/视频播放相关",
+      "line": 170,
+      "kind": "video-group",
+      "upstream": "lib/plugin/pl_player/controller.dart#setDataSource",
+      "native": [
+        "Playback/PlayerModel.swift#func load",
+        "Playback/PlayerViewport.swift#appControls",
+        "Playback/PlayerKeyboard.swift#keypress"
+      ],
+      "behavior": "README 所列 15 个子项，以同一表内已定位的叶子和解码、轨道、弹幕、字幕专题共同验收",
+      "evidence": [
+        "archive-detail-audit.md",
+        "player-key-gestures.md"
+      ],
+      "children": [
+        "upstream:功能/双击快进/快退",
+        "upstream:功能/双击播放/暂停",
+        "upstream:功能/垂直方向调节亮度/音量",
+        "upstream:功能/垂直方向上滑全屏、下滑退出全屏",
+        "upstream:功能/水平方向手势快进/快退",
+        "upstream:功能/全屏方向设置",
+        "upstream:功能/倍速选择/长按2倍速",
+        "upstream:功能/硬件加速（视机型而定）",
+        "upstream:功能/画质选择（高清画质未解锁）",
+        "upstream:功能/音质选择（视视频而定）",
+        "upstream:功能/解码格式选择（视视频而定）",
+        "upstream:功能/弹幕",
+        "upstream:功能/字幕",
+        "upstream:功能/记忆播放",
+        "upstream:功能/视频比例：高度/宽度适应、填充、包含等"
+      ]
+    },
+    {
+      "id": "upstream:功能/视频比例：高度/宽度适应、填充、包含等",
+      "line": 185,
+      "kind": "video",
+      "upstream": "lib/plugin/pl_player/models/video_fit_type.dart#VideoFitType",
+      "native": [
+        "Playback/PictureFit.swift#geometry",
+        "Playback/PictureSession.swift#PictureFitMenu",
+        "Playback/PlayerViewport.swift#canvas"
+      ],
+      "behavior": "九种画面比例含适宽、适高、包含、裁切、原始与强制比例；控制和交互区域不随画面翻转",
+      "evidence": [
+        "player-layout-and-system-controls.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/视频详情页相关",
+      "line": 194,
+      "kind": "video-group",
+      "upstream": "lib/pages/video/view.dart#VideoDetailPageV",
+      "native": [
+        "Playback/DetailView.swift#videoInfo",
+        "Playback/VideoExtras.swift#ArchiveChapterPanel",
+        "Social/Discussion.swift#Discussion"
+      ],
+      "behavior": "README 详情八个子项：分 P、互动、相关推荐以及评论标记/排序/楼中楼/点赞/笔记图片，评论细项关联已独立核对的原生评论域",
+      "evidence": [
+        "archive-detail-audit.md",
+        "reply-domain-audit.md"
+      ],
+      "children": [
+        "upstream:功能/视频选集(分p)切换",
+        "upstream:功能/点赞、投币、收藏/取消收藏",
+        "upstream:功能/相关视频查看",
+        "upstream:功能/评论用户身份标识",
+        "upstream:功能/评论(排序)查看、二楼评论查看",
+        "upstream:功能/主楼、二楼评论回复功能",
+        "upstream:功能/评论点赞",
+        "upstream:功能/评论笔记图片查看、保存"
+      ]
+    },
+    {
+      "id": "upstream:功能/视频选集(分p)切换",
+      "line": 195,
+      "kind": "video",
+      "upstream": "lib/pages/video/introduction/ugc/widgets/page.dart#_jumpToCurrent",
+      "native": [
+        "Playback/DetailView.swift#archivePlaylist",
+        "Playback/ArchiveCollectionPanel.swift#play(video",
+        "Playback/ArchiveResume.swift#func offer"
+      ],
+      "behavior": "按实际 CID 切换、分 P 调序、从指定位点进入；续播其他分 P 先提示再选择",
+      "evidence": [
+        "archive-resume.md"
+      ],
+      "children": []
+    },
+    {
+      "id": "upstream:功能/双击快进/快退",
+      "line": 171,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/PlayerGestures.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/player-gestures-layout.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/水平方向手势快进/快退",
+      "line": 175,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/PlayerGestures.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/player-gestures-layout.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/硬件加速（视机型而定）",
+      "line": 178,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Decoder/DecoderPreference.swift",
+        "Sources/PiliNative/Playback/DashBridge.swift",
+        "Sources/PiliNative/Playback/PlayerModel.swift",
+        "Sources/PiliNative/Decoder/DecoderOptions.swift",
+        "Sources/PiliNative/Live/NativeLivePlayback.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/native-decode.md",
+        "Acceptance/evidence/media-system-signoff.json",
+        "Checks/MediaSystemCheck.swift",
+        "Checks/native_decode.py",
+        "Checks/live_decode.py",
+        "Acceptance/evidence/progressive-native-decode.md"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/画质选择（高清画质未解锁）",
+      "line": 179,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/PlayerModel.swift",
+        "Sources/PiliNative/Playback/MediaPreferences.swift",
+        "Sources/PiliNative/Playback/PlaybackOptions.swift",
+        "Sources/PiliNative/Playback/MediaNetwork.swift",
+        "Sources/PiliNative/Playback/PlayerSessionPreferences.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/media-system-signoff.json",
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/音质选择（视视频而定）",
+      "line": 180,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/PlaybackOptions.swift",
+        "Sources/PiliNative/Settings/MediaProfilePanel.swift",
+        "Sources/PiliNative/Playback/MediaNetwork.swift",
+        "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+        "Sources/PiliNative/Audio/ListenSource.swift",
+        "Sources/PiliNative/Playback/MediaPreferences.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/offline-listening-signoff.json",
+        "Acceptance/evidence/offline-listening-final.md",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/media-system-signoff.json",
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/解码格式选择（视视频而定）",
+      "line": 181,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/PlaybackOptions.swift",
+        "Sources/PiliNative/Playback/MediaPreferences.swift",
+        "Sources/PiliNative/Playback/MediaNetwork.swift",
+        "Sources/PiliNative/Playback/PlayerSessionPreferences.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/media-system-signoff.json",
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/弹幕",
+      "line": 182,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Danmaku/SegmentedComments.swift",
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/danmaku-subtitles-audit.md",
+        "Checks/caption_domain.sh",
+        "Checks/subtitle_raster.py"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/字幕",
+      "line": 183,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/Captions.swift",
+        "Sources/PiliNative/Playback/SubtitlePicker.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/danmaku-subtitles-audit.md",
+        "Checks/caption_domain.sh",
+        "Checks/subtitle_raster.py"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/记忆播放",
+      "line": 184,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Playback/PlaybackMemory.swift",
+        "Sources/PiliNative/Playback/PlayerModel.swift",
+        "Sources/PiliNative/Offline/OfflineWatchBook.swift",
+        "Sources/PiliNative/Audio/ListenQueue.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/offline-listening-signoff.json",
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/cloud-playlist.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Acceptance/evidence/listener-audio-audit.md"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/评论用户身份标识",
+      "line": 198,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Social/Discussion.swift",
+        "Wire/Sources/PiliWire/ReplyGateway.swift",
+        "Sources/PiliNative/Social/ReplyTools.swift",
+        "Sources/PiliNative/Social/ReplyAuthor.swift",
+        "Sources/PiliNative/Social/ReplyAuthorView.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/social-reading-signoff.json",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/评论(排序)查看、二楼评论查看",
+      "line": 199,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Social/Discussion.swift",
+        "Wire/Sources/PiliWire/ReplyGateway.swift",
+        "Sources/PiliNative/Social/ReplyTools.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/social-reading-signoff.json",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/主楼、二楼评论回复功能",
+      "line": 200,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Social/Discussion.swift",
+        "Wire/Sources/PiliWire/ReplyGateway.swift",
+        "Sources/PiliNative/Social/ReplyTools.swift",
+        "Sources/PiliNative/Social/ReplyComposeRules.swift",
+        "Sources/PiliNative/Social/ReplyComposeAssets.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/social-reading-signoff.json",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/评论点赞",
+      "line": 201,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Social/Discussion.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/social-reading-signoff.json",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/评论笔记图片查看、保存",
+      "line": 202,
+      "kind": "existing-leaf",
+      "implementation": [
+        "Sources/PiliNative/Social/ReplyPictures.swift",
+        "Sources/PiliNative/Discover/NativeNotebook.swift",
+        "Sources/PiliNative/Discover/NotebookDocument.swift",
+        "Sources/PiliNative/Library/SavedReadings.swift",
+        "Sources/PiliNative/Library/GalleryView.swift",
+        "Sources/PiliNative/Library/GalleryFiles.swift"
+      ],
+      "evidence": [
+        "Acceptance/evidence/social-reading-signoff.json",
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Acceptance/evidence/media-system-signoff.json",
+        "Checks/ArticleBodyCheck.swift",
+        "Acceptance/evidence/media-gallery.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "upstream": "README.md"
+    },
+    {
+      "id": "upstream:功能/用户相关",
+      "line": 155,
+      "kind": "cross-domain-group",
+      "children": [
+        "upstream:功能/粉丝、关注用户、拉黑用户查看",
+        "upstream:功能/用户主页查看",
+        "upstream:功能/关注/取关用户",
+        "upstream:功能/离线缓存",
+        "upstream:功能/稍后再看",
+        "upstream:功能/观看记录",
+        "upstream:功能/我的收藏",
+        "upstream:功能/站内私信"
+      ],
+      "behavior": "按 README 实际子项核对，非视频子域由总表的对应独立验收提供"
+    },
+    {
+      "id": "upstream:功能/设置相关",
+      "line": 204,
+      "kind": "cross-domain-group",
+      "children": [
+        "upstream:功能/画质、音质、解码方式预设",
+        "upstream:功能/图片质量设定",
+        "upstream:功能/主题模式：亮色/暗色/跟随系统",
+        "upstream:功能/震动反馈(可选)",
+        "upstream:功能/高帧率",
+        "upstream:功能/自动全屏",
+        "upstream:功能/横屏适配"
+      ],
+      "behavior": "按 README 实际子项核对，非视频子域由总表的对应独立验收提供"
+    },
+    {
+      "id": "upstream:feat/其他",
+      "line": 120,
+      "kind": "unspecified",
+      "behavior": "上游只有汇总短语，未命名行为、重现步骤或可单独验收的效果；保留原文供总表归类"
+    },
+    {
+      "id": "upstream:opt/其他",
+      "line": 136,
+      "kind": "unspecified",
+      "behavior": "上游只有汇总短语，未命名行为、重现步骤或可单独验收的效果；保留原文供总表归类"
+    },
+    {
+      "id": "upstream:fix/bugs",
+      "line": 141,
+      "kind": "unspecified",
+      "behavior": "上游只有汇总短语，未命名行为、重现步骤或可单独验收的效果；保留原文供总表归类"
+    }
+  ],
+  "baselineRevision": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a"
+}

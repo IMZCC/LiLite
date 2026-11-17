@@ -1,0 +1,36 @@
+// swift-tools-version: 5.10
+import PackageDescription
+import Foundation
+
+// The Linux Swift driver otherwise stamps the deployment target as the linked SDK.
+// Keep the deployment target at iOS 26 while passing the SDK actually used by build.sh.
+// Without the real SDK version iOS runs the app in the legacy (pre-Liquid Glass) compatibility appearance.
+let linkedSDK = ProcessInfo.processInfo.environment["PILI_IOS_SDK_VERSION"]
+let sdkLinkFlags: [LinkerSetting] = linkedSDK.map {
+  [.unsafeFlags(["-Xlinker", "-platform_version", "-Xlinker", "ios", "-Xlinker", "26.0", "-Xlinker", $0], .when(platforms: [.iOS]))]
+} ?? []
+// Development device builds (`build.sh --sign-dev`) keep -O but compile in parallel batches and
+// incrementally instead of one single-threaded whole-module job; delivery builds are unchanged.
+let fastBuild = ProcessInfo.processInfo.environment["PILI_FAST_BUILD"] == "1"
+let developmentFlags: [SwiftSetting] = fastBuild ? [.unsafeFlags(["-no-whole-module-optimization"])] : []
+
+let package = Package(
+  name: "PiliNative",
+  platforms: [.iOS("26.0")],
+  products: [.library(name: "PiliNative", targets: ["PiliNative"])],
+  dependencies: [.package(path: "Wire"), .package(path: "ArchiveKit"), .package(path: "MediaKit"), .package(path: "ColorKit")],
+  targets: [
+    .target(
+      name: "PiliNative",
+      dependencies: [
+        .product(name: "PiliWire", package: "Wire"),
+        .product(name: "PiliArchive", package: "ArchiveKit"),
+        .product(name: "MaterialColorUtilities", package: "ColorKit"),
+        .product(name: "CLiveRemux", package: "MediaKit"),
+        .product(name: "CMPV", package: "MediaKit"),
+      ],
+      resources: [.copy("Notices"), .copy("UpscaleAssets")],
+      swiftSettings: developmentFlags,
+      linkerSettings: sdkLinkFlags)
+  ]
+)

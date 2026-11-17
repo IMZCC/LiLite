@@ -1,0 +1,390 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "control": "preference:SettingBoxKey/feedBackEnable",
+  "source_calls": {
+    "lib/pages/common/dyn/common_dyn_page.dart:383": {
+      "action": "动态/图文评论入口编辑器按讨论对象取正确账号，和视频回复共用 begin",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "private func begin("
+        }
+      ]
+    },
+    "lib/pages/common/publish/common_rich_text_pub_page.dart:505": {
+      "action": "动态发布、动态转发、评论及直播文字弹幕在上传前反馈；直播大表情按上游直接发送接口不触发该动作，私信走自己的 send",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "private func submit()"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "private func send()"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveComposer.swift",
+          "symbol": "if !emoji { TouchFeedback.light() }"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "private func send()"
+        }
+      ]
+    },
+    "lib/pages/common/publish/common_text_pub_page.dart:33": {
+      "action": "点视频弹幕发送；输入/模式合法后、请求前一次",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Danmaku/BulletComposer.swift",
+          "symbol": "private func send()"
+        }
+      ]
+    },
+    "lib/pages/common/reply/reply_controller.dart:218": {
+      "action": "有排序权限时点按热度/时间切换并反馈",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "if sortable {"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "chosenSort = sort == 3 ? 2 : 3"
+        }
+      ]
+    },
+    "lib/pages/dynamics/widgets/author_panel.dart:132": {
+      "action": "动态卡作者与原动态作者头像只在可打开空间时触发",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "ReplyAuthorLabel(member: src, showsAvatar: false)"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "entry.authorNavigable"
+        }
+      ]
+    },
+    "lib/pages/dynamics/widgets/up_panel.dart:210": {
+      "action": "顶部/侧边头像点选我、全部、UP 或有效直播间；被动加载和长按菜单打开空间不触发",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "model.read(person.mid)"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "TouchFeedback.light(); select(nil)"
+        }
+      ]
+    },
+    "lib/pages/fav_panel/view.dart:200": {
+      "action": "收藏面板按完成；存在可编辑收藏夹时，未改动也可确认关闭，无差异不提交空写入",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Library/PickFolder.swift",
+          "symbol": "private func save()"
+        }
+      ]
+    },
+    "lib/pages/follow/widgets/follow_item.dart:63": {
+      "action": "点关注列表的资料进入空间；另一区域处理关注，不会点关注同时弹开个人主页",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "struct CreatorLink"
+        }
+      ]
+    },
+    "lib/pages/group_panel/view.dart:56": {
+      "action": "已载入分组后保存，允许保持原分组；失败留在面板、未加载或取消不反馈",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "private func save()"
+        }
+      ]
+    },
+    "lib/pages/home/view.dart:60": {
+      "action": "点频道立即反馈；点当前频道只滚至顶部，不触发底部标签的刷新",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Library/Feed.swift",
+          "symbol": "channelToTop()"
+        }
+      ]
+    },
+    "lib/pages/main/controller.dart:292": {
+      "action": "点切换根标签或者重复点击：发一次反馈，再按栏目和点击时距回顶/刷新",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Settings/MainNavShell.swift",
+          "symbol": "private func select("
+        }
+      ]
+    },
+    "lib/pages/main_reply/view.dart:99": {
+      "action": "独立评论页撰写入口在确定目标后打开编辑器",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "private func begin("
+        }
+      ]
+    },
+    "lib/pages/setting/models/extra_settings.dart:172": {
+      "action": "手动开启反馈立即体验；关闭、读取设置、备份导入均不主动震动",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Settings/PlaybackPreferences.swift",
+          "symbol": "if enabled { TouchFeedback.light() }"
+        }
+      ]
+    },
+    "lib/pages/video/introduction/pgc/controller.dart:417": {
+      "action": "PGC 三连共用入口、选择剧集接口，同一激活只发一次",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "case .armTriple:TouchFeedback.light()"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "private func askForTriple()"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "PlaybackSocialRequest.triple(item)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackSocialRequest.swift",
+          "symbol": "/pgc/season/episode/like/triple"
+        }
+      ]
+    },
+    "lib/pages/video/introduction/ugc/controller.dart:234": {
+      "action": "UGC 长按三连进入判断前反馈；未登录、已三连、取消确认、服务器拒绝均不在回包补震",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "private func askForTriple()"
+        }
+      ]
+    },
+    "lib/pages/video/introduction/ugc/view.dart:112": {
+      "action": "点视频简介开合；布局调整导致自动调整展开状态不反馈",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveDescription.swift",
+          "symbol": "TouchFeedback.light()"
+        }
+      ]
+    },
+    "lib/pages/video/introduction/ugc/view.dart:744": {
+      "action": "点 UP 头像或名字打开空间，横屏内嵌和导航两条路径各一次",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "sideAuthor = video.owner"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoExtras.swift",
+          "symbol": "TouchFeedback.light(); showOwner()"
+        }
+      ]
+    },
+    "lib/pages/video/introduction/ugc/widgets/menu_row.dart:29": {
+      "action": "所有移动端实例：弹幕五类屏蔽/海量/固定转滚动/等速，水平和垂直镜像，当前播放项仅音频，后台继续播放，倒计时停止后动作。设置恢复或被动换源不触发",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Settings/DanmakuStylePanel.swift",
+          "symbol": "$s.hideSpecial.withTouchFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PictureSession.swift",
+          "symbol": "$session.mirrorY.withTouchFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackTrackSwitch.swift",
+          "symbol": "func set(_ enabled: Bool)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "withTouchFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SleepTimer.swift",
+          "symbol": "action=new;TouchFeedback.light()"
+        }
+      ]
+    },
+    "lib/pages/video/introduction/ugc/widgets/menu_row.dart:95": {
+      "action": "仅 ActionIconItem 的两处桌面专用左右 90° 旋转。原 iOS 平台没有实例，不添加与屏幕方向相冲突的额外按钮",
+      "native": []
+    },
+    "lib/pages/video/reply/view.dart:129": {
+      "action": "视频评论面板回复主贴",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "private func begin("
+        }
+      ]
+    },
+    "lib/pages/video/reply/widgets/reply_item_grpc.dart:154": {
+      "action": "一级评论作者可导航时点击头像/名称",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "route = .space(mid, r.member?.uname"
+        }
+      ]
+    },
+    "lib/pages/video/reply/widgets/reply_item_grpc.dart:514": {
+      "action": "点具体评论的回复，在所属条目和当前账号确定后进入该楼对话",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "private func begin("
+        }
+      ]
+    },
+    "lib/pages/video/reply/widgets/reply_item_grpc.dart:632": {
+      "action": "轻点子回复预览定位楼中楼，长按预览可进入作者空间并反馈",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "route = .space(mid, child.member?.uname"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "route = .thread(root: r.id, anchor: child.id)"
+        }
+      ]
+    },
+    "lib/pages/video/reply/widgets/zan_grpc.dart:25": {
+      "action": "评论点踩及取消点按发出反馈，成功或失败回调不再发",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "if kind == \"hate\" || kind == \"action\""
+        }
+      ]
+    },
+    "lib/pages/video/reply/widgets/zan_grpc.dart:58": {
+      "action": "评论点赞及取消，同一用户动作只反馈一次",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "if kind == \"hate\" || kind == \"action\""
+        }
+      ]
+    },
+    "lib/pages/whisper_detail/controller.dart:110": {
+      "action": "非忙发送文字/图片私信；上传或发送失败不补震、重试是新的用户动作",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "private func send()"
+        }
+      ]
+    },
+    "lib/pages/whisper_detail/view.dart:68": {
+      "action": "点对话顶栏作者名进入个人空间；进出会话本身不反馈",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "piliTapFeedback"
+        }
+      ]
+    },
+    "lib/plugin/pl_player/controller.dart:1475": {
+      "action": "全屏锁定/解锁按钮，切换之前反馈，锁定时屏蔽其他手势",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "locked.toggle()"
+        }
+      ]
+    },
+    "lib/plugin/pl_player/view/view.dart:954": {
+      "action": "横滑结束时仅提交过有效寻址的手势；未产生目标/纵向调节不触发",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/PlayerGestures.swift",
+          "symbol": "if start != nil, axis == .seek"
+        }
+      ]
+    },
+    "lib/plugin/pl_player/widgets/bottom_control.dart:31": {
+      "action": "进度条第一次有效拖动，连续移动不重复；无时长不触发",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/ViewportTimeline.swift",
+          "symbol": "if drag == nil { TouchFeedback.light()"
+        }
+      ]
+    },
+    "lib/utils/page_utils.dart:239": {
+      "action": "动态详情/原动态/评论/图文等明确的点击入口，不在页面自动呈现时反馈",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "NavigationLink(\"详情\")"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "piliTapFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": "piliTapFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "piliTapFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicPostReceipt.swift",
+          "symbol": "piliTapFeedback"
+        }
+      ]
+    },
+    "lib/utils/request_utils.dart:144": {
+      "action": "有效 UID 的关注或已关注菜单，先反馈再处理；确认、取消、返回不再次反馈。自己关注列表、分组、个人空间、UGC 主 UP/联合创作可操作",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+          "symbol": "func press()"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "confirmUnfollow = true"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorRelations.swift",
+          "symbol": "CreatorGroupEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DetailView.swift",
+          "symbol": "CreatorQuickRelation"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoExtras.swift",
+          "symbol": "CreatorQuickRelation"
+        }
+      ]
+    },
+    "lib/utils/request_utils.dart:409": {
+      "action": "动态点赞/取消均在用户意图已确定时反馈，跨角色可明确选择动作，不等请求结果",
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "func thumb("
+        }
+      ]
+    }
+  }
+}

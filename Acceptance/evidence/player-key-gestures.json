@@ -1,0 +1,1014 @@
+{
+  "baseline": "PiliPlus 2.2.0.2",
+  "scope": "External keyboard, touch / fullscreen controls and their settings; UIKit physical input remains a device check.",
+  "rows": [
+    {
+      "id": "preference:SettingBoxKey/btmProgressBehavior",
+      "upstream": [
+        "lib/utils/storage_key.dart#btmProgressBehavior",
+        "lib/utils/storage_pref.dart#btmProgressBehavior"
+      ],
+      "native": [
+        "Playback/PlayerViewport.swift#player.bottomProgress",
+        "Settings/BackupFormat.swift#btmProgressBehavior"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAutoLongPressSpeed",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableAutoLongPressSpeed",
+        "lib/utils/storage_pref.dart#enableAutoLongPressSpeed"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.doubleSpeed",
+        "Settings/BackupFormat.swift#enableAutoLongPressSpeed"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableLongShowControl",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableLongShowControl",
+        "lib/utils/storage_pref.dart#enableLongShowControl"
+      ],
+      "native": [
+        "Playback/PlayerViewport.swift#player.longControls",
+        "Settings/BackupFormat.swift#enableLongShowControl"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableQuickDouble",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableQuickDouble",
+        "lib/utils/storage_pref.dart#enableQuickDouble"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.quickDouble",
+        "Settings/BackupFormat.swift#enableQuickDouble"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableScrollVolume",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableScrollVolume",
+        "lib/utils/storage_pref.dart#enableScrollVolume"
+      ],
+      "native": [
+        "Playback/PlayerViewport.swift#player.scrollVolume",
+        "Settings/BackupFormat.swift#enableScrollVolume"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableShrinkVideoSize",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableShrinkVideoSize",
+        "lib/utils/storage_pref.dart#enableShrinkVideoSize"
+      ],
+      "native": [
+        "Playback/PlayerViewport.swift#player.shrink",
+        "Settings/BackupFormat.swift#enableShrinkVideoSize"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableSlideFS",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableSlideFS",
+        "lib/utils/storage_pref.dart#enableSlideFS"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#theater.swipe",
+        "Settings/BackupFormat.swift#enableSlideFS"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableSlideVolumeBrightness",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableSlideVolumeBrightness",
+        "lib/utils/storage_pref.dart#enableSlideVolumeBrightness"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.slideLevels",
+        "Settings/BackupFormat.swift#enableSlideVolumeBrightness"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableTapDm",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableTapDm",
+        "lib/utils/storage_pref.dart#enableTapDm"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#dm.tap",
+        "Settings/BackupFormat.swift#enableTapDm"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/fastForBackwardDuration",
+      "upstream": [
+        "lib/utils/storage_key.dart#fastForBackwardDuration",
+        "lib/utils/storage_pref.dart#fastForBackwardDuration"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.seekStep",
+        "Settings/BackupFormat.swift#fastForBackwardDuration"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/fullScreenGestureReverse",
+      "upstream": [
+        "lib/utils/storage_key.dart#fullScreenGestureReverse",
+        "lib/utils/storage_pref.dart#fullScreenGestureReverse"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#theater.reverseSwipe",
+        "Settings/BackupFormat.swift#fullScreenGestureReverse"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/fullScreenMode",
+      "upstream": [
+        "lib/utils/storage_key.dart#fullScreenMode",
+        "lib/utils/storage_pref.dart#fullScreenMode"
+      ],
+      "native": [
+        "Playback/Theater.swift#theater.orientation",
+        "Settings/BackupFormat.swift#fullScreenMode"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/keyboardControl",
+      "upstream": [
+        "lib/utils/storage_key.dart#keyboardControl",
+        "lib/utils/storage_pref.dart#keyboardControl"
+      ],
+      "native": [
+        "Playback/PlayerKeyboard.swift#player.keyboard",
+        "Settings/BackupFormat.swift#keyboardControl"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/removeSafeArea",
+      "upstream": [
+        "lib/utils/storage_key.dart#removeSafeArea",
+        "lib/utils/storage_pref.dart#removeSafeArea"
+      ],
+      "native": [
+        "Playback/ViewportSettings.swift#player.edgeToEdge",
+        "Settings/BackupFormat.swift#removeSafeArea"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showBatteryLevel",
+      "upstream": [
+        "lib/utils/storage_key.dart#showBatteryLevel",
+        "lib/utils/storage_pref.dart#showBatteryLevel"
+      ],
+      "native": [
+        "Playback/PlayerHeaderStatus.swift#theater.battery",
+        "Settings/BackupFormat.swift#showBatteryLevel"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showFSActionItem",
+      "upstream": [
+        "lib/utils/storage_key.dart#showFSActionItem",
+        "lib/utils/storage_pref.dart#showFSActionItem"
+      ],
+      "native": [
+        "Playback/Theater.swift#theater.actionBar",
+        "Settings/BackupFormat.swift#showFSActionItem"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showFsLockBtn",
+      "upstream": [
+        "lib/utils/storage_key.dart#showFsLockBtn",
+        "lib/utils/storage_pref.dart#showFsLockBtn"
+      ],
+      "native": [
+        "Playback/Theater.swift#theater.lockButton",
+        "Settings/BackupFormat.swift#showFsLockBtn"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showFsScreenshotBtn",
+      "upstream": [
+        "lib/utils/storage_key.dart#showFsScreenshotBtn",
+        "lib/utils/storage_pref.dart#showFsScreenshotBtn"
+      ],
+      "native": [
+        "Playback/Theater.swift#theater.captureButton",
+        "Settings/BackupFormat.swift#showFsScreenshotBtn"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showSeekPreview",
+      "upstream": [
+        "lib/utils/storage_key.dart#showSeekPreview",
+        "lib/utils/storage_pref.dart#showSeekPreview"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.seekPreview",
+        "Settings/BackupFormat.swift#showSeekPreview"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/sliderDuration",
+      "upstream": [
+        "lib/utils/storage_key.dart#sliderDuration",
+        "lib/utils/storage_pref.dart#sliderDuration"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.slideRange",
+        "Settings/BackupFormat.swift#sliderOffset"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/useRelativeSlide",
+      "upstream": [
+        "lib/utils/storage_key.dart#useRelativeSlide",
+        "lib/utils/storage_pref.dart#useRelativeSlide"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.relativeSeek",
+        "Settings/BackupFormat.swift#useRelativeSlide"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAutoEnter",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableAutoEnter",
+        "lib/utils/storage_pref.dart#enableAutoEnter"
+      ],
+      "native": [
+        "Playback/FullscreenPresentation.swift#theater.autoEnter",
+        "Settings/BackupFormat.swift#enableAutoEnter"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAutoExit",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableAutoExit",
+        "lib/utils/storage_pref.dart#enableAutoExit"
+      ],
+      "native": [
+        "Playback/FullscreenPresentation.swift#theater.autoExit",
+        "Settings/BackupFormat.swift#enableAutoExit"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/feedBackEnable",
+      "upstream": [
+        "lib/utils/storage_key.dart#feedBackEnable",
+        "lib/utils/storage_pref.dart#feedBackEnable"
+      ],
+      "native": [
+        "Playback/EngagementBar.swift#ui.haptics",
+        "Settings/BackupFormat.swift#feedBackEnable"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/playerVolume",
+      "upstream": [
+        "lib/utils/storage_key.dart#playerVolume",
+        "lib/utils/storage_pref.dart#playerVolume"
+      ],
+      "native": [
+        "Playback/ItemAudioGain.swift#audio.gainPercent",
+        "Settings/BackupFormat.swift#playerVolume"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableVerticalExpand",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableVerticalExpand",
+        "lib/utils/storage_pref.dart#enableVerticalExpand"
+      ],
+      "native": [
+        "Playback/PlaybackPanels.swift#layout.verticalMedia",
+        "Settings/BackupFormat.swift#enableVerticalExpand"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/tempPlayerConf",
+      "upstream": [
+        "lib/utils/storage_key.dart#tempPlayerConf",
+        "lib/utils/storage_pref.dart#tempPlayerConf"
+      ],
+      "native": [
+        "Playback/PlayerSessionPreferences.swift#play.temporaryPreferences",
+        "Settings/BackupFormat.swift#tempPlayerConf"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableShowDanmaku",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableShowDanmaku",
+        "lib/utils/storage_pref.dart#enableShowDanmaku"
+      ],
+      "native": [
+        "Playback/PlayerSessionPreferences.swift#video.danmaku.enabled",
+        "Settings/BackupFormat.swift#enableShowDanmaku"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableShowLiveDanmaku",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableShowLiveDanmaku",
+        "lib/utils/storage_pref.dart#enableShowLiveDanmaku"
+      ],
+      "native": [
+        "Playback/PlayerSessionPreferences.swift#live.showChat",
+        "Settings/BackupFormat.swift#enableShowLiveDanmaku"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableQuickFav",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableQuickFav",
+        "lib/utils/storage_pref.dart#enableQuickFav"
+      ],
+      "native": [
+        "Playback/EngagementBar.swift#detail.quickFav",
+        "Settings/BackupFormat.swift#enableQuickFav"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/quickFavId",
+      "upstream": [
+        "lib/utils/storage_key.dart#quickFavId",
+        "lib/utils/storage_pref.dart#quickFavId"
+      ],
+      "native": [
+        "Playback/EngagementBar.swift#detail.quickFolder",
+        "Settings/BackupFormat.swift#quickFavId"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/coinWithLike",
+      "upstream": [
+        "lib/utils/storage_key.dart#coinWithLike",
+        "lib/utils/storage_pref.dart#coinWithLike"
+      ],
+      "native": [
+        "Playback/ArchiveCoinPicker.swift#detail.coinLike",
+        "Settings/BackupFormat.swift#coinWithLike"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showViewPoints",
+      "upstream": [
+        "lib/utils/storage_key.dart#showViewPoints",
+        "lib/utils/storage_pref.dart#showViewPoints"
+      ],
+      "native": [
+        "Playback/ViewportTimeline.swift#detail.chapters",
+        "Settings/BackupFormat.swift#showViewPoints"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/showDmChart",
+      "upstream": [
+        "lib/utils/storage_key.dart#showDmChart",
+        "lib/utils/storage_pref.dart#showDmChart"
+      ],
+      "native": [
+        "Playback/TimelineAssets.swift#player.trend",
+        "Settings/BackupFormat.swift#showDmChart"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableDragSubtitle",
+      "upstream": [
+        "lib/utils/storage_key.dart#enableDragSubtitle",
+        "lib/utils/storage_pref.dart#enableDragSubtitle"
+      ],
+      "native": [
+        "Settings/PlaybackPreferences.swift#caption.drag",
+        "Settings/BackupFormat.swift#enableDragSubtitle"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:VideoBoxKey/cacheVideoFit",
+      "upstream": [
+        "lib/utils/storage_key.dart#cacheVideoFit",
+        "lib/utils/storage_pref.dart#cacheVideoFit"
+      ],
+      "native": [
+        "Playback/PlayerViewport.swift#play.gravity",
+        "Settings/BackupFormat.swift#cacheVideoFit"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:VideoBoxKey/longPressSpeedDefault",
+      "upstream": [
+        "lib/utils/storage_key.dart#longPressSpeedDefault",
+        "lib/utils/storage_pref.dart#longPressSpeedDefault"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#player.holdSpeed",
+        "Settings/BackupFormat.swift#longPressSpeedDefault"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:VideoBoxKey/playSpeedDefault",
+      "upstream": [
+        "lib/utils/storage_key.dart#playSpeedDefault",
+        "lib/utils/storage_pref.dart#playSpeedDefault"
+      ],
+      "native": [
+        "Playback/PlayerModel.swift#play.rate",
+        "Settings/BackupFormat.swift#playSpeedDefault"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "preference:VideoBoxKey/speedsList",
+      "upstream": [
+        "lib/utils/storage_key.dart#speedsList",
+        "lib/utils/storage_pref.dart#speedsList"
+      ],
+      "native": [
+        "Playback/PlayerKeyboard.swift#SpeedPresets",
+        "Settings/BackupFormat.swift#speedsList"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "key:Q-tap",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyQ"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#like",
+        "Playback/PlayerKeyboard.swift#like"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:Q-hold",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyQ",
+        "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart#milliseconds: 1200"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#armTriple",
+        "Playback/PlayerKeyboard.swift#triple"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:R-tap",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyR"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#elapsed",
+        "Playback/PlayerKeyboard.swift#armTriple"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:R-hold",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyR",
+        "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart#milliseconds: 1200"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#armTriple",
+        "Playback/PlayerKeyboard.swift#triple"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:QR-live",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#onRefresh"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#refresh",
+        "Playback/PlayerKeyboard.swift#liveRefresh"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:W",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyW"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#coin",
+        "Playback/PlayerKeyboard.swift#EngagementBar"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:E",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyE"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#favorite",
+        "Playback/PlayerKeyboard.swift#EngagementBar"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:T",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyT"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#later",
+        "Playback/PlayerKeyboard.swift#watchLater"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:V",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyV"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#later",
+        "Playback/PlayerKeyboard.swift#watchLater"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:G",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyG"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#relation",
+        "Playback/PlayerKeyboard.swift#CreatorQuickRelation"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:Enter",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#onSkipSegment"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#enter",
+        "Playback/PlayerKeyboard.swift#skipSponsor"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:Space",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#space"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#toggle",
+        "Playback/PlayerKeyboard.swift#toggle"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:F",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyF"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#fullscreen",
+        "Playback/PlayerKeyboard.swift#fullscreen"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:Shift-F",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#isShiftPressed"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#fullscreen",
+        "Playback/PlayerKeyboard.swift#fullscreen"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:D",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyD"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#bullets",
+        "Playback/PlayerKeyboard.swift#bullets"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:M",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyM"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#mute",
+        "Playback/PlayerKeyboard.swift#isMuted"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:S",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyS"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#capture",
+        "Playback/PlayerKeyboard.swift#CapturePanel"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:L",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#keyL"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#lock",
+        "Playback/PlayerKeyboard.swift#locked"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:left",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#arrowLeft"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#previewBack",
+        "Playback/PlayerKeyboard.swift#seekBack"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:right",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#arrowRight"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#seekForward",
+        "Playback/PlayerKeyboard.swift#boost"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:up",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#arrowUp"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#volume",
+        "Playback/PlayerKeyboard.swift#presentationVolume"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:down",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#arrowDown"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#volume",
+        "Playback/PlayerKeyboard.swift#presentationVolume"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:Shift-1",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#digit1"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#setSpeed(1)",
+        "Playback/PlayerKeyboard.swift#speed"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:Shift-2",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#digit2"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#setSpeed(2)",
+        "Playback/PlayerKeyboard.swift#speed"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:previous",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#bracketLeft"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#previous",
+        "Playback/PlayerKeyboard.swift#step"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:next",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#bracketRight"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#next",
+        "Playback/PlayerKeyboard.swift#step"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:comma",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#comma"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#changeSpeed(-1)",
+        "Playback/PlayerKeyboard.swift#SpeedPresets"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:period",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#period"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#changeSpeed(1)",
+        "Playback/PlayerKeyboard.swift#SpeedPresets"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "page:video",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#LogicalKeyboardKey"
+      ],
+      "native": [
+        "Playback/DetailView.swift#PlayerKeyboard",
+        "Playback/Theater.swift#PlayerKeyboard"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "route:/videoV",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#LogicalKeyboardKey"
+      ],
+      "native": [
+        "Playback/DetailView.swift#PlayerKeyboard"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "page:pgc",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#introController"
+      ],
+      "native": [
+        "Discover/Seasons.swift#PlayerKeyboard"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "page:download",
+      "upstream": [
+        "lib/pages/video/introduction/local/controller.dart#actionFavVideo"
+      ],
+      "native": [
+        "Offline/DownloadViews.swift#FilePlayerGestures",
+        "Offline/DownloadViews.swift#skipOffline"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "page:live_room",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#isLive"
+      ],
+      "native": [
+        "Live/LiveViews.swift#liveRefresh",
+        "Live/LiveComposer.swift#focusOnEntry"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "route:/liveRoom",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#isLive"
+      ],
+      "native": [
+        "Live/LiveViews.swift#liveSend"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "gesture:quarter-tap",
+      "upstream": [
+        "lib/plugin/pl_player/view/view.dart#maxWidth / 4"
+      ],
+      "native": [
+        "Playback/PlayerKeySequence.swift#doubleTap",
+        "Playback/PlayerGestures.swift#accumulate"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "gesture:repeat-seek",
+      "upstream": [
+        "lib/plugin/pl_player/widgets/forward_seek.dart#400"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#milliseconds(400)"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "gesture:three-zone-slide",
+      "upstream": [
+        "lib/plugin/pl_player/view/view.dart#enableSlideFS"
+      ],
+      "native": [
+        "Playback/FullscreenPolicy.swift#abs(dx)",
+        "Playback/PlayerGestures.swift#PlayerSlide"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "gesture:pinch",
+      "upstream": [
+        "lib/plugin/pl_player/view/view.dart#MouseInteractiveViewer"
+      ],
+      "native": [
+        "Playback/ViewportPolicy.swift#magnified",
+        "Playback/PlayerViewport.swift#MagnifyGesture"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "gesture:boost-hold",
+      "upstream": [
+        "lib/plugin/pl_player/view/view.dart#enableTapDm"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#minimumDuration",
+        "Playback/PlayerGestures.swift#endBoost"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "gesture:hold-glyph",
+      "upstream": [
+        "lib/plugin/pl_player/view/view.dart#item..suspend = true"
+      ],
+      "native": [
+        "Danmaku/BulletPauseClock.swift#position(at:",
+        "Danmaku/BulletLayerSurface.swift#if let shift, shift.resume == nil",
+        "Danmaku/BulletInspection.swift#pauseClock"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "focus:only-active",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#HardwareKeyboard"
+      ],
+      "native": [
+        "Playback/PlayerKeyFocus.swift#isKeyWindow",
+        "Playback/PlayerKeyFocus.swift#UITextInput",
+        "Playback/PlayerKeyboard.swift#foreground"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "focus:cancel-owner",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#longPressTimer"
+      ],
+      "native": [
+        "Playback/PlayerKeyboard.swift#cancelHolds",
+        "Playback/PlayerKeyboard.swift#expectedAccount",
+        "Playback/EngagementBar.swift#ticket.owner"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "focus:system-chords",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#isMetaPressed"
+      ],
+      "native": [
+        "Playback/PlayerKeyboard.swift#.command",
+        "Playback/PlayerKeyboard.swift#.ignored"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "origin:later",
+      "upstream": [
+        "lib/pages/common/common_intro_controller.dart#hasLater"
+      ],
+      "native": [
+        "Playback/PlayerKeyActions.swift#PlayerKeyMemory",
+        "Playback/VideoActions.swift#PlayerKeyMemory"
+      ],
+      "proof": "source+sdk"
+    },
+    {
+      "id": "gesture:touch-triple",
+      "upstream": [
+        "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart#onStartTriple"
+      ],
+      "native": [
+        "Playback/TripleTouch.swift#cancelTracking",
+        "Playback/EngagementBar.swift#commitHeldTriple"
+      ],
+      "proof": "state-machine+sdk"
+    },
+    {
+      "id": "key:P",
+      "upstream": [
+        "lib/pages/video/widgets/player_focus.dart#toggleDesktopPip"
+      ],
+      "native": [
+        "Playback/PlayerViewport.swift#画中画"
+      ],
+      "proof": "platform-scope",
+      "note": "原版仅桌面迷你窗口；iOS 使用 AVKit 画中画"
+    },
+    {
+      "id": "preference:SettingBoxKey/maxVolume",
+      "upstream": [
+        "lib/utils/storage_pref.dart#// desktop"
+      ],
+      "native": [
+        "Playback/ItemAudioGain.swift#audio.gainPercent"
+      ],
+      "proof": "platform-scope",
+      "note": "原版桌面最大音量；iOS 采用 playerVolume"
+    },
+    {
+      "id": "preference:SettingBoxKey/angleDegrees",
+      "upstream": [
+        "lib/plugin/pl_player/controller.dart#Platform.isAndroid ? Pref.angleDegrees : null"
+      ],
+      "native": [
+        "Playback/Theater.swift#TheaterGeometry"
+      ],
+      "proof": "platform-scope",
+      "note": "Android 传感器转动角度；iOS 场景请求方向"
+    },
+    {
+      "id": "preference:SettingBoxKey/setSystemBrightness",
+      "upstream": [
+        "lib/plugin/pl_player/view/view.dart#Platform.isIOS || plPlayerController.setSystemBrightness"
+      ],
+      "native": [
+        "Playback/PlayerGestures.swift#UIScreen.main.brightness"
+      ],
+      "proof": "platform-scope",
+      "note": "Android 分应用亮度选项；原版 iOS 直接用系统亮度"
+    }
+  ]
+}

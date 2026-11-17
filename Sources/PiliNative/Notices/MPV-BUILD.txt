@@ -1,0 +1,35 @@
+PiliNative dual playback engines
+
+mpv 0.41.0
+Source: https://github.com/mpv-player/mpv/tree/v0.41.0
+Source archive: https://codeload.github.com/mpv-player/mpv/tar.gz/refs/tags/v0.41.0
+SHA256: ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209
+Configured with GPL components disabled (-Dgpl=false), LGPL 2.1 or later
+License: mpv-LGPL.txt
+
+libplacebo 7.360.1
+Source: https://github.com/haasn/libplacebo/tree/v7.360.1
+SHA256: d05fdf90bea2f629eaa2d115e909fd356388ac639e54f77b87a018a6d76224bd
+License: libplacebo-LGPL.txt (LGPL 2.1 or later)
+
+fast_float 8.0.2 (headers)
+Source: https://github.com/fastfloat/fast_float/tree/v8.0.2
+SHA256: e14a33089712b681d74d94e2a11362643bd7d769ae8f7e7caefe955f57f7eacd
+Used under the MIT option; see fast_float-MIT.txt
+
+Vulkan-Headers 1.4.321 (headers for disabled libplacebo backend stubs)
+Source: https://github.com/KhronosGroup/Vulkan-Headers/tree/v1.4.321
+SHA256: 7c1874f9186d9e7d5245e279cdccaa77a66ed8f52871b428630aeb771dc7623c
+Licenses: Vulkan-Headers.txt, Vulkan-Headers-Apache-2.txt, Vulkan-Headers-MIT.txt
+No Vulkan runtime is linked
+
+FFmpeg 9.0.2, dav1d 1.5.4, libass 0.17.5, FreeType 2.15.0,
+HarfBuzz 15.1.0 and FriBidi 1.0.18 retain their separately bundled notices
+FFmpeg is built without GPL, version3 or nonfree components
+PNG encoding includes FFmpeg's LGPL PNG implementation and system zlib
+
+Build/relink recipe: Native/MediaKit/build-mpv.py, build-decoder-libs.sh,
+build-dav1d.sh, build-subtitles.py, Package.swift and Native/build.sh
+The recipe adds Objective-C to mpv's Meson project for the iOS-only build
+Application source and build instructions: Native/MPV-MIGRATION.md
+The application source repository retains its own existing license

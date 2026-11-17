@@ -1,0 +1,1175 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "method_count": 37,
+  "methods": {
+    "audioCoinAdd": {
+      "method": "AudioGrpc.audioCoinAdd",
+      "rpc": "/bilibili.app.listener.v1.Listener/CoinAdd",
+      "wrapper": {
+        "file": "lib/grpc/audio.dart",
+        "symbol": "GrpcUrl.audioCoinAdd"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/audio/controller.dart",
+          "line": 544,
+          "symbol": "AudioGrpc.audioCoinAdd"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "对可用视频/音频目标投币，金额和是否同时点赞写入原请求",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ListenerGateway.swift",
+          "symbol": "func update("
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": ".update(action"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "authority": "main; mutations require user-authorized mobile grant"
+    },
+    "audioPlayList": {
+      "method": "AudioGrpc.audioPlayList",
+      "rpc": "/bilibili.app.listener.v1.Listener/Playlist",
+      "wrapper": {
+        "file": "lib/grpc/audio.dart",
+        "symbol": "GrpcUrl.audioPlayList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/audio/controller.dart",
+          "line": 250,
+          "symbol": "AudioGrpc.audioPlayList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按来源、顺序、方向及游标取听视频队列，遇到当前锚分页和合并实际条目",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ListenerGateway.swift",
+          "symbol": "func playlist("
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": ".playlist("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "authority": "main; mutations require user-authorized mobile grant"
+    },
+    "audioPlayUrl": {
+      "method": "AudioGrpc.audioPlayUrl",
+      "rpc": "/bilibili.app.listener.v1.Listener/PlayURL",
+      "wrapper": {
+        "file": "lib/grpc/audio.dart",
+        "symbol": "GrpcUrl.audioPlayUrl"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/audio/controller.dart",
+          "line": 305,
+          "symbol": "AudioGrpc.audioPlayUrl"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "指定视频/歌曲/套集音源，按服务实际返回的播放信息、音轨授权和当前角色选取",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ListenerGateway.swift",
+          "symbol": "func media("
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": ".media(loc)"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "authority": "main; mutations require user-authorized mobile grant"
+    },
+    "audioThumbUp": {
+      "method": "AudioGrpc.audioThumbUp",
+      "rpc": "/bilibili.app.listener.v1.Listener/ThumbUp",
+      "wrapper": {
+        "file": "lib/grpc/audio.dart",
+        "symbol": "GrpcUrl.audioThumbUp"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/audio/controller.dart",
+          "line": 483,
+          "symbol": "AudioGrpc.audioThumbUp"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "点赞和取消由真实作用对象、当前主号与回执驱动，未授权不代发",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ListenerGateway.swift",
+          "symbol": "func update("
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": ".update(action"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "authority": "main; mutations require user-authorized mobile grant"
+    },
+    "audioTripleLike": {
+      "method": "AudioGrpc.audioTripleLike",
+      "rpc": "/bilibili.app.listener.v1.Listener/TripleLike",
+      "wrapper": {
+        "file": "lib/grpc/audio.dart",
+        "symbol": "GrpcUrl.audioTripleLike"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/audio/controller.dart",
+          "line": 511,
+          "symbol": "AudioGrpc.audioTripleLike"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "听视频三连由对应 RPC 执行，按回执解码多项状态，不在拒绝时换身份",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ListenerGateway.swift",
+          "symbol": "func update("
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": ".update(action"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "authority": "main; mutations require user-authorized mobile grant"
+    },
+    "clearUnread": {
+      "method": "ImGrpc.clearUnread",
+      "rpc": "/bilibili.app.im.v1.im/ClearUnread",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.clearUnread"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/common_whisper_controller.dart",
+          "line": 66,
+          "symbol": "ImGrpc.clearUnread"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按 pageType 批量清未读；原版可达入口只传页面类型，成功后刷本地标记",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func clearUnread("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "api.clearUnread(type)"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "deleteSessionList": {
+      "method": "ImGrpc.deleteSessionList",
+      "rpc": "/bilibili.app.im.v1.im/DeleteSessionList",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.deleteSessionList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/common_whisper_controller.dart",
+          "line": 85,
+          "symbol": "ImGrpc.deleteSessionList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "对当前页面的会话列表提交删除，确认和当前主号绑定，拒绝保留原列表",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func deleteSessions("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "api.deleteSessions(type)"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "detailList": {
+      "method": "ReplyGrpc.detailList",
+      "rpc": "/bilibili.main.community.reply.v1.Reply/DetailList",
+      "wrapper": {
+        "file": "lib/grpc/reply.dart",
+        "symbol": "GrpcUrl.detailList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/video/reply_reply/controller.dart",
+          "line": 139,
+          "symbol": "ReplyGrpc.detailList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "楼中楼保留 root/anchor、排序和下一页资料",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "case .detail("
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "return .detail(root:"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "dialogList": {
+      "method": "ReplyGrpc.dialogList",
+      "rpc": "/bilibili.main.community.reply.v1.Reply/DialogList",
+      "wrapper": {
+        "file": "lib/grpc/reply.dart",
+        "symbol": "GrpcUrl.dialogList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/video/reply_reply/controller.dart",
+          "line": 132,
+          "symbol": "ReplyGrpc.dialogList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "两条回复的对话上下文保留讨论目标、root 和 dialog 标识",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "case .dialogue("
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "commentService(for: uid).list"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "dmSegMobile": {
+      "method": "DmGrpc.dmSegMobile",
+      "rpc": "/bilibili.community.service.dm.v1.DM/DmSegMobile",
+      "wrapper": {
+        "file": "lib/grpc/dm.dart",
+        "symbol": "GrpcUrl.dmSegMobile"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/danmaku/controller.dart",
+          "line": 46,
+          "symbol": "DmGrpc.dmSegMobile"
+        },
+        {
+          "file": "lib/services/download/download_service.dart",
+          "line": 331,
+          "symbol": "DmGrpc.dmSegMobile"
+        },
+        {
+          "file": "lib/services/download/download_service.dart",
+          "line": 339,
+          "symbol": "DmGrpc.dmSegMobile"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "固定 CID、分段 index 和弹幕类型。主号有移动授权时直接调用；网页登录和游客使用同样允许的官方 web protobuf 段；移动端明确不支持协议才尝试 Web，拒绝不当作支持。播放与离线复用",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Danmaku/SegmentedComments.swift",
+          "symbol": "/bilibili.community.service.dm.v1.DM/DmSegMobile"
+        },
+        {
+          "file": "Sources/PiliNative/Danmaku/DMProto.swift",
+          "symbol": "static func page"
+        }
+      ],
+      "evidence": [
+        "Checks/ContentContractCheck.swift",
+        "Acceptance/evidence/danmaku-subtitles.json"
+      ],
+      "authority": "main/guest; detail and download do not bypass denied segments"
+    },
+    "dmView": {
+      "method": "DmGrpc.dmView",
+      "rpc": "/bilibili.community.service.dm.v1.DM/DmView",
+      "wrapper": {
+        "file": "lib/grpc/dm.dart",
+        "symbol": "GrpcUrl.dmView"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/video/controller.dart",
+          "line": 1161,
+          "symbol": "DmGrpc.dmView"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "固定原版这一 RPC 仅在主账号未登录且普通 player 回应缺字幕时查询字幕列表，将 lan/lanDoc/url 交回原生字幕选择器",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/SubtitleGateway.swift",
+          "symbol": "DmViewReq"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/Captions.swift",
+          "symbol": "guestSubtitleTracks"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/SubtitleGatewayTests.swift"
+      ],
+      "authority": "guest only fallback per pinned call site"
+    },
+    "dynRed": {
+      "method": "DynGrpc.dynRed",
+      "rpc": "/bilibili.app.dynamic.v1.Dynamic/DynRed",
+      "wrapper": {
+        "file": "lib/grpc/dyn.dart",
+        "symbol": "GrpcUrl.dynRed"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/main/controller.dart",
+          "line": 201,
+          "symbol": "DynGrpc.dynRed"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "查询动态 tab 的服务端未读数；按主账号隔离，不把广播值当作发送/写成功",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "func unseenCount("
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": ".unseenCount()"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "foldList": {
+      "method": "ReplyGrpc.foldList",
+      "rpc": "/bilibili.main.community.reply.v1.Reply/FoldList",
+      "wrapper": {
+        "file": "lib/grpc/reply.dart",
+        "symbol": "GrpcUrl.foldList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/reply/fold/reply_fold_mixin.dart",
+          "line": 23,
+          "symbol": "ReplyGrpc.foldList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "只有服务返回可展开的折叠游标才显示和请求隐藏回复，不捏造分页范围",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "case .folded("
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "commentService(for: uid).list"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "getImSettings": {
+      "method": "ImGrpc.getImSettings",
+      "rpc": "/bilibili.app.im.v1.im/GetImSettings",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.getImSettings"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_settings/controller.dart",
+          "line": 37,
+          "symbol": "ImGrpc.getImSettings"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按服务设置品类读取开关、选项及相应状态",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func settings("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "api.settings(type)"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "getTotalUnread": {
+      "method": "ImGrpc.getTotalUnread",
+      "rpc": "/bilibili.im.interface.v1.ImInterface/GetTotalUnread",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.getTotalUnread"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper/controller.dart",
+          "line": 68,
+          "symbol": "ImGrpc.getTotalUnread"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "消息角标使用 GetTotalUnread 的分页聚合配置和 msgFeedUnread，不把计数当成读回执",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func noticeCounts("
+        },
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": ".noticeCounts()"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "keywordBlockingAdd": {
+      "method": "ImGrpc.keywordBlockingAdd",
+      "rpc": "/bilibili.app.im.v1.im/KeywordBlockingAdd",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.keywordBlockingAdd"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_block/controller.dart",
+          "line": 34,
+          "symbol": "ImGrpc.keywordBlockingAdd"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "显式添加非空关键词，回执后重新取真实列表",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func keyword("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "api.keyword(word"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "keywordBlockingDelete": {
+      "method": "ImGrpc.keywordBlockingDelete",
+      "rpc": "/bilibili.app.im.v1.im/KeywordBlockingDelete",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.keywordBlockingDelete"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_block/controller.dart",
+          "line": 48,
+          "symbol": "ImGrpc.keywordBlockingDelete"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "显式删除选中关键词，回执后重新取真实列表",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func keyword("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "api.keyword(word"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "keywordBlockingList": {
+      "method": "ImGrpc.keywordBlockingList",
+      "rpc": "/bilibili.app.im.v1.im/KeywordBlockingList",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.keywordBlockingList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_block/controller.dart",
+          "line": 31,
+          "symbol": "ImGrpc.keywordBlockingList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "打开、更新或重载屏蔽关键词列表按服务状态展示",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func keywords("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "api.keywords()"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "likeList": {
+      "method": "DynGrpc.likeList",
+      "rpc": "/bilibili.app.dynamic.v2.Dynamic/LikeList",
+      "wrapper": {
+        "file": "lib/grpc/dyn.dart",
+        "symbol": "GrpcUrl.likeList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/dyn/like_list/controller.dart",
+          "line": 29,
+          "symbol": "DynGrpc.likeList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "点赞用户分页以页面及上次实际 mid 定位，展示用户名/头像/关系并可进空间",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "func likes("
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": ".likes(id"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "mainList": {
+      "method": "ReplyGrpc.mainList",
+      "rpc": "/bilibili.main.community.reply.v1.Reply/MainList",
+      "wrapper": {
+        "file": "lib/grpc/reply.dart",
+        "symbol": "GrpcUrl.mainList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/dyn/common_dyn_controller.dart",
+          "line": 41,
+          "symbol": "ReplyGrpc.mainList"
+        },
+        {
+          "file": "lib/pages/main_reply/controller.dart",
+          "line": 30,
+          "symbol": "ReplyGrpc.mainList"
+        },
+        {
+          "file": "lib/pages/video/reply/controller.dart",
+          "line": 82,
+          "symbol": "ReplyGrpc.mainList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "主楼评论按目标类型、排序、游标和锚点加载",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "case .main("
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "commentService(for: uid).list"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "opusDetail": {
+      "method": "DynGrpc.opusDetail",
+      "rpc": "/bilibili.app.dynamic.v2.Opus/OpusDetail",
+      "wrapper": {
+        "file": "lib/grpc/dyn.dart",
+        "symbol": "GrpcUrl.opusDetail"
+      },
+      "calls": [],
+      "verdict": "unused-upstream-wrapper",
+      "behavior": "该方法只有定义，固定 Dart 业务代码无执行点；阅读功能走现有文章/图文服务",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        }
+      ],
+      "evidence": [
+        "Checks/service_protocols.py"
+      ],
+      "authority": "not invoked by pinned app"
+    },
+    "opusSpaceFlow": {
+      "method": "SpaceGrpc.opusSpaceFlow",
+      "rpc": "/bilibili.app.dynamic.v2.Opus/OpusSpaceFlow",
+      "wrapper": {
+        "file": "lib/grpc/space.dart",
+        "symbol": "GrpcUrl.opusSpaceFlow"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/member_opus/controller.dart",
+          "line": 73,
+          "symbol": "SpaceGrpc.opusSpaceFlow"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "空间图文与文集根据过滤和服务 next 分类分页，不把文集当单篇文章",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "func space("
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": ".space("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "pinSession": {
+      "method": "ImGrpc.pinSession",
+      "rpc": "/bilibili.app.im.v1.im/PinSession",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.pinSession"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/common_whisper_controller.dart",
+          "line": 35,
+          "symbol": "ImGrpc.pinSession"
+        },
+        {
+          "file": "lib/pages/whisper_link_setting/controller.dart",
+          "line": 95,
+          "symbol": "ImGrpc.pinSession"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按稳定 SessionId 设置置顶，若失败不报告成功",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func pin("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMConversationSettings.swift",
+          "symbol": "api.pin("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "repostList": {
+      "method": "DynGrpc.repostList",
+      "rpc": "/bilibili.app.dynamic.v2.Dynamic/RepostList",
+      "wrapper": {
+        "file": "lib/grpc/dyn.dart",
+        "symbol": "GrpcUrl.repostList"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/dyn/repost_list/controller.dart",
+          "line": 28,
+          "symbol": "DynGrpc.repostList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "转发列表保留服务端的 string offset，点击转发卡或用户并可继续翻页",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "func reposts("
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": ".reposts(id"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/DynamicGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "searchArchive": {
+      "method": "SpaceGrpc.searchArchive",
+      "rpc": "/bilibili.app.interface.v1.Space/SearchArchive",
+      "wrapper": {
+        "file": "lib/grpc/space.dart",
+        "symbol": "GrpcUrl.searchArchive"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/member_search/child/controller.dart",
+          "line": 60,
+          "symbol": "SpaceGrpc.searchArchive"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "指定作者和关键词，64 位 mid 及 pn/ps=20。普通投稿保留首 CID，PGC/课堂走相应目标；与动态搜索独立显示总数、重选置顶",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/SpaceSearchGateway.swift",
+          "symbol": "SearchArchiveReq"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "SpaceSearchGateway.page"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/SpaceSearchGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "searchItem": {
+      "method": "ReplyGrpc.searchItem",
+      "rpc": "/bilibili.main.community.reply.v1.Reply/SearchItem",
+      "wrapper": {
+        "file": "lib/grpc/reply.dart",
+        "symbol": "GrpcUrl.searchItem"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/video/reply_search_item/child/controller.dart",
+          "line": 26,
+          "symbol": "ReplyGrpc.searchItem"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "从评论编辑器搜视频或文章供插入，按原业务类型和页码过滤",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func references("
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": ".references("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "sendMsg": {
+      "method": "ImGrpc.sendMsg",
+      "rpc": "/bilibili.im.interface.v1.ImInterface/SendMsg",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.sendMsg"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_detail/controller.dart",
+          "line": 116,
+          "symbol": "ImGrpc.sendMsg"
+        },
+        {
+          "file": "lib/utils/request_utils.dart",
+          "line": 79,
+          "symbol": "ImGrpc.sendMsg"
+        },
+        {
+          "file": "lib/utils/request_utils.dart",
+          "line": 90,
+          "symbol": "ImGrpc.sendMsg"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "站内卡片、转发或撤回使用相应 msg_type/收件人/内容，原生文本图片也有同账号 Web 消息路径。需要可验证的新消息键或序号，写入不重放",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func sendCardOrNote("
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": ".sendCardOrNote("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift",
+        "Wire/Tests/PiliWireTests/IMHistoryTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "sessionDetail": {
+      "method": "ImGrpc.sessionDetail",
+      "rpc": "/bilibili.im.interface.v1.ImInterface/SessionDetail",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.sessionDetail"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper/widgets/item.dart",
+          "line": 42,
+          "symbol": "ImGrpc.sessionDetail"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "读取自己的私信会话最后序号/已读所需信息，再按实际会话执行已读逻辑",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func readSequence("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "api.readSequence"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "sessionMain": {
+      "method": "ImGrpc.sessionMain",
+      "rpc": "/bilibili.app.im.v1.im/SessionMain",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.sessionMain"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper/controller.dart",
+          "line": 106,
+          "symbol": "ImGrpc.sessionMain"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "消息主列表取服务返回的卡片/菜单/游标，打开对应子页",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func sessions("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "api.sessions(type"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "sessionSecondary": {
+      "method": "ImGrpc.sessionSecondary",
+      "rpc": "/bilibili.app.im.v1.im/SessionSecondary",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.sessionSecondary"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_secondary/controller.dart",
+          "line": 55,
+          "symbol": "ImGrpc.sessionSecondary"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "陌生人、消息分组、垃圾箱等子列表按各自 pageType 分页",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func sessions("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "api.sessions(type"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "sessionUpdate": {
+      "method": "ImGrpc.sessionUpdate",
+      "rpc": "/bilibili.app.im.v1.im/SessionUpdate",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.sessionUpdate"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_link_setting/controller.dart",
+          "line": 58,
+          "symbol": "ImGrpc.sessionUpdate"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "读取指定 sessionID 的最新会话和置顶状态。这是只读回查，不是新的写命令",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func session("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMConversationSettings.swift",
+          "symbol": "api.session(id)"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "setImSettings": {
+      "method": "ImGrpc.setImSettings",
+      "rpc": "/bilibili.app.im.v1.im/SetImSettings",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.setImSettings"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_settings/controller.dart",
+          "line": 40,
+          "symbol": "ImGrpc.setImSettings"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按原设置 key 与用户选择的类型提交；授权变化后丢弃回包，不重试写入",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "public func set("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "api.set(key"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "shareList": {
+      "method": "ImGrpc.shareList",
+      "rpc": "/bilibili.im.interface.v1.ImInterface/ShareList",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.shareList"
+      },
+      "calls": [
+        {
+          "file": "lib/utils/page_utils.dart",
+          "line": 75,
+          "symbol": "ImGrpc.shareList"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "打开分享面板读取固定上游调用的最近 5 位会话联系人，用户明确选择才发送",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func shareContacts("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMShareSheet.swift",
+          "symbol": ".shareContacts()"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMGatewayTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "syncFetchSessionMsgs": {
+      "method": "ImGrpc.syncFetchSessionMsgs",
+      "rpc": "/bilibili.im.interface.v1.ImInterface/SyncFetchSessionMsgs",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.syncFetchSessionMsgs"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/whisper_detail/controller.dart",
+          "line": 161,
+          "symbol": "ImGrpc.syncFetchSessionMsgs"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "私信详情按会话对方、时间与序号分页，首次历史与继续翻早的范围有区别",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func history("
+        },
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": ".history(talker:"
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMHistoryTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "translateReply": {
+      "method": "ReplyGrpc.translateReply",
+      "rpc": "/bilibili.main.community.reply.v1.Reply/TranslateReply",
+      "wrapper": {
+        "file": "lib/grpc/reply.dart",
+        "symbol": "GrpcUrl.translateReply"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/video/reply/widgets/reply_item_grpc.dart",
+          "line": 432,
+          "symbol": "ReplyGrpc.translateReply"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按实际 oid/type/rpid 请求翻译，缺少回包展示失败而非复写正文",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func translation("
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": ".translation("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "authority": "main/guest, under normal service grants"
+    },
+    "unpinSession": {
+      "method": "ImGrpc.unpinSession",
+      "rpc": "/bilibili.app.im.v1.im/UnpinSession",
+      "wrapper": {
+        "file": "lib/grpc/im.dart",
+        "symbol": "GrpcUrl.unpinSession"
+      },
+      "calls": [
+        {
+          "file": "lib/pages/common/common_whisper_controller.dart",
+          "line": 34,
+          "symbol": "ImGrpc.unpinSession"
+        },
+        {
+          "file": "lib/pages/whisper_link_setting/controller.dart",
+          "line": 94,
+          "symbol": "ImGrpc.unpinSession"
+        }
+      ],
+      "verdict": "native-rpc",
+      "behavior": "按同一 SessionId 取消置顶，选择不同 RPC 而不是本地排序",
+      "consumers": [
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func pin("
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMConversationSettings.swift",
+          "symbol": "api.pin("
+        }
+      ],
+      "evidence": [
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "authority": "main account; RPC requires matching authorized mobile token; supported web session actions use ordinary first-party HTTPS"
+    },
+    "view": {
+      "method": "ViewGrpc.view",
+      "rpc": "/bilibili.app.viewunite.v1.View/View",
+      "wrapper": {
+        "file": "lib/grpc/view.dart",
+        "symbol": "GrpcUrl.view"
+      },
+      "calls": [],
+      "verdict": "unused-upstream-wrapper",
+      "behavior": "仅有 PGC/controller 中完整注释掉的示例，固定 UI 不会调用 ViewUnite/View；详情由 UGC/PGC/PUGV 各自实际接口加载",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "func reloadLine"
+        }
+      ],
+      "evidence": [
+        "Checks/service_protocols.py"
+      ],
+      "authority": "not invoked by pinned app"
+    }
+  }
+}

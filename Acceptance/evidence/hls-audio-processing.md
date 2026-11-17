@@ -1,0 +1,10 @@
+# 点播 HLS 的真实声音处理
+
+- 入口：播放设置 → 声音。100% 增益、均衡关闭时继续传输原音频。需要音效时，普通视频、番剧、课堂的可用 DASH 音轨与已索引的渐进 MP4 / 离线缓存共用处理路径。不会重复给回环 HLS 加 AudioProcessingTap，也不会把处理结果写进下载目录
+- 上游 lib/models/common/audio_normalization.dart 的主设置及服务器数据缺失时的备用设置都是字符串，默认“0”。“1”为 dynaudnorm 的 g=5、f=250、r=0.9、p=0.5；“2”为 loudnorm 的 I=-16、LRA=11、TP=-1.5。服务器的 measured_i、measured_lra、measured_tp、measured_threshold、target_offset、target_i、target_tp 参与上游格式与 FFmpeg 有效范围校正；缺少有效测量时替换为所选备用预设，默认关闭。自定义支持这两种滤镜及 volume 的受限数字参数和组合，不接受任意滤镜、文件、URL 或统计日志路径
+- 增益键 audio.gainPercent（100…300）；均衡键 audio.normalization 与 audio.fallbackNormalization。音轨在 CPU 上解码为 PCM，经原生 LGPL libavfilter 的实际 loudnorm/dynaudnorm/volume 处理，按源采样率及声道布局输出 24 位 Apple Lossless；原视频、字幕和弹幕时钟沿用同一条 AVPlayer 时间轴。回环清单发布真实 alac 和首段估算带宽。Apple 将 Apple Lossless 规定为 fMP4 中可用的 HLS 音频格式，见 [Apple HLS authoring specification](https://developer.apple.com/streaming/hls-authoring-specification-for-apple-devices.html)；[FFmpeg 音频滤镜文档](https://ffmpeg.org/ffmpeg-filters.html) 列出两个均衡滤镜的行为
+- 每个转换片段以原音轨的包位置确定准确的起点、终点和样本数。滤镜可读取附近最多约 7 秒的前后上下文，以降低 AAC 解码起始和滤镜预读的影响，单边最多 12 个邻段，上限 48 MiB 压缩输入。输出只保留目标样本，按原时基写回 fMP4；按分段缓存尽量合并相同请求，并支持 seek 取消和内存压力释放。将 loudnorm 配为动态分析时，跳跃至相距很远的位置会使用当地的分析窗口，而非假设已经扫描全片
+- 保留原音轨上的声道数，不把 Dolby Atmos/JOC、未知编码及对象音频静默变成普通立体声；这些音轨原样播放。加密轨道、带加密样本信息的数据及外部媒体引用不会被做成过滤后的音轨。回环监听限 127.0.0.1 和随机会话令牌。构建仍固定 FFmpeg 9.0.2 与 dav1d，libavfilter、swresample、ALAC 编码均来自同一 LGPL 配方，没有启用网络、GPL、Version 3 或 nonfree
+- 可重复验证：WSL 运行 python3 Checks/audio_segments.py，以生成的原始声音作为唯一输入。独立 FFmpeg 命令输出 PCM 作对照；覆盖 100/200/300% 增益、dynaudnorm、动态及带服务器测量的 loudnorm，检验非零位置绝对 PTS、逐个 PCM 样本、首末段，以及对文件/不支持的滤镜与取消输入的拒绝。Swift 测试另外验证服务器/备用/自定义设置和五个并发请求合并后的实际 fMP4 可解码。AAC、ALAC、FLAC 三种输入共十八组，从中段实际输出 96256、98304、96768 个样本，RMS 误差最多 0.38 个 PCM24 量化单位。96 kHz 立体声 300% 的额外样本验证保留声道和采样率，大声道到达正负饱和值，小声道没有被削掉。既有 native_decode.py 与 live_remux.py 在新库上均通过
+- 同一份 C 处理核已编译为 iOS 17+ arm64 Mach-O，Swift 媒体入口与设置接口已在 iOS 27.1 SDK 下独立类型检查。构建配方现在以 fcntl 跨进程锁保护同一平台缓存，避免审核与打包同时写静态库
+- 真机应检查听感、环绕声道映射、长时间功耗、前后台和边播边改设置。直播原始 HLS/FLV 是另一条媒体管线，不在这份点播测试内

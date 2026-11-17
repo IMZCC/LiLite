@@ -1,0 +1,1689 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "account-and-messaging",
+  "records": {
+    "page:coin_log": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/coin_log/controller.dart",
+        "symbol": "class CoinLogController"
+      },
+      "fixed_actions": "CoinLogController.getFlexAndText / UserHttp.coinLog",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountLogs.swift",
+          "symbol": "/x/member/web/coin/log"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "AccountLogs"
+        }
+      ],
+      "behavior": "按主账号展示硬币变动时间、正负额和原因，可刷新、复制和重试",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:contact": {
+      "verdict": "implemented",
+      "ownership": "IM contact picker (relation lists: library agent)",
+      "upstream": {
+        "file": "lib/pages/contact/view.dart",
+        "symbol": "class ContactPage"
+      },
+      "fixed_actions": "contact/view.dart 的普通、选联系人两类入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMContactBook"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "RelationsList"
+        }
+      ],
+      "behavior": "普通入口浏览关注/粉丝账户；选人模式返回具体收件人给分享页；对应列表可搜索关注、管理本人的粉丝",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:exp_log": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/exp_log/controller.dart",
+        "symbol": "class ExpLogController"
+      },
+      "fixed_actions": "ExpLogController.getFlexAndText / UserHttp.expLog",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountLogs.swift",
+          "symbol": "/x/member/web/exp/log"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "AccountLogs"
+        }
+      ],
+      "behavior": "按主账号展示经验变动时间、数额和原因；独立状态及空列表",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:log_table": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/log_table/view.dart",
+        "symbol": "class LogPage"
+      },
+      "fixed_actions": "log_table/view.dart 通用刷新/空/错误与可选文字",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountLogs.swift",
+          "symbol": "struct Record"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "AccountLogs"
+        }
+      ],
+      "behavior": "分硬币、经验和登录三种真实记录字段，iOS List 分行布局，保留选取复制、重试、刷新",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:login": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/login/view.dart",
+        "symbol": "class LoginPage"
+      },
+      "fixed_actions": "固定 login/view.dart 与 controller.dart 的客户端扫码、密码、国际短信、Geetest、status2 风险短信及 OAuth2，会话与 Cookie 替代入口，LoginHttp 正常公开 AppSign",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "MobileClientLoginView"
+        },
+        {
+          "file": "Sources/PiliNative/Account/NativeLoginForm.swift",
+          "symbol": "NativeLoginForm"
+        },
+        {
+          "file": "Sources/PiliNative/Account/NativeLoginFlow.swift",
+          "symbol": "NativeLoginFlow"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobilePassport.swift",
+          "symbol": "MobileLoginVerifier"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileClientSigning.swift",
+          "symbol": "MobileClientSigning"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobilePasswordCipher.swift",
+          "symbol": "rsaEncryptionPKCS1"
+        },
+        {
+          "file": "Sources/PiliNative/Account/GeetestView.swift",
+          "symbol": "GeetestView"
+        },
+        {
+          "file": "Sources/PiliNative/Account/LoginRegions.swift",
+          "symbol": "LoginRegion"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "WebLoginIdentity.verify"
+        },
+        {
+          "file": "Sources/PiliNative/Account/CookieLogin.swift",
+          "symbol": "WebLoginIdentity.verify"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "MobileClientLoginView(expectedUID: uid)"
+        }
+      ],
+      "behavior": "Swift 原生扫码/密码/SMS，完整 215 地区、验证码及风险验证闭环；nav 与 token-only myinfo 核对同 UID 后原子写入，绑定授权限定 expectedUID；取消/离开、陈旧 challenge 和账号 generation 变更禁止迟到保存；保留独立网页、Cookie 和网页 QR",
+      "evidence": [
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/account-grant-scope.json",
+        "Checks/mobile_passport.py",
+        "Checks/imported_credentials.sh"
+      ],
+      "device_or_remaining": "公开公钥、生产签名 QR 生成与未扫码轮询实际通过；真人扫码/密码/SMS/Geetest 展示在用户真机使用时验收，本轮未发送真实短信或保存真人登录",
+      "source_witness": [
+        "lib/http/login.dart",
+        "lib/utils/app_sign.dart",
+        "lib/common/constants.dart",
+        "lib/common/dial_prefix.dart",
+        "lib/pages/login/controller.dart",
+        "lib/pages/login/geetest/geetest_webview_dialog.dart"
+      ],
+      "user_witness": "我的 → 登录/添加账号 → 客户端登录 → 扫码/密码/短信；移动端授权 → 重新授权；登录方式可改网页/Cookie",
+      "device_witness": "匿名官方服务返回公钥与有效签名 QR 等待状态；原生 UI/安全框架经 arm64 iPhone SDK 定点检查"
+    },
+    "page:login_devices": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/login_devices/view.dart",
+        "symbol": "class LoginDevicesPage"
+      },
+      "fixed_actions": "LoginHttp.loginDevices 以及 LoginDevicesPage._buildItem",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/LoginDevices.swift",
+          "symbol": "deviceListRequest"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobilePassport.swift",
+          "symbol": "/x/safecenter/user_login_devices"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileClientSigning.swift",
+          "symbol": "MobileClientSigning"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "MobileClientLoginView(expectedUID: uid)"
+        }
+      ],
+      "behavior": "原生列表显示真实设备名称、本机标记、登录时间、来源；请求按固定源码公开 AppSign 携带 access_key/CSRF/buvid/statistics，分别核对 web/mobile 后发送，并在回包后检查同 UID/凭据/设备材料；网页账号可从页面完成移动端授权",
+      "evidence": [
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/account-grant-scope.json",
+        "Checks/mobile_passport.py"
+      ],
+      "device_or_remaining": "签名构造已由独立 MD5/编码 oracle 验证，需用户在真机登录后读取本人设备列表；无 issuer 客户端缺口",
+      "source_witness": [
+        "lib/http/login.dart:LoginHttp.loginDevices",
+        "lib/models_new/login_devices/device.dart",
+        "lib/pages/login_devices/view.dart"
+      ],
+      "user_witness": "我的空间 → 账号 → 登录设备；没有移动授权时可进入移动端授权重新扫码/密码/短信",
+      "device_witness": "arm64 iPhone SDK 定点通过，实际设备记录读取留给已登录用户"
+    },
+    "page:login_log": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/login_log/controller.dart",
+        "symbol": "class LoginLogController"
+      },
+      "fixed_actions": "LoginLogController.getFlexAndText / UserHttp.loginLog",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountLogs.swift",
+          "symbol": "/x/member/web/login/log"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileView.swift",
+          "symbol": "AccountLogs"
+        }
+      ],
+      "behavior": "按主账号显示发生时间、IP 与地区，账号切换后无残留",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:member_profile": {
+      "verdict": "implemented",
+      "ownership": "account-profile-fields (space and library shell: library agent)",
+      "upstream": {
+        "file": "lib/pages/member_profile/view.dart",
+        "symbol": "class EditProfilePage"
+      },
+      "fixed_actions": "member_profile/view.dart 与资料编辑工具",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "editProfile"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AvatarEditor.swift",
+          "symbol": "struct AvatarEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "renameTerms"
+        }
+      ],
+      "behavior": "可改头像（裁剪或保留动画）、昵称、签名、性别、生日；费用/许可用服务器当前回包。按打开时 UID 写并回读",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:msg_feed_top": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/msg_feed_top/at_me/controller.dart",
+        "symbol": "class AtMeController"
+      },
+      "fixed_actions": "msg_feed_top 所有通知子页、分组与未读",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "struct NoticeFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "struct Inbox"
+        }
+      ],
+      "behavior": "在同一账号打开回复/@/赞/系统通知；按真实分页、时间戳及通知编号重试或删除，返回会话更新未读数",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:share": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/share/view.dart",
+        "symbol": "class UserModel"
+      },
+      "fixed_actions": "share/view.dart 和 RequestUtils.pmShare",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMShareSheet.swift",
+          "symbol": "struct IMShareSheet"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMShareCard.swift",
+          "symbol": "struct IMShareCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMForwardContent.swift",
+          "symbol": "IMForwardContent"
+        }
+      ],
+      "behavior": "最近会话/联系人选择、多选收件人、附言、分类型卡片、部分失败重试时不重复发给成功的人",
+      "evidence": [
+        "Acceptance/evidence/im-share.md",
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:space_setting": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/space_setting/view.dart",
+        "symbol": "class SpaceSettingPage"
+      },
+      "fixed_actions": "space_setting/view.dart 和 controller.dart 的修改/保存/返回",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacy.swift",
+          "symbol": "struct SpacePrivacy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacyValues.swift",
+          "symbol": "struct SpacePrivacyValues"
+        }
+      ],
+      "behavior": "三组十五个真实选项，区分反向标记和服务缺项；提交前重读本账号，在最新配置上合并；可放弃返回",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:whisper": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/whisper/view.dart",
+        "symbol": "class WhisperPage"
+      },
+      "fixed_actions": "whisper/view.dart；common_whisper_controller 的会话分区与分页",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "struct Inbox"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMSessions"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "真实主会话、未读/数字/圆点、分类、刷新、末页、置顶/免打扰/删除/标为已读。进入子列表、聊天、联系人和消息设置；换主账号重新加载",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:whisper_block": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/whisper_block/view.dart",
+        "symbol": "class WhisperBlockPage"
+      },
+      "fixed_actions": "whisper_block/controller.dart onAdd/onRemove",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "IMKeywordBlocking"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "关键词数量/长度/重复校验、添加、确认删除，重新读取服务端列表",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:whisper_detail": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/whisper_detail/view.dart",
+        "symbol": "class WhisperDetailPage"
+      },
+      "fixed_actions": "whisper_detail/controller.dart SyncFetchSessionMsgs / ack；grpc/im.dart SendMsg",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "struct ChatThread"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ChatWindow.swift",
+          "symbol": "struct ChatWindow"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "struct MessageComposer"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按 peer 翻看及发送、图片分享、表情、消息撤回、举报与转发。系统、通知及原版只读分区不出现虚假聊天写入口；更新游标和已读均归属于原会话",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:whisper_link_setting": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/whisper_link_setting/view.dart",
+        "symbol": "class WhisperLinkSettingPage"
+      },
+      "fixed_actions": "whisper_link_setting 指定 talker 的推送、免打扰、置顶、用户举报及拉黑",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMConversationSettings.swift",
+          "symbol": "struct IMConversationSettings"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按对话对象与主账号设置推送、置顶和免打扰，正确解释接口开关；拉黑及举报与消息举报分别处理",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:whisper_secondary": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/whisper_secondary/view.dart",
+        "symbol": "class WhisperSecPage"
+      },
+      "fixed_actions": "whisper_secondary + common_whisper_controller；携服务器分类与 paging 状态",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMSessions"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "查看未关注、陌生人、垃圾箱/群折叠；整组显式标已读或清理需要确认，已有会话可单独管理",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:whisper_settings": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/whisper_settings/view.dart",
+        "symbol": "class WhisperSettingsPage"
+      },
+      "fixed_actions": "whisper_settings 控制器及 Get/SetImSettings",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "struct IMPreferences"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按本人授权读取服务器提供的分组、选项、子页和关键词/黑名单入口，按回执显示实际设置；移动专用接口需对应授权",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/checkDynamic": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "checkDynamic"
+      },
+      "fixed_actions": "msg_feed_top / 服务未读刷新；原设置键 checkDynamic",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "UnreadTotals"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "UnreadIndicators"
+        }
+      ],
+      "behavior": "控制后台刷新动态未读数",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/disableLikeMsg": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "disableLikeMsg"
+      },
+      "fixed_actions": "msg_feed_top / 服务未读刷新；原设置键 disableLikeMsg",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "UnreadTotals"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "UnreadIndicators"
+        }
+      ],
+      "behavior": "排除点赞通知及其未读，其他分组保留",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/dynamicBadgeMode": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "dynamicBadgeMode"
+      },
+      "fixed_actions": "msg_feed_top / 服务未读刷新；原设置键 dynamicBadgeMode",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "UnreadTotals"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "UnreadIndicators"
+        }
+      ],
+      "behavior": "动态角标可关闭、点或数字，真实动态未读为零时隐藏",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/dynamicPeriod": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "dynamicPeriod"
+      },
+      "fixed_actions": "msg_feed_top / 服务未读刷新；原设置键 dynamicPeriod",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "UnreadTotals"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "UnreadIndicators"
+        }
+      ],
+      "behavior": "动态检查周期；改动后重建刷新任务",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/msgBadgeMode": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "msgBadgeMode"
+      },
+      "fixed_actions": "msg_feed_top / 服务未读刷新；原设置键 msgBadgeMode",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "UnreadTotals"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "UnreadIndicators"
+        }
+      ],
+      "behavior": "消息角标展示按设置选择",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/msgUnReadTypeV2": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "msgUnReadTypeV2"
+      },
+      "fixed_actions": "msg_feed_top / 服务未读刷新；原设置键 msgUnReadTypeV2",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/UnreadTotals.swift",
+          "symbol": "UnreadTotals"
+        },
+        {
+          "file": "Sources/PiliNative/Social/UnreadIndicators.swift",
+          "symbol": "UnreadIndicators"
+        }
+      ],
+      "behavior": "按持久化的消息类型位掩码汇总，只计选择的类别",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/atMe": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/atMe"
+      },
+      "fixed_actions": "msg_feed_top/at_me/controller.dart；http/msg.dart at",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "按消息身份及业务链接进入提及来源、空间、定点回复，可删除该通知",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/editProfile": {
+      "verdict": "implemented",
+      "ownership": "account-profile-fields (space and library shell: library agent)",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/editProfile"
+      },
+      "fixed_actions": "member_profile/view.dart 与资料编辑工具",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "editProfile"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AvatarEditor.swift",
+          "symbol": "struct AvatarEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "renameTerms"
+        }
+      ],
+      "behavior": "可改头像（裁剪或保留动画）、昵称、签名、性别、生日；费用/许可用服务器当前回包。按打开时 UID 写并回读",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/likeMe": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/likeMe"
+      },
+      "fixed_actions": "msg_feed_top/like_me/controller.dart；http/msg.dart like",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "最新赞与累计赞分组、显示原资源和计数、关闭特定提醒或删除",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/loginPage": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/loginPage"
+      },
+      "fixed_actions": "固定 login/view.dart 与 controller.dart 的客户端扫码、密码、国际短信、Geetest、status2 风险短信及 OAuth2，会话与 Cookie 替代入口，LoginHttp 正常公开 AppSign",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "MobileClientLoginView"
+        },
+        {
+          "file": "Sources/PiliNative/Account/NativeLoginForm.swift",
+          "symbol": "NativeLoginForm"
+        },
+        {
+          "file": "Sources/PiliNative/Account/NativeLoginFlow.swift",
+          "symbol": "NativeLoginFlow"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobilePassport.swift",
+          "symbol": "MobileLoginVerifier"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileClientSigning.swift",
+          "symbol": "MobileClientSigning"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobilePasswordCipher.swift",
+          "symbol": "rsaEncryptionPKCS1"
+        },
+        {
+          "file": "Sources/PiliNative/Account/GeetestView.swift",
+          "symbol": "GeetestView"
+        },
+        {
+          "file": "Sources/PiliNative/Account/LoginRegions.swift",
+          "symbol": "LoginRegion"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "WebLoginIdentity.verify"
+        },
+        {
+          "file": "Sources/PiliNative/Account/CookieLogin.swift",
+          "symbol": "WebLoginIdentity.verify"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "MobileClientLoginView(expectedUID: uid)"
+        }
+      ],
+      "behavior": "Swift 原生扫码/密码/SMS，完整 215 地区、验证码及风险验证闭环；nav 与 token-only myinfo 核对同 UID 后原子写入，绑定授权限定 expectedUID；取消/离开、陈旧 challenge 和账号 generation 变更禁止迟到保存；保留独立网页、Cookie 和网页 QR",
+      "evidence": [
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/account-grant-scope.json",
+        "Checks/mobile_passport.py",
+        "Checks/imported_credentials.sh"
+      ],
+      "device_or_remaining": "公开公钥、生产签名 QR 生成与未扫码轮询实际通过；真人扫码/密码/SMS/Geetest 展示在用户真机使用时验收，本轮未发送真实短信或保存真人登录",
+      "source_witness": [
+        "lib/http/login.dart",
+        "lib/utils/app_sign.dart",
+        "lib/common/constants.dart",
+        "lib/common/dial_prefix.dart",
+        "lib/pages/login/controller.dart",
+        "lib/pages/login/geetest/geetest_webview_dialog.dart"
+      ],
+      "user_witness": "我的 → 登录/添加账号 → 客户端登录 → 扫码/密码/短信；移动端授权 → 重新授权；登录方式可改网页/Cookie",
+      "device_witness": "匿名官方服务返回公钥与有效签名 QR 等待状态；原生 UI/安全框架经 arm64 iPhone SDK 定点检查"
+    },
+    "route:/msgLikeDetail": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/msgLikeDetail"
+      },
+      "fixed_actions": "msg_feed_top/like_detail/controller.dart；http/msg.dart like/detail",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "真实对象的点赞人员列表、游标和作者空间；与点赞通知列表区分",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/replyMe": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/replyMe"
+      },
+      "fixed_actions": "msg_feed_top/reply_me/controller.dart；http/msg.dart reply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "回复的原文、引用、图片与发件人，传准确的根楼/子楼到回复讨论",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/spaceSetting": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/spaceSetting"
+      },
+      "fixed_actions": "space_setting/view.dart 和 controller.dart 的修改/保存/返回",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacy.swift",
+          "symbol": "struct SpacePrivacy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/SpacePrivacyValues.swift",
+          "symbol": "struct SpacePrivacyValues"
+        }
+      ],
+      "behavior": "三组十五个真实选项，区分反向标记和服务缺项；提交前重读本账号，在最新配置上合并；可放弃返回",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/sysMsg": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/sysMsg"
+      },
+      "fixed_actions": "msg_feed_top/sys_msg/controller.dart；http/msg.dart system",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "系统通知分页、链接、标读、删除；只处理指定用户的通知",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/whisper": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/whisper"
+      },
+      "fixed_actions": "whisper/view.dart；common_whisper_controller 的会话分区与分页",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "struct Inbox"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMSessions"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "真实主会话、未读/数字/圆点、分类、刷新、末页、置顶/免打扰/删除/标为已读。进入子列表、聊天、联系人和消息设置；换主账号重新加载",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/whisperDetail": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/whisperDetail"
+      },
+      "fixed_actions": "whisper_detail/controller.dart SyncFetchSessionMsgs / ack；grpc/im.dart SendMsg",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "struct ChatThread"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ChatWindow.swift",
+          "symbol": "struct ChatWindow"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "struct MessageComposer"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按 peer 翻看及发送、图片分享、表情、消息撤回、举报与转发。系统、通知及原版只读分区不出现虚假聊天写入口；更新游标和已读均归属于原会话",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:msg_feed_top/at_me": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/msg_feed_top/at_me/view.dart",
+        "symbol": "class AtMePage"
+      },
+      "fixed_actions": "msg_feed_top/at_me/controller.dart；http/msg.dart at",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "按消息身份及业务链接进入提及来源、空间、定点回复，可删除该通知",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:msg_feed_top/like_detail": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/msg_feed_top/like_detail/view.dart",
+        "symbol": "class LikeDetailPage"
+      },
+      "fixed_actions": "msg_feed_top/like_detail/controller.dart；http/msg.dart like/detail",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "真实对象的点赞人员列表、游标和作者空间；与点赞通知列表区分",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:msg_feed_top/like_me": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/msg_feed_top/like_me/view.dart",
+        "symbol": "class LikeMePage"
+      },
+      "fixed_actions": "msg_feed_top/like_me/controller.dart；http/msg.dart like",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "最新赞与累计赞分组、显示原资源和计数、关闭特定提醒或删除",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:msg_feed_top/reply_me": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/msg_feed_top/reply_me/view.dart",
+        "symbol": "class ReplyMePage"
+      },
+      "fixed_actions": "msg_feed_top/reply_me/controller.dart；http/msg.dart reply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "回复的原文、引用、图片与发件人，传准确的根楼/子楼到回复讨论",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:msg_feed_top/sys_msg": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/pages/msg_feed_top/sys_msg/view.dart",
+        "symbol": "class SysMsgPage"
+      },
+      "fixed_actions": "msg_feed_top/sys_msg/controller.dart；http/msg.dart system",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "LikeNoticeDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/GroupedNoticeList.swift",
+          "symbol": "GroupedNoticeList"
+        }
+      ],
+      "behavior": "系统通知分页、链接、标读、删除；只处理指定用户的通知",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "subsystem:services/account_service.dart": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/services/account_service.dart",
+        "symbol": "class AccountService"
+      },
+      "fixed_actions": "lib/services/account_service.dart；lib/utils/accounts.dart 的切换、主账号及不同请求用途",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/Accounts.swift",
+          "symbol": "actor AccountJar"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AccountRole.swift",
+          "symbol": "func owner"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AccountRolesPanel.swift",
+          "symbol": "struct AccountRolesPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "AccountRoutes.service"
+        }
+      ],
+      "behavior": "设备内钥匙串保存多账号，主操作、推荐、视频、观看记录可分别跟随/指定已有账号/游客；退出移除后重新选路，请求前后检查账号。临时/永久不记历史不改变推荐/播放账号",
+      "evidence": [
+        "Checks/account_routes.py",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/login-website.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "subsystem:utils/accounts": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "lib/utils/accounts/account.dart",
+        "symbol": "sealed class Account"
+      },
+      "fixed_actions": "lib/services/account_service.dart；lib/utils/accounts.dart 的切换、主账号及不同请求用途",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/Accounts.swift",
+          "symbol": "actor AccountJar"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AccountRole.swift",
+          "symbol": "func owner"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AccountRolesPanel.swift",
+          "symbol": "struct AccountRolesPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "AccountRoutes.service"
+        }
+      ],
+      "behavior": "设备内钥匙串保存多账号，主操作、推荐、视频、观看记录可分别跟随/指定已有账号/游客；退出移除后重新选路，请求前后检查账号。临时/永久不记历史不改变推荐/播放账号",
+      "evidence": [
+        "Checks/account_routes.py",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/login-website.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/Cookie登录": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "Cookie登录"
+      },
+      "fixed_actions": "LoginPageController.loginByCookie",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/CookieLogin.swift",
+          "symbol": "WebLoginIdentity.verify"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "/x/web-interface/nav"
+        },
+        {
+          "file": "Sources/PiliNative/Account/Accounts.swift",
+          "symbol": "func add"
+        }
+      ],
+      "behavior": "校验填写的 Cookie、当前登录会话返回的 UID，保存至设备钥匙串；认证失败不覆盖原账号",
+      "evidence": [
+        "Acceptance/evidence/login-website.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/Win/Mac 支持极验、短信登录 by [@My-Responsitories](https://github.com/My-Responsitories)": {
+      "verdict": "not-ios",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "Win/Mac 支持极验、短信登录 by [@My-Responsitories](https://github.com/My-Responsitories)"
+      },
+      "fixed_actions": "固定 README 条目标明 Win/Mac，移动端另由 page:login 记录",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "struct WebsiteLogin"
+        }
+      ],
+      "behavior": "Windows/macOS 的桌面验证适配不属于 iOS，iOS 官网密码和短信方式见登录专项",
+      "evidence": [
+        "Acceptance/evidence/account-final-scope.md",
+        "Acceptance/evidence/login-website.md"
+      ],
+      "device_or_remaining": "桌面条目明确标注平台，不计作 iOS 登录能力缺口"
+    },
+    "upstream:feat/修改头像/用户名/签名/性别/生日": {
+      "verdict": "implemented",
+      "ownership": "account-profile-fields (space and library shell: library agent)",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "修改头像/用户名/签名/性别/生日"
+      },
+      "fixed_actions": "member_profile/view.dart 与资料编辑工具",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "editProfile"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AvatarEditor.swift",
+          "symbol": "struct AvatarEditor"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileEditor.swift",
+          "symbol": "renameTerms"
+        }
+      ],
+      "behavior": "可改头像（裁剪或保留动画）、昵称、签名、性别、生日；费用/许可用服务器当前回包。按打开时 UID 写并回读",
+      "evidence": [
+        "Acceptance/evidence/account-profile-settings.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/修改消息设置": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "修改消息设置"
+      },
+      "fixed_actions": "whisper_settings 控制器及 Get/SetImSettings",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMPreferences.swift",
+          "symbol": "struct IMPreferences"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按本人授权读取服务器提供的分组、选项、子页和关键词/黑名单入口，按回执显示实际设置；移动专用接口需对应授权",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/修改聊天设置": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "修改聊天设置"
+      },
+      "fixed_actions": "whisper_link_setting 指定 talker 的推送、免打扰、置顶、用户举报及拉黑",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMConversationSettings.swift",
+          "symbol": "struct IMConversationSettings"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按对话对象与主账号设置推送、置顶和免打扰，正确解释接口开关；拉黑及举报与消息举报分别处理",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/分享`视频`/`番剧`/`动态`/`专栏`/`直播`至消息": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "分享`视频`/`番剧`/`动态`/`专栏`/`直播`至消息"
+      },
+      "fixed_actions": "share/view.dart 和 RequestUtils.pmShare",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMShareSheet.swift",
+          "symbol": "struct IMShareSheet"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMShareCard.swift",
+          "symbol": "struct IMShareCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/IMForwardContent.swift",
+          "symbol": "IMForwardContent"
+        }
+      ],
+      "behavior": "最近会话/联系人选择、多选收件人、附言、分类型卡片、部分失败重试时不重复发给成功的人",
+      "evidence": [
+        "Acceptance/evidence/im-share.md",
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/删除/置顶/撤回私信": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "删除/置顶/撤回私信"
+      },
+      "fixed_actions": "whisper/widgets/item + whisper_detail 的管理菜单",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMSessions"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "MessageKey"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ChatWindow.swift",
+          "symbol": "ChatWindow"
+        }
+      ],
+      "behavior": "按真实 talker/session 做删除或置顶；撤回只对原发送者与原消息键，按服务回执移除可转发状态",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/多账号支持 by [@My-Responsitories](https://github.com/My-Responsitories)": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "多账号支持 by [@My-Responsitories](https://github.com/My-Responsitories)"
+      },
+      "fixed_actions": "lib/services/account_service.dart；lib/utils/accounts.dart 的切换、主账号及不同请求用途",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/Accounts.swift",
+          "symbol": "actor AccountJar"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AccountRole.swift",
+          "symbol": "func owner"
+        },
+        {
+          "file": "Sources/PiliNative/Account/AccountRolesPanel.swift",
+          "symbol": "struct AccountRolesPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "AccountRoutes.service"
+        }
+      ],
+      "behavior": "设备内钥匙串保存多账号，主操作、推荐、视频、观看记录可分别跟随/指定已有账号/游客；退出移除后重新选路，请求前后检查账号。临时/永久不记历史不改变推荐/播放账号",
+      "evidence": [
+        "Checks/account_routes.py",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/login-website.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/展示折叠消息": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "展示折叠消息"
+      },
+      "fixed_actions": "whisper_secondary + common_whisper_controller；携服务器分类与 paging 状态",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMSessions.swift",
+          "symbol": "struct IMSessions"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "查看未关注、陌生人、垃圾箱/群折叠；整组显式标已读或清理需要确认，已有会话可单独管理",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/私信发图": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "私信发图"
+      },
+      "fixed_actions": "whisper_detail 图片选择、上传和 SendMsg 图片字段",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/IMPicture.swift",
+          "symbol": "IMOutgoingPicture"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "MessageComposer"
+        }
+      ],
+      "behavior": "原生相册输出基础格式或许可的动画，展示预览再发，上传后的网址/宽高及大小传给当前会话，换号中止",
+      "evidence": [
+        "Acceptance/evidence/im-history.md",
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:opt/回复界面": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "回复界面"
+      },
+      "fixed_actions": "whisper / msg_feed_top 页面与原生底层导航",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "ChatThread"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "struct NoticeFeed"
+        }
+      ],
+      "behavior": "私信入口与回复我的通知能分别进入聊天原记录或对应评论；系统导航返回保留当前列表",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:opt/私信界面": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "私信界面"
+      },
+      "fixed_actions": "whisper / msg_feed_top 页面与原生底层导航",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "ChatThread"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "struct NoticeFeed"
+        }
+      ],
+      "behavior": "私信入口与回复我的通知能分别进入聊天原记录或对应评论；系统导航返回保留当前列表",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:opt/系统通知": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "系统通知"
+      },
+      "fixed_actions": "msg_feed_top/sys_msg 和 MsgHttp",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "NoticeKind"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeViews.swift",
+          "symbol": "struct NoticeFeed"
+        }
+      ],
+      "behavior": "浏览、读状态、删除、官方链接；接口失败不冒充已读",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/无痕模式（播放视为未登录）": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "无痕模式（播放视为未登录）"
+      },
+      "fixed_actions": "Accounts.heartbeat / Accounts.recommend 与账号用途选择",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountRole.swift",
+          "symbol": "privatePlaybackCopy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/Accounts.swift",
+          "symbol": "func privatePlayback"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "AccountRoutes.service"
+        }
+      ],
+      "behavior": "观看记录或推荐角色使用访客；播放权限依视频角色，写操作仍由主账号绑定",
+      "evidence": [
+        "Checks/account_routes.py",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/interface-signoff.json"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/游客模式（推荐视为未登录）": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "游客模式（推荐视为未登录）"
+      },
+      "fixed_actions": "Accounts.heartbeat / Accounts.recommend 与账号用途选择",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Account/AccountRole.swift",
+          "symbol": "privatePlaybackCopy"
+        },
+        {
+          "file": "Sources/PiliNative/Account/Accounts.swift",
+          "symbol": "func privatePlayback"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "AccountRoutes.service"
+        }
+      ],
+      "behavior": "观看记录或推荐角色使用访客；播放权限依视频角色，写操作仍由主账号绑定",
+      "evidence": [
+        "Checks/account_routes.py",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/interface-signoff.json"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/站内私信": {
+      "verdict": "implemented",
+      "ownership": "account-and-messaging",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "站内私信"
+      },
+      "fixed_actions": "whisper_detail/controller.dart SyncFetchSessionMsgs / ack；grpc/im.dart SendMsg",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "struct ChatThread"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ChatWindow.swift",
+          "symbol": "struct ChatWindow"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MessageComposer.swift",
+          "symbol": "struct MessageComposer"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "IMGateway"
+        }
+      ],
+      "behavior": "按 peer 翻看及发送、图片分享、表情、消息撤回、举报与转发。系统、通知及原版只读分区不出现虚假聊天写入口；更新游标和已读均归属于原会话",
+      "evidence": [
+        "Acceptance/evidence/im-inbox-audit.md",
+        "Checks/im_notice_actions.sh",
+        "Wire/Tests/PiliWireTests/IMConversationActionTests.swift"
+      ],
+      "device_or_remaining": ""
+    }
+  }
+}

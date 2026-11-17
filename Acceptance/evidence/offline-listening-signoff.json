@@ -1,0 +1,1119 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "offline-listening-system-media",
+  "records": {
+    "page:audio": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/audio/view.dart",
+        "symbol": "class AudioPage"
+      },
+      "fixed_actions": "audio/view、AudioController 的队列次序/双向分页、来源/多 P、播放控制与互动，AudioHttp 与 Listener 服务",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Audio/ListenView.swift",
+          "symbol": "struct ListenView"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "func start"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "func listeningMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": "func load"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenMetadata.swift",
+          "symbol": "struct ListenMetadata"
+        }
+      ],
+      "behavior": "从音频卡或普通/分集进入听视频，支持目录、点播、歌词/简介、播放顺序/分P、续听、互动与系统控制；无音轨或不授权时给出服务错误",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/listen_interruption.sh",
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "page:download": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/download/detail/view.dart",
+        "symbol": "class DownloadDetailPage"
+      },
+      "fixed_actions": "download 页面全部标签、下载进度和管理及视频控制器 initFileSource 断网打开保存媒体",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "struct OfflineShelfView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct OfflinePlayer"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func playerItem"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineIndexStore.swift",
+          "symbol": "OfflineIndexStore"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineMediaStore.swift",
+          "symbol": "OfflinePlaybackFiles"
+        }
+      ],
+      "behavior": "缓存实际媒体及附件、分区/搜索/管理、自定义真实存储、失败重试；已完成内容按原视频账号用本机媒体数据播放",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-native-decode.md",
+        "Acceptance/evidence/storage-locations.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "page:member_audio": {
+      "verdict": "implemented",
+      "ownership": "空间资料库与播放交接（只签音频入口）",
+      "upstream": {
+        "file": "lib/pages/member_audio/view.dart",
+        "symbol": "class MemberAudio"
+      },
+      "fixed_actions": "member_audio 的用户音频目录、分页与 AU 播放",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorSectionViews.swift",
+          "symbol": "case .audios:"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/Song.swift",
+          "symbol": "struct SongView"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": "func load"
+        }
+      ],
+      "behavior": "空间音频投稿使用原作 UID，AU 歌曲打开和播放后传来源上下文给听队列；空间宿主的其他操作由资料库签核",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/listen_interruption.sh",
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/audioPlayMode": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "audioPlayMode"
+      },
+      "fixed_actions": "audio/controller::onChangeOrder 以外的播放模式 Pref.audioPlayMode / PlayRepeat",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "private var mode"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/AudioSequence.swift",
+          "symbol": "func action"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenView.swift",
+          "symbol": "listen.repeat"
+        }
+      ],
+      "behavior": "持久化播放模式、上下曲/自动完成及多P边界；原四种模式之外允许顺序播放",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/listen_interruption.sh",
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/continuePlayInBackground": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "continuePlayInBackground"
+      },
+      "fixed_actions": "PlPlayer 后台播放设置，与 enableBackgroundPlay 的通知设置分开",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "continuesInBackground"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoScenePause.swift",
+          "symbol": "continuesInBackground"
+        }
+      ],
+      "behavior": "按原后台设置和 PiP 接管选择 AVPlayer 原生后台策略，前后台切换与电话中断恢复分开",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/video-transport.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "preference:SettingBoxKey/defaultAudioQa": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "defaultAudioQa"
+      },
+      "fixed_actions": "video/controller 与 audio/controller 按 isWiFi 配置，header_control 切换/记住；下载用一般档，VideoUtils.findTargetAudio 按排名选择可用格式",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MediaProfilePanel.swift",
+          "symbol": "Picker(\"音质\""
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "func chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "func record"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "func listeningMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "enum OfflineQuality"
+        }
+      ],
+      "behavior": "播放可切换服务提供并支持的音轨；Wi-Fi/有线和蜂窝读取独立偏好，取流与在线换轨按回包排名，缓存另外遵循原版的一般档",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/listener-audio-audit.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "preference:SettingBoxKey/defaultAudioQaCellular": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "defaultAudioQaCellular"
+      },
+      "fixed_actions": "video/controller 与 audio/controller 按 isWiFi 配置，header_control 切换/记住；下载用一般档，VideoUtils.findTargetAudio 按排名选择可用格式",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MediaProfilePanel.swift",
+          "symbol": "Picker(\"音质\""
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "func chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "func record"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "func listeningMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "enum OfflineQuality"
+        }
+      ],
+      "behavior": "播放可切换服务提供并支持的音轨；Wi-Fi/有线和蜂窝读取独立偏好，取流与在线换轨按回包排名，缓存另外遵循原版的一般档",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/listener-audio-audit.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "preference:SettingBoxKey/disableAudioCDN": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "disableAudioCDN"
+      },
+      "fixed_actions": "VideoUtils.getCdnUrl 的 isAudio && disableAudioCDN 分支；video_settings 可改并持久化",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VODLine.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VODLine.swift",
+          "symbol": "audioKey"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "routes(audio: true)"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "audio.routes(audio: true)"
+        }
+      ],
+      "behavior": "禁用音频更换 CDN 后保留服务实际签发的音轨地址；不影响视频独立选择，兼容听视频、缓存与切换",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/vod-lines.md",
+        "Checks/vod_probe.py"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/downloadPath": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "downloadPath"
+      },
+      "fixed_actions": "DownloadService 目录管理、扫描和持久化；iOS Files 授权路径",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineLocationPanel.swift",
+          "symbol": "struct OfflineLocationPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "moveSaved"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "storageUsage"
+        }
+      ],
+      "behavior": "用户可选实际缓存根目录、重选/移动、撤回后重试；显式目录授权保存在本机 bookmark，导入备份不会将任意系统绝对路径当新权限",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/storage-locations.md",
+        "Checks/storage_locations.sh"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "preference:SettingBoxKey/enableBackgroundPlay": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enableBackgroundPlay"
+      },
+      "fixed_actions": "AudioHandler::enableBackgroundPlay 开关是否发布媒体控制",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "policyEnabled"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "MPNowPlayingInfoCenter.default"
+        }
+      ],
+      "behavior": "控制锁屏/控制中心注册发布和注销，禁用后不接收旧监听命令；可用于视频、直播、音频、离线",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "route:/audio": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/audio"
+      },
+      "fixed_actions": "audio/view、AudioController 的队列次序/双向分页、来源/多 P、播放控制与互动，AudioHttp 与 Listener 服务",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Audio/ListenView.swift",
+          "symbol": "struct ListenView"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "func start"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "func listeningMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": "func load"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenMetadata.swift",
+          "symbol": "struct ListenMetadata"
+        }
+      ],
+      "behavior": "从音频卡或普通/分集进入听视频，支持目录、点播、歌词/简介、播放顺序/分P、续听、互动与系统控制；无音轨或不授权时给出服务错误",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/listen_interruption.sh",
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "route:/download": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/download"
+      },
+      "fixed_actions": "download 页面全部标签、下载进度和管理及视频控制器 initFileSource 断网打开保存媒体",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "struct OfflineShelfView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct OfflinePlayer"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func playerItem"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineIndexStore.swift",
+          "symbol": "OfflineIndexStore"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineMediaStore.swift",
+          "symbol": "OfflinePlaybackFiles"
+        }
+      ],
+      "behavior": "缓存实际媒体及附件、分区/搜索/管理、自定义真实存储、失败重试；已完成内容按原视频账号用本机媒体数据播放",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-native-decode.md",
+        "Acceptance/evidence/storage-locations.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "screen:download/detail": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/download/detail/view.dart",
+        "symbol": "class DownloadDetailPage"
+      },
+      "fixed_actions": "download/detail/view 与 detail/widgets/item：选集/续播/剩余进度、删除/更新附件",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+          "symbol": "struct OfflineGroupView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineWatchBook.swift",
+          "symbol": "struct Point"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct OfflinePlayer"
+        }
+      ],
+      "behavior": "按真实资源与观看者显示集数、恢复位置、全播或倒序；已保存的片段和弹幕可更新和离线使用",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-groups.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:download/download": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/download/download/view.dart",
+        "symbol": "class DownloadPage"
+      },
+      "fixed_actions": "DownloadController::_loadList 与 download/download/widgets/{season,page} 的成品聚合与批量操作",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "struct OfflineShelfView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelfFilter.swift",
+          "symbol": "enum OfflineShelfFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+          "symbol": "struct OfflineGroupView"
+        }
+      ],
+      "behavior": "已完成与进行中分栏，按季度、作品与分 P 聚合、选择、批量更新与删除；索引损坏可修复",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-groups.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:download/downloading": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/download/downloading/view.dart",
+        "symbol": "class DownloadingPage"
+      },
+      "fixed_actions": "download/downloading 的任务队列、进度、暂停/继续、删除与后台失败恢复",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct DownloadRow"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "func actions"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func start"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflinePieces.swift",
+          "symbol": "struct OfflinePieces"
+        }
+      ],
+      "behavior": "以系统任务、媒体组件、文件和真实长度驱动进度；根据任务状态分别暂停、恢复/重试或确认移除，不恢复其他账号的下载",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "screen:download/page": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/download/page/view.dart",
+        "symbol": "class DownloadPagePage"
+      },
+      "fixed_actions": "download/page 的一稿多 P 列表、选择、更新、倒序和队列",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+          "symbol": "archiveFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+          "symbol": "OfflineQueuePlayer"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func refreshExtras"
+        }
+      ],
+      "behavior": "合集→稿件→分 P，当前分集作为实际起点，选择集可更新；不将同名标题的另一个稿件拼入队列",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-groups.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:download/search": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/download/search/view.dart",
+        "symbol": "class DownloadSearchPage"
+      },
+      "fixed_actions": "download/search 按标题、作者与分集筛选以及对结果的条目操作",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelfFilter.swift",
+          "symbol": "func rows"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "searchable"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+          "symbol": "searchable"
+        }
+      ],
+      "behavior": "本地按当前视频账号/列表状态匹配作者、标题、分 P、编号；确认删除与清理进度只影响勾选项目",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/download_panel": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/pages/video/download_panel/view.dart",
+        "symbol": "class DownloadPanel"
+      },
+      "fixed_actions": "video/download_panel::选音画质、当前 P/全选、合集中多选，http/download::preferedAudioQuality 或一般档 defaultAudioQa",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct CacheSelection"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineCollectionSelection.swift",
+          "symbol": "struct OfflineCollectionSelection"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/EpisodeCache.swift",
+          "symbol": "struct EpisodeCacheView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/SeasonBatchCache.swift",
+          "symbol": "struct SeasonBatchCache"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "enum OfflineQuality"
+        }
+      ],
+      "behavior": "取得当集缓存权和有可用地址的格式；下载默认不随蜂窝播放档切换；可按明确档位、范围和附件入队并保留逐项失败",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/episode-offline.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "subsystem:services/audio_handler.dart": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/audio_handler.dart",
+        "symbol": "class VideoPlayerServiceHandler"
+      },
+      "fixed_actions": "audio_handler.dart::onVideoDetailChange/onVideoDetailDispose/play/pause/seek/skipToNext/skipToPrevious/clear",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "func restorePrevious"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "MPRemoteCommandCenter.shared"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "setupSystemMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "installCommands"
+        }
+      ],
+      "behavior": "按当前真实播放器发布进度、速度、艺人和封面；命令绑定具体媒体和时点，退出当前详情可恢复上一已使用项目的暂停控制、不抢播",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "subsystem:services/audio_session.dart": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/audio_session.dart",
+        "symbol": "class AudioSessionHandler"
+      },
+      "fixed_actions": "AudioSessionHandler::initSession 的正常中断、未知中断、耳机断开、系统音量礼让和播放类别",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackSessionEvents.swift",
+          "symbol": "resumptionRecommendationNotification"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackSessionEvents.swift",
+          "symbol": "interruptionNotification"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoScenePause.swift",
+          "symbol": "audioUnavailable"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackInterruptionIntent.swift",
+          "symbol": "func finish"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "monitorAudio"
+        }
+      ],
+      "behavior": "AVAudioSession .playback 与 AVPlayer 管理系统优先级；新旧通知分流，允许恢复也须原条目、真实开播、仍有意图且成功重新激活；拔耳机/定时/换媒体/换号都作废",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/listen_interruption.sh",
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "subsystem:services/download": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/download/download_manager.dart",
+        "symbol": "class DownloadManager"
+      },
+      "fixed_actions": "DownloadService 的启动/清单、队列、入队/取消/重新开始、SS、UGC、PUGV和附件落盘",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func resolve"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func suspendOtherOwners"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func relocate"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineIndexStore.swift",
+          "symbol": "OfflineIndexStore"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflinePackage.swift",
+          "symbol": "enum OfflinePackage"
+        }
+      ],
+      "behavior": "索引、权限和角色、重启后任务对账、磁盘和附件管理相互关联。系统授权目录脱机保留可恢复状态；受控媒体不从其他 UID 认领",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/storage-locations.md",
+        "Checks/storage_locations.sh"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "subsystem:services/download/download_manager.dart": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/download/download_manager.dart",
+        "symbol": "class DownloadManager"
+      },
+      "fixed_actions": "DownloadManager::_start/cancel 进度、失败状态、分段继续与终止",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "URLSessionDownloadDelegate"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "didFinishDownloadingTo"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflinePieces.swift",
+          "symbol": "struct OfflinePieces"
+        }
+      ],
+      "behavior": "原生后台任务与确认点、HTTP Range、强校验器、长度和表示指纹；中断后只复用一致的文件，续签受源授权限制",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "subsystem:services/download/download_service.dart": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/download/download_service.dart",
+        "symbol": "class DownloadService"
+      },
+      "fixed_actions": "DownloadService 的启动/清单、队列、入队/取消/重新开始、SS、UGC、PUGV和附件落盘",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func resolve"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func suspendOtherOwners"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func relocate"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineIndexStore.swift",
+          "symbol": "OfflineIndexStore"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflinePackage.swift",
+          "symbol": "enum OfflinePackage"
+        }
+      ],
+      "behavior": "索引、权限和角色、重启后任务对账、磁盘和附件管理相互关联。系统授权目录脱机保留可恢复状态；受控媒体不从其他 UID 认领",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/storage-locations.md",
+        "Checks/storage_locations.sh"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "subsystem:services/service_locator.dart": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/service_locator.dart",
+        "symbol": "Future<void> setupServiceLocator()"
+      },
+      "fixed_actions": "setupServiceLocator 只注册 audio handler 与 audio session；播放生命周期与应用根绑定",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "ListenQueue.shared.activate"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackSessionEvents.swift",
+          "symbol": "PlaybackSessionEvents"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "func bind"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "func prepare"
+        }
+      ],
+      "behavior": "AVPlayer 页面和听队列使用原生对应服务；关闭媒体/切账号解绑，外部播放命令仅交给实际所有者",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "subsystem:services/shutdown_timer_service.dart": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "lib/services/shutdown_timer_service.dart",
+        "symbol": "enum _ShutdownType"
+      },
+      "fixed_actions": "ShutdownTimerService::_handleShutdown/handleWaiting/_syncProgressAndExit 与 DeviceUtils.exitApp；自定小时0–24、分钟0–59",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/SleepTimer.swift",
+          "symbol": "prepareQuit"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SleepDeadline.swift",
+          "symbol": "func expire"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SleepExitPermit.swift",
+          "symbol": "func finish"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SleepAppExit.swift",
+          "symbol": "requestSceneSessionDestruction"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "checkpointForExit"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Connection.swift",
+          "symbol": "SleepExitFence.shared.enter"
+        },
+        {
+          "file": "Sources/PiliNative/PiliNativeApp.swift",
+          "symbol": "sleepTimer.homeRevision"
+        }
+      ],
+      "behavior": "预设、自定、倒计时、取消、到时/播完当前项，按明确选择暂停、回首页或退出。退出前保存进度并等账号/缓存事务；在支持的设备请求关闭所有窗口，单窗口 iPhone 自签构建执行正常 Darwin.exit(0)，不使用私有 UIApplication 方法",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Checks/listen_interruption.sh"
+      ],
+      "device_or_remaining": "只在供安装的最终真机验证系统实际退回桌面、iOS 后台传输恢复；本次只用注入回调验证，不终止任何应用"
+    },
+    "upstream:feat/播放全部/继续播放/倒序播放": {
+      "verdict": "implemented",
+      "ownership": "资料库、离线与听视频共同覆盖",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "播放全部/继续播放/倒序播放"
+      },
+      "fixed_actions": "稍后再看与收藏的播放全部、视频 medialist 的顺序和恢复；离线与收听中的对应入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/LibraryPlaylist.swift",
+          "symbol": "struct LibraryPlaylist"
+        },
+        {
+          "file": "Sources/PiliNative/Library/MediaPageWindow.swift",
+          "symbol": "MediaPageWindow"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineGroupView.swift",
+          "symbol": "OfflineQueuePlayer"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": "func sort"
+        }
+      ],
+      "behavior": "来源列表按账号、过滤和原排序记录断点，完整队列可跨页、选择某项开始或倒序；离线按本地分组/分P，听视频使用其服务目录窗口",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/cloud-playlist.md",
+        "Acceptance/evidence/offline-groups.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/PortBehaviorCheck.swift"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "upstream:feat/播放音频": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "播放音频"
+      },
+      "fixed_actions": "audio/view、AudioController 的队列次序/双向分页、来源/多 P、播放控制与互动，AudioHttp 与 Listener 服务",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Audio/ListenView.swift",
+          "symbol": "struct ListenView"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "func start"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "func listeningMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenerCatalog.swift",
+          "symbol": "func load"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenMetadata.swift",
+          "symbol": "struct ListenMetadata"
+        }
+      ],
+      "behavior": "从音频卡或普通/分集进入听视频，支持目录、点播、歌词/简介、播放顺序/分P、续听、互动与系统控制；无音轨或不授权时给出服务错误",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/audio-queue-order.md",
+        "Checks/listen_interruption.sh",
+        "Wire/Tests/PiliWireTests/ListenerGatewayTests.swift"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "upstream:feat/离线缓存/播放": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "离线缓存/播放"
+      },
+      "fixed_actions": "download 页面全部标签、下载进度和管理及视频控制器 initFileSource 断网打开保存媒体",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "struct OfflineShelfView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct OfflinePlayer"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func playerItem"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineIndexStore.swift",
+          "symbol": "OfflineIndexStore"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineMediaStore.swift",
+          "symbol": "OfflinePlaybackFiles"
+        }
+      ],
+      "behavior": "缓存实际媒体及附件、分区/搜索/管理、自定义真实存储、失败重试；已完成内容按原视频账号用本机媒体数据播放",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-native-decode.md",
+        "Acceptance/evidence/storage-locations.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "upstream:功能/离线缓存": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "离线缓存"
+      },
+      "fixed_actions": "download 页面全部标签、下载进度和管理及视频控制器 initFileSource 断网打开保存媒体",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineShelf.swift",
+          "symbol": "struct OfflineShelfView"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/DownloadViews.swift",
+          "symbol": "struct OfflinePlayer"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/Downloads.swift",
+          "symbol": "func playerItem"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineIndexStore.swift",
+          "symbol": "OfflineIndexStore"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineMediaStore.swift",
+          "symbol": "OfflinePlaybackFiles"
+        }
+      ],
+      "behavior": "缓存实际媒体及附件、分区/搜索/管理、自定义真实存储、失败重试；已完成内容按原视频账号用本机媒体数据播放",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Checks/offline_resume.py",
+        "Acceptance/evidence/offline-native-decode.md",
+        "Acceptance/evidence/storage-locations.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "upstream:功能/记忆播放": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "记忆播放"
+      },
+      "fixed_actions": "固定 README 与 video/controller 本地播放/服务进度、audio/controller 及下载的持久化位置",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackMemory.swift",
+          "symbol": "func store"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "PlaybackMemory.read"
+        },
+        {
+          "file": "Sources/PiliNative/Offline/OfflineWatchBook.swift",
+          "symbol": "func read"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenQueue.swift",
+          "symbol": "continueListening"
+        }
+      ],
+      "behavior": "实际写入并按账号和 CID/音频/离线资源恢复，关闭记忆不自动跳转，播完时处理尾部；队列继续还原原项与分集",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Acceptance/evidence/cloud-playlist.md",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Acceptance/evidence/listener-audio-audit.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    },
+    "upstream:功能/音质选择（视视频而定）": {
+      "verdict": "implemented",
+      "ownership": "offline-listening-system-media",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "音质选择（视视频而定）"
+      },
+      "fixed_actions": "video/controller 与 audio/controller 按 isWiFi 配置，header_control 切换/记住；下载用一般档，VideoUtils.findTargetAudio 按排名选择可用格式",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/MediaProfilePanel.swift",
+          "symbol": "Picker(\"音质\""
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "func chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "func record"
+        },
+        {
+          "file": "Sources/PiliNative/Audio/ListenSource.swift",
+          "symbol": "func listeningMedia"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "enum OfflineQuality"
+        }
+      ],
+      "behavior": "播放可切换服务提供并支持的音轨；Wi-Fi/有线和蜂窝读取独立偏好，取流与在线换轨按回包排名，缓存另外遵循原版的一般档",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-final.md",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/listener-audio-audit.md"
+      ],
+      "device_or_remaining": "真机验证 iOS 在锁屏/挂起时的系统回调、扬声器/耳机、控制中心或文件提供方交接；服务仅应按当前用户实有的权利返回内容"
+    }
+  }
+}

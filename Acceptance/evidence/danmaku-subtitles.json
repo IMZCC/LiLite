@@ -1,0 +1,714 @@
+{
+  "baseline": "PiliPlus 2.2.0.2",
+  "device_pending": [
+    "Files provider and VoiceOver",
+    "iPhone and AirPlay/AVKit PiP composition",
+    "device fonts, portrait / landscape, touch, high-density visible pool",
+    "authorized real-account writes and guest-vs-auth result differences"
+  ],
+  "proof": {
+    "host": "Checks/caption_domain.sh",
+    "raster": "Checks/subtitle_raster.py",
+    "settings": "Checks/BackupCheck.swift",
+    "layout": "Checks/ContentContractCheck.swift",
+    "cloud": "Acceptance/evidence/cloud-bullet-rules.md",
+    "public": "Acceptance/evidence/danmaku-subtitles-audit.md",
+    "catalog": "Acceptance/evidence/subtitle-catalog.md",
+    "live": "Acceptance/evidence/live-interaction.md",
+    "timeline": "Sources/PiliNative/Playback/TimelineAssets.swift",
+    "pip": "Acceptance/evidence/pip-bullet-loading.md",
+    "post": "Acceptance/evidence/bullet-composer.md",
+    "recall": "Acceptance/evidence/danmaku-recall.md",
+    "sdk": "Acceptance/evidence/danmaku-subtitles-audit.md"
+  },
+  "rows": [
+    {
+      "id": "preference:SettingBoxKey/danmakuBlockType",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/DanmakuStyle.swift#admits"
+      ],
+      "behavior": "五类原版屏蔽值；关闭彩色后使用白色而不是删除文字",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuDuration",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletTrackFrame.swift#duration"
+      ],
+      "behavior": "滚动轨时长，普通或按长度调整后独立参与追尾判断",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuFixedV",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletTrackFrame.swift#fixedVelocity"
+      ],
+      "behavior": "滚速恒定；长文字的存活时长相应增加",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuStatic2Scroll",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletTrackFrame.swift#convertFixed"
+      ],
+      "behavior": "固定内容太宽或轨道已满时才转为滚动",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuMassiveMode",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletTrackFrame.swift#dense"
+      ],
+      "behavior": "普通滚动轨满时允许叠放",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuStaticDuration",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletTrackFrame.swift#staticDuration"
+      ],
+      "behavior": "定点弹幕按视频时间离开轨道",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuFontScale",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#dm.fontSize"
+      ],
+      "behavior": "普通窗口字号以 15 点为基准",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuFontScaleFS",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#dm.fullFontSize"
+      ],
+      "behavior": "全屏独立字号，退出全屏恢复普通值",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuFontWeight",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#fontWeight"
+      ],
+      "behavior": "字重同时用于绘制和测量",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuLineHeight",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#lineHeight"
+      ],
+      "behavior": "实际逻辑像素高度参与轨道数量及基线",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuOpacity",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#dm.opacity"
+      ],
+      "behavior": "透明度可调；为零时取消命中",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuShowArea",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#dm.area"
+      ],
+      "behavior": "可见区域决定物理轨数，满屏保留一排",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuStrokeWidth",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletRasterCache.swift#spec.stroke > 0"
+      ],
+      "behavior": "绘制渐变和普通字轮廓",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/showVipDanmaku",
+      "upstream": [
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletRasterCache.swift#layout.showVIP && bullet.isVIPGradient"
+      ],
+      "behavior": "只有服务端 VipGradualColor=60001 才给会员色",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/danmakuWeight",
+      "upstream": [
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/DanmakuStyle.swift#minimumWeight"
+      ],
+      "behavior": "按服务返回权重过滤，含自己发送的内容",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/enableShowDanmaku",
+      "upstream": [
+        "lib/pages/danmaku/view.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/PlayerModel.swift#syncPiPBullets"
+      ],
+      "behavior": "关闭后停止请求和绘制，开启后恢复当前六分钟分段",
+      "proof": [
+        "layout",
+        "public"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/enableShowLiveDanmaku",
+      "upstream": [
+        "lib/pages/live_room/widgets/bottom_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Live/LiveTrackView.swift#LiveTrack"
+      ],
+      "behavior": "只有新收到的聊天室弹幕随直播时钟移动",
+      "proof": [
+        "live"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/enableTapDm",
+      "upstream": [
+        "lib/plugin/pl_player/controller.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#inspector.locate"
+      ],
+      "behavior": "只命中实际文字，普通和旋转高级弹幕按显示坐标识别",
+      "proof": [
+        "layout"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/showDmChart",
+      "upstream": [
+        "lib/plugin/pl_player/controller.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/TimelineAssets.swift#player.trend"
+      ],
+      "behavior": "点播趋势曲线使用时间轴服务结果，可独立开关",
+      "proof": [
+        "timeline"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/mergeDanmaku",
+      "upstream": [
+        "lib/pages/danmaku/controller.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/DanmakuStyle.swift#wireText"
+      ],
+      "behavior": "按同一分段第一条原文归并重复弹幕；自发内容独立",
+      "proof": [
+        "layout"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/pipNoDanmaku",
+      "upstream": [
+        "lib/plugin/pl_player/controller.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/VideoTransport.swift#quietPiP"
+      ],
+      "behavior": "PiP 可减少加载，返回恢复当前段；iOS 系统 PiP 合成由系统控制",
+      "proof": [
+        "pip"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/enableDragSubtitle",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.drag"
+      ],
+      "behavior": "在启用时拖动字幕底距，保持播放器手势分离",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitleBgOpacity",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.opacity"
+      ],
+      "behavior": "背景不透明时不重复绘制描边",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitleFontScale",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#play.subtitleSize"
+      ],
+      "behavior": "普通窗口使用独立字幕字号",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitleFontScaleFS",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.fullSize"
+      ],
+      "behavior": "全屏使用独立字幕字号",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitleFontWeight",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.weight"
+      ],
+      "behavior": "按原版九档字重绘制",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitlePaddingB",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.bottom"
+      ],
+      "behavior": "底距加上控件展开保留空间",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitlePaddingH",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.horizontal"
+      ],
+      "behavior": "限制字幕距离左右边缘",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitleStrokeWidth",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Settings/PlaybackPreferences.swift#caption.stroke"
+      ],
+      "behavior": "透明背景时绘制黑色轮廓",
+      "proof": [
+        "layout",
+        "settings"
+      ]
+    },
+    {
+      "id": "preference:SettingBoxKey/subtitlePreferenceV2",
+      "upstream": [
+        "lib/pages/video/controller.dart",
+        "lib/utils/storage_pref.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/SubtitlePreference.swift#select"
+      ],
+      "behavior": "关闭、开启、跳过 AI、静音允许 AI 四种原版初始策略",
+      "proof": [
+        "catalog",
+        "host"
+      ]
+    },
+    {
+      "id": "page:danmaku",
+      "upstream": [
+        "lib/pages/danmaku/view.dart",
+        "lib/pages/danmaku/controller.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletOverlay.swift#BulletOverlay",
+        "Sources/PiliNative/Danmaku/SegmentedComments.swift#commentPage"
+      ],
+      "behavior": "原生排轨、暂停、变速、分段和服务关闭状态",
+      "proof": [
+        "layout",
+        "public",
+        "host"
+      ]
+    },
+    {
+      "id": "page:danmaku_block",
+      "upstream": [
+        "lib/pages/danmaku_block/controller.dart",
+        "lib/models/user/danmaku_block.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/AccountBulletRules.swift#AccountBulletRules",
+        "Sources/PiliNative/Settings/AccountBulletRulePanel.swift#AccountBulletRulePanel"
+      ],
+      "behavior": "当前主账号的关键词、正则、发送者三类云规则，支持增删改、刷新与本机匹配",
+      "proof": [
+        "cloud"
+      ]
+    },
+    {
+      "id": "route:/danmakuBlock",
+      "upstream": [
+        "lib/pages/danmaku_block/controller.dart",
+        "lib/models/user/danmaku_block.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/AccountBulletRules.swift#AccountBulletRules",
+        "Sources/PiliNative/Settings/AccountBulletRulePanel.swift#AccountBulletRulePanel"
+      ],
+      "behavior": "当前主账号的关键词、正则、发送者三类云规则，支持增删改、刷新与本机匹配",
+      "proof": [
+        "cloud"
+      ]
+    },
+    {
+      "id": "page:live_dm_block",
+      "upstream": [
+        "lib/pages/live_dm_block/controller.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Live/LiveShield.swift#LiveShieldView",
+        "Sources/PiliNative/Live/LiveTrackView.swift#LiveTrack"
+      ],
+      "behavior": "房间官方屏蔽关键字及 UID；聊天室与实时叠层共用结果",
+      "proof": [
+        "live"
+      ]
+    },
+    {
+      "id": "route:/liveDmBlockPage",
+      "upstream": [
+        "lib/pages/live_dm_block/controller.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Live/LiveShield.swift#LiveShieldView",
+        "Sources/PiliNative/Live/LiveTrackView.swift#LiveTrack"
+      ],
+      "behavior": "房间官方屏蔽关键字及 UID；聊天室与实时叠层共用结果",
+      "proof": [
+        "live"
+      ]
+    },
+    {
+      "id": "screen:video/send_danmaku",
+      "upstream": [
+        "lib/pages/video/send_danmaku/view.dart",
+        "lib/http/danmaku.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/BulletComposer.swift#BulletComposer",
+        "Sources/PiliNative/Danmaku/BulletRecall.swift#BulletRecall"
+      ],
+      "behavior": "保留草稿；尺寸、位置、颜色、会员色；校验登录、关闭状态及服务回执才显示自己的发送",
+      "proof": [
+        "post",
+        "host"
+      ]
+    },
+    {
+      "id": "screen:live_room/send_danmaku",
+      "upstream": [
+        "lib/pages/live_room/send_danmaku/view.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Live/LiveComposer.swift#sendLive"
+      ],
+      "behavior": "房间、当前账号、文字/表情和回复目标随真正的发送请求；未执行真实发言",
+      "proof": [
+        "live"
+      ]
+    },
+    {
+      "id": "flow:subtitle-file-import",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/subtitle_utils.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/SubtitleDocument.swift#SubtitleDocument",
+        "Sources/PiliNative/Playback/SubtitlePicker.swift#fileImporter"
+      ],
+      "behavior": "BCC/JSON、VTT/SRT、ASS 载入；服务原始 JSON 字节保真，另存 SRT/WebVTT，多语言选择",
+      "proof": [
+        "host",
+        "sdk"
+      ]
+    },
+    {
+      "id": "flow:subtitle-export",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/utils/subtitle_utils.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/SubtitleDocument.swift#SubtitleDocument",
+        "Sources/PiliNative/Playback/SubtitlePicker.swift#fileImporter"
+      ],
+      "behavior": "BCC/JSON、VTT/SRT、ASS 载入；服务原始 JSON 字节保真，另存 SRT/WebVTT，多语言选择",
+      "proof": [
+        "host",
+        "sdk"
+      ]
+    },
+    {
+      "id": "flow:ass-render",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/StyledSubtitleLayer.swift#pili_ass_render",
+        "MediaKit/Sources/CLiveRemux/PiliASS.c#ass_render_frame"
+      ],
+      "behavior": "按原视频时钟、画幅和 CoreText 字体渲染 ASS 特效与绘图",
+      "proof": [
+        "raster",
+        "sdk"
+      ]
+    },
+    {
+      "id": "flow:subtitle-voices-accessibility",
+      "upstream": [
+        "lib/models_new/video/video_play_info/subtitle.dart",
+        "lib/pages/video/controller.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Playback/Captions.swift#lan_doc",
+        "Sources/PiliNative/Playback/SubtitleSession.swift#select"
+      ],
+      "behavior": "保留语言/听障轨道服务原名及文本，只有收到 AI 类型或 AI 语言标记才追加 AI；双轨原生补充，上游界面只有主轨",
+      "proof": [
+        "host",
+        "catalog"
+      ]
+    },
+    {
+      "id": "flow:bullet-pool",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/DanmakuList.swift#snapshot",
+        "Sources/PiliNative/Danmaku/BulletInspection.swift#BulletReportSheet"
+      ],
+      "behavior": "当前屏幕上实际排轨的文字可刷新；时间段可搜索、跳转。点赞、举报、屏蔽、撤回单独确认。已经点过/取消过按回执同步",
+      "proof": [
+        "host",
+        "layout",
+        "cloud",
+        "recall"
+      ]
+    },
+    {
+      "id": "flow:bullet-actions",
+      "upstream": [
+        "lib/pages/video/widgets/header_control.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/DanmakuList.swift#snapshot",
+        "Sources/PiliNative/Danmaku/BulletInspection.swift#BulletReportSheet"
+      ],
+      "behavior": "当前屏幕上实际排轨的文字可刷新；时间段可搜索、跳转。点赞、举报、屏蔽、撤回单独确认。已经点过/取消过按回执同步",
+      "proof": [
+        "host",
+        "layout",
+        "cloud",
+        "recall"
+      ]
+    },
+    {
+      "id": "flow:advanced-and-code-danmaku",
+      "upstream": [
+        "lib/pages/danmaku/view.dart",
+        "lib/utils/danmaku_utils.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Danmaku/SpecialBullet.swift#frame",
+        "Sources/PiliNative/Danmaku/DMProto.swift#page"
+      ],
+      "behavior": "模式 7 按 JSON 数据动画；8/9 作为惰性文字，不执行表达式/代码或把未使用的互动命令称作原版播放功能",
+      "proof": [
+        "host",
+        "layout",
+        "public"
+      ]
+    },
+    {
+      "id": "flow:offline-social-media",
+      "upstream": [
+        "lib/pages/danmaku/controller.dart",
+        "lib/pages/video/controller.dart"
+      ],
+      "native": [
+        "Sources/PiliNative/Offline/OfflineExtras.swift#updateComments",
+        "Sources/PiliNative/Offline/DownloadViews.swift#SubtitleButton"
+      ],
+      "behavior": "缓存选择原有字幕及弹幕，无网可选择/导入本地字幕",
+      "proof": [
+        "host",
+        "catalog",
+        "sdk"
+      ]
+    }
+  ]
+}

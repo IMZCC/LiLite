@@ -1,0 +1,83 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "fixed-readme-scope",
+  "entries": {
+    "upstream:feat/其他": {
+      "file": "README.md",
+      "line": 120,
+      "section": "feat",
+      "literal": "- [x] 其他",
+      "introduced_by_blame": "33b9a936207b977a06def52993083e8274ea48be",
+      "ancestor_subject": "Update README.md",
+      "children": [],
+      "disposition": "unspecified-summary",
+      "eligible": false,
+      "policy": "没有编号、功能描述、链接或子项。单列原文备注，不产生验收功能数或实现缺口"
+    },
+    "upstream:opt/其他": {
+      "file": "README.md",
+      "line": 136,
+      "section": "opt",
+      "literal": "- [x] 其他",
+      "introduced_by_blame": "33b9a936207b977a06def52993083e8274ea48be",
+      "ancestor_subject": "Update README.md",
+      "children": [],
+      "disposition": "unspecified-summary",
+      "eligible": false,
+      "policy": "没有编号、功能描述、链接或子项。单列原文备注，不产生验收功能数或实现缺口"
+    },
+    "upstream:fix/bugs": {
+      "file": "README.md",
+      "line": 141,
+      "section": "fix",
+      "literal": "- [x] bugs",
+      "introduced_by_blame": "33b9a936207b977a06def52993083e8274ea48be",
+      "ancestor_subject": "Update README.md",
+      "children": [],
+      "disposition": "unspecified-summary",
+      "eligible": false,
+      "policy": "没有编号、功能描述、链接或子项。单列原文备注，不产生验收功能数或实现缺口"
+    },
+    "upstream:功能/用户相关": {
+      "file": "README.md",
+      "line": 155,
+      "section": "功能",
+      "literal": "- [x] 用户相关",
+      "introduced_by_blame": "c43296d152d2cf43bd6b9152054a9ec770cb4cb5",
+      "ancestor_subject": "Update README.md",
+      "children": [
+        "upstream:功能/粉丝、关注用户、拉黑用户查看",
+        "upstream:功能/用户主页查看",
+        "upstream:功能/关注/取关用户",
+        "upstream:功能/离线缓存",
+        "upstream:功能/稍后再看",
+        "upstream:功能/观看记录",
+        "upstream:功能/我的收藏",
+        "upstream:功能/站内私信"
+      ],
+      "disposition": "aggregate-listed-children",
+      "eligible": "only when all named children have an implementation or an explicit source-appropriate platform equivalent",
+      "policy": "按这份固定 README 逐个聚合；更广的登录授权、商店或未知账号能力不纳入"
+    },
+    "upstream:功能/设置相关": {
+      "file": "README.md",
+      "line": 204,
+      "section": "功能",
+      "literal": "- [x] 设置相关",
+      "introduced_by_blame": "c43296d152d2cf43bd6b9152054a9ec770cb4cb5",
+      "ancestor_subject": "Update README.md",
+      "children": [
+        "upstream:功能/画质、音质、解码方式预设",
+        "upstream:功能/图片质量设定",
+        "upstream:功能/主题模式：亮色/暗色/跟随系统",
+        "upstream:功能/震动反馈(可选)",
+        "upstream:功能/高帧率",
+        "upstream:功能/自动全屏",
+        "upstream:功能/横屏适配"
+      ],
+      "disposition": "aggregate-listed-children",
+      "eligible": "only when all named children have an implementation or an explicit source-appropriate platform equivalent",
+      "policy": "按这份固定 README 逐个聚合；更广的登录授权、商店或未知账号能力不纳入"
+    }
+  }
+}

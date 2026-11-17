@@ -1,0 +1,2871 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "dynamics-comments-reading",
+  "records": {
+    "page:article": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/article/view.dart",
+        "symbol": "class ArticlePage"
+      },
+      "fixed_actions": "article/view.dart、controller.dart、opus_content/html_render/article_ops",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleBody.swift",
+          "symbol": "enum ArticleBody"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookArticle.swift",
+          "symbol": "NotebookArticle"
+        }
+      ],
+      "behavior": "旧 CV、OPUS 图文、公开笔记与旧文本 ops 由 Swift 渲染，保留正文图片/字体样式/公式/来源、站内与站外资源、讨论/分享/收藏；付费/专属模块不改内容授权",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:article_list": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/article_list/view.dart",
+        "symbol": "class ArticleListPage"
+      },
+      "fixed_actions": "article_list/controller.dart 返回完整合集而非分页接口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleCollection"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SharedLink.swift",
+          "symbol": "enum SharedLink"
+        }
+      ],
+      "behavior": "文集目录、封面、文章顺序，选中真实 CV 进入阅读，重复文章按身份去重",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics/view.dart",
+        "symbol": "class DynamicsPage"
+      },
+      "fixed_actions": "dynamics/controller.dart 与 dynamics_tab/controller.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "struct DynamicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "FeedDirectoryState"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "func dynamics"
+        }
+      ],
+      "behavior": "关注动态、切类型/指定UP、关注和直播面板、分页、隐藏、折叠、进入详情与发布；配合未读刷新",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-feed-layout.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_create": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_create/view.dart",
+        "symbol": "class CreateDynPanel"
+      },
+      "fixed_actions": "dynamics_create/controller.dart、dynamics 交互菜单",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "struct DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDraftFile.swift",
+          "symbol": "DynamicPublishWire"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        }
+      ],
+      "behavior": "当前账号发布纯文或图文，支持草稿/图片/实况、@与话题、标题、投票预约、评论权限；限本人操作的置顶/删除回读身份后按回执更新",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_create_reserve": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_create_reserve/view.dart",
+        "symbol": "class CreateReservePage"
+      },
+      "fixed_actions": "dynamics_create_reserve/controller.dart 与 additional_panel.dart 的预约卡",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/LiveReservation.swift",
+          "symbol": "saveReservation"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MomentResources.swift",
+          "symbol": "struct MomentResources"
+        }
+      ],
+      "behavior": "发起或编辑直播/首映预约，日期与类型、已有 SID、作者身份及返回号核对；观众预约和取消走服务给的按钮状态，禁用或跳转卡单独处理",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_create_vote": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_create_vote/view.dart",
+        "symbol": "class CreateVotePage"
+      },
+      "fixed_actions": "dynamics_create_vote/controller.dart；投票卡选择与编辑",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/VoteEditor.swift",
+          "symbol": "struct NewVote"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Votes.swift",
+          "symbol": "struct VoteView"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicEditView.swift",
+          "symbol": "DynamicEditView"
+        }
+      ],
+      "behavior": "文本/图片投票选项、可选数、截止时间，真实投票号/已选状态；编辑已有投票、在草稿移除、查看统计及公开的好友投票",
+      "evidence": [
+        "Acceptance/evidence/native-polls.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_detail": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_detail/view.dart",
+        "symbol": "class DynamicDetailPage"
+      },
+      "fixed_actions": "dynamics_detail 控制器/视图、dynamics/widgets/rich_node_panel.dart 查看图片",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct DynamicDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "DynamicActivityList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MomentPictureResource.swift",
+          "symbol": "MomentPictureResource"
+        },
+        {
+          "file": "Sources/PiliNative/Social/RichNodes.swift",
+          "symbol": "MomentPictureReply"
+        }
+      ],
+      "behavior": "显示原文和转发卡、图集与实况、资源、互动和评论，能打开正确的动态或文章；已附图的富文本节点就地显示图片，只有资源 rid 的节点点开后读官方独立图组，服务拒绝不替换另一作品",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/social-final-scope.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_mention": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_mention/view.dart",
+        "symbol": "class DynMentionPanel"
+      },
+      "fixed_actions": "dynamics_mention/controller.dart dynMention",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ComposePickers.swift",
+          "symbol": "MentionChooser"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyDraft.swift",
+          "symbol": "mentionIDs"
+        }
+      ],
+      "behavior": "官方分组的候选与搜索、原作者快捷项、按选择顺序插入，真实 UID 随实体保留；调整光标或中途手改名字后不会误提及",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_repost": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_repost/view.dart",
+        "symbol": "class RepostPanel"
+      },
+      "fixed_actions": "dynamics_repost 与转发原帖入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDraftFile.swift",
+          "symbol": "DynamicRepostContext"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        }
+      ],
+      "behavior": "选当前帖子进行转发，展示原作者/原文与附言；可同步评论，识别真实新帖 ID、定时受理与失败。稿件/影视/收藏夹的业务资源区分",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_select_topic": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_select_topic/view.dart",
+        "symbol": "class SelectTopicPanel"
+      },
+      "fixed_actions": "dynamics_select_topic/controller.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ComposePickers.swift",
+          "symbol": "TopicChooser"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        }
+      ],
+      "behavior": "搜索/选择服务话题，回填实际 id/name；从话题直接参与时保留预选，编辑器不因预选误点就发布",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_tab": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_tab/view.dart",
+        "symbol": "class DynamicsTabPage"
+      },
+      "fixed_actions": "DynamicsTabController.getDataList；DynamicsDataModel.fromJson",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "private func feed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "enum FeedScope"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        }
+      ],
+      "behavior": "各栏分页和筛选、暂时隐藏用户和显式展开折叠；默认标签和返回列表保持正确。过滤只作用于列表，不改动用户手动打开的详情",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_topic": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_topic/view.dart",
+        "symbol": "class DynTopicPage"
+      },
+      "fixed_actions": "dynamics_topic/controller.dart 与话题详情视图",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/TopicTimeline.swift",
+          "symbol": "TopicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/TopicService.swift",
+          "symbol": "TopicAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        }
+      ],
+      "behavior": "话题真实 id 和标题、排序、详情/折叠列表、分页、收藏和发起带该话题的动态；服务空结果与错误可重试",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:dynamics_topic_rcmd": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/dynamics_topic_rcmd/view.dart",
+        "symbol": "class DynTopicRcmdPage"
+      },
+      "fixed_actions": "dynamics_topic_rcmd/controller.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "TopicDirectory"
+        },
+        {
+          "file": "Sources/PiliNative/Social/TopicService.swift",
+          "symbol": "TopicCard"
+        }
+      ],
+      "behavior": "按服务真实游标和卡片展示推荐，打开指定话题或搜索；正常返回空目录不伪造推荐",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:emote": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/emote/view.dart",
+        "symbol": "class EmotePanel"
+      },
+      "fixed_actions": "emote/view.dart 的表情包选择与提示，控制器业务标识 reply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/EmoteInput.swift",
+          "symbol": "EmotePalette"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyRichText.swift",
+          "symbol": "ReplyEmoteImages"
+        }
+      ],
+      "behavior": "真实表情包分页内分组、文字表情与图片、名称/预览，选中后插入本地文本光标，不自动提交",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:main_reply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/main_reply/view.dart",
+        "symbol": "class MainReplyPage"
+      },
+      "fixed_actions": "main_reply、common/reply、video/reply 的主列表/精选/折叠/定位",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "TranslatableReply"
+        }
+      ],
+      "behavior": "排序、置顶去重、折叠、分页、翻译、图片、角色和真实投票卡；根据资源 type/oid 进入普通视频、课堂、专栏与动态的讨论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:member_article": {
+      "verdict": "implemented",
+      "ownership": "article content / shared space and library agent",
+      "upstream": {
+        "file": "lib/pages/member_article/view.dart",
+        "symbol": "class MemberArticle"
+      },
+      "fixed_actions": "member_article、member_opus 空间子栏目",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "struct CreatorLibrary"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": "struct CreatorOpus"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        }
+      ],
+      "behavior": "空间公开专栏/图文按实际栏目和分页读取，打开指定作品或者所属文集；内容阅读沿同一原生阅读器",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:member_dynamics": {
+      "verdict": "implemented",
+      "ownership": "dynamic content / shared space and library agent",
+      "upstream": {
+        "file": "lib/pages/member_dynamics/view.dart",
+        "symbol": "class MemberDynamicsPage"
+      },
+      "fixed_actions": "member_dynamics 和 member_search/child：按 UP 的空间动态、关键词搜索",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct CreatorDynamics"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "struct CreatorSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        }
+      ],
+      "behavior": "列表与搜索保留 UP 身份/游标，普通空间动态及空间搜索与首页相同，对原帖与转发文分别匹配正则/带货标签；搜索读推荐账号，写操作仍使用主账号",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/social-final-scope.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:member_opus": {
+      "verdict": "implemented",
+      "ownership": "article content / shared space and library agent",
+      "upstream": {
+        "file": "lib/pages/member_opus/view.dart",
+        "symbol": "class MemberOpus"
+      },
+      "fixed_actions": "member_article、member_opus 空间子栏目",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "struct CreatorLibrary"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": "struct CreatorOpus"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        }
+      ],
+      "behavior": "空间公开专栏/图文按实际栏目和分页读取，打开指定作品或者所属文集；内容阅读沿同一原生阅读器",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:my_reply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/my_reply/view.dart",
+        "symbol": "class MyReply"
+      },
+      "fixed_actions": "my_reply/view.dart 的本地记录、定位与导入/导出",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/MyReplies.swift",
+          "symbol": "struct MyReplies"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyArchive.swift",
+          "symbol": "actor ReplyArchive"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func archived"
+        }
+      ],
+      "behavior": "按账号保存确认回执及原富文本/64 位 ID，剪贴板/文件合并导出，能定位原楼、区分清本机记录与确认删除自己在线评论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "page:save_panel": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/save_panel/view.dart",
+        "symbol": "class SavePanel"
+      },
+      "fixed_actions": "save_panel/view.dart 与动态/评论菜单",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/SharePoster.swift",
+          "symbol": "struct SharePoster"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        }
+      ],
+      "behavior": "生成当前内容的图片海报，二维码/底部信息/封面及整组图片按用户选项呈现，系统分享或保存到照片和用户授权目录，不覆盖已有文件",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Acceptance/evidence/storage-locations.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/antiGoodsDyn": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "antiGoodsDyn"
+      },
+      "fixed_actions": "DynamicsDataModel.fromJson → antiGoodsDyn",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "MomentFilterFields"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "MomentListFilter"
+        }
+      ],
+      "behavior": "原帖或转发的 ADDITIONAL_TYPE_GOODS 任一命中即滤除，普通含“商品”字样不受影响",
+      "evidence": [
+        "Acceptance/evidence/social-final-scope.md",
+        "Checks/MomentDomainCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/antiGoodsReply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "antiGoodsReply"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 antiGoodsReply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyFiltering.swift",
+          "symbol": "struct ReplyFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        }
+      ],
+      "behavior": "按服务商品链接/标记和原版固定商品 URL 过滤",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/banWordForDyn": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "banWordForDyn"
+      },
+      "fixed_actions": "DynamicsDataModel.fromJson → banWordForDyn",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "MomentFilterFields"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "MomentListFilter"
+        }
+      ],
+      "behavior": "正则忽略大小写，分别检查正文及转发原文，不跨边界匹配；扫描对应 major 类型的标题",
+      "evidence": [
+        "Acceptance/evidence/social-final-scope.md",
+        "Checks/MomentDomainCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/banWordForReply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "banWordForReply"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 banWordForReply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyFiltering.swift",
+          "symbol": "addingLiteral"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplySelection.swift",
+          "symbol": "ReplySelection"
+        }
+      ],
+      "behavior": "设置或选区确认加入规则后实时过滤，添加文字正则转义，保留原匹配式",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/biliSendCommAntifraud": {
+      "verdict": "not-ios",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "biliSendCommAntifraud"
+      },
+      "fixed_actions": "lib/pages/setting/models/reply_settings.dart 只在 Platform.isAndroid 时挂载",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/PublicationCheck.swift",
+          "symbol": "VisibilityPanel"
+        }
+      ],
+      "behavior": "该开关控制 Android 的外部反诈应用，iOS 没有相应系统桥。iOS 自带的公开可见性读查属其他两个开关",
+      "evidence": [
+        "Acceptance/evidence/public-visibility.md",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ],
+      "device_or_remaining": "不把原版 Android 专用外部应用算作 iOS 缺失"
+    },
+    "preference:SettingBoxKey/blockAtOnlyReply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "blockAtOnlyReply"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 blockAtOnlyReply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyFiltering.swift",
+          "symbol": "struct ReplyFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        }
+      ],
+      "behavior": "排除只有 @ 名字的正文，楼内前缀和带媒体/普通文字明确区分",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/blockReplyAtCount": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "blockReplyAtCount"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 blockReplyAtCount",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyFiltering.swift",
+          "symbol": "struct ReplyFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        }
+      ],
+      "behavior": "返回提及映射达到设定阈值过滤；零与关闭分别处理",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/defaultDynamicType": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "defaultDynamicType"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn defaultDynamicType",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "FeedScope.setting"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "enum FeedScope"
+        }
+      ],
+      "behavior": "按原枚举首次进入默认动态分类，选择后正常切换、分页，不把账号数据混栏",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/dynamicDetailRatio": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "dynamicDetailRatio"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn dynamicDetailRatio",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReadingSplit.swift",
+          "symbol": "ReadingSplit"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "ReadingSplit"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "ReadingSplit"
+        }
+      ],
+      "behavior": "可支持的横向组合布局按用户保存比例显示动态/文章与互动面板",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/dynamicsShowAllFollowedUp": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "dynamicsShowAllFollowedUp"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn dynamicsShowAllFollowedUp",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "FeedPeoplePanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "FeedDirectoryState"
+        }
+      ],
+      "behavior": "UP 面板在有更新的账号和所有关注账号间切换，后者按后续页补齐",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/dynamicsWaterfallFlow": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "dynamicsWaterfallFlow"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn dynamicsWaterfallFlow",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "struct DynamicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Library/PageList.swift",
+          "symbol": "dynamicCards"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedWaterfall.swift",
+          "symbol": "Feed"
+        }
+      ],
+      "behavior": "动态瀑布流与单列按设置切换，页面依据设备宽度与可访问性显示",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/enableCommAntifraud": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enableCommAntifraud"
+      },
+      "fixed_actions": "ReplyUtils、动态发表回执与enableCommAntifraud",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/PublicationCheck.swift",
+          "symbol": "VisibilityPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "VisibilityRequest"
+        }
+      ],
+      "behavior": "本人回复成功且有实际 rpid 后可查询该评论公开可见性",
+      "evidence": [
+        "Acceptance/evidence/public-visibility.md",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/enableCreateDynAntifraud": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enableCreateDynAntifraud"
+      },
+      "fixed_actions": "ReplyUtils、动态发表回执与enableCreateDynAntifraud",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/PublicationCheck.swift",
+          "symbol": "VisibilityPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "VisibilityRequest"
+        }
+      ],
+      "behavior": "本人公开且立即发布的动态在有真实 id 后可查公开状态，定时/私密不当公开帖",
+      "evidence": [
+        "Acceptance/evidence/public-visibility.md",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/enableEmoteTooltip": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enableEmoteTooltip"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 enableEmoteTooltip",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyRichText.swift",
+          "symbol": "permitsPreview"
+        },
+        {
+          "file": "Sources/PiliNative/Social/EmoteInput.swift",
+          "symbol": "EmotePalette"
+        }
+      ],
+      "behavior": "支持的正文按设置打开表情详情/预览；编辑器表情包支持选择名称",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/enableWordRe": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "enableWordRe"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 enableWordRe",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyTextLinks.swift",
+          "symbol": "wordSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyRichText.swift",
+          "symbol": "wordSearch"
+        }
+      ],
+      "behavior": "评论中服务指定的关键词可按设置打开搜索，关闭保留普通文字",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/expandDynLivePanel": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "expandDynLivePanel"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn expandDynLivePanel",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "FeedPeoplePanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectory.swift",
+          "symbol": "CommunityFilterPanel"
+        }
+      ],
+      "behavior": "初次展开直播 UP 面板按设置，显示真实订阅和直播间，之后可手动折叠",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/filterIntro": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "filterIntro"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 filterIntro",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyFiltering.swift",
+          "symbol": "struct ReplyFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        }
+      ],
+      "behavior": "主楼去除与视频简介实际相同的评论；不因简介过滤其他视频或子回复",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/reply2SortType": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "reply2SortType"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 reply2SortType",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "defaultDetailSort"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "楼中楼有独立默认排序，发送 DetailList 参数而非沿用主楼设置",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/replyLengthLimit": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "replyLengthLimit"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 replyLengthLimit",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyRichText.swift",
+          "symbol": "maxLines"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "lineLimit"
+        }
+      ],
+      "behavior": "超长内容折叠并可展开/收起，0 不截断",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/replySortType": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "replySortType"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 replySortType",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "defaultMainSort"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "默认热度/时间按真实 MainList.mode 设置，被标为精选时不允许切换",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/saveReply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "saveReply"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 saveReply",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyArchive.swift",
+          "symbol": "func capture"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        }
+      ],
+      "behavior": "只在成功且确认为本评论的回执后按账号记录，关闭时不写本机档案",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/showDynActionBar": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "showDynActionBar"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn showDynActionBar",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectory.swift",
+          "symbol": "CommunityFilterPanel"
+        }
+      ],
+      "behavior": "据设置显示动态详情底部操作栏，其余内容正常阅读",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/showDynDispute": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "showDynDispute"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn showDynDispute",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "DynamicModules"
+        }
+      ],
+      "behavior": "据设置显示返回的争议信息、提示与说明地址，不伪造警示卡",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/showDynInteraction": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "showDynInteraction"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn showDynInteraction",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "DynamicModules"
+        }
+      ],
+      "behavior": "据设置在列表卡展示实际互动摘要、作者和富文本，详情保留独立互动页",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/slideDismissReplyPage": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "slideDismissReplyPage"
+      },
+      "fixed_actions": "lib/grpc/reply.dart 或 lib/pages/video/reply 涉及 slideDismissReplyPage",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyEdgeDismiss.swift",
+          "symbol": "ReplyEdgeDismiss"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "ReplyEdgeDismiss"
+        }
+      ],
+      "behavior": "独立评论页支持设置的边缘返回，嵌入页保留常规播放器导航",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift",
+        "Acceptance/evidence/comment-filter-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/upPanelPosition": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/utils/storage_key.dart",
+        "symbol": "upPanelPosition"
+      },
+      "fixed_actions": "dynamics/view.dart 与 common/dyn upPanelPosition",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/FeedPeoplePanel.swift",
+          "symbol": "FeedPanelHost"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "FeedPanelPosition"
+        }
+      ],
+      "behavior": "根据原枚举在顶部、左右抽屉/固定面板显示 UP 主，适应 iOS 布局",
+      "evidence": [
+        "Acceptance/evidence/dynamic-feed-layout.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-feed.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/articleList": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/articleList"
+      },
+      "fixed_actions": "article_list/controller.dart 返回完整合集而非分页接口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleCollection"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SharedLink.swift",
+          "symbol": "enum SharedLink"
+        }
+      ],
+      "behavior": "文集目录、封面、文章顺序，选中真实 CV 进入阅读，重复文章按身份去重",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/articlePage": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/articlePage"
+      },
+      "fixed_actions": "article/view.dart、controller.dart、opus_content/html_render/article_ops",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleBody.swift",
+          "symbol": "enum ArticleBody"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookArticle.swift",
+          "symbol": "NotebookArticle"
+        }
+      ],
+      "behavior": "旧 CV、OPUS 图文、公开笔记与旧文本 ops 由 Swift 渲染，保留正文图片/字体样式/公式/来源、站内与站外资源、讨论/分享/收藏；付费/专属模块不改内容授权",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/createVote": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/createVote"
+      },
+      "fixed_actions": "dynamics_create_vote/controller.dart；投票卡选择与编辑",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/VoteEditor.swift",
+          "symbol": "struct NewVote"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Votes.swift",
+          "symbol": "struct VoteView"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicEditView.swift",
+          "symbol": "DynamicEditView"
+        }
+      ],
+      "behavior": "文本/图片投票选项、可选数、截止时间，真实投票号/已选状态；编辑已有投票、在草稿移除、查看统计及公开的好友投票",
+      "evidence": [
+        "Acceptance/evidence/native-polls.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/dynTopic": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/dynTopic"
+      },
+      "fixed_actions": "dynamics_topic/controller.dart 与话题详情视图",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/TopicTimeline.swift",
+          "symbol": "TopicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/TopicService.swift",
+          "symbol": "TopicAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        }
+      ],
+      "behavior": "话题真实 id 和标题、排序、详情/折叠列表、分页、收藏和发起带该话题的动态；服务空结果与错误可重试",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/dynTopicRcmd": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/dynTopicRcmd"
+      },
+      "fixed_actions": "dynamics_topic_rcmd/controller.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "TopicDirectory"
+        },
+        {
+          "file": "Sources/PiliNative/Social/TopicService.swift",
+          "symbol": "TopicCard"
+        }
+      ],
+      "behavior": "按服务真实游标和卡片展示推荐，打开指定话题或搜索；正常返回空目录不伪造推荐",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/dynamicDetail": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/dynamicDetail"
+      },
+      "fixed_actions": "dynamics_detail 控制器/视图、dynamics/widgets/rich_node_panel.dart 查看图片",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct DynamicDetail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "DynamicActivityList"
+        },
+        {
+          "file": "Sources/PiliNative/Social/MomentPictureResource.swift",
+          "symbol": "MomentPictureResource"
+        },
+        {
+          "file": "Sources/PiliNative/Social/RichNodes.swift",
+          "symbol": "MomentPictureReply"
+        }
+      ],
+      "behavior": "显示原文和转发卡、图集与实况、资源、互动和评论，能打开正确的动态或文章；已附图的富文本节点就地显示图片，只有资源 rid 的节点点开后读官方独立图组，服务拒绝不替换另一作品",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/social-final-scope.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/dynamics": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/dynamics"
+      },
+      "fixed_actions": "dynamics/controller.dart 与 dynamics_tab/controller.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "struct DynamicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "FeedDirectoryState"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "func dynamics"
+        }
+      ],
+      "behavior": "关注动态、切类型/指定UP、关注和直播面板、分页、隐藏、折叠、进入详情与发布；配合未读刷新",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-feed-layout.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/mainReply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/mainReply"
+      },
+      "fixed_actions": "main_reply、common/reply、video/reply 的主列表/精选/折叠/定位",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "TranslatableReply"
+        }
+      ],
+      "behavior": "排序、置顶去重、折叠、分页、翻译、图片、角色和真实投票卡；根据资源 type/oid 进入普通视频、课堂、专栏与动态的讨论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/memberDynamics": {
+      "verdict": "implemented",
+      "ownership": "dynamic content / shared space and library agent",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/memberDynamics"
+      },
+      "fixed_actions": "member_dynamics 和 member_search/child：按 UP 的空间动态、关键词搜索",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct CreatorDynamics"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "struct CreatorSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        }
+      ],
+      "behavior": "列表与搜索保留 UP 身份/游标，普通空间动态及空间搜索与首页相同，对原帖与转发文分别匹配正则/带货标签；搜索读推荐账号，写操作仍使用主账号",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/social-final-scope.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "route:/myReply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/router/app_pages.dart",
+        "symbol": "/myReply"
+      },
+      "fixed_actions": "my_reply/view.dart 的本地记录、定位与导入/导出",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/MyReplies.swift",
+          "symbol": "struct MyReplies"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyArchive.swift",
+          "symbol": "actor ReplyArchive"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func archived"
+        }
+      ],
+      "behavior": "按账号保存确认回执及原富文本/64 位 ID，剪贴板/文件合并导出，能定位原楼、区分清本机记录与确认删除自己在线评论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:common/dyn/like_list": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/common/dyn/like_list/view.dart",
+        "symbol": "class DynLikePage"
+      },
+      "fixed_actions": "common/dyn/like_list/controller.dart → LikeList",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "DynamicActivityList"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "DynamicGateway"
+        }
+      ],
+      "behavior": "按动态 id / offset 分页查看点赞者、进入空间，与普通评论列表独立",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-protocol.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:common/dyn/repost_list": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/common/dyn/repost_list/view.dart",
+        "symbol": "class DynRepostPage"
+      },
+      "fixed_actions": "common/dyn/repost_list/controller.dart → RepostList",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": "DynamicActivityList"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/DynamicGateway.swift",
+          "symbol": "DynamicGateway"
+        }
+      ],
+      "behavior": "分页转发记录、作者与原文可跳转；不会将 HTTP dynReaction 未被原版调用当成业务缺失",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-protocol.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:fav/article": {
+      "verdict": "implemented",
+      "ownership": "reading target / shared favorites list agent",
+      "upstream": {
+        "file": "lib/pages/fav/article/view.dart",
+        "symbol": "class FavArticlePage"
+      },
+      "fixed_actions": "fav/article 的收藏文章/图文与移除",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "struct SavedReadings"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        }
+      ],
+      "behavior": "原生列表打开所属原文、刷新、多选/取消收藏按当前收藏用户和服务回执处理",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:fav/note": {
+      "verdict": "implemented",
+      "ownership": "notes and published reading / shared favorites list agent",
+      "upstream": {
+        "file": "lib/pages/fav/note/view.dart",
+        "symbol": "class FavNotePage"
+      },
+      "fixed_actions": "video/note、fav/note 和原版创作中心入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/NativeNotebook.swift",
+          "symbol": "struct NativeNotebook"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookDocument.swift",
+          "symbol": "enum NotebookGrant"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "ArchiveNotes"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyPictures.swift",
+          "symbol": "struct ReplyPictures"
+        }
+      ],
+      "behavior": "观看时查看公开笔记、自己的稿件/草稿、添加时间戳和截图；原生本地稿可编辑，服务已授权的云笔记按真实 note_id 保存/发布；不能确认官方笔记编辑权时跳同一官方入口。阅读笔记与评论中的图片可全屏及保存",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:fav/topic": {
+      "verdict": "implemented",
+      "ownership": "topic content / shared favorites list agent",
+      "upstream": {
+        "file": "lib/pages/fav/topic/view.dart",
+        "symbol": "class FavTopicPage"
+      },
+      "fixed_actions": "fav/topic 的收藏/跳话题与取消",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "struct SavedReadings"
+        },
+        {
+          "file": "Sources/PiliNative/Social/TopicTimeline.swift",
+          "symbol": "TopicFeed"
+        }
+      ],
+      "behavior": "已收藏话题打开原生话题页，用户明确移除，认证/载入状态与访问他人话题分开",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:search_panel/article": {
+      "verdict": "implemented",
+      "ownership": "article destination / search and discovery agent",
+      "upstream": {
+        "file": "lib/pages/search_panel/article/view.dart",
+        "symbol": "class SearchArticlePanel"
+      },
+      "fixed_actions": "search_panel/article 专栏搜索分类",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/DiscoveryContracts.swift",
+          "symbol": "case \"article\""
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SearchView.swift",
+          "symbol": "struct SearchView"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        }
+      ],
+      "behavior": "资料按专栏类型和排序解析，选择真实 CV ID 后能到原文阅读器",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift",
+        "Acceptance/evidence/discovery-search-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/note": {
+      "verdict": "implemented",
+      "ownership": "notes and published reading / shared favorites list agent",
+      "upstream": {
+        "file": "lib/pages/video/note/view.dart",
+        "symbol": "class NoteListPage"
+      },
+      "fixed_actions": "video/note、fav/note 和原版创作中心入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/NativeNotebook.swift",
+          "symbol": "struct NativeNotebook"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookDocument.swift",
+          "symbol": "enum NotebookGrant"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "ArchiveNotes"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyPictures.swift",
+          "symbol": "struct ReplyPictures"
+        }
+      ],
+      "behavior": "观看时查看公开笔记、自己的稿件/草稿、添加时间戳和截图；原生本地稿可编辑，服务已授权的云笔记按真实 note_id 保存/发布；不能确认官方笔记编辑权时跳同一官方入口。阅读笔记与评论中的图片可全屏及保存",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/reply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/video/reply/view.dart",
+        "symbol": "class VideoReplyPanel"
+      },
+      "fixed_actions": "main_reply、common/reply、video/reply 的主列表/精选/折叠/定位",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "TranslatableReply"
+        }
+      ],
+      "behavior": "排序、置顶去重、折叠、分页、翻译、图片、角色和真实投票卡；根据资源 type/oid 进入普通视频、课堂、专栏与动态的讨论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/reply_new": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/video/reply_new/view.dart",
+        "symbol": "class ReplyPage"
+      },
+      "fixed_actions": "video/reply_new/view.dart 与 VideoHttp.replyAdd",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeRules.swift",
+          "symbol": "ReplyComposeAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeAssets.swift",
+          "symbol": "ReplyComposePhotos"
+        }
+      ],
+      "behavior": "主楼限九张图并依服务能力决定，支持裁剪/排序、当前片帧及进度、表情、@和公式；楼内发送正确 root/parent，可同步到动态且不同目标草稿隔离",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/reply_reply": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/video/reply_reply/view.dart",
+        "symbol": "class VideoReplyReplyPanel"
+      },
+      "fixed_actions": "video/reply_reply/controller.dart DetailList、DialogList 与 anchor",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "按主楼/次楼精确定位，热度或时间翻页，查看对话与返回指定父回复，嵌套作者可直接进空间",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/reply_search_item": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/video/reply_search_item/view.dart",
+        "symbol": "class ReplySearchPage"
+      },
+      "fixed_actions": "video/reply_search_item 与 child 发评论插入内容",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "ReplyReferencePicker"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func references"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyDraft.swift",
+          "symbol": "struct ReplyDraft"
+        }
+      ],
+      "behavior": "分别分页搜索视频/专栏；插入展示标题，未改动时提交服务返回的 URL，改动后按普通文本发",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "screen:video/reply_search_item/child": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "lib/pages/video/reply_search_item/child/view.dart",
+        "symbol": "class ReplySearchChildPage"
+      },
+      "fixed_actions": "video/reply_search_item 与 child 发评论插入内容",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "ReplyReferencePicker"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func references"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyDraft.swift",
+          "symbol": "struct ReplyDraft"
+        }
+      ],
+      "behavior": "分别分页搜索视频/专栏；插入展示标题，未改动时提交服务返回的 URL，改动后按普通文本发",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/举报用户/评论/视频/动态": {
+      "verdict": "implemented",
+      "ownership": "community reporting / shared video and creator agents",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "举报用户/评论/视频/动态"
+      },
+      "fixed_actions": "reply_item_grpc.dart、动态作者菜单与视频详情举报入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CommunityReport.swift",
+          "symbol": "struct CommunityReport"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "CommunityReport"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "CommunityReport"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoActions.swift",
+          "symbol": "举报"
+        }
+      ],
+      "behavior": "用户/动态/评论分别走所需原因、补充说明、可选屏蔽及取消；视频走官方举报入口。身份/来源/内容对象在确认前绑定，不把本地屏蔽代替举报",
+      "evidence": [
+        "Acceptance/evidence/community-report.md",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/保存评论/动态": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "保存评论/动态"
+      },
+      "fixed_actions": "save_panel/view.dart 与动态/评论菜单",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/SharePoster.swift",
+          "symbol": "struct SharePoster"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        }
+      ],
+      "behavior": "生成当前内容的图片海报，二维码/底部信息/封面及整组图片按用户选项呈现，系统分享或保存到照片和用户授权目录，不覆盖已有文件",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Acceptance/evidence/storage-locations.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/删除/发布/置顶文本/图片动态": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "删除/发布/置顶文本/图片动态"
+      },
+      "fixed_actions": "dynamics_create/controller.dart、dynamics 交互菜单",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "struct DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDraftFile.swift",
+          "symbol": "DynamicPublishWire"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        }
+      ],
+      "behavior": "当前账号发布纯文或图文，支持草稿/图片/实况、@与话题、标题、投票预约、评论权限；限本人操作的置顶/删除回读身份后按回执更新",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/动态话题": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "动态话题"
+      },
+      "fixed_actions": "dynamics_topic/controller.dart 与话题详情视图",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/TopicTimeline.swift",
+          "symbol": "TopicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/TopicService.swift",
+          "symbol": "TopicAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        }
+      ],
+      "behavior": "话题真实 id 和标题、排序、详情/折叠列表、分页、收藏和发起带该话题的动态；服务空结果与错误可重试",
+      "evidence": [
+        "Acceptance/evidence/topic-timeline.md",
+        "Checks/topic_readback.py",
+        "Acceptance/evidence/moment-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/发布动态/评论支持`富文本编辑`/`表情显示`/`@用户`": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "发布动态/评论支持`富文本编辑`/`表情显示`/`@用户`"
+      },
+      "fixed_actions": "common/publish 与 comment/dynamic editor",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyDraft.swift",
+          "symbol": "mentionIDs"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        },
+        {
+          "file": "Sources/PiliNative/Social/RichNodes.swift",
+          "symbol": "struct RichNode"
+        }
+      ],
+      "behavior": "评论和动态均按当前光标维护真实实体，表情有预览，未知/手动更改的名字不冒充账号，发布时使用各自的正式实体编码",
+      "evidence": [
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift",
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/MomentDomainCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/发评/动态反诈": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "发评/动态反诈"
+      },
+      "fixed_actions": "ReplyUtils 的发布后/手动公开可见性读取",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/PublicationCheck.swift",
+          "symbol": "VisibilityPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        }
+      ],
+      "behavior": "按已确认的目标 ID、作者、根评论或动态类型做匿名可见性检查；无可见信息或接口错误显式保留不确定，平台专用 Android 外部桥另计",
+      "evidence": [
+        "Acceptance/evidence/public-visibility.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/发起投票": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "发起投票"
+      },
+      "fixed_actions": "dynamics_create_vote/controller.dart；投票卡选择与编辑",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/VoteEditor.swift",
+          "symbol": "struct NewVote"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Votes.swift",
+          "symbol": "struct VoteView"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicEditView.swift",
+          "symbol": "DynamicEditView"
+        }
+      ],
+      "behavior": "文本/图片投票选项、可选数、截止时间，真实投票号/已选状态；编辑已有投票、在草稿移除、查看统计及公开的好友投票",
+      "evidence": [
+        "Acceptance/evidence/native-polls.md",
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/取消/置顶评论": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "取消/置顶评论"
+      },
+      "fixed_actions": "reply_item_grpc.dart 限本人作品的主楼",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func change"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "识别 UP / 管理员 / 投票置顶，只有有权的作品作者可按实际 rpid 置顶/取消，服务确认后重载",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/屏蔽带货动态/评论": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "屏蔽带货动态/评论"
+      },
+      "fixed_actions": "DynamicsDataModel.fromJson / ReplyGrpc 商品标记",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "MomentFilterFields"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyFiltering.swift",
+          "symbol": "struct ReplyFilter"
+        }
+      ],
+      "behavior": "按服务真实 additional.type 判断原帖和转发是否带货；评论用回复商品字段/原版链接过滤，设置独立",
+      "evidence": [
+        "Acceptance/evidence/social-final-scope.md",
+        "Acceptance/evidence/comment-filter-audit.md",
+        "Checks/MomentDomainCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/带图评论": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "带图评论"
+      },
+      "fixed_actions": "video/reply_new/view.dart 与 VideoHttp.replyAdd",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeRules.swift",
+          "symbol": "ReplyComposeAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeAssets.swift",
+          "symbol": "ReplyComposePhotos"
+        }
+      ],
+      "behavior": "主楼限九张图并依服务能力决定，支持裁剪/排序、当前片帧及进度、表情、@和公式；楼内发送正确 root/parent，可同步到动态且不同目标草稿隔离",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/搜索用户动态": {
+      "verdict": "implemented",
+      "ownership": "dynamic content / shared space and library agent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "搜索用户动态"
+      },
+      "fixed_actions": "member_dynamics 和 member_search/child：按 UP 的空间动态、关键词搜索",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "struct CreatorDynamics"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorSearchResults.swift",
+          "symbol": "struct CreatorSearch"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "MomentListFilter"
+        }
+      ],
+      "behavior": "列表与搜索保留 UP 身份/游标，普通空间动态及空间搜索与首页相同，对原帖与转发文分别匹配正则/带货标签；搜索读推荐账号，写操作仍使用主账号",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/social-final-scope.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/查看用户图文": {
+      "verdict": "implemented",
+      "ownership": "article content / shared space and library agent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "查看用户图文"
+      },
+      "fixed_actions": "member_article、member_opus 空间子栏目",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorLibrary.swift",
+          "symbol": "struct CreatorLibrary"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorOpus.swift",
+          "symbol": "struct CreatorOpus"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        }
+      ],
+      "behavior": "空间公开专栏/图文按实际栏目和分页读取，打开指定作品或者所属文集；内容阅读沿同一原生阅读器",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/编辑动态": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "编辑动态"
+      },
+      "fixed_actions": "dynamics_create 动态编辑及与原稿比对",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicEditView.swift",
+          "symbol": "DynamicEditView"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicRevision.swift",
+          "symbol": "DynamicRevision"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDraftFile.swift",
+          "symbol": "DynamicPublishWire"
+        }
+      ],
+      "behavior": "本人普通图文、转发、含投票/预约/话题和来自视频/音频等资源帖的说明可改；保留原图/实况和原有资源。独立长专栏及商业专用编辑目标使用官方创作入口",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/MomentDomainCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/记笔记": {
+      "verdict": "implemented",
+      "ownership": "notes and published reading / shared favorites list agent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "记笔记"
+      },
+      "fixed_actions": "video/note、fav/note 和原版创作中心入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/NativeNotebook.swift",
+          "symbol": "struct NativeNotebook"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookDocument.swift",
+          "symbol": "enum NotebookGrant"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "ArchiveNotes"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyPictures.swift",
+          "symbol": "struct ReplyPictures"
+        }
+      ],
+      "behavior": "观看时查看公开笔记、自己的稿件/草稿、添加时间戳和截图；原生本地稿可编辑，服务已授权的云笔记按真实 note_id 保存/发布；不能确认官方笔记编辑权时跳同一官方入口。阅读笔记与评论中的图片可全屏及保存",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/评论楼中楼定位点击查看的评论": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论楼中楼定位点击查看的评论"
+      },
+      "fixed_actions": "video/reply_reply/controller.dart DetailList、DialogList 与 anchor",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "按主楼/次楼精确定位，热度或时间翻页，查看对话与返回指定父回复，嵌套作者可直接进空间",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/评论楼中楼按热度/时间排序": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论楼中楼按热度/时间排序"
+      },
+      "fixed_actions": "video/reply_reply/controller.dart DetailList、DialogList 与 anchor",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "按主楼/次楼精确定位，热度或时间翻页，查看对话与返回指定父回复，嵌套作者可直接进空间",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/评论楼中楼查看对话": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论楼中楼查看对话"
+      },
+      "fixed_actions": "video/reply_reply/controller.dart DetailList、DialogList 与 anchor",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        }
+      ],
+      "behavior": "按主楼/次楼精确定位，热度或时间翻页，查看对话与返回指定父回复，嵌套作者可直接进空间",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/评论点踩": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论点踩"
+      },
+      "fixed_actions": "reply/widgets/zan_grpc.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func readAction"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func change"
+        }
+      ],
+      "behavior": "点赞点踩及取消精确绑定当前主帐号和 rpid；读取身份不一致时用明确动作，状态在肯定回执后改变",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:feat/转发动态": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "转发动态"
+      },
+      "fixed_actions": "dynamics_repost 与转发原帖入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "DynamicComposer"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDraftFile.swift",
+          "symbol": "DynamicRepostContext"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "DynamicCard"
+        }
+      ],
+      "behavior": "选当前帖子进行转发，展示原作者/原文与附言；可同步评论，识别真实新帖 ID、定时受理与失败。稿件/影视/收藏夹的业务资源区分",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-editor.md",
+        "Acceptance/evidence/dynamic-edit.md",
+        "Checks/DynamicDraftCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:opt/专栏界面": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "专栏界面"
+      },
+      "fixed_actions": "article/view.dart、controller.dart、opus_content/html_render/article_ops",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "struct ArticleReader"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/ArticleBody.swift",
+          "symbol": "enum ArticleBody"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookArticle.swift",
+          "symbol": "NotebookArticle"
+        }
+      ],
+      "behavior": "旧 CV、OPUS 图文、公开笔记与旧文本 ops 由 Swift 渲染，保留正文图片/字体样式/公式/来源、站内与站外资源、讨论/分享/收藏；付费/专属模块不改内容授权",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:opt/评论显示": {
+      "verdict": "implemented",
+      "ownership": "comment row / shared interface appearance agent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论显示"
+      },
+      "fixed_actions": "reply_item_grpc.dart 作者名片与评论展示",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthor.swift",
+          "symbol": "ReplyAuthor"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+          "symbol": "ReplyAuthorLabel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "replyRow"
+        }
+      ],
+      "behavior": "呈现服务给出的用户等级、认证、会员、头像装扮和 UP 主身份，保留富文本、表情与图片；新增勋章显示开关由外观代理单独合并",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/主楼、二楼评论回复功能": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "主楼、二楼评论回复功能"
+      },
+      "fixed_actions": "video/reply_new/view.dart 与 VideoHttp.replyAdd",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeRules.swift",
+          "symbol": "ReplyComposeAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeAssets.swift",
+          "symbol": "ReplyComposePhotos"
+        }
+      ],
+      "behavior": "主楼限九张图并依服务能力决定，支持裁剪/排序、当前片帧及进度、表情、@和公式；楼内发送正确 root/parent，可同步到动态且不同目标草稿隔离",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/全部、投稿、番剧分类查看": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "全部、投稿、番剧分类查看"
+      },
+      "fixed_actions": "dynamics_tab 选择分类",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicModules.swift",
+          "symbol": "enum FeedScope"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "struct DynamicFeed"
+        }
+      ],
+      "behavior": "动态全部、投稿及番剧各自分页、排序和独立暂存；切换后不会把别类的结果当作当前类",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/动态相关": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "动态相关"
+      },
+      "fixed_actions": "dynamics/controller.dart 与 dynamics_tab/controller.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicFeed.swift",
+          "symbol": "struct DynamicFeed"
+        },
+        {
+          "file": "Sources/PiliNative/Social/FeedDirectoryState.swift",
+          "symbol": "FeedDirectoryState"
+        },
+        {
+          "file": "Sources/PiliNative/Network/DynamicAPI.swift",
+          "symbol": "func dynamics"
+        }
+      ],
+      "behavior": "关注动态、切类型/指定UP、关注和直播面板、分页、隐藏、折叠、进入详情与发布；配合未读刷新",
+      "evidence": [
+        "Acceptance/evidence/moment-domain-audit.md",
+        "Checks/MomentDomainCheck.swift",
+        "Checks/moment_domain.sh",
+        "Acceptance/evidence/dynamic-feed-layout.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/动态评论回复功能": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "动态评论回复功能"
+      },
+      "fixed_actions": "video/reply_new/view.dart 与 VideoHttp.replyAdd",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func send"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeRules.swift",
+          "symbol": "ReplyComposeAddress"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyComposeAssets.swift",
+          "symbol": "ReplyComposePhotos"
+        }
+      ],
+      "behavior": "主楼限九张图并依服务能力决定，支持裁剪/排序、当前片帧及进度、表情、@和公式；楼内发送正确 root/parent，可同步到动态且不同目标草稿隔离",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/动态评论查看": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "动态评论查看"
+      },
+      "fixed_actions": "main_reply、common/reply、video/reply 的主列表/精选/折叠/定位",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "TranslatableReply"
+        }
+      ],
+      "behavior": "排序、置顶去重、折叠、分页、翻译、图片、角色和真实投票卡；根据资源 type/oid 进入普通视频、课堂、专栏与动态的讨论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/评论(排序)查看、二楼评论查看": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论(排序)查看、二楼评论查看"
+      },
+      "fixed_actions": "main_reply、common/reply、video/reply 的主列表/精选/折叠/定位",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "struct Discussion"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ReplyGateway.swift",
+          "symbol": "func list"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyTools.swift",
+          "symbol": "TranslatableReply"
+        }
+      ],
+      "behavior": "排序、置顶去重、折叠、分页、翻译、图片、角色和真实投票卡；根据资源 type/oid 进入普通视频、课堂、专栏与动态的讨论",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/评论点赞": {
+      "verdict": "implemented",
+      "ownership": "dynamics-comments-reading",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论点赞"
+      },
+      "fixed_actions": "reply/widgets/zan_grpc.dart",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func readAction"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "func change"
+        }
+      ],
+      "behavior": "点赞点踩及取消精确绑定当前主帐号和 rpid；读取身份不一致时用明确动作，状态在肯定回执后改变",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/评论用户身份标识": {
+      "verdict": "implemented",
+      "ownership": "comment row / shared interface appearance agent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论用户身份标识"
+      },
+      "fixed_actions": "reply_item_grpc.dart 作者名片与评论展示",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthor.swift",
+          "symbol": "ReplyAuthor"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyAuthorView.swift",
+          "symbol": "ReplyAuthorLabel"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "replyRow"
+        }
+      ],
+      "behavior": "呈现服务给出的用户等级、认证、会员、头像装扮和 UP 主身份，保留富文本、表情与图片；新增勋章显示开关由外观代理单独合并",
+      "evidence": [
+        "Acceptance/evidence/reply-domain-audit.md",
+        "Checks/reply_domain.sh",
+        "Wire/Tests/PiliWireTests/ReplyGatewayTests.swift"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/评论笔记图片查看、保存": {
+      "verdict": "implemented",
+      "ownership": "notes and published reading / shared favorites list agent",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论笔记图片查看、保存"
+      },
+      "fixed_actions": "video/note、fav/note 和原版创作中心入口",
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/NativeNotebook.swift",
+          "symbol": "struct NativeNotebook"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/NotebookDocument.swift",
+          "symbol": "enum NotebookGrant"
+        },
+        {
+          "file": "Sources/PiliNative/Library/SavedReadings.swift",
+          "symbol": "ArchiveNotes"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReplyPictures.swift",
+          "symbol": "struct ReplyPictures"
+        }
+      ],
+      "behavior": "观看时查看公开笔记、自己的稿件/草稿、添加时间戳和截图；原生本地稿可编辑，服务已授权的云笔记按真实 note_id 保存/发布；不能确认官方笔记编辑权时跳同一官方入口。阅读笔记与评论中的图片可全屏及保存",
+      "evidence": [
+        "Acceptance/evidence/article-notebook-audit.md",
+        "Checks/notebook_domain.sh",
+        "Checks/NotebookContractCheck.swift",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ],
+      "device_or_remaining": ""
+    }
+  }
+}

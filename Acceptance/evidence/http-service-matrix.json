@@ -1,0 +1,4751 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "definitions_scope": "active static string URLs in lib/http/api.dart; literal matches are a discovery index, not action sign-off",
+  "counts": {
+    "literal-index-only": 239,
+    "alternative-first-party": 7,
+    "composed-same-path": 26,
+    "no-upstream-constant-reference": 21,
+    "official-account-handoff": 9,
+    "no-reachable-upstream-action": 7,
+    "client-identity-boundary": 1,
+    "repaired-same-path": 1
+  },
+  "constants": {
+    "ab2c": {
+      "host": "api.bilibili.com",
+      "path": "/x/player/pagelist",
+      "upstream_constant_line": 285,
+      "upstream_references": [
+        "lib/http/search.dart:134"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonAccess.swift"
+      ]
+    },
+    "ackSessionMsg": {
+      "host": "api.vc.bilibili.com",
+      "path": "/session_svr/v1/session_svr/update_ack",
+      "upstream_constant_line": 527,
+      "upstream_references": [
+        "lib/http/msg.dart:360"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/HTTP11Message.swift",
+        "Sources/PiliNative/Social/MessageComposer.swift"
+      ]
+    },
+    "activateBuvidApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/internal/gaia-gateway/ExClimbWuzhi",
+      "upstream_constant_line": 664,
+      "upstream_references": [
+        "lib/http/init.dart:92"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "client-identity-boundary",
+      "upstream_control": [
+        {
+          "file": "lib/http/init.dart",
+          "symbol": "buvidActive(Account account)"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/MobileDeviceID.swift",
+          "symbol": "func use"
+        },
+        {
+          "file": "Wire/Sources/PiliWire/ClientMetadata.swift",
+          "symbol": "d.channel = \"pilinative\""
+        }
+      ],
+      "review": "上游会尝试其客户端设备激活流程；原生保留自有安装标识或用户合法保存的真实设备信息，申明 PiliNative 渠道。没有对其他客户端进行设备指纹仿冒、激活保证或账户验证绕过；服务拒绝原样保留"
+    },
+    "addFavArticle": {
+      "host": "api.bilibili.com",
+      "path": "/x/article/favorites/add",
+      "upstream_constant_line": 746,
+      "upstream_references": [
+        "lib/http/fav.dart:282"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/article/controller.dart",
+          "symbol": "FavHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "\"/x/article/favorites/\""
+        }
+      ],
+      "review": "专栏的收藏和取消使用 add/del、文章真实 id 及主号，与笔记/话题的收藏接口分别处理"
+    },
+    "addFavPugv": {
+      "host": "api.bilibili.com",
+      "path": "/pugv/app/web/favorite/add",
+      "upstream_constant_line": 842,
+      "upstream_references": [
+        "lib/http/fav.dart:159"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/video/introduction/pgc/controller.dart",
+          "symbol": "FavHttp.addFavPugv"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/Courses.swift",
+          "symbol": "\"/pugv/app/web/favorite/\""
+        }
+      ],
+      "review": "课程收藏按当前 season_id、主账号及服务实际返回状态选择 add/del"
+    },
+    "addFavTopic": {
+      "host": "api.bilibili.com",
+      "path": "/x/topic/fav/sub/add",
+      "upstream_constant_line": 848,
+      "upstream_references": [
+        "lib/http/fav.dart:209"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "addFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/add",
+      "upstream_constant_line": 212,
+      "upstream_references": [
+        "lib/http/fav.dart:521"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FolderEditor.swift"
+      ]
+    },
+    "addNote": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/add",
+      "upstream_constant_line": 731,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "addShieldKeyword": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-ucenter/v1/banned/AddShieldKeyword",
+      "upstream_constant_line": 903,
+      "upstream_references": [
+        "lib/http/live.dart:535"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/live_dm_block/controller.dart",
+          "symbol": "LiveHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Live/LiveShield.swift",
+          "symbol": "\"/xlive/web-ucenter/v1/banned/\""
+        }
+      ],
+      "review": "直播弹幕本机列表和账号同步分别处理；服务端 AddShieldKeyword/DelShieldKeyword 根据用户手势、原关键词和所属账号构造"
+    },
+    "addSpecial": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tag/special/add",
+      "upstream_constant_line": 450,
+      "upstream_references": [
+        "lib/http/member.dart:528"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/utils/request_utils.dart",
+          "symbol": "MemberHttp.specialAction"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+          "symbol": "\"/x/relation/tag/special/\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "\"/x/relation/tag/special/\""
+        }
+      ],
+      "review": "已关注用户可设置或取消特别关注；相应 action 与真实 fid 绑定，切换主号不沿用确认"
+    },
+    "addUsers": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tags/addUsers",
+      "upstream_constant_line": 448,
+      "upstream_references": [
+        "lib/http/member.dart:545"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorRelations.swift"
+      ]
+    },
+    "aiConclusion": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/view/conclusion/get",
+      "upstream_constant_line": 543,
+      "upstream_references": [
+        "lib/http/video.dart:865"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/ArchiveCardActions.swift",
+        "Sources/PiliNative/Playback/VideoSummary.swift"
+      ]
+    },
+    "appSmsCode": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/sms/send",
+      "upstream_constant_line": 563,
+      "upstream_references": [
+        "lib/http/login.dart:131"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "请求短信验证码 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "archiveNote": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/list/archive",
+      "upstream_constant_line": 737,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "archiveNoteList": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/publish/list/archive",
+      "upstream_constant_line": 725,
+      "upstream_references": [
+        "lib/http/video.dart:994"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "articleInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/article/viewinfo",
+      "upstream_constant_line": 766,
+      "upstream_references": [
+        "lib/http/dynamics.dart:341"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift"
+      ]
+    },
+    "articleList": {
+      "host": "api.bilibili.com",
+      "path": "/x/article/list/web/articles",
+      "upstream_constant_line": 818,
+      "upstream_references": [
+        "lib/http/dynamics.dart:512"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift"
+      ]
+    },
+    "articleView": {
+      "host": "api.bilibili.com",
+      "path": "/x/article/view",
+      "upstream_constant_line": 771,
+      "upstream_references": [
+        "lib/http/dynamics.dart:360"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift"
+      ]
+    },
+    "bgmDetail": {
+      "host": "api.bilibili.com",
+      "path": "/x/copyright-music-publicity/bgm/detail",
+      "upstream_constant_line": 942,
+      "upstream_references": [
+        "lib/http/music.dart:13"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/MusicPage.swift"
+      ]
+    },
+    "bgmRecommend": {
+      "host": "api.bilibili.com",
+      "path": "/x/copyright-music-publicity/bgm/recommend_list",
+      "upstream_constant_line": 947,
+      "upstream_references": [
+        "lib/http/music.dart:50"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/MusicPage.swift"
+      ]
+    },
+    "blackList": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/blacks",
+      "upstream_constant_line": 411,
+      "upstream_references": [
+        "lib/http/black.dart:13"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/BlacklistManagement.swift"
+      ]
+    },
+    "bubble": {
+      "host": "api.bilibili.com",
+      "path": "/x/tribee/v1/dyn/all",
+      "upstream_constant_line": 1011,
+      "upstream_references": [
+        "lib/http/dynamics.dart:837"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/BubbleCommunity.swift"
+      ]
+    },
+    "cleanFav": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/clean",
+      "upstream_constant_line": 120,
+      "upstream_references": [
+        "lib/http/fav.dart:474"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteFolderScreen.swift"
+      ]
+    },
+    "clearHistory": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/clear",
+      "upstream_constant_line": 250,
+      "upstream_references": [
+        "lib/http/user.dart:153"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountRole.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift",
+        "Sources/PiliNative/Playback/CloudHistory.swift"
+      ]
+    },
+    "coinArc": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/coinarc",
+      "upstream_constant_line": 877,
+      "upstream_references": [
+        "lib/http/member.dart:774"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorLibrary.swift"
+      ]
+    },
+    "coinLog": {
+      "host": "api.bilibili.com",
+      "path": "/x/member/web/coin/log",
+      "upstream_constant_line": 887,
+      "upstream_references": [
+        "lib/http/user.dart:471"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountLogs.swift"
+      ]
+    },
+    "coinVideo": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/view/coin/add",
+      "upstream_constant_line": 82,
+      "upstream_references": [
+        "lib/http/video.dart:422"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/pages/common/common_intro_controller.dart",
+          "symbol": "VideoHttp.coinVideo"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackSocialRequest.swift",
+          "symbol": "/x/web-interface/coin/add"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveCoinPicker.swift",
+          "symbol": "private var available"
+        }
+      ],
+      "review": "普通稿件/可用的剧集稿件通过授权 Web coin/add 传真实 BV/aid、multiply 及 select_like。原始端点不同，硬币上限/余额独立核算"
+    },
+    "communityAction": {
+      "host": "api.bilibili.com",
+      "path": "/x/community/cosmo/interface/simple_action",
+      "upstream_constant_line": 741,
+      "upstream_references": [
+        "lib/http/fav.dart:619"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift",
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "copyFav": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/copy",
+      "upstream_constant_line": 116,
+      "upstream_references": [
+        "lib/http/fav.dart:693"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/utils/request_utils.dart",
+          "symbol": "FavHttp.copyOrMoveFav"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func transfer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "LibraryCheckedOrder"
+        }
+      ],
+      "review": "收藏夹的复制：按源分类拼接 prefix 和动作、按真实 rid:type/aid、目标夹与主账号提交。显示顺序见个人资料库的隔离测试"
+    },
+    "copyToview": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/toview/copy",
+      "upstream_constant_line": 153,
+      "upstream_references": [
+        "lib/http/fav.dart:696"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/utils/request_utils.dart",
+          "symbol": "FavHttp.copyOrMoveFav"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func transfer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "LibraryCheckedOrder"
+        }
+      ],
+      "review": "稍后再看的复制：按源分类拼接 prefix 和动作、按真实 rid:type/aid、目标夹与主账号提交。显示顺序见个人资料库的隔离测试"
+    },
+    "createDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/create/dyn",
+      "upstream_constant_line": 699,
+      "upstream_references": [
+        "lib/http/dynamics.dart:194"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Compose.swift"
+      ]
+    },
+    "createFollowTag": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tag/create",
+      "upstream_constant_line": 457,
+      "upstream_references": [
+        "lib/http/member.dart:600"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/PersonalLibraryContracts.swift"
+      ]
+    },
+    "createReserve": {
+      "host": "api.bilibili.com",
+      "path": "/x/new-reserve/up/reserve/create",
+      "upstream_constant_line": 924,
+      "upstream_references": [
+        "lib/http/dynamics.dart:642"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/dynamics_create_reserve/controller.dart",
+          "symbol": "DynamicsHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/LiveReservation.swift",
+          "symbol": "\"/x/new-reserve/up/reserve/\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/ComposePickers.swift",
+          "symbol": "struct"
+        }
+      ],
+      "review": "创作动态预约的创建/编辑根据已有 sid 分支，发送标题、时间及预约类型，跨账号不继续提交"
+    },
+    "createTextDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/dynamic_svr/v1/dynamic_svr/create",
+      "upstream_constant_line": 701,
+      "upstream_references": [
+        "lib/http/msg.dart:211"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/msg.dart",
+          "symbol": "Future<LoadingState<void>> createTextDynamic"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Compose.swift",
+          "symbol": "struct DynamicComposer"
+        }
+      ],
+      "review": "旧动态 create 的封装没有调用；发布文字和图片走当前创作页面的实际发布接口并保留回执"
+    },
+    "createVote": {
+      "host": "api.bilibili.com",
+      "path": "/x/vote/create",
+      "upstream_constant_line": 920,
+      "upstream_references": [
+        "lib/http/dynamics.dart:612"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/VoteEditor.swift"
+      ]
+    },
+    "danmakuEditState": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/dm/edit/state",
+      "upstream_constant_line": 974,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "danmakuFilter": {
+      "host": "api.bilibili.com",
+      "path": "/x/dm/filter/user",
+      "upstream_constant_line": 428,
+      "upstream_references": [
+        "lib/http/danmaku_block.dart:10"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/AccountBulletRules.swift"
+      ]
+    },
+    "danmakuFilterAdd": {
+      "host": "api.bilibili.com",
+      "path": "/x/dm/filter/user/add",
+      "upstream_constant_line": 435,
+      "upstream_references": [
+        "lib/http/danmaku_block.dart:39"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/AccountBulletRules.swift"
+      ]
+    },
+    "danmakuFilterDel": {
+      "host": "api.bilibili.com",
+      "path": "/x/dm/filter/user/del",
+      "upstream_constant_line": 441,
+      "upstream_references": [
+        "lib/http/danmaku_block.dart:20"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/AccountBulletRules.swift"
+      ]
+    },
+    "danmakuLike": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/dm/thumbup/add",
+      "upstream_constant_line": 968,
+      "upstream_references": [
+        "lib/http/danmaku.dart:81"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/BulletInspection.swift"
+      ]
+    },
+    "danmakuRecall": {
+      "host": "api.bilibili.com",
+      "path": "/x/dm/recall",
+      "upstream_constant_line": 972,
+      "upstream_references": [
+        "lib/http/danmaku.dart:148",
+        "lib/http/danmaku.dart:176"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/BulletRecall.swift"
+      ]
+    },
+    "danmakuReport": {
+      "host": "api.bilibili.com",
+      "path": "/x/dm/report/add",
+      "upstream_constant_line": 970,
+      "upstream_references": [
+        "lib/http/danmaku.dart:114"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/BulletInspection.swift"
+      ]
+    },
+    "delFavArticle": {
+      "host": "api.bilibili.com",
+      "path": "/x/article/favorites/del",
+      "upstream_constant_line": 744,
+      "upstream_references": [
+        "lib/http/fav.dart:302"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/article/controller.dart",
+          "symbol": "FavHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/ArticleReader.swift",
+          "symbol": "\"/x/article/favorites/\""
+        }
+      ],
+      "review": "专栏的收藏和取消使用 add/del、文章真实 id 及主号，与笔记/话题的收藏接口分别处理"
+    },
+    "delFavPugv": {
+      "host": "api.bilibili.com",
+      "path": "/pugv/app/web/favorite/del",
+      "upstream_constant_line": 844,
+      "upstream_references": [
+        "lib/http/fav.dart:175"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Courses.swift"
+      ]
+    },
+    "delFavTopic": {
+      "host": "api.bilibili.com",
+      "path": "/x/topic/fav/sub/cancel",
+      "upstream_constant_line": 850,
+      "upstream_references": [
+        "lib/http/fav.dart:225"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift",
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "delFollowTag": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tag/del",
+      "upstream_constant_line": 461,
+      "upstream_references": [
+        "lib/http/member.dart:644"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/PersonalLibraryContracts.swift"
+      ]
+    },
+    "delHistory": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/delete",
+      "upstream_constant_line": 253,
+      "upstream_references": [
+        "lib/http/user.dart:257"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountRole.swift",
+        "Sources/PiliNative/Library/CloudLibrarySource.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift"
+      ]
+    },
+    "delMsgfeed": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/del",
+      "upstream_constant_line": 695,
+      "upstream_references": [
+        "lib/http/msg.dart:276"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "delNote": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/del",
+      "upstream_constant_line": 733,
+      "upstream_references": [
+        "lib/http/fav.dart:365"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "delPublishNote": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/publish/del",
+      "upstream_constant_line": 735,
+      "upstream_references": [
+        "lib/http/fav.dart:365"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "delShieldKeyword": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-ucenter/v1/banned/DelShieldKeyword",
+      "upstream_constant_line": 906,
+      "upstream_references": [
+        "lib/http/live.dart:555"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/live_dm_block/controller.dart",
+          "symbol": "LiveHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Live/LiveShield.swift",
+          "symbol": "\"/xlive/web-ucenter/v1/banned/\""
+        }
+      ],
+      "review": "直播弹幕本机列表和账号同步分别处理；服务端 AddShieldKeyword/DelShieldKeyword 根据用户手势、原关键词和所属账号构造"
+    },
+    "delSpecial": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tag/special/del",
+      "upstream_constant_line": 452,
+      "upstream_references": [
+        "lib/http/member.dart:528"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/utils/request_utils.dart",
+          "symbol": "MemberHttp.specialAction"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+          "symbol": "\"/x/relation/tag/special/\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/Creators.swift",
+          "symbol": "\"/x/relation/tag/special/\""
+        }
+      ],
+      "review": "已关注用户可设置或取消特别关注；相应 action 与真实 fid 绑定，切换主号不沿用确认"
+    },
+    "delSysMsg": {
+      "host": "api.bilibili.com",
+      "path": "/x/sys-msg/del_notify_list",
+      "upstream_constant_line": 693,
+      "upstream_references": [
+        "lib/http/msg.dart:299"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "deleteFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/del",
+      "upstream_constant_line": 216,
+      "upstream_references": [
+        "lib/http/fav.dart:495"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/ProfileView.swift",
+        "Sources/PiliNative/Library/FavoriteFolderScreen.swift"
+      ]
+    },
+    "dislikeVideo": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/view/dislike",
+      "upstream_constant_line": 69,
+      "upstream_references": [
+        "lib/http/video.dart:522"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/CardPreferenceMutation.swift"
+      ]
+    },
+    "doVote": {
+      "host": "api.bilibili.com",
+      "path": "/x/vote/do_vote",
+      "upstream_constant_line": 781,
+      "upstream_references": [
+        "lib/http/dynamics.dart:425"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Votes.swift"
+      ]
+    },
+    "dynMention": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/mention/search",
+      "upstream_constant_line": 918,
+      "upstream_references": [
+        "lib/http/dynamics.dart:595"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/ComposePickers.swift"
+      ]
+    },
+    "dynPic": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/detail/pic",
+      "upstream_constant_line": 893,
+      "upstream_references": [
+        "lib/http/dynamics.dart:574"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/MomentPictureResource.swift"
+      ]
+    },
+    "dynPrivatePubSetting": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/dyn/private_pub_setting",
+      "upstream_constant_line": 993,
+      "upstream_references": [
+        "lib/http/dynamics.dart:730"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/MomentOwnerSettings.swift"
+      ]
+    },
+    "dynReaction": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/detail/reaction",
+      "upstream_constant_line": 1017,
+      "upstream_references": [
+        "lib/http/dynamics.dart:861"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/dynamics.dart",
+          "symbol": "Future<LoadingState<DynReactionData>> dynReaction"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": ".likes(id"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicActivityList.swift",
+          "symbol": ".reposts(id"
+        }
+      ],
+      "review": "旧 reaction 合并列表没有固定 Dart 业务调用；原版真正可点的转发/点赞列表以对应 gRPC 实现"
+    },
+    "dynReserve": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/reserve/click",
+      "upstream_constant_line": 834,
+      "upstream_references": [
+        "lib/http/dynamics.dart:532"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/MomentResourceViews.swift"
+      ]
+    },
+    "dynSearch": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/feed/space/search",
+      "upstream_constant_line": 385,
+      "upstream_references": [
+        "lib/http/member.dart:492"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorSearchResults.swift"
+      ]
+    },
+    "dynTopicRcmd": {
+      "host": "api.bilibili.com",
+      "path": "/x/topic/web/dynamic/rcmd",
+      "upstream_constant_line": 889,
+      "upstream_references": [
+        "lib/http/dynamics.dart:554"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "dynUplist": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/uplist",
+      "upstream_constant_line": 222,
+      "upstream_references": [
+        "lib/http/dynamics.dart:90"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/FeedDirectoryState.swift"
+      ]
+    },
+    "dynamicDetail": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/detail",
+      "upstream_constant_line": 534,
+      "upstream_references": [
+        "lib/http/dynamics.dart:273"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/DynamicAPI.swift",
+        "Sources/PiliNative/Network/MomentAccountService.swift",
+        "Sources/PiliNative/Social/PublicationCheck.swift"
+      ]
+    },
+    "dynamicReport": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/dynamic_report/add",
+      "upstream_constant_line": 768,
+      "upstream_references": [
+        "lib/http/user.dart:403"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/BiliAPI.swift",
+        "Sources/PiliNative/Social/CommunityReport.swift"
+      ]
+    },
+    "dynamicSpmPrefix": {
+      "host": "space.bilibili.com",
+      "path": "/1/dynamic",
+      "upstream_constant_line": 661,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "editDyn": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/edit/dyn",
+      "upstream_constant_line": 996,
+      "upstream_references": [
+        "lib/http/dynamics.dart:766"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/DynamicEditView.swift"
+      ]
+    },
+    "editFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/edit",
+      "upstream_constant_line": 214,
+      "upstream_references": [
+        "lib/http/fav.dart:521"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FolderEditor.swift"
+      ]
+    },
+    "episodeInfo": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/season/episode/web/info",
+      "upstream_constant_line": 293,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "expLog": {
+      "host": "api.bilibili.com",
+      "path": "/x/member/web/exp/log",
+      "upstream_constant_line": 932,
+      "upstream_references": [
+        "lib/http/user.dart:501"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountLogs.swift"
+      ]
+    },
+    "fans": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/fans",
+      "upstream_constant_line": 306,
+      "upstream_references": [
+        "lib/http/fan.dart:15"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "favArticle": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/opus/feed/fav",
+      "upstream_constant_line": 739,
+      "upstream_references": [
+        "lib/http/fav.dart:265"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "favFavFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/fav",
+      "upstream_constant_line": 873,
+      "upstream_references": [
+        "lib/http/fav.dart:23"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteFolderScreen.swift"
+      ]
+    },
+    "favFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/created/list-all",
+      "upstream_constant_line": 151,
+      "upstream_references": [
+        "lib/http/fav.dart:717",
+        "lib/http/fav.dart:734"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/CollectionsAPI.swift"
+      ]
+    },
+    "favFolderInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/info",
+      "upstream_constant_line": 210,
+      "upstream_references": [
+        "lib/http/fav.dart:545"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+        "Sources/PiliNative/Library/FolderEditor.swift"
+      ]
+    },
+    "favPgc": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/bangumi/follow/list",
+      "upstream_constant_line": 408,
+      "upstream_references": [
+        "lib/http/fav.dart:388"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/PGCHome.swift",
+        "Sources/PiliNative/Discover/SeasonLibrary.swift"
+      ]
+    },
+    "favPugv": {
+      "host": "api.bilibili.com",
+      "path": "/pugv/app/web/favorite/page",
+      "upstream_constant_line": 840,
+      "upstream_references": [
+        "lib/http/fav.dart:142"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Courses.swift"
+      ]
+    },
+    "favResourceList": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/list",
+      "upstream_constant_line": 101,
+      "upstream_references": [
+        "lib/http/fav.dart:63"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteMedia.swift"
+      ]
+    },
+    "favSeason": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/season/fav",
+      "upstream_constant_line": 714,
+      "upstream_references": [
+        "lib/http/fav.dart:562"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "repaired-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/episode_panel/view.dart",
+          "symbol": "Future<void> _onFavSeason"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveCollectionPanel.swift",
+          "symbol": "ArchiveSeasonSubscriptionButton("
+        },
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveSeasonSubscriptionButton.swift",
+          "symbol": "/x/web-interface/archive/relation"
+        },
+        {
+          "file": "Sources/PiliNative/Library/ArchiveSeasonSubscription.swift",
+          "symbol": "/x/v3/fav/season/fav"
+        },
+        {
+          "file": "Sources/PiliNative/Library/Subscriptions.swift",
+          "symbol": "/x/v3/fav/season/unfav"
+        }
+      ],
+      "review": "补齐 UGC 合集面板：按当前 BV 读取 season_fav，按主号、明确且一致的 season_id、platform=web 订阅或取消；我的订阅仍可取消。只有成功回执切换界面状态，拒绝、切号不发给新账号"
+    },
+    "favSeasonList": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/fav/season/list",
+      "upstream_constant_line": 670,
+      "upstream_references": [
+        "lib/http/fav.dart:121"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/Subscriptions.swift"
+      ]
+    },
+    "favTopicList": {
+      "host": "api.bilibili.com",
+      "path": "/x/topic/web/fav/list",
+      "upstream_constant_line": 846,
+      "upstream_references": [
+        "lib/http/fav.dart:193"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "favVideo": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/batch-deal",
+      "upstream_constant_line": 112,
+      "upstream_references": [
+        "lib/http/fav.dart:645"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Audio/ListenMetadata.swift",
+        "Sources/PiliNative/Library/CloudLibrarySource.swift",
+        "Sources/PiliNative/Library/FavoriteSearchAll.swift"
+      ]
+    },
+    "feedDislike": {
+      "host": "app.bilibili.com",
+      "path": "/x/feed/dislike",
+      "upstream_constant_line": 11,
+      "upstream_references": [
+        "lib/http/video.dart:548"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/CardPreferenceMutation.swift",
+        "Sources/PiliNative/Network/HTTP11Message.swift"
+      ]
+    },
+    "feedDislikeCancel": {
+      "host": "app.bilibili.com",
+      "path": "/x/feed/dislike/cancel",
+      "upstream_constant_line": 12,
+      "upstream_references": [
+        "lib/http/video.dart:576"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/CardPreferenceMutation.swift",
+        "Sources/PiliNative/Network/HTTP11Message.swift"
+      ]
+    },
+    "followDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/feed/all",
+      "upstream_constant_line": 228,
+      "upstream_references": [
+        "lib/http/dynamics.dart:47"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/DynamicAPI.swift"
+      ]
+    },
+    "followSearch": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/followings/search",
+      "upstream_constant_line": 301,
+      "upstream_references": [
+        "lib/http/member.dart:708"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "followUp": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/portal",
+      "upstream_constant_line": 220,
+      "upstream_references": [
+        "lib/http/dynamics.dart:75"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/FeedDirectoryState.swift"
+      ]
+    },
+    "followUpGroup": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tag",
+      "upstream_constant_line": 455,
+      "upstream_references": [
+        "lib/http/member.dart:574"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "followUpTag": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tags",
+      "upstream_constant_line": 444,
+      "upstream_references": [
+        "lib/http/member.dart:511"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CloudOrder.swift",
+        "Sources/PiliNative/Social/CreatorRelations.swift",
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "followedUp": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/followings/followed_upper",
+      "upstream_constant_line": 976,
+      "upstream_references": [
+        "lib/http/user.dart:538"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorRelations.swift"
+      ]
+    },
+    "followeeVotes": {
+      "host": "api.vc.bilibili.com",
+      "path": "/vote_svr/v1/vote_svr/followee_votes",
+      "upstream_constant_line": 982,
+      "upstream_references": [
+        "lib/http/dynamics.dart:708"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Votes.swift"
+      ]
+    },
+    "followings": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/followings",
+      "upstream_constant_line": 298,
+      "upstream_references": [
+        "lib/http/dynamics.dart:111",
+        "lib/http/follow.dart:17"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Creators.swift",
+        "Sources/PiliNative/Social/FeedDirectoryState.swift"
+      ]
+    },
+    "gaiaVgateRegister": {
+      "host": "api.bilibili.com",
+      "path": "/x/gaia-vgate/v1/register",
+      "upstream_constant_line": 775,
+      "upstream_references": [
+        "lib/http/validate.dart:10"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/search.dart",
+          "symbol": "// RequestUtils.validate(vVoucher, onSuccess);"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/UnifiedSearch.swift",
+          "symbol": "data[\"v_voucher\"]"
+        },
+        {
+          "file": "Sources/PiliNative/Network/ServiceError.swift",
+          "symbol": "func searchCheck"
+        }
+      ],
+      "review": "注册/提交验证封装虽有定义，但其唯一候选搜索调用在固定上游已注释；实际界面收到 v_voucher 即报风险。原生可打开官方搜索页面由用户自行处理，不自动挑战或提交验证"
+    },
+    "gaiaVgateValidate": {
+      "host": "api.bilibili.com",
+      "path": "/x/gaia-vgate/v1/validate",
+      "upstream_constant_line": 777,
+      "upstream_references": [
+        "lib/http/validate.dart:35"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/search.dart",
+          "symbol": "// RequestUtils.validate(vVoucher, onSuccess);"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/UnifiedSearch.swift",
+          "symbol": "data[\"v_voucher\"]"
+        },
+        {
+          "file": "Sources/PiliNative/Network/ServiceError.swift",
+          "symbol": "func searchCheck"
+        }
+      ],
+      "review": "注册/提交验证封装虽有定义，但其唯一候选搜索调用在固定上游已注释；实际界面收到 v_voucher 即报风险。原生可打开官方搜索页面由用户自行处理，不自动挑战或提交验证"
+    },
+    "getCaptcha": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/captcha",
+      "upstream_constant_line": 546,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "getCoin": {
+      "host": "account.bilibili.com",
+      "path": "/site/getCoin",
+      "upstream_constant_line": 750,
+      "upstream_references": [
+        "lib/http/user.dart:388"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/http/init.dart",
+          "symbol": "static Future<void> setCoin"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveCoinPicker.swift",
+          "symbol": "balance=who.money"
+        },
+        {
+          "file": "Sources/PiliNative/Account/ProfileOverview.swift",
+          "symbol": "person?.money"
+        }
+      ],
+      "review": "个人页与投币面板从主账号 /x/web-interface/nav 返回的 money 取得同一钱包额度。账户变化重新校验；后端拒绝仍优先，数字不用于代替实际写入"
+    },
+    "getLiveEmoticons": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-ucenter/v2/emoticon/GetEmoticons",
+      "upstream_constant_line": 752,
+      "upstream_references": [
+        "lib/http/live.dart:179"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveComposer.swift"
+      ]
+    },
+    "getLiveFavTag": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/second/get_fav_tag",
+      "upstream_constant_line": 800,
+      "upstream_references": [
+        "lib/http/live.dart:372"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAreaTags.swift"
+      ]
+    },
+    "getLiveInfoByUser": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-room/v1/index/getInfoByUser",
+      "upstream_constant_line": 897,
+      "upstream_references": [
+        "lib/http/live.dart:493"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveShield.swift"
+      ]
+    },
+    "getMemberSeasonsApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-space/home/seasons_series",
+      "upstream_constant_line": 647,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "getMemberViewApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/upstat",
+      "upstream_constant_line": 651,
+      "upstream_references": [
+        "lib/http/member.dart:679"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorVideoPanel.swift"
+      ]
+    },
+    "getMsgDnd": {
+      "host": "api.vc.bilibili.com",
+      "path": "/link_setting/v1/link_setting/get_msg_dnd",
+      "upstream_constant_line": 828,
+      "upstream_references": [
+        "lib/http/msg.dart:554"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/IMConversationSettings.swift",
+        "Sources/PiliNative/Social/IMConversationSettings.swift"
+      ]
+    },
+    "getRankApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/ranking/v2",
+      "upstream_constant_line": 676,
+      "upstream_references": [
+        "lib/http/video.dart:927"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Rankings.swift"
+      ]
+    },
+    "getRecentCoinVideoApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/coin/video",
+      "upstream_constant_line": 641,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "getRecentLikeVideoApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/like/video",
+      "upstream_constant_line": 644,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "getSessionSs": {
+      "host": "api.vc.bilibili.com",
+      "path": "/link_setting/v1/link_setting/get_session_ss",
+      "upstream_constant_line": 825,
+      "upstream_references": [
+        "lib/http/msg.dart:533"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/IMConversationSettings.swift",
+        "Sources/PiliNative/Social/IMConversationSettings.swift"
+      ]
+    },
+    "getTVCode": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-tv-login/qrcode/auth_code",
+      "upstream_constant_line": 623,
+      "upstream_references": [
+        "lib/http/login.dart:42"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "/x/passport-login/web/qrcode/"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "以官网二维码生成/轮询和手机授权完成登录，不调用其他平台的 TV 专用客户端签发。若需移动接口，单独验证属于同一 UID 的合法移动授权"
+    },
+    "getTopVideoApi": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/top/arc",
+      "upstream_constant_line": 633,
+      "upstream_references": [
+        "lib/http/member.dart:664"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/member.dart",
+          "symbol": "getTopVideo()"
+        }
+      ],
+      "native": [],
+      "review": "固定 Dart 只有 getTopVideo() 定义，没有业务或 UI 调用；当前空间展示由正常的作者空间服务供给"
+    },
+    "getUnreadDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/dynamic/entrance",
+      "upstream_constant_line": 658,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "getWebKey": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/web/key",
+      "upstream_constant_line": 616,
+      "upstream_references": [
+        "lib/http/login.dart:85"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "密码提交前获取公钥 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "hateReply": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/hate",
+      "upstream_constant_line": 181,
+      "upstream_references": [
+        "lib/http/reply.dart:98"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/http/reply.dart",
+          "symbol": "Api.hateReply"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "[\"top\", \"del\", \"hate\", \"action\"]"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "\"/x/v2/reply/\" + kind"
+        }
+      ],
+      "review": "原生评论操作用允许列表 hate 构造精确路径；oid、type、rpid、action 与提交的主号绑定，删除、置顶与非作者操作分别检查"
+    },
+    "heartBeat": {
+      "host": "api.bilibili.com",
+      "path": "/x/click-interface/web/heartbeat",
+      "upstream_constant_line": 275,
+      "upstream_references": [
+        "lib/http/video.dart:757",
+        "lib/utils/accounts/account_manager/account_mgr.dart:51"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/CloudHistory.swift"
+      ]
+    },
+    "historyList": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/history/cursor",
+      "upstream_constant_line": 241,
+      "upstream_references": [
+        "lib/http/user.dart:94"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountRole.swift",
+        "Sources/PiliNative/Account/ProfileShelf.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift"
+      ]
+    },
+    "historyReport": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/report",
+      "upstream_constant_line": 277,
+      "upstream_references": [
+        "lib/http/video.dart:738"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift"
+      ]
+    },
+    "historyStatus": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/shadow",
+      "upstream_constant_line": 247,
+      "upstream_references": [
+        "lib/http/user.dart:139"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountRole.swift",
+        "Sources/PiliNative/Discover/ArticleReader.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift"
+      ]
+    },
+    "hotList": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/popular",
+      "upstream_constant_line": 16,
+      "upstream_references": [
+        "lib/http/video.dart:198"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "hotSearchList": {
+      "host": "s.search.bilibili.com",
+      "path": "/main/hotword",
+      "upstream_constant_line": 259,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "imMsgReport": {
+      "host": "api.vc.bilibili.com",
+      "path": "/x/bplus/im/report/add",
+      "upstream_constant_line": 991,
+      "upstream_references": [
+        "lib/http/msg.dart:616"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/IMMessageReport.swift"
+      ]
+    },
+    "imUserInfos": {
+      "host": "api.vc.bilibili.com",
+      "path": "/x/im/user_infos",
+      "upstream_constant_line": 823,
+      "upstream_references": [
+        "lib/http/msg.dart:508"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/IMConversationSettings.swift",
+        "Sources/PiliNative/Social/IMConversationSettings.swift"
+      ]
+    },
+    "latestApp": {
+      "host": "api.github.com",
+      "path": "/repos/bggRGjQaUbCoE/PiliPlus/releases",
+      "upstream_constant_line": 414,
+      "upstream_references": [
+        "lib/utils/update.dart:25"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Settings/ReleaseUpdates.swift"
+      ]
+    },
+    "likeArc": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/likearc",
+      "upstream_constant_line": 879,
+      "upstream_references": [
+        "lib/http/member.dart:793"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorLibrary.swift"
+      ]
+    },
+    "likeReply": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/action",
+      "upstream_constant_line": 179,
+      "upstream_references": [
+        "lib/http/reply.dart:123"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/http/reply.dart",
+          "symbol": "Api.likeReply"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "[\"top\", \"del\", \"hate\", \"action\"]"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "\"/x/v2/reply/\" + kind"
+        }
+      ],
+      "review": "原生评论操作用允许列表 action 构造精确路径；oid、type、rpid、action 与提交的主号绑定，删除、置顶与非作者操作分别检查"
+    },
+    "likeTopic": {
+      "host": "api.bilibili.com",
+      "path": "/x/topic/like",
+      "upstream_constant_line": 852,
+      "upstream_references": [
+        "lib/http/fav.dart:244"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "likeVideo": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/view/like",
+      "upstream_constant_line": 53,
+      "upstream_references": [
+        "lib/http/video.dart:502"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/pages/video/introduction/ugc/controller.dart",
+          "symbol": "VideoHttp.likeVideo"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackSocialRequest.swift",
+          "symbol": "/x/web-interface/archive/like"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/EngagementBar.swift",
+          "symbol": "PlaybackSocialRequest.like"
+        }
+      ],
+      "review": "当前 BV 的点赞/撤销。原 app 端点在 iOS 换 Web 一方通道，主账号绑定、失败不宣称完成"
+    },
+    "liveAreaList": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/index/getAreaList",
+      "upstream_constant_line": 794,
+      "upstream_references": [
+        "lib/http/live.dart:341"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAreaTags.swift"
+      ]
+    },
+    "liveContributionRank": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/general-interface/v1/rank/queryContributionRank",
+      "upstream_constant_line": 985,
+      "upstream_references": [
+        "lib/http/live.dart:687"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/ContributionRank.swift"
+      ]
+    },
+    "liveDmReport": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-ucenter/v1/dMReport/Report",
+      "upstream_constant_line": 965,
+      "upstream_references": [
+        "lib/http/live.dart:669"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveChatActions.swift"
+      ]
+    },
+    "liveFeedIndex": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/index/feed",
+      "upstream_constant_line": 783,
+      "upstream_references": [
+        "lib/http/live.dart:221"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/MobileDeviceID.swift",
+        "Sources/PiliNative/Live/LiveInteractionAPI.swift"
+      ]
+    },
+    "liveFeedback": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/index/feedback",
+      "upstream_constant_line": 1019,
+      "upstream_references": [
+        "lib/http/live.dart:787"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveInteractionAPI.swift",
+        "Sources/PiliNative/Network/HTTP11Message.swift"
+      ]
+    },
+    "liveFollow": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-ucenter/user/following",
+      "upstream_constant_line": 786,
+      "upstream_references": [
+        "lib/http/live.dart:248"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveComposer.swift"
+      ]
+    },
+    "liveLikeReport": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-ucenter/v1/like_info_v3/like/likeReportV3",
+      "upstream_constant_line": 936,
+      "upstream_references": [
+        "lib/http/live.dart:601"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveInteractionAPI.swift"
+      ]
+    },
+    "liveList": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-interface/v1/second/getUserRecommend",
+      "upstream_constant_line": 310,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "liveMasterInfo": {
+      "host": "api.live.bilibili.com",
+      "path": "/live_user/v1/Master/info",
+      "upstream_constant_line": 1022,
+      "upstream_references": [
+        "lib/http/live.dart:799"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorMedalName.swift"
+      ]
+    },
+    "liveMedalWall": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-ucenter/user/MedalWall",
+      "upstream_constant_line": 1005,
+      "upstream_references": [
+        "lib/http/live.dart:750"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorSectionViews.swift"
+      ]
+    },
+    "liveRoomAreaList": {
+      "host": "api.live.bilibili.com",
+      "path": "/room/v1/Area/getList",
+      "upstream_constant_line": 797,
+      "upstream_references": [
+        "lib/http/live.dart:442"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAPI.swift"
+      ]
+    },
+    "liveRoomDmPrefetch": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-room/v1/dM/gethistory",
+      "upstream_constant_line": 327,
+      "upstream_references": [
+        "lib/http/live.dart:130"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAPI.swift"
+      ]
+    },
+    "liveRoomDmToken": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-room/v1/index/getDanmuInfo",
+      "upstream_constant_line": 331,
+      "upstream_references": [
+        "lib/http/live.dart:158"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAPI.swift"
+      ]
+    },
+    "liveRoomInfo": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-room/v2/index/getRoomPlayInfo",
+      "upstream_constant_line": 316,
+      "upstream_references": [
+        "lib/http/live.dart:86"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAPI.swift"
+      ]
+    },
+    "liveRoomInfoH5": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-room/v1/index/getH5InfoByRoom",
+      "upstream_constant_line": 322,
+      "upstream_references": [
+        "lib/http/live.dart:116"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveViews.swift"
+      ]
+    },
+    "liveSearch": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/search_live",
+      "upstream_constant_line": 806,
+      "upstream_references": [
+        "lib/http/live.dart:479"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/pages/live_search/child/controller.dart",
+          "symbol": "LiveHttp.liveSearch"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Live/LiveSearchView.swift",
+          "symbol": "/x/web-interface/wbi/search/type"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveSearchModels.swift",
+          "symbol": "struct LiveSearchPayload"
+        }
+      ],
+      "review": "原生对同一搜索词分别调用官方 Web WBI room/主播搜索、服务页码/总量，保留可进直播间/主播、状态和真实结果；服务风控显示失败，不伪造移动端"
+    },
+    "liveSecondList": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/second/getList",
+      "upstream_constant_line": 789,
+      "upstream_references": [
+        "lib/http/live.dart:299"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/MobileDeviceID.swift",
+        "Sources/PiliNative/Live/LiveInteractionAPI.swift"
+      ]
+    },
+    "liveSetSilent": {
+      "host": "api.live.bilibili.com",
+      "path": "/liveact/user_silent",
+      "upstream_constant_line": 900,
+      "upstream_references": [
+        "lib/http/live.dart:514"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/live.dart",
+          "symbol": "Future<LoadingState<void>> liveSetSilent"
+        }
+      ],
+      "native": [],
+      "review": "旧 liveSetSilent 的包房全员禁言包装在固定上游无任何可执行调用。该未调用入口不能证明实际房管功能缺失；真实房管禁言见直播域"
+    },
+    "liveShieldUser": {
+      "host": "api.live.bilibili.com",
+      "path": "/liveact/shield_user",
+      "upstream_constant_line": 909,
+      "upstream_references": [
+        "lib/http/live.dart:577"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveInteractionAPI.swift"
+      ]
+    },
+    "logInByAppSms": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/login/sms",
+      "upstream_constant_line": 567,
+      "upstream_references": [
+        "lib/http/login.dart:306"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "短信验证码登录 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "logInByWebPwd": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/web/login",
+      "upstream_constant_line": 556,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "loginByPwdApi": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/oauth2/login",
+      "upstream_constant_line": 579,
+      "upstream_references": [
+        "lib/http/login.dart:240"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "密码登录 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "loginDevices": {
+      "host": "passport.bilibili.com",
+      "path": "/x/safecenter/user_login_devices",
+      "upstream_constant_line": 939,
+      "upstream_references": [
+        "lib/http/login.dart:525"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/LoginDevices.swift"
+      ]
+    },
+    "loginLog": {
+      "host": "api.bilibili.com",
+      "path": "/x/member/web/login/log",
+      "upstream_constant_line": 930,
+      "upstream_references": [
+        "lib/http/user.dart:486"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountLogs.swift"
+      ]
+    },
+    "logout": {
+      "host": "passport.bilibili.com",
+      "path": "/login/exit/v2",
+      "upstream_constant_line": 630,
+      "upstream_references": [
+        "lib/http/login.dart:496"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Settings/AccountExitRequest.swift"
+      ]
+    },
+    "matchInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/esports/match/info",
+      "upstream_constant_line": 891,
+      "upstream_references": [
+        "lib/http/match.dart:10"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/MusicAndMatches.swift"
+      ]
+    },
+    "mediaList": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/medialist/resource/list",
+      "upstream_constant_line": 719,
+      "upstream_references": [
+        "lib/http/user.dart:365"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorPlaybackCursor.swift",
+        "Sources/PiliNative/Social/CreatorVideoPanel.swift"
+      ]
+    },
+    "mediaListHistory": {
+      "host": "api.bilibili.com",
+      "path": "/x/v1/medialist/history",
+      "upstream_constant_line": 282,
+      "upstream_references": [
+        "lib/http/video.dart:778"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorPlaybackCursor.swift"
+      ]
+    },
+    "memberCardInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/card",
+      "upstream_constant_line": 366,
+      "upstream_references": [
+        "lib/http/member.dart:336"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorPanelIdentity.swift"
+      ]
+    },
+    "memberDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/feed/space",
+      "upstream_constant_line": 388,
+      "upstream_references": [
+        "lib/http/member.dart:460"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/DynamicAPI.swift"
+      ]
+    },
+    "memberGuard": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-ucenter/v1/guard/MainGuardCardAll",
+      "upstream_constant_line": 1008,
+      "upstream_references": [
+        "lib/http/member.dart:842"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorCatalog.swift"
+      ]
+    },
+    "memberInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/wbi/acc/info",
+      "upstream_constant_line": 336,
+      "upstream_references": [
+        "lib/http/member.dart:303"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/http/member.dart",
+          "symbol": "Api.memberInfo"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "\"/x/web-interface/card\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorPanelIdentity.swift",
+          "symbol": "user.mid == mid"
+        }
+      ],
+      "review": "视频作者面板用用户卡片接口读取头像、昵称、等级、VIP 和关注状态，核对返回的 mid；不声称返回完整空间详情"
+    },
+    "moralLog": {
+      "host": "api.bilibili.com",
+      "path": "/x/member/web/moral/log",
+      "upstream_constant_line": 934,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "moveFav": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/move",
+      "upstream_constant_line": 118,
+      "upstream_references": [
+        "lib/http/fav.dart:694"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/utils/request_utils.dart",
+          "symbol": "FavHttp.copyOrMoveFav"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func transfer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "LibraryCheckedOrder"
+        }
+      ],
+      "review": "收藏夹的移动：按源分类拼接 prefix 和动作、按真实 rid:type/aid、目标夹与主账号提交。显示顺序见个人资料库的隔离测试"
+    },
+    "moveToview": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/toview/move",
+      "upstream_constant_line": 155,
+      "upstream_references": [
+        "lib/http/fav.dart:697"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/utils/request_utils.dart",
+          "symbol": "FavHttp.copyOrMoveFav"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrarySource.swift",
+          "symbol": "func transfer"
+        },
+        {
+          "file": "Sources/PiliNative/Library/CloudLibrary.swift",
+          "symbol": "LibraryCheckedOrder"
+        }
+      ],
+      "review": "稍后再看的移动：按源分类拼接 prefix 和动作、按真实 rid:type/aid、目标夹与主账号提交。显示顺序见个人资料库的隔离测试"
+    },
+    "msgFeedAt": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/at",
+      "upstream_constant_line": 473,
+      "upstream_references": [
+        "lib/http/msg.dart:50"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/msg_feed_top/at_me/controller.dart",
+          "symbol": "MsgHttp.msgFeedAtMe"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "\"/x/msgfeed/\" + endpoint"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "let endpoint = kind"
+        }
+      ],
+      "review": "提到我的入口按实际时间和 cursor 请求 at，读取其专用通知并链接到真实来源"
+    },
+    "msgFeedLike": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/like",
+      "upstream_constant_line": 475,
+      "upstream_references": [
+        "lib/http/msg.dart:72"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "msgFeedReply": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/reply",
+      "upstream_constant_line": 471,
+      "upstream_references": [
+        "lib/http/msg.dart:28"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/msg_feed_top/reply_me/controller.dart",
+          "symbol": "MsgHttp.msgFeedReplyMe"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "\"/x/msgfeed/\" + endpoint"
+        },
+        {
+          "file": "Sources/PiliNative/Social/NoticeService.swift",
+          "symbol": "let endpoint = kind"
+        }
+      ],
+      "review": "回复我的入口按真实时间、ID cursor 请求 reply，点通知去准确的回复或消息"
+    },
+    "msgFeedUnread": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/unread",
+      "upstream_constant_line": 469,
+      "upstream_references": [
+        "lib/http/msg.dart:594"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Inbox.swift",
+        "Sources/PiliNative/Social/UnreadIndicators.swift"
+      ]
+    },
+    "msgLikeDetail": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/like_detail",
+      "upstream_constant_line": 895,
+      "upstream_references": [
+        "lib/http/msg.dart:95"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "msgSetNotice": {
+      "host": "api.bilibili.com",
+      "path": "/x/msgfeed/notice",
+      "upstream_constant_line": 792,
+      "upstream_references": [
+        "lib/http/msg.dart:431"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "msgSysNotify": {
+      "host": "message.bilibili.com",
+      "path": "/x/sys-msg/query_notify_list",
+      "upstream_constant_line": 477,
+      "upstream_references": [
+        "lib/http/msg.dart:118"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "msgSysUpdateCursor": {
+      "host": "message.bilibili.com",
+      "path": "/x/sys-msg/update_cursor",
+      "upstream_constant_line": 482,
+      "upstream_references": [
+        "lib/http/msg.dart:141"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/HTTP11Message.swift",
+        "Sources/PiliNative/Social/NoticeService.swift"
+      ]
+    },
+    "msgUnread": {
+      "host": "api.vc.bilibili.com",
+      "path": "/session_svr/v1/session_svr/single_unread",
+      "upstream_constant_line": 465,
+      "upstream_references": [
+        "lib/http/msg.dart:577"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/UnreadIndicators.swift"
+      ]
+    },
+    "myEmote": {
+      "host": "api.bilibili.com",
+      "path": "/x/emote/user/panel/web",
+      "upstream_constant_line": 198,
+      "upstream_references": [
+        "lib/http/reply.dart:144"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/EmoteInput.swift"
+      ]
+    },
+    "noteList": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/list",
+      "upstream_constant_line": 727,
+      "upstream_references": [
+        "lib/http/fav.dart:343"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "oauth2AccessToken": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/oauth2/access_token",
+      "upstream_constant_line": 610,
+      "upstream_references": [
+        "lib/http/login.dart:474"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "安全中心完成后换取平台凭据 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "ogvUrl": {
+      "host": "api.bilibili.com",
+      "path": "/ogv/player/playview",
+      "upstream_constant_line": 28,
+      "upstream_references": [
+        "lib/models/common/video/video_type.dart:11",
+        "lib/models/common/video/video_type.dart:18"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/EpisodePlayService.swift"
+      ]
+    },
+    "onlineTotal": {
+      "host": "api.bilibili.com",
+      "path": "/x/player/online/total",
+      "upstream_constant_line": 419,
+      "upstream_references": [
+        "lib/http/video.dart:845"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/DiscoveryExtras.swift"
+      ]
+    },
+    "opusDetail": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/opus/detail",
+      "upstream_constant_line": 773,
+      "upstream_references": [
+        "lib/http/dynamics.dart:378"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift"
+      ]
+    },
+    "pauseHistory": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/shadow/set",
+      "upstream_constant_line": 244,
+      "upstream_references": [
+        "lib/http/user.dart:118"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountRole.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift",
+        "Sources/PiliNative/Playback/CloudHistory.swift"
+      ]
+    },
+    "pgcAdd": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/web/follow/add",
+      "upstream_constant_line": 400,
+      "upstream_references": [
+        "lib/http/video.dart:792"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/video/introduction/pgc/controller.dart",
+          "symbol": "VideoHttp.pgcAdd"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/SeasonLibrary.swift",
+          "symbol": "\"/pgc/web/follow/\""
+        }
+      ],
+      "review": "原生追番追剧按钮按实际状态选择 add/del/status/update，season_id 与该账号的反馈一起使用"
+    },
+    "pgcDel": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/web/follow/del",
+      "upstream_constant_line": 403,
+      "upstream_references": [
+        "lib/http/video.dart:806"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonLibrary.swift"
+      ]
+    },
+    "pgcIndexCondition": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/season/index/condition",
+      "upstream_constant_line": 721,
+      "upstream_references": [
+        "lib/http/pgc.dart:46"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonIndex.swift"
+      ]
+    },
+    "pgcIndexResult": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/season/index/result",
+      "upstream_constant_line": 723,
+      "upstream_references": [
+        "lib/http/pgc.dart:23",
+        "lib/http/pgc.dart:65"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/PGCHome.swift",
+        "Sources/PiliNative/Discover/SeasonIndex.swift",
+        "Sources/PiliNative/Discover/Seasons.swift"
+      ]
+    },
+    "pgcInfo": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/view/web/season",
+      "upstream_constant_line": 288,
+      "upstream_references": [
+        "lib/http/search.dart:158"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonAccess.swift",
+        "Sources/PiliNative/Discover/Seasons.swift",
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "pgcLikeCoinFav": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/season/episode/community",
+      "upstream_constant_line": 61,
+      "upstream_references": [
+        "lib/http/video.dart:405"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/EngagementBar.swift"
+      ]
+    },
+    "pgcRank": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/web/rank/list",
+      "upstream_constant_line": 678,
+      "upstream_references": [
+        "lib/http/video.dart:948"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Rankings.swift"
+      ]
+    },
+    "pgcReviewDel": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/short/del",
+      "upstream_constant_line": 866,
+      "upstream_references": [
+        "lib/http/pgc.dart:231"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonReviews.swift"
+      ]
+    },
+    "pgcReviewDislike": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/action/dislike",
+      "upstream_constant_line": 860,
+      "upstream_references": [
+        "lib/http/pgc.dart:162"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/pgc_review/child/controller.dart",
+          "symbol": "PgcHttp.pgcReview"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/SeasonReviews.swift",
+          "symbol": "\"/pgc/review/action/\" + action"
+        }
+      ],
+      "review": "短评的赞同/不赞同带真实 review_id、media_id 和类型。长评在固定上游仅显示票数、不允许点短评写入按钮"
+    },
+    "pgcReviewL": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/long/list",
+      "upstream_constant_line": 854,
+      "upstream_references": [
+        "lib/models/common/pgc_review_type.dart:4"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/models/common/pgc_review_type.dart",
+          "symbol": "Api.pgcReview"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/SeasonReviews.swift",
+          "symbol": "\"/pgc/review/\""
+        }
+      ],
+      "review": "长评与短评按原分类选取对应列表，排序和下一页游标不交叉"
+    },
+    "pgcReviewLike": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/action/like",
+      "upstream_constant_line": 858,
+      "upstream_references": [
+        "lib/http/pgc.dart:141"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/pgc_review/child/controller.dart",
+          "symbol": "PgcHttp.pgcReview"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/SeasonReviews.swift",
+          "symbol": "\"/pgc/review/action/\" + action"
+        }
+      ],
+      "review": "短评的赞同/不赞同带真实 review_id、media_id 和类型。长评在固定上游仅显示票数、不允许点短评写入按钮"
+    },
+    "pgcReviewMod": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/short/modify",
+      "upstream_constant_line": 864,
+      "upstream_references": [
+        "lib/http/pgc.dart:209"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonReviews.swift"
+      ]
+    },
+    "pgcReviewPost": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/short/post",
+      "upstream_constant_line": 862,
+      "upstream_references": [
+        "lib/http/pgc.dart:185"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonReviews.swift"
+      ]
+    },
+    "pgcReviewS": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/review/short/list",
+      "upstream_constant_line": 856,
+      "upstream_references": [
+        "lib/models/common/pgc_review_type.dart:5"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/models/common/pgc_review_type.dart",
+          "symbol": "Api.pgcReview"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Discover/SeasonReviews.swift",
+          "symbol": "\"/pgc/review/\""
+        }
+      ],
+      "review": "长评与短评按原分类选取对应列表，排序和下一页游标不交叉"
+    },
+    "pgcSeasonRank": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/season/rank/web/list",
+      "upstream_constant_line": 680,
+      "upstream_references": [
+        "lib/http/video.dart:971"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Rankings.swift"
+      ]
+    },
+    "pgcTimeline": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/web/timeline",
+      "upstream_constant_line": 755,
+      "upstream_references": [
+        "lib/http/pgc.dart:99"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/PGCHome.swift"
+      ]
+    },
+    "pgcTriple": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/season/episode/like/triple",
+      "upstream_constant_line": 144,
+      "upstream_references": [
+        "lib/http/video.dart:445"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/PlaybackSocialRequest.swift"
+      ]
+    },
+    "pgcUpdate": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/web/follow/status/update",
+      "upstream_constant_line": 405,
+      "upstream_references": [
+        "lib/http/video.dart:822"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonLibrary.swift"
+      ]
+    },
+    "pgcUrl": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/player/web/v2/playurl",
+      "upstream_constant_line": 24,
+      "upstream_references": [
+        "lib/models/common/video/video_type.dart:12"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/EpisodePlayService.swift",
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "playInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/player/wbi/v2",
+      "upstream_constant_line": 34,
+      "upstream_references": [
+        "lib/http/video.dart:888"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/ArchiveChapterPanel.swift",
+        "Sources/PiliNative/Playback/Captions.swift",
+        "Sources/PiliNative/Playback/DetailView.swift"
+      ]
+    },
+    "popularPrecious": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/popular/precious",
+      "upstream_constant_line": 961,
+      "upstream_references": [
+        "lib/http/video.dart:1065"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Rankings.swift"
+      ]
+    },
+    "popularSeriesList": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/popular/series/list",
+      "upstream_constant_line": 958,
+      "upstream_references": [
+        "lib/http/video.dart:1014"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Rankings.swift"
+      ]
+    },
+    "popularSeriesOne": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/popular/series/one",
+      "upstream_constant_line": 956,
+      "upstream_references": [
+        "lib/http/video.dart:1041"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Rankings.swift"
+      ]
+    },
+    "preCapture": {
+      "host": "passport.bilibili.com",
+      "path": "/x/safecenter/captcha/pre",
+      "upstream_constant_line": 589,
+      "upstream_references": [
+        "lib/http/login.dart:351"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "加载服务所需的交互挑战 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "pugvInfo": {
+      "host": "api.bilibili.com",
+      "path": "/pugv/view/web/season",
+      "upstream_constant_line": 290,
+      "upstream_references": [
+        "lib/http/search.dart:176"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Courses.swift",
+        "Sources/PiliNative/Discover/Courses.swift",
+        "Sources/PiliNative/Discover/Courses.swift"
+      ]
+    },
+    "pugvUrl": {
+      "host": "api.bilibili.com",
+      "path": "/pugv/player/web/playurl",
+      "upstream_constant_line": 26,
+      "upstream_references": [
+        "lib/models/common/video/video_type.dart:19"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/EpisodePlayService.swift",
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "qrcodeConfirm": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-tv-login/h5/qrcode/confirm",
+      "upstream_constant_line": 619,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "qrcodePoll": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-tv-login/qrcode/poll",
+      "upstream_constant_line": 627,
+      "upstream_references": [
+        "lib/http/login.dart:62"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "/x/passport-login/web/qrcode/"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "以官网二维码生成/轮询和手机授权完成登录，不调用其他平台的 TV 专用客户端签发。若需移动接口，单独验证属于同一 UID 的合法移动授权"
+    },
+    "recommendListApp": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/feed/index",
+      "upstream_constant_line": 5,
+      "upstream_references": [
+        "lib/http/video.dart:146"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/MobileDeviceID.swift",
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "recommendListWeb": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/wbi/index/top/feed/rcmd",
+      "upstream_constant_line": 7,
+      "upstream_references": [
+        "lib/http/video.dart:57"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "relatedList": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/archive/related",
+      "upstream_constant_line": 158,
+      "upstream_references": [
+        "lib/http/video.dart:384"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/DetailView.swift",
+        "Sources/PiliNative/Playback/VideoActions.swift"
+      ]
+    },
+    "relation": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation",
+      "upstream_constant_line": 161,
+      "upstream_references": [
+        "lib/http/user.dart:277"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+        "Sources/PiliNative/Social/CreatorRelations.swift",
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "relationMod": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/modify",
+      "upstream_constant_line": 166,
+      "upstream_references": [
+        "lib/http/video.dart:683"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/ArchiveCovers.swift",
+        "Sources/PiliNative/Social/BlacklistManagement.swift",
+        "Sources/PiliNative/Social/CommunityReport.swift"
+      ]
+    },
+    "relations": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/relations",
+      "upstream_constant_line": 163,
+      "upstream_references": [
+        "lib/pages/video/introduction/ugc/controller.dart:196"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "alternative-first-party",
+      "upstream_control": [
+        {
+          "file": "lib/pages/video/introduction/ugc/controller.dart",
+          "symbol": "Future<void> queryUserStat"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoExtras.swift",
+          "symbol": "ForEach(staff.filter{$0.mid>0})"
+        },
+        {
+          "file": "Sources/PiliNative/Social/CreatorQuickRelation.swift",
+          "symbol": "/x/relation"
+        }
+      ],
+      "review": "原将合作作者 MID 批量传 fids 查询关系；原生逐个显示并用同一主号对每个 fid 获取关系，点击时重取真实状态。批量 HTTP 调用替换为有界可见行读取"
+    },
+    "removeDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/operate/remove",
+      "upstream_constant_line": 705,
+      "upstream_references": [
+        "lib/http/msg.dart:228"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/DynamicDetail.swift"
+      ]
+    },
+    "removeMsg": {
+      "host": "api.bilibili.com",
+      "path": "/session_svr/v1/session_svr/remove_session",
+      "upstream_constant_line": 691,
+      "upstream_references": [
+        "lib/http/msg.dart:259"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/common/common_whisper_controller.dart",
+          "symbol": "MsgHttp.removeMsg"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "\"/session_svr/v1/session_svr/\""
+        }
+      ],
+      "review": "删除一段会话的 Web 兼容通道按真实 talker_id 和已登录主号；新移动会话操作另见 IM 矩阵"
+    },
+    "replyAdd": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/add",
+      "upstream_constant_line": 185,
+      "upstream_references": [
+        "lib/http/video.dart:624"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Compose.swift",
+        "Sources/PiliNative/Social/Discussion.swift"
+      ]
+    },
+    "replyDel": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/del",
+      "upstream_constant_line": 189,
+      "upstream_references": [
+        "lib/http/video.dart:654"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/MyReplies.swift"
+      ]
+    },
+    "replyInteraction": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/subject/interaction-status",
+      "upstream_constant_line": 998,
+      "upstream_references": [
+        "lib/http/reply.dart:217"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/DynamicEditView.swift",
+        "Sources/PiliNative/Social/MomentOwnerSettings.swift"
+      ]
+    },
+    "replyList": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply",
+      "upstream_constant_line": 173,
+      "upstream_references": [
+        "lib/http/reply.dart:31",
+        "lib/http/reply.dart:42"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Discussion.swift"
+      ]
+    },
+    "replyReplyList": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/reply",
+      "upstream_constant_line": 176,
+      "upstream_references": [
+        "lib/http/reply.dart:68"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Discussion.swift",
+        "Sources/PiliNative/Social/PublicationCheck.swift",
+        "Sources/PiliNative/Social/PublicationCheck.swift"
+      ]
+    },
+    "replyReport": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/report",
+      "upstream_constant_line": 1015,
+      "upstream_references": [
+        "lib/http/reply.dart:189"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CommunityReport.swift"
+      ]
+    },
+    "replySubjectModify": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/subject/modify",
+      "upstream_constant_line": 1001,
+      "upstream_references": [
+        "lib/http/reply.dart:241"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/MomentOwnerSettings.swift"
+      ]
+    },
+    "replyTop": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/reply/top",
+      "upstream_constant_line": 748,
+      "upstream_references": [
+        "lib/http/reply.dart:164"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/http/reply.dart",
+          "symbol": "Api.replyTop"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "[\"top\", \"del\", \"hate\", \"action\"]"
+        },
+        {
+          "file": "Sources/PiliNative/Social/Discussion.swift",
+          "symbol": "\"/x/v2/reply/\" + kind"
+        }
+      ],
+      "review": "原生评论操作用允许列表 top 构造精确路径；oid、type、rpid、action 与提交的主号绑定，删除、置顶与非作者操作分别检查"
+    },
+    "reportMember": {
+      "host": "space.bilibili.com",
+      "path": "/ajax/report/add",
+      "upstream_constant_line": 688,
+      "upstream_references": [
+        "lib/http/member.dart:48"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/BiliAPI.swift",
+        "Sources/PiliNative/Social/CommunityReport.swift"
+      ]
+    },
+    "reserveInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/new-reserve/up/reserve/info",
+      "upstream_constant_line": 928,
+      "upstream_references": [
+        "lib/http/dynamics.dart:690"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/LiveReservation.swift"
+      ]
+    },
+    "rmTopDyn": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/space/rm_top",
+      "upstream_constant_line": 761,
+      "upstream_references": [
+        "lib/http/dynamics.dart:322"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/member_dynamics/controller.dart",
+          "symbol": "DynamicsHttp.setTop"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "\"/x/dynamic/feed/space/\""
+        }
+      ],
+      "review": "自己空间中的动态按真实 pinned 状态发送 set_top/rm_top、动态 ID 及当前主号"
+    },
+    "roomEntryAction": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/web-room/v1/index/roomEntryAction",
+      "upstream_constant_line": 279,
+      "upstream_references": [
+        "lib/http/video.dart:727"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveVisit.swift"
+      ]
+    },
+    "safeCenterGetInfo": {
+      "host": "passport.bilibili.com",
+      "path": "/x/safecenter/user/info",
+      "upstream_constant_line": 585,
+      "upstream_references": [
+        "lib/http/login.dart:332"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "从安全中心确定当前验证入口 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "safeCenterSmsCode": {
+      "host": "passport.bilibili.com",
+      "path": "/x/safecenter/common/sms/send",
+      "upstream_constant_line": 599,
+      "upstream_references": [
+        "lib/http/login.dart:386"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "安全中心发送验证码 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "safeCenterSmsVerify": {
+      "host": "passport.bilibili.com",
+      "path": "/x/safecenter/login/tel/verify",
+      "upstream_constant_line": 607,
+      "upstream_references": [
+        "lib/http/login.dart:428"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "official-account-handoff",
+      "upstream_control": [
+        {
+          "file": "lib/pages/login/controller.dart",
+          "symbol": "LoginHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Account/QRLogin.swift",
+          "symbol": "case .web: WebsiteLogin()"
+        },
+        {
+          "file": "Sources/PiliNative/Account/WebsiteLogin.swift",
+          "symbol": "https://passport.bilibili.com/login"
+        },
+        {
+          "file": "Sources/PiliNative/Account/MobileAuthorization.swift",
+          "symbol": "func mobileIdentity"
+        }
+      ],
+      "review": "安全中心人工填入验证码 在网站登录和安全中心的官方交互流程中完成。PiliNative 不接收原始密码/短信或替代人完成挑战；网站成功后取得 Web 会话，移动 token 独立绑定同一 UID，不声称能以其他客户端身份自动签发"
+    },
+    "sameFollowing": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/same/followings",
+      "upstream_constant_line": 978,
+      "upstream_references": [
+        "lib/http/user.dart:560"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorRelations.swift"
+      ]
+    },
+    "searchAll": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/wbi/search/all/v2",
+      "upstream_constant_line": 271,
+      "upstream_references": [
+        "lib/models/common/search/search_type.dart:6"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/UnifiedSearch.swift",
+        "Sources/PiliNative/Network/ServiceError.swift"
+      ]
+    },
+    "searchArchive": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/wbi/arc/search",
+      "upstream_constant_line": 381,
+      "upstream_references": [
+        "lib/http/member.dart:377"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorArchiveCatalog.swift",
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "searchByType": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/wbi/search/type",
+      "upstream_constant_line": 269,
+      "upstream_references": [
+        "lib/models/common/search/search_type.dart:33"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/UnifiedSearch.swift",
+        "Sources/PiliNative/Live/LiveSearchView.swift",
+        "Sources/PiliNative/Network/ServiceError.swift"
+      ]
+    },
+    "searchDefault": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/wbi/search/default",
+      "upstream_constant_line": 263,
+      "upstream_references": [
+        "lib/pages/home/controller.dart:91"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/DiscoveryExtras.swift"
+      ]
+    },
+    "searchHistory": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/history/search",
+      "upstream_constant_line": 256,
+      "upstream_references": [
+        "lib/http/user.dart:296"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/AccountRole.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift",
+        "Sources/PiliNative/Network/CollectionsAPI.swift"
+      ]
+    },
+    "searchRecommend": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/search/recommend",
+      "upstream_constant_line": 763,
+      "upstream_references": [
+        "lib/http/search.dart:224"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/UnifiedSearch.swift"
+      ]
+    },
+    "searchSuggest": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/suggest",
+      "upstream_constant_line": 266,
+      "upstream_references": [
+        "lib/http/search.dart:27"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/UnifiedSearch.swift"
+      ]
+    },
+    "searchTrending": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/search/trending/ranking",
+      "upstream_constant_line": 757,
+      "upstream_references": [
+        "lib/http/search.dart:208"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/MoreSearch.swift"
+      ]
+    },
+    "seasonArchives": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-space/seasons_archives_list",
+      "upstream_constant_line": 653,
+      "upstream_references": [
+        "lib/models/common/member/web_ss_type.dart:4"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorArchiveCatalog.swift"
+      ]
+    },
+    "seasonSeries": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-space/seasons_series_list",
+      "upstream_constant_line": 363,
+      "upstream_references": [
+        "lib/http/member.dart:103"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorLibrary.swift"
+      ]
+    },
+    "seasonStatus": {
+      "host": "api.bilibili.com",
+      "path": "/pgc/view/web/season/user/status",
+      "upstream_constant_line": 980,
+      "upstream_references": [
+        "lib/http/pgc.dart:248"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonLibrary.swift"
+      ]
+    },
+    "seeYouLater": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/toview/web",
+      "upstream_constant_line": 238,
+      "upstream_references": [
+        "lib/http/user.dart:67"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/CollectionsAPI.swift"
+      ]
+    },
+    "sendLiveMsg": {
+      "host": "api.live.bilibili.com",
+      "path": "/msg/send",
+      "upstream_constant_line": 319,
+      "upstream_references": [
+        "lib/http/live.dart:46"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveComposer.swift"
+      ]
+    },
+    "sendMsg": {
+      "host": "api.vc.bilibili.com",
+      "path": "/web_im/v1/web_im/send_msg",
+      "upstream_constant_line": 673,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "seriesArchives": {
+      "host": "api.bilibili.com",
+      "path": "/x/series/archives",
+      "upstream_constant_line": 655,
+      "upstream_references": [
+        "lib/models/common/member/web_ss_type.dart:5"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorArchiveCatalog.swift"
+      ]
+    },
+    "sessionAccountList": {
+      "host": "api.vc.bilibili.com",
+      "path": "/account/v1/user/cards",
+      "upstream_constant_line": 502,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "sessionList": {
+      "host": "api.vc.bilibili.com",
+      "path": "/session_svr/v1/session_svr/get_sessions",
+      "upstream_constant_line": 496,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "sessionMsg": {
+      "host": "api.vc.bilibili.com",
+      "path": "/svr_sync/v1/svr_sync/fetch_session_msgs",
+      "upstream_constant_line": 516,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "setLiveFavTag": {
+      "host": "api.live.bilibili.com",
+      "path": "/xlive/app-interface/v2/second/set_fav_tag",
+      "upstream_constant_line": 803,
+      "upstream_references": [
+        "lib/http/live.dart:408"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveAreaTags.swift"
+      ]
+    },
+    "setMsgDnd": {
+      "host": "api.vc.bilibili.com",
+      "path": "/link_setting/v1/link_setting/set_msg_dnd",
+      "upstream_constant_line": 820,
+      "upstream_references": [
+        "lib/http/msg.dart:460"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Inbox.swift"
+      ]
+    },
+    "setPushSs": {
+      "host": "api.vc.bilibili.com",
+      "path": "/link_setting/v1/link_setting/set_push_ss",
+      "upstream_constant_line": 831,
+      "upstream_references": [
+        "lib/http/msg.dart:485"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/IMConversationSettings.swift"
+      ]
+    },
+    "setTop": {
+      "host": "api.bilibili.com",
+      "path": "/session_svr/v1/session_svr/set_top",
+      "upstream_constant_line": 697,
+      "upstream_references": [
+        "lib/http/msg.dart:334"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "no-reachable-upstream-action",
+      "upstream_control": [
+        {
+          "file": "lib/http/msg.dart",
+          "symbol": "Future<LoadingState<void>> setTop"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/Inbox.swift",
+          "symbol": "\"/session_svr/v1/session_svr/\""
+        },
+        {
+          "file": "Wire/Sources/PiliWire/IMGateway.swift",
+          "symbol": "func pin("
+        }
+      ],
+      "review": "旧 HTTP 置顶封装在固定上游没有调用，原版实际走 ImGrpc.pinSession/unpinSession；原生实现这两个 RPC 及普通网页会话的同路径兼容"
+    },
+    "setTopDyn": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/space/set_top",
+      "upstream_constant_line": 759,
+      "upstream_references": [
+        "lib/http/dynamics.dart:303"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/member_dynamics/controller.dart",
+          "symbol": "DynamicsHttp.setTop"
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "\"/x/dynamic/feed/space/\""
+        }
+      ],
+      "review": "自己空间中的动态按真实 pinned 状态发送 set_top/rm_top、动态 ID 及当前主号"
+    },
+    "shootDanmaku": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/dm/post",
+      "upstream_constant_line": 425,
+      "upstream_references": [
+        "lib/http/danmaku.dart:51"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Danmaku/BulletComposer.swift"
+      ]
+    },
+    "smsCode": {
+      "host": "passport.bilibili.com",
+      "path": "/x/passport-login/web/sms/send",
+      "upstream_constant_line": 550,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "sortFav": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/sort",
+      "upstream_constant_line": 122,
+      "upstream_references": [
+        "lib/http/fav.dart:457"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteOrder.swift"
+      ]
+    },
+    "sortFavFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/sort",
+      "upstream_constant_line": 124,
+      "upstream_references": [
+        "lib/http/fav.dart:433"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CloudOrder.swift"
+      ]
+    },
+    "sortFollowTag": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tags/update_sort",
+      "upstream_constant_line": 1013,
+      "upstream_references": [
+        "lib/http/follow.dart:37"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/PersonalLibraryContracts.swift"
+      ]
+    },
+    "space": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space",
+      "upstream_constant_line": 338,
+      "upstream_references": [
+        "lib/http/member.dart:270"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorOpus.swift",
+        "Sources/PiliNative/Social/Creators.swift"
+      ]
+    },
+    "spaceArchive": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/archive/cursor",
+      "upstream_constant_line": 340,
+      "upstream_references": [
+        "lib/models/common/member/contribute_type.dart:4"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorQueueDomain.swift"
+      ]
+    },
+    "spaceArticle": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/article",
+      "upstream_constant_line": 358,
+      "upstream_references": [
+        "lib/http/member.dart:82"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorLibrary.swift"
+      ]
+    },
+    "spaceAudio": {
+      "host": "api.bilibili.com",
+      "path": "/audio/music-service/web/song/upper",
+      "upstream_constant_line": 914,
+      "upstream_references": [
+        "lib/http/member.dart:174"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Audio/ListenerCatalog.swift",
+        "Sources/PiliNative/Social/CreatorLibrary.swift"
+      ]
+    },
+    "spaceBangumi": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/bangumi",
+      "upstream_constant_line": 355,
+      "upstream_references": [
+        "lib/models/common/member/contribute_type.dart:8"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorSectionViews.swift"
+      ]
+    },
+    "spaceChargingArchive": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/archive/charging",
+      "upstream_constant_line": 346,
+      "upstream_references": [
+        "lib/models/common/member/contribute_type.dart:5"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorSectionViews.swift"
+      ]
+    },
+    "spaceCheese": {
+      "host": "api.bilibili.com",
+      "path": "/pugv/app/web/season/page",
+      "upstream_constant_line": 916,
+      "upstream_references": [
+        "lib/http/member.dart:195"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/Courses.swift"
+      ]
+    },
+    "spaceComic": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/comic",
+      "upstream_constant_line": 912,
+      "upstream_references": [
+        "lib/models/common/member/contribute_type.dart:9"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorCatalog.swift"
+      ]
+    },
+    "spaceFav": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/space",
+      "upstream_constant_line": 361,
+      "upstream_references": [
+        "lib/http/fav.dart:594"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorFavorites.swift"
+      ]
+    },
+    "spaceOpus": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/opus/feed/space",
+      "upstream_constant_line": 816,
+      "upstream_references": [
+        "lib/http/member.dart:729"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorOpus.swift"
+      ]
+    },
+    "spaceReserve": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/reserve",
+      "upstream_constant_line": 836,
+      "upstream_references": [
+        "lib/http/user.dart:582"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorSectionViews.swift"
+      ]
+    },
+    "spaceReserveCancel": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/reserve/cancel",
+      "upstream_constant_line": 838,
+      "upstream_references": [
+        "lib/http/user.dart:582"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorSectionViews.swift"
+      ]
+    },
+    "spaceSeason": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/season/videos",
+      "upstream_constant_line": 349,
+      "upstream_references": [
+        "lib/models/common/member/contribute_type.dart:6"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorQueueDomain.swift"
+      ]
+    },
+    "spaceSeries": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/space/series",
+      "upstream_constant_line": 352,
+      "upstream_references": [
+        "lib/models/common/member/contribute_type.dart:7"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CreatorQueueDomain.swift"
+      ]
+    },
+    "spaceSetting": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/setting/app",
+      "upstream_constant_line": 881,
+      "upstream_references": [
+        "lib/http/user.dart:424"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/SpacePrivacy.swift"
+      ]
+    },
+    "spaceSettingMod": {
+      "host": "api.bilibili.com",
+      "path": "/x/space/privacy/batch/modify",
+      "upstream_constant_line": 883,
+      "upstream_references": [
+        "lib/http/user.dart:440"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/SpacePrivacy.swift"
+      ]
+    },
+    "spaceShop": {
+      "host": "mall.bilibili.com",
+      "path": "/community-hub/small_shop/feed/tab/item",
+      "upstream_constant_line": 950,
+      "upstream_references": [
+        "lib/http/member.dart:820"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorShop.swift"
+      ]
+    },
+    "spaceStory": {
+      "host": "app.bilibili.com",
+      "path": "/x/v2/feed/index/space/story/cursor",
+      "upstream_constant_line": 343,
+      "upstream_references": [],
+      "raw_review_state_at_audit": "no-baseline-call",
+      "verdict": "no-upstream-constant-reference"
+    },
+    "superChatMsg": {
+      "host": "api.live.bilibili.com",
+      "path": "/av/v1/SuperChat/getMessageList",
+      "upstream_constant_line": 953,
+      "upstream_references": [
+        "lib/http/live.dart:624"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveChat.swift"
+      ]
+    },
+    "superChatReport": {
+      "host": "api.live.bilibili.com",
+      "path": "/av/v1/SuperChat/report",
+      "upstream_constant_line": 988,
+      "upstream_references": [
+        "lib/http/live.dart:721"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Live/LiveChatActions.swift"
+      ]
+    },
+    "thumbDynamic": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/dyn/thumb",
+      "upstream_constant_line": 235,
+      "upstream_references": [
+        "lib/http/dynamics.dart:156"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/ArticleReader.swift",
+        "Sources/PiliNative/Social/DynamicDetail.swift"
+      ]
+    },
+    "toViewClear": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/toview/clear",
+      "upstream_constant_line": 397,
+      "upstream_references": [
+        "lib/http/user.dart:236"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/CloudLibrary.swift"
+      ]
+    },
+    "toViewDel": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/toview/v2/dels",
+      "upstream_constant_line": 394,
+      "upstream_references": [
+        "lib/http/user.dart:201"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonEpisodeActions.swift",
+        "Sources/PiliNative/Library/CloudLibrarySource.swift",
+        "Sources/PiliNative/Playback/PlaybackSocialRequest.swift"
+      ]
+    },
+    "toViewLater": {
+      "host": "api.bilibili.com",
+      "path": "/x/v2/history/toview/add",
+      "upstream_constant_line": 391,
+      "upstream_references": [
+        "lib/http/user.dart:177"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonEpisodeActions.swift",
+        "Sources/PiliNative/Library/ArchiveCovers.swift",
+        "Sources/PiliNative/Library/HistoryLibrary.swift"
+      ]
+    },
+    "topicFeed": {
+      "host": "api.bilibili.com",
+      "path": "/x/polymer/web-dynamic/v1/feed/topic",
+      "upstream_constant_line": 812,
+      "upstream_references": [
+        "lib/http/dynamics.dart:463"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "topicFold": {
+      "host": "api.bilibili.com",
+      "path": "/x/topic/web/details/fold",
+      "upstream_constant_line": 814,
+      "upstream_references": [
+        "lib/http/dynamics.dart:490"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "topicPubSearch": {
+      "host": "app.bilibili.com",
+      "path": "/x/topic/pub/search",
+      "upstream_constant_line": 868,
+      "upstream_references": [
+        "lib/http/search.dart:249"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "topicTop": {
+      "host": "app.bilibili.com",
+      "path": "/x/topic/web/details/top",
+      "upstream_constant_line": 809,
+      "upstream_references": [
+        "lib/http/dynamics.dart:441"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/TopicService.swift",
+        "Sources/PiliNative/Social/TopicService.swift"
+      ]
+    },
+    "tvPlayUrl": {
+      "host": "api.bilibili.com",
+      "path": "/x/tv/playurl",
+      "upstream_constant_line": 30,
+      "upstream_references": [
+        "lib/http/video.dart:1108"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/CastGrantAPI.swift"
+      ]
+    },
+    "ugcTriple": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/archive/like/triple",
+      "upstream_constant_line": 142,
+      "upstream_references": [
+        "lib/http/video.dart:469"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/PlaybackSocialRequest.swift"
+      ]
+    },
+    "ugcUrl": {
+      "host": "api.bilibili.com",
+      "path": "/x/player/wbi/playurl",
+      "upstream_constant_line": 20,
+      "upstream_references": [
+        "lib/models/common/video/video_type.dart:6",
+        "lib/models/common/video/video_type.dart:7"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/BiliAPI.swift",
+        "Sources/PiliNative/Playback/DashBridge.swift"
+      ]
+    },
+    "unfavAll": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/resource/unfav-all",
+      "upstream_constant_line": 114,
+      "upstream_references": [
+        "lib/http/fav.dart:667"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Audio/ListenMetadata.swift",
+        "Sources/PiliNative/Playback/EngagementBar.swift"
+      ]
+    },
+    "unfavFavFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/unfav",
+      "upstream_constant_line": 875,
+      "upstream_references": [
+        "lib/http/fav.dart:39"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+        "Sources/PiliNative/Library/Subscriptions.swift"
+      ]
+    },
+    "unfavFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/unfav",
+      "upstream_constant_line": 683,
+      "upstream_references": [
+        "lib/http/fav.dart:91"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FavoriteFolderScreen.swift",
+        "Sources/PiliNative/Library/Subscriptions.swift"
+      ]
+    },
+    "unfavSeason": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/season/unfav",
+      "upstream_constant_line": 716,
+      "upstream_references": [
+        "lib/http/fav.dart:562",
+        "lib/http/fav.dart:99"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/ArchiveSeasonSubscription.swift",
+        "Sources/PiliNative/Library/Subscriptions.swift"
+      ]
+    },
+    "updateFollowTag": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/tag/update",
+      "upstream_constant_line": 459,
+      "upstream_references": [
+        "lib/http/member.dart:623"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/PersonalLibraryContracts.swift"
+      ]
+    },
+    "updateReserve": {
+      "host": "api.bilibili.com",
+      "path": "/x/new-reserve/up/reserve/update",
+      "upstream_constant_line": 926,
+      "upstream_references": [
+        "lib/http/dynamics.dart:667"
+      ],
+      "raw_review_state_at_audit": "inspect",
+      "verdict": "composed-same-path",
+      "upstream_control": [
+        {
+          "file": "lib/pages/dynamics_create_reserve/controller.dart",
+          "symbol": "DynamicsHttp."
+        }
+      ],
+      "native": [
+        {
+          "file": "Sources/PiliNative/Social/LiveReservation.swift",
+          "symbol": "\"/x/new-reserve/up/reserve/\""
+        },
+        {
+          "file": "Sources/PiliNative/Social/ComposePickers.swift",
+          "symbol": "struct"
+        }
+      ],
+      "review": "创作动态预约的创建/编辑根据已有 sid 分支，发送标题、时间及预约类型，跨账号不继续提交"
+    },
+    "updateVote": {
+      "host": "api.bilibili.com",
+      "path": "/x/vote/update",
+      "upstream_constant_line": 922,
+      "upstream_references": [
+        "lib/http/dynamics.dart:625"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/VoteEditor.swift"
+      ]
+    },
+    "uploadBfs": {
+      "host": "api.bilibili.com",
+      "path": "/x/dynamic/feed/draw/upload_bfs",
+      "upstream_constant_line": 707,
+      "upstream_references": [
+        "lib/http/msg.dart:182"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/Compose.swift"
+      ]
+    },
+    "uploadImage": {
+      "host": "api.bilibili.com",
+      "path": "/x/upload/web/image",
+      "upstream_constant_line": 709,
+      "upstream_references": [
+        "lib/http/msg.dart:160"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/FolderCover.swift"
+      ]
+    },
+    "upowerRank": {
+      "host": "api.bilibili.com",
+      "path": "/x/upower/up/member/rank/v2",
+      "upstream_constant_line": 871,
+      "upstream_references": [
+        "lib/http/member.dart:751"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/SupporterRanks.swift"
+      ]
+    },
+    "userFavFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/created/list",
+      "upstream_constant_line": 208,
+      "upstream_references": [
+        "lib/http/fav.dart:410",
+        "lib/pages/member_favorite/controller.dart:85"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/ProfileShelf.swift",
+        "Sources/PiliNative/Account/ProfileView.swift",
+        "Sources/PiliNative/Social/CreatorFavorites.swift"
+      ]
+    },
+    "userInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/nav",
+      "upstream_constant_line": 201,
+      "upstream_references": [
+        "lib/http/user.dart:39",
+        "lib/utils/wbi_sign.dart:78"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/WebsiteLogin.swift",
+        "Sources/PiliNative/Danmaku/BulletComposer.swift",
+        "Sources/PiliNative/Network/BiliAPI.swift"
+      ]
+    },
+    "userNoteList": {
+      "host": "api.bilibili.com",
+      "path": "/x/note/publish/list/user",
+      "upstream_constant_line": 729,
+      "upstream_references": [
+        "lib/http/fav.dart:322"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Library/SavedReadings.swift"
+      ]
+    },
+    "userRealName": {
+      "host": "api.bilibili.com",
+      "path": "/x/member/app/up/realname",
+      "upstream_constant_line": 963,
+      "upstream_references": [
+        "lib/http/user.dart:523"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/LinkedDiscussion.swift"
+      ]
+    },
+    "userStat": {
+      "host": "api.bilibili.com",
+      "path": "/x/relation/stat",
+      "upstream_constant_line": 193,
+      "upstream_references": [
+        "lib/http/member.dart:322"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/CreatorVideoPanel.swift"
+      ]
+    },
+    "userStatOwner": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/nav/stat",
+      "upstream_constant_line": 204,
+      "upstream_references": [
+        "lib/http/user.dart:50"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/ProfileOverview.swift"
+      ]
+    },
+    "userSubFolder": {
+      "host": "api.bilibili.com",
+      "path": "/x/v3/fav/folder/collected/list",
+      "upstream_constant_line": 667,
+      "upstream_references": [
+        "lib/http/user.dart:318",
+        "lib/pages/member_favorite/controller.dart:121"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/ProfileShelf.swift",
+        "Sources/PiliNative/Library/Subscriptions.swift",
+        "Sources/PiliNative/Social/CreatorFavorites.swift"
+      ]
+    },
+    "videoIntro": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/wbi/view",
+      "upstream_constant_line": 39,
+      "upstream_references": [
+        "lib/http/video.dart:355"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Network/BiliAPI.swift",
+        "Sources/PiliNative/Network/BiliAPI.swift",
+        "Sources/PiliNative/Offline/OfflineArchiveGrant.swift"
+      ]
+    },
+    "videoRelation": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/archive/relation",
+      "upstream_constant_line": 712,
+      "upstream_references": [
+        "lib/http/video.dart:369"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/ArchiveSeasonSubscriptionButton.swift",
+        "Sources/PiliNative/Playback/EngagementBar.swift"
+      ]
+    },
+    "videoTags": {
+      "host": "api.bilibili.com",
+      "path": "/x/web-interface/view/detail/tag",
+      "upstream_constant_line": 686,
+      "upstream_references": [
+        "lib/http/user.dart:338"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/SeasonCatalogView.swift",
+        "Sources/PiliNative/Playback/VideoExtras.swift"
+      ]
+    },
+    "videoshot": {
+      "host": "api.bilibili.com",
+      "path": "/x/player/videoshot",
+      "upstream_constant_line": 1003,
+      "upstream_references": [
+        "lib/http/video.dart:1121"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Playback/TimelineAssets.swift"
+      ]
+    },
+    "vipExpAdd": {
+      "host": "api.bilibili.com",
+      "path": "/x/vip/experience/add",
+      "upstream_constant_line": 885,
+      "upstream_references": [
+        "lib/http/user.dart:456"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Account/MemberExperience.swift"
+      ]
+    },
+    "voteInfo": {
+      "host": "api.bilibili.com",
+      "path": "/x/vote/vote_info",
+      "upstream_constant_line": 779,
+      "upstream_references": [
+        "lib/http/dynamics.dart:394"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Social/VoteEditor.swift",
+        "Sources/PiliNative/Social/Votes.swift"
+      ]
+    },
+    "wishUpdate": {
+      "host": "api.bilibili.com",
+      "path": "/x/copyright-music-publicity/bgm/wish/update",
+      "upstream_constant_line": 944,
+      "upstream_references": [
+        "lib/http/music.dart:31"
+      ],
+      "raw_review_state_at_audit": "native-path",
+      "verdict": "literal-index-only",
+      "native_index": [
+        "Sources/PiliNative/Discover/MusicPage.swift"
+      ]
+    }
+  }
+}

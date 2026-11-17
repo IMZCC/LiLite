@@ -1,0 +1,660 @@
+{
+  "baseline": "PiliPlus 2.2.0.2",
+  "proof": "Source wiring and executable local fixtures. Physical and authenticated end-to-end cases are documented separately.",
+  "rows": [
+    {
+      "id": "page:video",
+      "scope": "主体、播放会话、授权分离、标题及计数",
+      "sourceFiles": [
+        "lib/pages/video/ai_conclusion/view.dart",
+        "lib/pages/video/controller.dart",
+        "lib/pages/video/download_panel/view.dart",
+        "lib/pages/video/introduction/local/controller.dart",
+        "lib/pages/video/introduction/local/view.dart",
+        "lib/pages/video/introduction/pgc/controller.dart",
+        "lib/pages/video/introduction/pgc/view.dart",
+        "lib/pages/video/introduction/pgc/widgets/episode.dart",
+        "lib/pages/video/introduction/pgc/widgets/intro_detail.dart",
+        "lib/pages/video/introduction/pgc/widgets/season.dart",
+        "lib/pages/video/introduction/pgc/widgets/section.dart",
+        "lib/pages/video/introduction/ugc/controller.dart",
+        "lib/pages/video/introduction/ugc/view.dart",
+        "lib/pages/video/introduction/ugc/widgets/action_item.dart",
+        "lib/pages/video/introduction/ugc/widgets/menu_row.dart",
+        "lib/pages/video/introduction/ugc/widgets/page.dart",
+        "lib/pages/video/introduction/ugc/widgets/season.dart",
+        "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart",
+        "lib/pages/video/medialist/view.dart",
+        "lib/pages/video/member/controller.dart",
+        "lib/pages/video/member/view.dart",
+        "lib/pages/video/note/controller.dart",
+        "lib/pages/video/note/view.dart",
+        "lib/pages/video/pay_coins/view.dart",
+        "lib/pages/video/post_panel/popup_menu_text.dart",
+        "lib/pages/video/post_panel/view.dart",
+        "lib/pages/video/related/controller.dart",
+        "lib/pages/video/related/view.dart",
+        "lib/pages/video/reply/controller.dart",
+        "lib/pages/video/reply/view.dart",
+        "lib/pages/video/reply/widgets/reply_item_grpc.dart",
+        "lib/pages/video/reply/widgets/zan_grpc.dart",
+        "lib/pages/video/reply_new/view.dart",
+        "lib/pages/video/reply_reply/controller.dart",
+        "lib/pages/video/reply_reply/view.dart",
+        "lib/pages/video/reply_search_item/child/controller.dart",
+        "lib/pages/video/reply_search_item/child/view.dart",
+        "lib/pages/video/reply_search_item/child/widgets/item.dart",
+        "lib/pages/video/reply_search_item/controller.dart",
+        "lib/pages/video/reply_search_item/view.dart",
+        "lib/pages/video/send_danmaku/view.dart",
+        "lib/pages/video/view.dart",
+        "lib/pages/video/view_point/view.dart",
+        "lib/pages/video/widgets/header_control.dart",
+        "lib/pages/video/widgets/header_mixin.dart",
+        "lib/pages/video/widgets/intro_layout.dart",
+        "lib/pages/video/widgets/player_focus.dart"
+      ],
+      "origin": "lib/pages/video/view.dart#class VideoDetailPage",
+      "native": [
+        "Playback/DetailView.swift#PlaybackPanels",
+        "Playback/PlayerModel.swift#func load",
+        "Playback/ArchiveMetadata.swift#ArchiveMetadata"
+      ],
+      "evidence": [
+        "archive-display.md",
+        "video-transport.md"
+      ]
+    },
+    {
+      "id": "route:/videoV",
+      "scope": "BV/AV、CID、分 P 与精确起点",
+      "sourceFiles": [
+        "lib/router/app_pages.dart"
+      ],
+      "origin": "lib/router/app_pages.dart#/videoV",
+      "native": [
+        "Discover/LinkDestination.swift#DetailView",
+        "Playback/DetailView.swift#initialCID",
+        "Playback/ArchiveSharePoint.swift#archive"
+      ],
+      "evidence": [
+        "shared-media-playlist.md"
+      ]
+    },
+    {
+      "id": "route:/playSpeedSet",
+      "scope": "编辑、保护默认档、重置速度列表、临时长按倍速",
+      "sourceFiles": [
+        "lib/pages/setting/pages/play_speed_set.dart"
+      ],
+      "origin": "lib/pages/setting/pages/play_speed_set.dart#menuAction",
+      "native": [
+        "Settings/SpeedSettings.swift#重置列表",
+        "Playback/PlayerKeyboard.swift#SpeedPresets",
+        "Offline/DownloadViews.swift#regularSpeed"
+      ],
+      "evidence": [
+        "player-key-gestures.md"
+      ]
+    },
+    {
+      "id": "screen:video/ai_conclusion",
+      "scope": "真实摘要与可跳时间点，按 CID/读取角色取消旧请求",
+      "sourceFiles": [
+        "lib/pages/video/ai_conclusion/view.dart"
+      ],
+      "origin": "lib/pages/video/ai_conclusion/view.dart#partOutline",
+      "native": [
+        "Playback/VideoSummary.swift#part_outline",
+        "Playback/VideoExtras.swift#VideoSummaryView"
+      ],
+      "evidence": [
+        "archive-display.md"
+      ]
+    },
+    {
+      "id": "screen:video/download_panel",
+      "scope": "同源稿件/番剧/课程批量缓存与权限",
+      "sourceFiles": [
+        "lib/pages/video/download_panel/view.dart"
+      ],
+      "origin": "lib/pages/video/download_panel/view.dart#Download",
+      "native": [
+        "Offline/DownloadViews.swift#CacheSelection",
+        "Offline/SeasonBatchCache.swift#SeasonBatchCache"
+      ],
+      "evidence": [
+        "episode-offline.md",
+        "season-course-detail.md"
+      ]
+    },
+    {
+      "id": "screen:video/introduction/local",
+      "scope": "封面、选集、已保存且当前账号可读的列表、速度和离线播放",
+      "sourceFiles": [
+        "lib/pages/video/introduction/local/controller.dart",
+        "lib/pages/video/introduction/local/view.dart"
+      ],
+      "origin": "lib/pages/video/introduction/local/controller.dart#playIndex",
+      "native": [
+        "Offline/OfflinePlayingList.swift#OfflinePlayingList",
+        "Offline/OfflineGroupView.swift#OfflineQueuePlayer",
+        "Offline/DownloadViews.swift#sessionSpeed"
+      ],
+      "evidence": [
+        "offline-listening-final.md"
+      ]
+    },
+    {
+      "id": "screen:video/introduction/pgc",
+      "scope": "正片/特别篇/课程，收藏、播放列表与精确分享",
+      "sourceFiles": [
+        "lib/pages/video/introduction/pgc/controller.dart",
+        "lib/pages/video/introduction/pgc/view.dart",
+        "lib/pages/video/introduction/pgc/widgets/episode.dart",
+        "lib/pages/video/introduction/pgc/widgets/intro_detail.dart",
+        "lib/pages/video/introduction/pgc/widgets/season.dart",
+        "lib/pages/video/introduction/pgc/widgets/section.dart"
+      ],
+      "origin": "lib/pages/video/introduction/pgc/controller.dart#onFavPugv",
+      "native": [
+        "Discover/Seasons.swift#EpisodeListenButton",
+        "Discover/SeasonCatalogView.swift#SeasonCatalogView",
+        "Discover/Courses.swift#CourseDetail"
+      ],
+      "evidence": [
+        "season-course-detail.md"
+      ]
+    },
+    {
+      "id": "screen:video/introduction/ugc",
+      "scope": "稿件、充电/互动/空降标记、主账号互动、简介及多分 P 合集",
+      "sourceFiles": [
+        "lib/pages/video/introduction/ugc/controller.dart",
+        "lib/pages/video/introduction/ugc/view.dart",
+        "lib/pages/video/introduction/ugc/widgets/action_item.dart",
+        "lib/pages/video/introduction/ugc/widgets/menu_row.dart",
+        "lib/pages/video/introduction/ugc/widgets/page.dart",
+        "lib/pages/video/introduction/ugc/widgets/season.dart",
+        "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart"
+      ],
+      "origin": "lib/pages/video/introduction/ugc/controller.dart#actionDislikeVideo",
+      "native": [
+        "Playback/VideoExtras.swift#ArchiveCollectionPanel",
+        "Playback/ArchiveMetadata.swift#is_upower_exclusive",
+        "Playback/EngagementBar.swift#dislike",
+        "Playback/ArchiveDescription.swift#description"
+      ],
+      "evidence": [
+        "video-engagement.md",
+        "creator-archive-playlist.md"
+      ]
+    },
+    {
+      "id": "screen:video/medialist",
+      "scope": "以当前项为锚点、前后补页、切集、顺序及编辑权限",
+      "sourceFiles": [
+        "lib/pages/video/medialist/view.dart"
+      ],
+      "origin": "lib/pages/video/medialist/view.dart#loadPrevious",
+      "native": [
+        "Library/LibraryPlaylist.swift#LibraryPlaylist",
+        "Library/LibraryQueueState.swift#CloudPlaybackList",
+        "Library/SharedMediaPlaylist.swift#SharedMediaPlaylist"
+      ],
+      "evidence": [
+        "cloud-playlist.md",
+        "shared-media-playlist.md"
+      ]
+    },
+    {
+      "id": "screen:video/member",
+      "scope": "横屏作者侧栏、投稿前后页与空间导航",
+      "sourceFiles": [
+        "lib/pages/video/member/controller.dart",
+        "lib/pages/video/member/view.dart"
+      ],
+      "origin": "lib/pages/video/member/view.dart#HorizontalMemberPage",
+      "native": [
+        "Social/CreatorVideoPanel.swift#CreatorSpaceMetrics",
+        "Playback/DetailView.swift#creatorPanel"
+      ],
+      "evidence": [
+        "creator-playback-sidebar.md"
+      ]
+    },
+    {
+      "id": "screen:video/note",
+      "scope": "视频笔记、公私读取、草稿、时间点及编辑",
+      "sourceFiles": [
+        "lib/pages/video/note/controller.dart",
+        "lib/pages/video/note/view.dart"
+      ],
+      "origin": "lib/pages/video/note/view.dart#Note",
+      "native": [
+        "Library/SavedReadings.swift#ArchiveNotes",
+        "Playback/VideoExtras.swift#ArchiveNotes"
+      ],
+      "evidence": [
+        "article-notebook-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/pay_coins",
+      "scope": "余额、已有投币、版权上限、同时点赞及实际用户确认回执",
+      "sourceFiles": [
+        "lib/pages/video/pay_coins/view.dart"
+      ],
+      "origin": "lib/pages/video/pay_coins/view.dart#_canPay",
+      "native": [
+        "Playback/ArchiveCoinPicker.swift#available",
+        "Playback/EngagementBar.swift#private func coin",
+        "Playback/PlaybackSocialRequest.swift#func coin"
+      ],
+      "evidence": [
+        "video-engagement.md"
+      ]
+    },
+    {
+      "id": "screen:video/post_panel",
+      "scope": "空降草稿起止、类别、预览、确认提交",
+      "sourceFiles": [
+        "lib/pages/video/post_panel/popup_menu_text.dart",
+        "lib/pages/video/post_panel/view.dart"
+      ],
+      "origin": "lib/pages/video/post_panel/view.dart#PostPanel",
+      "native": [
+        "Playback/SponsorDraftEditor.swift#SponsorEditor",
+        "Playback/SponsorDraft.swift#SponsorDraft"
+      ],
+      "evidence": [
+        "sponsor-drafts.md"
+      ]
+    },
+    {
+      "id": "screen:video/related",
+      "scope": "相关稿件、过滤、原生卡片、单条移除与重载",
+      "sourceFiles": [
+        "lib/pages/video/related/controller.dart",
+        "lib/pages/video/related/view.dart"
+      ],
+      "origin": "lib/pages/video/related/controller.dart#relatedVideoList",
+      "native": [
+        "Playback/ArchiveIntro.swift#struct ArchiveRelatedList",
+        "Playback/ArchiveIntro.swift#discoveryCardRemoval",
+        "Library/RecommendationFilter.swift#related"
+      ],
+      "evidence": [
+        "public-playback-quality.md"
+      ]
+    },
+    {
+      "id": "screen:video/reply",
+      "scope": "评论分页、输入、楼中楼与稿件入口",
+      "sourceFiles": [
+        "lib/pages/video/reply/controller.dart",
+        "lib/pages/video/reply/view.dart",
+        "lib/pages/video/reply/widgets/reply_item_grpc.dart",
+        "lib/pages/video/reply/widgets/zan_grpc.dart"
+      ],
+      "origin": "lib/pages/video/reply/controller.dart#Reply",
+      "native": [
+        "Social/Discussion.swift#Discussion"
+      ],
+      "evidence": [
+        "reply-domain-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/reply_new",
+      "scope": "主评论流与原生排序",
+      "sourceFiles": [
+        "lib/pages/video/reply_new/view.dart"
+      ],
+      "origin": "lib/pages/video/reply_new/view.dart#Reply",
+      "native": [
+        "Social/Discussion.swift#Discussion"
+      ],
+      "evidence": [
+        "reply-domain-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/reply_reply",
+      "scope": "楼中楼、根回复与定位",
+      "sourceFiles": [
+        "lib/pages/video/reply_reply/controller.dart",
+        "lib/pages/video/reply_reply/view.dart"
+      ],
+      "origin": "lib/pages/video/reply_reply/controller.dart#Reply",
+      "native": [
+        "Social/Discussion.swift#Discussion"
+      ],
+      "evidence": [
+        "reply-domain-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/reply_search_item",
+      "scope": "评论内容搜索及分组结果",
+      "sourceFiles": [
+        "lib/pages/video/reply_search_item/child/controller.dart",
+        "lib/pages/video/reply_search_item/child/view.dart",
+        "lib/pages/video/reply_search_item/child/widgets/item.dart",
+        "lib/pages/video/reply_search_item/controller.dart",
+        "lib/pages/video/reply_search_item/view.dart"
+      ],
+      "origin": "lib/pages/video/reply_search_item/controller.dart#Search",
+      "native": [
+        "Social/Discussion.swift#Discussion"
+      ],
+      "evidence": [
+        "reply-domain-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/reply_search_item/child",
+      "scope": "搜索子分组与内容点击",
+      "sourceFiles": [
+        "lib/pages/video/reply_search_item/child/controller.dart",
+        "lib/pages/video/reply_search_item/child/view.dart",
+        "lib/pages/video/reply_search_item/child/widgets/item.dart"
+      ],
+      "origin": "lib/pages/video/reply_search_item/child/controller.dart#Search",
+      "native": [
+        "Social/Discussion.swift#Discussion"
+      ],
+      "evidence": [
+        "reply-domain-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/send_danmaku",
+      "scope": "真实 CID 与播放时间、样式和用户发送",
+      "sourceFiles": [
+        "lib/pages/video/send_danmaku/view.dart"
+      ],
+      "origin": "lib/pages/video/send_danmaku/view.dart#Danmaku",
+      "native": [
+        "Danmaku/BulletComposer.swift#BulletComposer",
+        "Playback/PlayerKeyboard.swift#composer"
+      ],
+      "evidence": [
+        "danmaku-subtitles-audit.md"
+      ]
+    },
+    {
+      "id": "screen:video/view_point",
+      "scope": "章节图、起止/命中、跳转及临时显示标记",
+      "sourceFiles": [
+        "lib/pages/video/view_point/view.dart"
+      ],
+      "origin": "lib/pages/video/view_point/view.dart#showVP",
+      "native": [
+        "Playback/ArchiveChapterPanel.swift#showChapterMarks",
+        "Playback/InteractiveStory.swift#var chapters",
+        "Playback/ViewportTimeline.swift#showChapterMarks"
+      ],
+      "evidence": [
+        "playback-timeline.md"
+      ]
+    },
+    {
+      "id": "subsystem:plugin/pl_player",
+      "scope": "固定引擎控制、轨道、控制面板、输入与画面、系统 PiP、离线及独立链接",
+      "sourceFiles": [
+        "lib/plugin/pl_player/controller.dart",
+        "lib/plugin/pl_player/models/audio_output_type.dart",
+        "lib/plugin/pl_player/models/bottom_control_type.dart",
+        "lib/plugin/pl_player/models/bottom_progress_behavior.dart",
+        "lib/plugin/pl_player/models/data_source.dart",
+        "lib/plugin/pl_player/models/data_status.dart",
+        "lib/plugin/pl_player/models/double_tap_type.dart",
+        "lib/plugin/pl_player/models/duration.dart",
+        "lib/plugin/pl_player/models/fullscreen_mode.dart",
+        "lib/plugin/pl_player/models/gesture_type.dart",
+        "lib/plugin/pl_player/models/heart_beat_type.dart",
+        "lib/plugin/pl_player/models/hwdec_type.dart",
+        "lib/plugin/pl_player/models/play_repeat.dart",
+        "lib/plugin/pl_player/models/play_speed.dart",
+        "lib/plugin/pl_player/models/play_status.dart",
+        "lib/plugin/pl_player/models/video_fit_type.dart",
+        "lib/plugin/pl_player/utils/danmaku_options.dart",
+        "lib/plugin/pl_player/utils/fullscreen.dart",
+        "lib/plugin/pl_player/view/view.dart",
+        "lib/plugin/pl_player/view/widgets.dart",
+        "lib/plugin/pl_player/widgets/app_bar_ani.dart",
+        "lib/plugin/pl_player/widgets/backward_seek.dart",
+        "lib/plugin/pl_player/widgets/bottom_control.dart",
+        "lib/plugin/pl_player/widgets/common_btn.dart",
+        "lib/plugin/pl_player/widgets/forward_seek.dart",
+        "lib/plugin/pl_player/widgets/mpv_convert_webp.dart",
+        "lib/plugin/pl_player/widgets/play_pause_btn.dart"
+      ],
+      "origin": "lib/plugin/pl_player/controller.dart#setDataSource",
+      "native": [
+        "Playback/PlayerModel.swift#func observe",
+        "Playback/ArchiveProgramInfo.swift#ArchiveProgramInfo",
+        "Playback/ArchiveSourceEditor.swift#IndependentMovie",
+        "Playback/ArchiveAddressGrant.swift#enum Choice",
+        "Decoder/ProgressiveDecoderBridge.swift#independent"
+      ],
+      "evidence": [
+        "native-decode.md",
+        "video-sync-modes.md",
+        "media-byte-buffer.md",
+        "dlna-cast.md",
+        "player-key-gestures.md",
+        "danmaku-subtitles-audit.md"
+      ]
+    }
+  ],
+  "sourceSHA256": {
+    "lib/pages/setting/pages/play_speed_set.dart": "aee4916b427904d8a798de58383556321bb3c11f2dda5e2b7201e745946ed155",
+    "lib/pages/video/ai_conclusion/view.dart": "a703c307f7f3b0db7a85d72ded8a99521964b50b8f04cc3bffacde7f0b24ae43",
+    "lib/pages/video/controller.dart": "023ec67873916be5af431c2ecc35bc181b8b49ee79672bf0074a072f59ee94a6",
+    "lib/pages/video/download_panel/view.dart": "080852befd6dce466c84a21844cb5a4dd17dabb3c3095476f549604a60ca64b6",
+    "lib/pages/video/introduction/local/controller.dart": "eae7e0691cb66278c633b6954ffa56ccbc525a2e235f4ce0dd3c18d8d7283554",
+    "lib/pages/video/introduction/local/view.dart": "7fbb8ab5ac2316d6f5bdee1aef63e8273bc3ba7605fd62316ed857d5e703090a",
+    "lib/pages/video/introduction/pgc/controller.dart": "ef5898c33abdc382982f3ddf2e863281d0ce833490bdbcdd9acc4fc0500f1ead",
+    "lib/pages/video/introduction/pgc/view.dart": "52af2ce9afa9fb50ec9d45fc36601c7ac6311f81c50173c9dbd7e08a830ca3eb",
+    "lib/pages/video/introduction/pgc/widgets/episode.dart": "6e378ca6ee5d3865dee9f776347857e94c60c0f2e399f6d21a155c29f317b64c",
+    "lib/pages/video/introduction/pgc/widgets/intro_detail.dart": "f73ec6f7fbbce45415d614ebf681a8cd02edd7e33116de4264b6d665bf84937f",
+    "lib/pages/video/introduction/pgc/widgets/season.dart": "21c982bd3827b7abaa423c159ec607bb06b6f6edd32508afb489452fa4c1a925",
+    "lib/pages/video/introduction/pgc/widgets/section.dart": "19eba65368e0ab3db54c6c808d89a60042e0b1de9f976e54ced21125961be31c",
+    "lib/pages/video/introduction/ugc/controller.dart": "5222a888a4563e8f20ecf78897998aba23e4507c4cd343f6d948faf9335b9f0b",
+    "lib/pages/video/introduction/ugc/view.dart": "5fc582e0922e41d922183e60b06b5719747bb92efb6b528d903f9a004cfdf95e",
+    "lib/pages/video/introduction/ugc/widgets/action_item.dart": "c550941140cd9378baf816fe97c51d35e69da05a0846cc65aabfbc5bfb162c8b",
+    "lib/pages/video/introduction/ugc/widgets/menu_row.dart": "b73d65c10d9ac8c2e63142fd8171e2fef40fce580c1510dbd6cb4bf2e6b424ae",
+    "lib/pages/video/introduction/ugc/widgets/page.dart": "29f4b5156c82776e66d144dd3ca17624348c3cd2b6a437964a14ff73ec65a149",
+    "lib/pages/video/introduction/ugc/widgets/season.dart": "cdeb58334f81d3a08b40860b468c3d5967349258fbb0f9f75b35484e76953bde",
+    "lib/pages/video/introduction/ugc/widgets/triple_mixin.dart": "27d40710e73f54ddeb7b73774a04b3d6338fc96aa9f1af173c7cdee974ae56c5",
+    "lib/pages/video/medialist/view.dart": "d02dd92f4b269b928a7a3982499fdbf50c6cbff4efb7023c6679dd843012b3ee",
+    "lib/pages/video/member/controller.dart": "37f45ee01f2e53285e478dc069b8a08dcf20d2f0dfc16d22d593bfaeeefdd67e",
+    "lib/pages/video/member/view.dart": "edfdf4d883f1f11bc86a9f669de3e630e223dcfedab7942c9e5af8860077d9a6",
+    "lib/pages/video/note/controller.dart": "b291deadcd7cc11fd076a140b3d0ce0a0c3854a5dc15af890b9c55e080d84fb8",
+    "lib/pages/video/note/view.dart": "e91c38a00e258ebc2d3fedd242d75a4c5e853d277c3211a1a45e3185acebdd65",
+    "lib/pages/video/pay_coins/view.dart": "73f658639d7d45a732de1d30a35c8aacffd95c6cdff2984e65d3486c8e50c6e2",
+    "lib/pages/video/post_panel/popup_menu_text.dart": "ac2869d6c773def76ccd693805cc4c9c3bded907d2d9023a1d8c6b3bbfce34fa",
+    "lib/pages/video/post_panel/view.dart": "6a0c143cdb93b035b9e2d94635b73f49fd5985181d55ee66a898acfa3f3d1b45",
+    "lib/pages/video/related/controller.dart": "79eb859b94fd8fa12f8eb9f4fa945e9d4d1d44f17676257ada20724973159397",
+    "lib/pages/video/related/view.dart": "5ca2e5f9b9606cda7123979bca3832df34e3e1523b0d5d0a9311d9ac008acf5f",
+    "lib/pages/video/reply/controller.dart": "f17b670b88db8361bc32c59919086a2695a4e8372aae8b613265c1e62a227fd3",
+    "lib/pages/video/reply/view.dart": "a0f249aec12a762055b022abda11c805797f07f9c2e6e376cd3101b94e5ac84a",
+    "lib/pages/video/reply/widgets/reply_item_grpc.dart": "244c24606b015e957eec35faaf451c20e3bab9f83e25c66dfe6a66d3147bd0b8",
+    "lib/pages/video/reply/widgets/zan_grpc.dart": "469104be9b395a1f800a013c7ecb310e938e2df0610d3dbad8135aa49b2ac8ca",
+    "lib/pages/video/reply_new/view.dart": "304db2ec1e683a1db2c1e387d1b257ede26dd39d1b9ede5ee017e4ceb11772ee",
+    "lib/pages/video/reply_reply/controller.dart": "d9ec3b20ccd287c85dff154c564c9b7ef36b39fcd4ded989ef7d7d59a0bc8412",
+    "lib/pages/video/reply_reply/view.dart": "ccfcedf1494713790d16e085369b9bdf14f0838a8c6e57c0c156cc5f26c57219",
+    "lib/pages/video/reply_search_item/child/controller.dart": "d739a5b68a2a5edcd8755404c593699e45f2050d677e4c654fd54418e6259817",
+    "lib/pages/video/reply_search_item/child/view.dart": "5bf1cccb6c297d6e6a06a13ccd7f01199e2d580e9a090587ddd20a6ffb8d0bf8",
+    "lib/pages/video/reply_search_item/child/widgets/item.dart": "2fbef0fa48ba7422c0fd15ae034a41f7e5d1cab43a7a521bb6bfc2559c736abb",
+    "lib/pages/video/reply_search_item/controller.dart": "ee57cd7fe7f1d1ce7a53d4cb5dd523df38cf19aacb6436bb2049466d0832cd6b",
+    "lib/pages/video/reply_search_item/view.dart": "e7d41097a900cd6fda3d783304f83490c8bcfafe791dbd42a92fbe9b3b6d5b19",
+    "lib/pages/video/send_danmaku/view.dart": "fc4a470e0e95659b7e874b312631f519f83c488810dc5f414c2ee5856c0288e7",
+    "lib/pages/video/view.dart": "5d1b3869299f56e54a025689833e24ac1bdd499ea84faf4ce7982f771d9ef6e8",
+    "lib/pages/video/view_point/view.dart": "41931a15d5c09c890a11c38de23f3c13193c4e5b360ffded65eeb87a16e9170a",
+    "lib/pages/video/widgets/header_control.dart": "60e1e72920eabd7581b6f3b1327ee2891554014f364ea7c34216976e785dec60",
+    "lib/pages/video/widgets/header_mixin.dart": "3b46b5cd925388b675e7fa552c356910e827b889bd709d4bd906a7d0c2599cc9",
+    "lib/pages/video/widgets/intro_layout.dart": "80458d1b317aa2d31f8855cdbe3e026cfbaf1cfd94e36dbc5d5196e05e6add60",
+    "lib/pages/video/widgets/player_focus.dart": "e3837264b71bba318392e1ce552272c3d7e2e5757dee2bcce52c2a2dbc31e894",
+    "lib/plugin/pl_player/controller.dart": "1aee45a312b01b15f89d3bac22cb78dc8c2be4c6bf147a79a577d8eb0c82ea14",
+    "lib/plugin/pl_player/models/audio_output_type.dart": "cde0de5ae6b7493a786c8ced182087ceebd2740efa02d425953d935829849961",
+    "lib/plugin/pl_player/models/bottom_control_type.dart": "1e21ffd626c30f761e0fa5cfde21111d7f27964b9aacef2381f5cadcf28fee79",
+    "lib/plugin/pl_player/models/bottom_progress_behavior.dart": "8ba36ed6088a4f22bd28ef7ec801373b9f91f560c2867d3e0b85c3815f70a760",
+    "lib/plugin/pl_player/models/data_source.dart": "946b4597721ddc7a7a8206e88307dcc83617e8aa2f02e773e1ab81b681ea0cbb",
+    "lib/plugin/pl_player/models/data_status.dart": "a70c32dd7c843e0c9fce0dd14ce1c806338788caa0b1af48c865b9f65052bc59",
+    "lib/plugin/pl_player/models/double_tap_type.dart": "92393e15e20d106c69e1a1066dbd87dcfe2787240d432f239e8623d1a9b48a80",
+    "lib/plugin/pl_player/models/duration.dart": "03bc5df8535dc2514e9c3fba2b16c4aaf2900066deb323fb7691c2f56d3842a5",
+    "lib/plugin/pl_player/models/fullscreen_mode.dart": "20e05f678864ea40e9d0af7e867204fac512e12a29c23c73ee4cc7ac36df6867",
+    "lib/plugin/pl_player/models/gesture_type.dart": "1ba708676bf973281d7cf21b0482217c1b243dd6261c50e2a5eb07ba2bf89343",
+    "lib/plugin/pl_player/models/heart_beat_type.dart": "9202e45106e5a7a22bbeb0b0829aa0ee3c470a6a98f65bfbed366e6592918ddd",
+    "lib/plugin/pl_player/models/hwdec_type.dart": "2d31221b5e455a2b841fb067bb192ea8f3fd6087835e943715e4b314ba907549",
+    "lib/plugin/pl_player/models/play_repeat.dart": "a43433509939a9b6b89b4e0befdbf2319f6ef65b86012bfa04eb0583efc2d06e",
+    "lib/plugin/pl_player/models/play_speed.dart": "1529bb1c67fee6722b9fd12ec5977d128fde54ed0bb4004b3b8eaff5a643c166",
+    "lib/plugin/pl_player/models/play_status.dart": "acfd936662fe1dc17efae01a5fadcd16286199a222b9f606b412ba1945486dba",
+    "lib/plugin/pl_player/models/video_fit_type.dart": "5a236282b6c850dddbabba5d7b14a1ddd68c409f075f80c5275176e415dac8b3",
+    "lib/plugin/pl_player/utils/danmaku_options.dart": "0200ad93891ae6b1bc846f6f57ee9ee189dd5cf8d15b8543e2ff44feed52aeb8",
+    "lib/plugin/pl_player/utils/fullscreen.dart": "00de75d69dd5796a3bdddf702811d15174de4c59b7a3508ebb9b622fcdfb3111",
+    "lib/plugin/pl_player/view/view.dart": "fb250938f190e69250e204ff10640bee8fd53e41b153f6a1afb1e07a3f848131",
+    "lib/plugin/pl_player/view/widgets.dart": "e05d4fd2f33a4dfaae8fd9965ad96789aaf75bb87983369ccb5bf70c7f6953ca",
+    "lib/plugin/pl_player/widgets/app_bar_ani.dart": "bbf2e5918256a0c270c736147dff35d045940a13a9660fbc7502a62eb9c33371",
+    "lib/plugin/pl_player/widgets/backward_seek.dart": "a1231aba7d79edb659d812949bdb49888ac1147b3bec015d6a9964124fdf8db2",
+    "lib/plugin/pl_player/widgets/bottom_control.dart": "061c91098f383aedc1be7c4971dbc929ad6f9652f2447b6f4641a94576f819d9",
+    "lib/plugin/pl_player/widgets/common_btn.dart": "7f81643c92af7dbcfcf2d31b4b9f1c413aca25cd3c5eb89aa60e72a888a8f316",
+    "lib/plugin/pl_player/widgets/forward_seek.dart": "414ba79a4693d6bb3e77b26ad801a11903686beb7785180a99e5a56be27a3b7d",
+    "lib/plugin/pl_player/widgets/mpv_convert_webp.dart": "daff35ab5a42df37b584d83c9cde5a88ad7144b57d5eca08f8be5f36f4eb95e8",
+    "lib/plugin/pl_player/widgets/play_pause_btn.dart": "fee2c13a5a2170b2a7303d335c65184f11e55c4099c651bc9023ebafb708bade",
+    "lib/router/app_pages.dart": "08ad8df0268c7e55e29e3548247f041ce02f4910bb2cae40e7e60cfc8765bc5d"
+  },
+  "preferences": [
+    {
+      "id": "preference:SettingBoxKey/alwaysExpandIntroPanel",
+      "native": "Playback/ArchiveDescription.swift#detail.expandIntro"
+    },
+    {
+      "id": "preference:SettingBoxKey/expandIntroPanelH",
+      "native": "Playback/ArchiveDescription.swift#detail.expandWide"
+    },
+    {
+      "id": "preference:SettingBoxKey/showArgueMsg",
+      "native": "Playback/DetailView.swift#detail.argue"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAi",
+      "native": "Playback/VideoExtras.swift#detail.summary"
+    },
+    {
+      "id": "preference:SettingBoxKey/showViewPoints",
+      "native": "Playback/VideoExtras.swift#detail.chapters"
+    },
+    {
+      "id": "preference:SettingBoxKey/showRelatedVideo",
+      "native": "Playback/VideoActions.swift#detail.related"
+    },
+    {
+      "id": "preference:SettingBoxKey/showVideoReply",
+      "native": "Playback/VideoActions.swift#detail.replies"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableQuickFav",
+      "native": "Playback/EngagementBar.swift#detail.quickFav"
+    },
+    {
+      "id": "preference:SettingBoxKey/quickFavId",
+      "native": "Playback/EngagementBar.swift#detail.quickFolder"
+    },
+    {
+      "id": "preference:SettingBoxKey/coinWithLike",
+      "native": "Playback/ArchiveCoinPicker.swift#detail.coinLike"
+    },
+    {
+      "id": "preference:SettingBoxKey/continuePlayingPart",
+      "native": "Playback/DetailView.swift#continueBadge"
+    },
+    {
+      "id": "preference:SettingBoxKey/reverseFromFirst",
+      "native": "Playback/ArchiveCollectionPanel.swift#play.reverseFirst"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableOnlineTotal",
+      "native": "Discover/DiscoveryExtras.swift#onlineCount"
+    },
+    {
+      "id": "preference:SettingBoxKey/tempPlayerConf",
+      "native": "Playback/PlayerSessionPreferences.swift#play.temporaryPreferences"
+    },
+    {
+      "id": "preference:SettingBoxKey/applyFilterToRelatedVideos",
+      "native": "Library/RecommendationFilter.swift#related"
+    },
+    {
+      "id": "preference:SettingBoxKey/horizontalMemberPage",
+      "native": "Playback/DetailView.swift#layout.member"
+    },
+    {
+      "id": "preference:SettingBoxKey/horizontalSeasonPanel",
+      "native": "Playback/PlaybackPanels.swift#layout.playlist"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableVerticalExpand",
+      "native": "Playback/PlaybackPanels.swift#layout.verticalMedia"
+    },
+    {
+      "id": "preference:SettingBoxKey/showSeekPreview",
+      "native": "Playback/PlayerGestures.swift#player.seekPreview"
+    },
+    {
+      "id": "preference:SettingBoxKey/showDmChart",
+      "native": "Playback/TimelineAssets.swift#player.trend"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAutoEnter",
+      "native": "Playback/FullscreenPresentation.swift#theater.autoEnter"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAutoExit",
+      "native": "Playback/FullscreenPresentation.swift#theater.autoExit"
+    },
+    {
+      "id": "preference:SettingBoxKey/keyboardControl",
+      "native": "Playback/PlayerKeyboard.swift#player.keyboard"
+    },
+    {
+      "id": "preference:SettingBoxKey/enableAutoLongPressSpeed",
+      "native": "Settings/SpeedSettings.swift#player.doubleSpeed"
+    },
+    {
+      "id": "preference:SettingBoxKey/preInitPlayer",
+      "native": "Playback/DetailView.swift#preinitialize"
+    },
+    {
+      "id": "preference:SettingBoxKey/btmProgressBehavior",
+      "native": "Playback/PlayerViewport.swift#player.bottomProgress"
+    },
+    {
+      "id": "preference:SettingBoxKey/fullScreenMode",
+      "native": "Playback/Theater.swift#theater.orientation"
+    },
+    {
+      "id": "preference:VideoBoxKey/cacheVideoFit",
+      "native": "Playback/PictureSession.swift#play.gravity"
+    },
+    {
+      "id": "preference:VideoBoxKey/speedsList",
+      "native": "Settings/SpeedSettings.swift#SpeedPresets"
+    },
+    {
+      "id": "preference:VideoBoxKey/playSpeedDefault",
+      "native": "Settings/SpeedSettings.swift#play.rate"
+    },
+    {
+      "id": "preference:VideoBoxKey/longPressSpeedDefault",
+      "native": "Settings/SpeedSettings.swift#player.holdSpeed"
+    },
+    {
+      "id": "preference:VideoBoxKey/playRepeat",
+      "native": "Playback/VideoRepeat.swift#play.repeat"
+    }
+  ]
+}

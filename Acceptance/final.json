@@ -1,0 +1,164 @@
+{
+  "status": "pending",
+  "scope": "all-feasible-ios",
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "sourceRevision": "b7e128c121c1b18fd72c4ae7261e8e34333f1b87",
+  "fingerprint": "e4d70322d4ba24519c8ced5dcd74d50f0c46b6179b11ceb03617956ec99c5a60",
+  "issuerDependent": [],
+  "sourceNotes": [
+    "upstream:feat/其他",
+    "upstream:fix/bugs",
+    "upstream:opt/其他"
+  ],
+  "receipts": {
+    "host": "afca1aea39dc85f7cf80889e06900f6a2b252ac78eef5ce412ee15dd238a5dc3",
+    "media": "62c15289f9071e3114416f86967ee7dbde9753b310306e8edce1640e643e8d59",
+    "unsigned": "e3ff67c9db5c91f913bace62f2bd7e2ca754bedf5ae45e3369264f493ccaa3c9"
+  },
+  "domains": {
+    "discovery": {
+      "result": "pending",
+      "evidence": [
+        "Acceptance/evidence/discovery-search-audit.md",
+        "Acceptance/evidence/retained-discovery.md",
+        "Acceptance/evidence/reaudit-2026-11-13-surface.md",
+        "Acceptance/evidence/public-readback-final.md"
+      ]
+    },
+    "playback": {
+      "result": "pending",
+      "evidence": [
+        "Acceptance/evidence/archive-detail-signoff.json",
+        "Acceptance/evidence/player-key-gestures.json",
+        "Acceptance/evidence/reaudit-2026-11-13-media.md",
+        "Acceptance/evidence/archive-detail-audit.md",
+        "Acceptance/evidence/readme-video-audit.md",
+        "Acceptance/evidence/player-key-gestures.md"
+      ]
+    },
+    "series-courses": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/season-catalog-audit.md",
+        "Acceptance/evidence/season-course-detail.md"
+      ]
+    },
+    "audio": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/listener-audio-audit.md",
+        "Acceptance/evidence/offline-listening-signoff.json",
+        "Acceptance/evidence/offline-listening-final.md"
+      ]
+    },
+    "danmaku-subtitles": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/danmaku-subtitles.json",
+        "Acceptance/evidence/danmaku-subtitles-audit.md"
+      ]
+    },
+    "accounts": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/account-messages-signoff.json",
+        "Acceptance/evidence/account-grant-scope.json",
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/reaudit-2026-11-13-session.md",
+        "Acceptance/evidence/reaudit-2026-11-13-cookies.md",
+        "Acceptance/evidence/data-integrity-final.md"
+      ]
+    },
+    "library": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/personal-library-signoff.json"
+      ]
+    },
+    "social-messages": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/social-reading-signoff.json",
+        "Acceptance/evidence/account-messages-signoff.json",
+        "Acceptance/evidence/common-page-actions.md",
+        "Acceptance/evidence/reply-domain-audit.md"
+      ]
+    },
+    "creator": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/creator-sections.md",
+        "Acceptance/evidence/personal-library-signoff.json"
+      ]
+    },
+    "live": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/live-room-controls.md",
+        "Acceptance/evidence/live-room-header.md",
+        "Acceptance/evidence/community-and-live-emotes.md",
+        "Acceptance/evidence/live-interaction.md"
+      ]
+    },
+    "offline": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/offline-listening-signoff.json",
+        "Acceptance/evidence/offline-files-audit.md",
+        "Acceptance/evidence/data-integrity-final.md",
+        "Acceptance/evidence/offline-listening-final.md"
+      ]
+    },
+    "settings-backup": {
+      "result": "pending",
+      "evidence": [
+        "Acceptance/evidence/backup-restore-audit.md",
+        "Acceptance/evidence/interface-signoff.json",
+        "Acceptance/evidence/reaudit-custom-services.md",
+        "Acceptance/evidence/data-integrity-final.md"
+      ]
+    },
+    "ios-integration": {
+      "result": "pending",
+      "evidence": [
+        "Acceptance/evidence/media-system-signoff.json",
+        "Acceptance/evidence/interface-signoff.json",
+        "Acceptance/evidence/reaudit-2026-11-13-interface.md",
+        "Acceptance/evidence/offline-listening-final.md"
+      ]
+    },
+    "package": {
+      "result": "passed",
+      "evidence": [
+        "Acceptance/evidence/personal-device-signing.md",
+        "Acceptance/evidence/reaudit-2026-11-13-overview.md",
+        "Acceptance/evidence/release-review-gate.md"
+      ]
+    }
+  },
+  "reviewedOn": "2026-11-13",
+  "reviewScope": "Pinned upstream executable behavior, native UI and call paths, frozen host/media regressions and actual arm64 device package",
+  "deviceTesting": {
+    "status": "issues-found",
+    "checklist": "Acceptance/device-checklist.md",
+    "reportedIssues": [
+      "Severe app-wide UI and scrolling hitches during video playback",
+      "Layout issues across pages"
+    ],
+    "reportedOn": "2026-11-13"
+  },
+  "delivery": {
+    "status": "verified",
+    "artifact": "dist/Delivery/2026-11-13-reaudit/PiliPlus-native-signed.ipa",
+    "sha256": "f217f86c021c751aff38e62fb3ca58d87346472491fa8967205c63d2db6a4abb",
+    "sizeBytes": 86749507,
+    "sourceRevision": "b7e128c121c1b18fd72c4ae7261e8e34333f1b87",
+    "bundleIdentifier": "XTL-<TEAM>.com.liuliuya.PiliNative",
+    "displayName": "PiliPlus",
+    "minimumOS": "17.0",
+    "profileExpiresUTC": "2026-11-20T04:33:10Z",
+    "originalTargetDeviceVerified": true,
+    "discovery": "personal",
+    "verification": "Checks/parity.py --verify-delivery"
+  }
+}

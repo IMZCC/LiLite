@@ -1,0 +1,91 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "disposition": "implemented-public-upstream-protocol",
+  "previousAssessmentWithdrawn": "The upstream AppSign algorithm and client parameters are public source code, not a privileged issuer identity. Login, device-list and TV playback signing are ordinary client implementation work",
+  "records": {
+    "page:login": {
+      "state": "implemented",
+      "original": [
+        "lib/http/login.dart|static Future codePoll(String authCode)",
+        "lib/http/login.dart|Api.loginByPwdApi",
+        "lib/pages/login/controller.dart|tokenInfo['access_token']",
+        "lib/pages/login/controller.dart|tokenInfo['refresh_token']",
+        "lib/utils/app_sign.dart|static void appSign("
+      ],
+      "clients": [
+        "Account/QRLogin.swift|struct QRLoginView",
+        "Account/CookieLogin.swift|struct CookieLogin",
+        "Account/WebsiteLogin.swift|WebLoginIdentity.verify",
+        "Account/MobileAuthorization.swift|func mobileIdentity",
+        "Account/QRLogin.swift|找回密码",
+        "Account/MobileClientSigning.swift|enum MobileClientSigning",
+        "Account/NativeLoginForm.swift|struct NativeLoginForm",
+        "Account/NativeLoginFlow.swift|final class NativeLoginFlow",
+        "Account/MobilePassport.swift|func password(",
+        "Account/MobilePassport.swift|func sendSMS(",
+        "Account/MobilePassport.swift|func verifyRisk(",
+        "Account/GeetestView.swift|struct GeetestView",
+        "Account/Accounts.swift|func addSession("
+      ],
+      "available": "原生移动二维码、密码 RSA、国际区号短信、人工验证与风险短信、OAuth 换令牌、Cookie/网页登录替代入口、找回密码、同 UID 双凭据校验、原子保存和取消隔离",
+      "evidence": [
+        "Checks/mobile_passport.py",
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/account-final-scope.md"
+      ]
+    },
+    "route:/loginPage": {
+      "state": "implemented",
+      "original": [
+        "lib/http/login.dart|static Future codePoll(String authCode)",
+        "lib/http/login.dart|Api.loginByPwdApi",
+        "lib/pages/login/controller.dart|tokenInfo['access_token']",
+        "lib/pages/login/controller.dart|tokenInfo['refresh_token']",
+        "lib/utils/app_sign.dart|static void appSign("
+      ],
+      "clients": [
+        "Account/QRLogin.swift|struct QRLoginView",
+        "Account/CookieLogin.swift|struct CookieLogin",
+        "Account/WebsiteLogin.swift|WebLoginIdentity.verify",
+        "Account/MobileAuthorization.swift|func mobileIdentity",
+        "Account/QRLogin.swift|找回密码",
+        "Account/MobileClientSigning.swift|enum MobileClientSigning",
+        "Account/NativeLoginForm.swift|struct NativeLoginForm",
+        "Account/NativeLoginFlow.swift|final class NativeLoginFlow",
+        "Account/MobilePassport.swift|func password(",
+        "Account/MobilePassport.swift|func sendSMS(",
+        "Account/MobilePassport.swift|func verifyRisk(",
+        "Account/GeetestView.swift|struct GeetestView",
+        "Account/Accounts.swift|func addSession("
+      ],
+      "available": "原生移动二维码、密码 RSA、国际区号短信、人工验证与风险短信、OAuth 换令牌、Cookie/网页登录替代入口、找回密码、同 UID 双凭据校验、原子保存和取消隔离",
+      "evidence": [
+        "Checks/mobile_passport.py",
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/account-final-scope.md"
+      ]
+    },
+    "page:login_devices": {
+      "state": "implemented",
+      "original": [
+        "lib/http/login.dart|Future<LoadingState<LoginDevicesData>> loginDevices()",
+        "lib/http/login.dart|AppSign.appSign(params)",
+        "lib/http/login.dart|Api.loginDevices"
+      ],
+      "clients": [
+        "Account/MobilePassport.swift|/x/safecenter/user_login_devices",
+        "Account/LoginDevices.swift|is_current_device",
+        "Account/LoginDevices.swift|h5/account-h5/device",
+        "Account/MobileAuthorization.swift|func mobileIdentity",
+        "Account/MobileClientSigning.swift|enum MobileClientSigning",
+        "Account/LoginDevices.swift|MobilePassport.deviceListRequest"
+      ],
+      "available": "同一公开客户端签名请求真实设备列表，按原字段显示和刷新，绑定账号与会话，保留官方设备管理入口",
+      "evidence": [
+        "Checks/mobile_passport.py",
+        "Acceptance/evidence/reaudit-2026-11-13-data.md",
+        "Acceptance/evidence/account-final-scope.md"
+      ]
+    }
+  }
+}

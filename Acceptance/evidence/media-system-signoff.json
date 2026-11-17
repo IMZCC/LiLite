@@ -1,0 +1,1757 @@
+{
+  "baseline": "d9e9626f1a3f89cd9ca85e18f61aaba02634e12a",
+  "domain": "native-media-network-system",
+  "records": {
+    "platform:ios/Runner/PipPlugin.swift": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "ios/Runner/PipPlugin.swift",
+        "symbol": "restoreUserInterfaceForPictureInPictureStopWithCompletionHandler"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "restoreUserInterfaceForPictureInPictureStopWithCompletionHandler"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "failedToStartPictureInPictureWithError"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemPiPLifecycle.swift",
+          "symbol": "func end"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerViewport.swift",
+          "symbol": "supportsSystemVideo"
+        }
+      ],
+      "behavior": "AVPlayer 内核利用持有相同 AVPlayer 的 AVPlayerViewController：用户进入、自动入窗、恢复、失败及手动关闭分开处理；播放/暂停和可用跳转交由同一系统播放器。mpv 内核通过 supportsSystemVideo 禁用系统视频控件与画中画入口",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/media-system-final.md",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "PiP 窗口、系统接收器或中断按钮的实际触控在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/CDNService": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/video_utils.dart",
+        "symbol": "getCdnUrl"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VODLine.swift",
+          "symbol": "func candidate"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VODLine.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/VODLineSettings.swift",
+          "symbol": "struct VODLineSettings"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "func reloadLine"
+        }
+      ],
+      "behavior": "21 个原版枚举。主/备与普通 UPOS 选线，区分已有地址、可替换的授权普通镜像与不可移植的服务专属参数；测速选最快或手选后沿用当前进度换线，不给新账号复用旧视频地址",
+      "evidence": [
+        "Checks/vod_probe.py",
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/vod-lines.md"
+      ],
+      "device_or_remaining": "特定地域或运营商线路是否工作由源站和网络决定"
+    },
+    "preference:SettingBoxKey/audioNormalization": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "audioNormalization"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/AudioLevelSettings.swift",
+          "symbol": "struct SoundPreset"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/AudioFilterChoice.swift",
+          "symbol": "enum AudioFilterChoice"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DashBridge.swift",
+          "symbol": "AudioSegment.convert"
+        }
+      ],
+      "behavior": "按设置关闭、动态均衡或 loudnorm；有服务响度值使用该值，没有时使用用户选的备用处理。实际分段在原时基输出、保留声道，不能无损保留对象音频时不假称已处理",
+      "evidence": [
+        "Checks/audio_segments.py",
+        "Checks/audio_gain.py"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/audioOutput": {
+      "verdict": "not-ios",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "audioOutput"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "AVRoutePickerView"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/Cast.swift",
+          "symbol": "struct CastSystemRoute"
+        }
+      ],
+      "behavior": "上游仅 Android 将 mpv audio-output 驱动列表写入 ao；iOS 无这些硬件驱动可选。这里提供系统路由选择，区分 AirPlay 视频和音频，不冒充相同驱动",
+      "evidence": [
+        "Checks/cast_receiver.py",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "实际可见输出设备由系统提供"
+    },
+    "preference:SettingBoxKey/autoPiP": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/play_settings.dart",
+        "symbol": "SettingBoxKey.autoPiP"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "canStartPictureInPictureAutomaticallyFromInline"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemPiPLifecycle.swift",
+          "symbol": "mutating func end"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "func continuesInBackground"
+        }
+      ],
+      "behavior": "手动入口显示系统播放控件；可单独启用自动进入。恢复、启动失败、换源与后台关闭区分：仅仍为对应 AVPlayer 且不允许后台继续时主动暂停。原生系统接管播放/暂停和支持的跳转",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/player-layout-and-system-controls.md",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "PiP 窗口、系统接收器或中断按钮的实际触控在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/autosync": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.autosync"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Timing/PresentationClock.swift",
+          "symbol": "struct PresentationClock"
+        },
+        {
+          "file": "Sources/PiliNative/Timing/PresentationSession.swift",
+          "symbol": "class PresentationSession"
+        },
+        {
+          "file": "Sources/PiliNative/Timing/ClockSound.swift",
+          "symbol": "class"
+        }
+      ],
+      "behavior": "同步模式与平滑校正写入实际时间控制器，根据音频/显示时钟选择、速率调整或丢/重复声画数据，避免在外部/受限输出上重复控制；音画偏移、滚动直播与倍速在合成流上核验",
+      "evidence": [
+        "Checks/presentation_timing.py",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "显示刷新率、硬件路径和接收器延时在设备测量"
+    },
+    "preference:SettingBoxKey/badCertificateCallback": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/http/init.dart",
+        "symbol": "badCertificateCallback"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Network/ServerCertificatePolicy.swift",
+          "symbol": "enum ServerCertificatePolicy"
+        },
+        {
+          "file": "Sources/PiliNative/Network/MediaCertificatePolicy.swift",
+          "symbol": "final class MediaCertificatePolicy"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ConnectionSettings.swift",
+          "symbol": "允许无效证书"
+        },
+        {
+          "file": "Sources/PiliNative/Network/PrivateServerTrust.swift",
+          "symbol": "func validate"
+        },
+        {
+          "file": "Sources/PiliNative/Network/ServerCertificate.swift",
+          "symbol": "struct PrivateCertificate"
+        },
+        {
+          "file": "Sources/PiliNative/Network/PrivateServerTrust.swift",
+          "symbol": "struct PrivateTrustPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Connection.swift",
+          "symbol": "struct BiliServiceSession"
+        }
+      ],
+      "behavior": "默认验证证书；网络连接中的允许无效证书开关显式启用时，URLSession、Network.framework HTTP/1.1、WKWebView 和 AVFoundation 原生加载器接受服务端证书挑战，其他认证继续默认处理。原版 badCertificateCallback 与原生布尔偏好双向备份。关闭全局开关时保留单源 WebDAV/SponsorBlock 自定义证书链验证",
+      "evidence": [
+        "Checks/secure_network_loopback.py",
+        "Acceptance/evidence/http-transport-trust.md"
+      ],
+      "device_or_remaining": "主机检查覆盖默认关闭、显式开启、非服务端认证拒绝、重试挑战拒绝、关闭恢复及备份往返；iPhone 系统 TLS/网页/媒体加载器的实际证书挑战保留真机联调"
+    },
+    "preference:SettingBoxKey/bufferSec": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.bufferSec"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "preferredForwardBufferDuration"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaBufferPolicy.swift",
+          "symbol": "func horizon"
+        }
+      ],
+      "behavior": "点播时间目标跟随倍速，DASH 预读同时受范围/码率/时长/字节预算限制",
+      "evidence": [
+        "Checks/MediaBufferCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "系统私有的 AVFoundation 缓冲无法精确以应用内字节数限制"
+    },
+    "preference:SettingBoxKey/bufferSize": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.bufferSize"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaBufferPolicy.swift",
+          "symbol": "func capacity"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaBufferWindow.swift",
+          "symbol": "actor MediaBufferWindow"
+        }
+      ],
+      "behavior": "点播按字节限制已读与预读窗口、按内存收缩及释放",
+      "evidence": [
+        "Checks/MediaBufferCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "系统私有的 AVFoundation 缓冲无法精确以应用内字节数限制"
+    },
+    "preference:SettingBoxKey/cdnSpeedTest": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "SettingBoxKey.cdnSpeedTest"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/VODLineSettings.swift",
+          "symbol": "func measure"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VODSpeedProbe.swift",
+          "symbol": "func sample"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "lineSampleOwner"
+        }
+      ],
+      "behavior": "进入时按设置读取同一个真实样片各线路的首个至多 256 KiB，区分不可用/拒绝/速度，没有用其他线路速度冒充结果。可以停止、重新测速、手动选或采用最快；切换视频角色使旧测速作废",
+      "evidence": [
+        "Checks/vod_probe.py",
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/vod-lines.md"
+      ],
+      "device_or_remaining": "无法从当前服务授权生成的专属线路不测速，正式公网耗流量由用户开启"
+    },
+    "preference:SettingBoxKey/continuePlayInBackground": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "continuePlayInBackground"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "func continuesInBackground"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "VideoTransport.background(player)"
+        }
+      ],
+      "behavior": "点播、直播和听视频的会话遵守背景权限；PiP 期间保持播放，关闭窗口还原本次覆盖或全局设置，后台禁播且关闭窗口主动停当前播放器",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/player-layout-and-system-controls.md",
+        "Acceptance/evidence/listener-audio-audit.md"
+      ],
+      "device_or_remaining": "PiP 窗口、系统接收器或中断按钮的实际触控在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/defaultAudioQa": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "defaultAudioQa"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "默认音频设置独立保存，取流时使用当前网络。精确音轨优先；不足时按 Hi-Res、两种 Dolby 同等级、192K/132K/64K 的语义而非数字 ID 匹配，保留系统支持检查。",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/defaultAudioQaCellular": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "defaultAudioQaCellular"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "cellAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "蜂窝音频设置独立保存，取流时使用当前网络。精确音轨优先；不足时按 Hi-Res、两种 Dolby 同等级、192K/132K/64K 的语义而非数字 ID 匹配，保留系统支持检查。",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/defaultPicQa": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/image_utils.dart",
+        "symbol": "thumbnailUrl"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/SiteThumbnail.swift",
+          "symbol": "display(quality: quality)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "func display"
+        }
+      ],
+      "behavior": "列表及网格质量范围 1–100；只重写已知公开图片 CDN 的尺寸/质量路径，不修改带签名查询或站外图",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/media-gallery.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/defaultVideoQa": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "defaultVideoQa"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiVideo"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "preferredQuality"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "默认视频设置独立保存，取流时使用当前网络。目标匹配当前服务实际提供且设备可解码的档位；手动选择优先，不用支持列表的广告信息解锁收费档，无法满足时落到实际可播档。",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/defaultVideoQaCellular": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "defaultVideoQaCellular"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "cellVideo"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "preferredQuality"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "蜂窝视频设置独立保存，取流时使用当前网络。目标匹配当前服务实际提供且设备可解码的档位；手动选择优先，不用支持列表的广告信息解锁收费档，无法满足时落到实际可播档。",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/disableAudioCDN": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/video_utils.dart",
+        "symbol": "isAudio"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VODLine.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/VODLineSettings.swift",
+          "symbol": "VODLine.audioKey"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DashModels.swift",
+          "symbol": "VODLine.current"
+        }
+      ],
+      "behavior": "开启后仅音频优先使用其自身服务备选，主线路直通例外按原版保留，视频仍走已选线路",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/vod_probe.py",
+        "Acceptance/evidence/vod-lines.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/enableHA": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "SettingBoxKey.enableHA"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderPreference.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderOptions.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Live/NativeLivePlayback.swift",
+          "symbol": "LiveDecoderSelection"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "requiresIndex"
+        }
+      ],
+      "behavior": "允许直接使用 AVFoundation/VideoToolbox，关闭时支持的文件和直播用原生软件解码；若媒体没有获准的软解路径则停止，不暗中改回系统硬解",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/native_decode.py",
+        "Checks/live_decode.py",
+        "Acceptance/evidence/progressive-native-decode.md"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/enableHttp2": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/http/init.dart",
+        "symbol": "Pref.enableHttp2"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/ConnectionSettings.swift",
+          "symbol": "HTTP/1.1"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Connection.swift",
+          "symbol": "struct BiliServiceSession"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Message.swift",
+          "symbol": "allowsRedirect"
+        }
+      ],
+      "behavior": "选择明确 HTTP/1.1 时以 Network.framework 设置 ALPN、分块和重定向约束；自动协商交给系统 TLS，依服务器选 h2/h1。gRPC 自有协议需求不受 HTTP/1.1 开关破坏",
+      "evidence": [
+        "Checks/secure_network_loopback.py",
+        "Acceptance/evidence/http-transport-trust.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/enableImgMenu": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/common/widgets/image_grid/image_grid_view.dart",
+        "symbol": "void _showMenu"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "content.contextMenu"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "struct GalleryActions"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func savePictures"
+        }
+      ],
+      "behavior": "缩略图长按可直接分享原图文件、保存当前原图/整组、多图或实况依内容决定；系统上下文菜单负责触感，关闭不显示菜单",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Acceptance/evidence/media-system-final.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/enableLivePhoto": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/common/widgets/image_grid/image_grid_view.dart",
+        "symbol": "get isLivePhoto"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "live_url"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "if allowMotion, photo.motion"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func saveLive"
+        },
+        {
+          "file": "Sources/PiliNative/Library/LivePhotoPair.swift",
+          "symbol": "func prepare"
+        }
+      ],
+      "behavior": "只有开关开启且媒体包含 live_url 时播放和保存实况，关闭保留普通封面；图库有静态/实况切换，保存 JPEG/MOV 共用 identifier 与定时封面标记",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Acceptance/evidence/media-gallery.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/enableSystemProxy": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/http/init.dart",
+        "symbol": "if (Pref.enableSystemProxy)"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Network/APIProxy.swift",
+          "symbol": "func validated"
+        },
+        {
+          "file": "Sources/PiliNative/Network/APIProxy.swift",
+          "symbol": "ProxyConfiguration(httpCONNECTProxy:"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Connection.swift",
+          "symbol": "struct BiliServiceSession"
+        },
+        {
+          "file": "Sources/PiliNative/Library/RemoteArtwork.swift",
+          "symbol": "APIProxy.current()"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "proxy.apply(to: c)"
+        }
+      ],
+      "behavior": "可设置合法域名/IP/IPv6 与 1…65535 端口，启用后绑定新 B 站接口及缩略图/图库/实况下载会话；关闭继承系统网络设置。CONNECT 隧道仍验证目标主机证书。不会改变全设备代理",
+      "evidence": [
+        "Checks/secure_network_loopback.py",
+        "Acceptance/evidence/media-system-final.md",
+        "Acceptance/evidence/http-transport-trust.md"
+      ],
+      "device_or_remaining": "真实系统代理、运营商网络和可达性取决于用户设置"
+    },
+    "preference:SettingBoxKey/fallbackNormalization": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "fallbackNormalization"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/AudioLevelSettings.swift",
+          "symbol": "struct SoundPreset"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/AudioFilterChoice.swift",
+          "symbol": "enum AudioFilterChoice"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DashBridge.swift",
+          "symbol": "AudioSegment.convert"
+        }
+      ],
+      "behavior": "按设置关闭、动态均衡或 loudnorm；有服务响度值使用该值，没有时使用用户选的备用处理。实际分段在原时基输出、保留声道，不能无损保留对象音频时不假称已处理",
+      "evidence": [
+        "Checks/audio_segments.py",
+        "Checks/audio_gain.py"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/hardwareDecoding": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.hardwareDecoding"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderPreference.swift",
+          "symbol": "static let local"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderOptions.swift",
+          "symbol": "struct DecoderSettings"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/ProgressiveDecoderBridge.swift",
+          "symbol": "enum ProgressiveDecoderBridge"
+        },
+        {
+          "file": "Sources/PiliNative/Live/NativeLivePlayback.swift",
+          "symbol": "LiveDecoderSelection"
+        }
+      ],
+      "behavior": "按 iOS 可用的 auto/auto-safe/auto-copy/videotoolbox/videotoolbox-copy/no 顺序选路径；直通、系统拷贝、FFmpeg/dav1d 软解都有实际消费者，不把 Android/桌面驱动当成本机可选硬件",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/native_decode.py",
+        "Checks/live_decode.py",
+        "Acceptance/evidence/progressive-native-decode.md"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/horizontalPreview": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/common/widgets/image_grid/image_grid_view.dart",
+        "symbol": "if (horizontalPreview"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "presentGalleryRail"
+        },
+        {
+          "file": "Sources/PiliNative/Social/ReadingSplit.swift",
+          "symbol": "GalleryRailPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackPanels.swift",
+          "symbol": "GalleryRailPanel"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryRail.swift",
+          "symbol": "struct GalleryRailPanel"
+        }
+      ],
+      "behavior": "启用且当前视频/动态详情/文章窗口为横屏时在原生内容面板显示图片；视频或正文留在原位置。其他页面与竖屏仍正常导航，横竖按当前窗口而非设备型号判断",
+      "evidence": [
+        "Acceptance/evidence/media-system-final.md",
+        "Acceptance/evidence/media-gallery.md"
+      ],
+      "device_or_remaining": "iPad 实际分屏尺寸和旋转留待系统测试"
+    },
+    "preference:SettingBoxKey/imageSavePath": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "get imageSavePath"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Offline/OfflineLocationPanel.swift",
+          "symbol": "struct PictureLocationSettings"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderGrants.swift",
+          "symbol": "func withFolder"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func savePictures"
+        },
+        {
+          "file": "Sources/PiliNative/Library/FolderExport.swift",
+          "symbol": "func write"
+        }
+      ],
+      "behavior": "系统 Files 选定的目录由安全范围书签保持，拒绝或失效需重新选择。原图和实况配对可写入文件，重名不覆盖；系统照片目标只申请添加权限",
+      "evidence": [
+        "Checks/StorageLocationsCheck.swift",
+        "Acceptance/evidence/media-gallery.md"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/liveBufferSec": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.liveBufferSec"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "preferredForwardBufferDuration"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaBufferPolicy.swift",
+          "symbol": "func liveSeconds"
+        }
+      ],
+      "behavior": "直播与点播独立，0 交给播放器，正数作为目标并与窗口的字节上限共同约束",
+      "evidence": [
+        "Checks/MediaBufferCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "系统私有的 AVFoundation 缓冲无法精确以应用内字节数限制"
+    },
+    "preference:SettingBoxKey/liveBufferSize": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.liveBufferSize"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaBufferPolicy.swift",
+          "symbol": "func capacity"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaBufferHLS.swift",
+          "symbol": "class MediaBufferHLS"
+        }
+      ],
+      "behavior": "直播自定义或跟随点播的两倍，循环段/缓存受字节上限约束",
+      "evidence": [
+        "Checks/MediaBufferCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "系统私有的 AVFoundation 缓冲无法精确以应用内字节数限制"
+    },
+    "preference:SettingBoxKey/liveCdnUrl": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/video_utils.dart",
+        "symbol": "getLiveCdnUrl"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/LiveCDNSettings.swift",
+          "symbol": "struct LiveCDNSettings"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveCDNOrigin.swift",
+          "symbol": "struct LiveCDNOrigin"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveViews.swift",
+          "symbol": "rules.cellLive"
+        }
+      ],
+      "behavior": "直播 CDN 可指定 HTTPS 主机、端口与前缀；界面明示官方临时参数会发给该主机，失败回到官方可用线路，不给媒体附账号 Cookie",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/live-cdn.md",
+        "Checks/live_decode.py"
+      ],
+      "device_or_remaining": "自定义 CDN 和真实房间速度由用户自己的网络决定"
+    },
+    "preference:SettingBoxKey/liveQuality": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "liveQuality"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiLive"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveViews.swift",
+          "symbol": "rules.cellLive"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        }
+      ],
+      "behavior": "直播开房时优先使用本次手动 qn，然后按当前网络送对应质量值；原版默认 Wi-Fi 原画/蜂窝超清，菜单显示服务实际返回的线路、画质和格式",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Checks/live_decode.py",
+        "Acceptance/evidence/live-cdn.md"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/liveQualityCellular": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "liveQualityCellular"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "cellLive"
+        },
+        {
+          "file": "Sources/PiliNative/Live/LiveViews.swift",
+          "symbol": "rules.cellLive"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        }
+      ],
+      "behavior": "直播开房时优先使用本次手动 qn，然后按当前网络送对应质量值；原版默认 Wi-Fi 原画/蜂窝超清，菜单显示服务实际返回的线路、画质和格式",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Checks/live_decode.py",
+        "Acceptance/evidence/live-cdn.md"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/maxCacheSize": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/cache_manager.dart",
+        "symbol": "CacheManager"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/RemoteArtwork.swift",
+          "symbol": "func syncLimit"
+        },
+        {
+          "file": "Sources/PiliNative/Library/ArtworkCacheRules.swift",
+          "symbol": "func admits"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ArtworkCacheSettings.swift",
+          "symbol": "func refresh"
+        }
+      ],
+      "behavior": "缓存大小可改、设零与清空，公开无签名图片使用独立缓存；URL、cookies、private/no-store 与内容类型不满足时不写共享缓存。清图片缓存不删除用户文件或离线包",
+      "evidence": [
+        "Acceptance/evidence/artwork-cache.md",
+        "Checks/MediaSystemCheck.swift"
+      ],
+      "device_or_remaining": "iOS 何时回收磁盘空间由系统决定"
+    },
+    "preference:SettingBoxKey/openInBrowser": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/page_utils.dart",
+        "symbol": "if (!inApp && Pref.openInBrowser)"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Discover/SitePage.swift",
+          "symbol": "private func launch"
+        },
+        {
+          "file": "Sources/PiliNative/Discover/SitePage.swift",
+          "symbol": "EmbeddedSitePage"
+        }
+      ],
+      "behavior": "普通网页按偏好使用内置 WebKit 或系统浏览器；强制应用内的笔记编辑/授权任务留在本地会话。系统打开失败可重试或返回内置；内置菜单也提供复制、分享、返回和刷新",
+      "evidence": [
+        "Acceptance/evidence/media-system-final.md",
+        "Checks/MediaSystemCheck.swift"
+      ],
+      "device_or_remaining": "外部默认浏览器取决于 iOS 的配置"
+    },
+    "preference:SettingBoxKey/p1080": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "SettingBoxKey.p1080"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveStreamGrant.swift",
+          "symbol": "func automaticHD"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "ArchiveStreamGrant.automaticHD"
+        }
+      ],
+      "behavior": "游客只在服务实际返回且该视频角色具备的轨道中偏好 1080p；已选当前网络画质优先，试播不能缓存，不提供绕过登录或会员的手段",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md"
+      ],
+      "device_or_remaining": "未向游客返回 1080p 的视频沿用可播档位"
+    },
+    "preference:SettingBoxKey/pauseOnMinimize": {
+      "verdict": "platform-equivalent",
+      "upstream": {
+        "file": "lib/pages/setting/models/play_settings.dart",
+        "symbol": "SettingBoxKey.pauseOnMinimize"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/VideoScenePause.swift",
+          "symbol": "func snapshot"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoScenePause.swift",
+          "symbol": "func active"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemPiPLifecycle.swift",
+          "symbol": "func end"
+        }
+      ],
+      "behavior": "桌面窗口最小化/还原在 iOS 等效为所在 scene 进入后台/激活。只对原本在播的同一条记录恢复速率，中断、手动暂停、PiP 及允许后台继续时排除",
+      "evidence": [
+        "Checks/InteractionPolicyCheck.swift",
+        "Checks/MediaSystemCheck.swift"
+      ],
+      "device_or_remaining": "PiP 窗口、系统接收器或中断按钮的实际触控在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/preferCodecs": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "preferCodecs"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiCodecs"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "codecOrder"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "默认编码设置独立保存，取流时使用当前网络。服务可用并可解码的编码按偏好列表匹配；编码没有返回时使用同画质的受支持轨道，蜂窝未单独配置继承默认顺序。",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/preferCodecsCellular": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "preferCodecsCellular"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "cellCodecs"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "codecOrder"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "蜂窝编码设置独立保存，取流时使用当前网络。服务可用并可解码的编码按偏好列表匹配；编码没有返回时使用同画质的受支持轨道，蜂窝未单独配置继承默认顺序。",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "preference:SettingBoxKey/previewQuality": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/image_utils.dart",
+        "symbol": "thumbnailUrl"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "display(quality: quality, minimum: minimum)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "func display"
+        }
+      ],
+      "behavior": "图库独立预览质量、已有尺寸后缀与缩略质量下限；100 或下载/分享原图时保留原始 URL，低质量预览失败时回到原图",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/media-gallery.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/retryCount": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "retryCount"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Network/ConnectionRetry.swift",
+          "symbol": "func perform"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ConnectionSettings.swift",
+          "symbol": "重试间隔"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "fetch("
+        }
+      ],
+      "behavior": "界面存储次数 0–8、起始间隔 0–1000ms；只对可重放的只读连接错误重试，依次增加间隔，拒绝、取消、非幂等的表单不重试",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/connection-retry.md",
+        "Checks/secure_network_loopback.py"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/retryDelay": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "retryDelay"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Network/ConnectionRetry.swift",
+          "symbol": "func perform"
+        },
+        {
+          "file": "Sources/PiliNative/Settings/ConnectionSettings.swift",
+          "symbol": "重试间隔"
+        },
+        {
+          "file": "Sources/PiliNative/Network/BiliAPI.swift",
+          "symbol": "fetch("
+        }
+      ],
+      "behavior": "界面存储次数 0–8、起始间隔 0–1000ms；只对可重放的只读连接错误重试，依次增加间隔，拒绝、取消、非幂等的表单不重试",
+      "evidence": [
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/connection-retry.md",
+        "Checks/secure_network_loopback.py"
+      ],
+      "device_or_remaining": ""
+    },
+    "preference:SettingBoxKey/silentDownImg": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/image_utils.dart",
+        "symbol": "if (!silentDownImg)"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "owner.downloading"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "struct GalleryFeedback"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func savePictures"
+        }
+      ],
+      "behavior": "只在保存单张/整组/实况时隐藏下载进度，完成与失败仍可见；原文件分享继续显示进度，拒绝照片写入权限可由用户主动打开系统设置",
+      "evidence": [
+        "Acceptance/evidence/media-gallery.md",
+        "Checks/StorageLocationsCheck.swift",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "preference:SettingBoxKey/superResolutionType": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/utils/storage_pref.dart",
+        "symbol": "superResolutionType"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/UpscaleGraph.swift",
+          "symbol": "func plan"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/UpscaleSurface.swift",
+          "symbol": "func frame"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/UpscaleSession.swift",
+          "symbol": "class UpscaleSession"
+        }
+      ],
+      "behavior": "效率/画质两套 Anime4K 管线按窗口和缩放选择阶段，Metal 纹理池按预算运行。外接输出、受保护或不允许的格式不强行叠加",
+      "evidence": [
+        "Checks/anime4k.py",
+        "Acceptance/evidence/native-upscale.md"
+      ],
+      "device_or_remaining": "真机 Metal 性能、耗电、外接屏色彩待验"
+    },
+    "preference:SettingBoxKey/systemProxyHost": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/http/init.dart",
+        "symbol": "Pref.systemProxyHost"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Network/APIProxy.swift",
+          "symbol": "func validated"
+        },
+        {
+          "file": "Sources/PiliNative/Network/APIProxy.swift",
+          "symbol": "ProxyConfiguration(httpCONNECTProxy:"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Connection.swift",
+          "symbol": "struct BiliServiceSession"
+        },
+        {
+          "file": "Sources/PiliNative/Library/RemoteArtwork.swift",
+          "symbol": "APIProxy.current()"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "proxy.apply(to: c)"
+        }
+      ],
+      "behavior": "可设置合法域名/IP/IPv6 与 1…65535 端口，启用后绑定新 B 站接口及缩略图/图库/实况下载会话；关闭继承系统网络设置。CONNECT 隧道仍验证目标主机证书。不会改变全设备代理",
+      "evidence": [
+        "Checks/secure_network_loopback.py",
+        "Acceptance/evidence/media-system-final.md",
+        "Acceptance/evidence/http-transport-trust.md"
+      ],
+      "device_or_remaining": "真实系统代理、运营商网络和可达性取决于用户设置"
+    },
+    "preference:SettingBoxKey/systemProxyPort": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "lib/http/init.dart",
+        "symbol": "Pref.systemProxyPort"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Network/APIProxy.swift",
+          "symbol": "func validated"
+        },
+        {
+          "file": "Sources/PiliNative/Network/APIProxy.swift",
+          "symbol": "ProxyConfiguration(httpCONNECTProxy:"
+        },
+        {
+          "file": "Sources/PiliNative/Network/HTTP11Connection.swift",
+          "symbol": "struct BiliServiceSession"
+        },
+        {
+          "file": "Sources/PiliNative/Library/RemoteArtwork.swift",
+          "symbol": "APIProxy.current()"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "proxy.apply(to: c)"
+        }
+      ],
+      "behavior": "可设置合法域名/IP/IPv6 与 1…65535 端口，启用后绑定新 B 站接口及缩略图/图库/实况下载会话；关闭继承系统网络设置。CONNECT 隧道仍验证目标主机证书。不会改变全设备代理",
+      "evidence": [
+        "Checks/secure_network_loopback.py",
+        "Acceptance/evidence/media-system-final.md",
+        "Acceptance/evidence/http-transport-trust.md"
+      ],
+      "device_or_remaining": "真实系统代理、运营商网络和可达性取决于用户设置"
+    },
+    "preference:SettingBoxKey/videoSync": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "lib/pages/setting/models/video_settings.dart",
+        "symbol": "Pref.videoSync"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Timing/PresentationClock.swift",
+          "symbol": "struct PresentationClock"
+        },
+        {
+          "file": "Sources/PiliNative/Timing/PresentationSession.swift",
+          "symbol": "class PresentationSession"
+        },
+        {
+          "file": "Sources/PiliNative/Timing/ClockSound.swift",
+          "symbol": "class"
+        }
+      ],
+      "behavior": "同步模式与平滑校正写入实际时间控制器，根据音频/显示时钟选择、速率调整或丢/重复声画数据，避免在外部/受限输出上重复控制；音画偏移、滚动直播与倍速在合成流上核验",
+      "evidence": [
+        "Checks/presentation_timing.py",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "显示刷新率、硬件路径和接收器延时在设备测量"
+    },
+    "upstream:feat/DLNA 投屏": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "DLNA 投屏"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/CastDiscovery.swift",
+          "symbol": "enum CastSSDP"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/CastSession.swift",
+          "symbol": "class CastState"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/CastRelayHTTP.swift",
+          "symbol": "struct"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemMediaControls.swift",
+          "symbol": "AVRoutePickerView"
+        }
+      ],
+      "behavior": "DLNA 的实际发现、媒体授权、位置、选择设备、音量以及回到本机与 AVKit 的 AirPlay 设备选择分别实现，DLNA 回环发送真实 SOAP 验证和有界 Range 的本地媒体转发",
+      "evidence": [
+        "Checks/cast_receiver.py",
+        "Acceptance/evidence/player-layout-and-system-controls.md"
+      ],
+      "device_or_remaining": "AirPlay 功能单独使用系统路线；兼容设备上的画面、音轨和延时需要对应接收器"
+    },
+    "upstream:feat/Live Photo": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "Live Photo"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "live_url"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "if allowMotion, photo.motion"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func saveLive"
+        },
+        {
+          "file": "Sources/PiliNative/Library/LivePhotoPair.swift",
+          "symbol": "func prepare"
+        }
+      ],
+      "behavior": "只有开关开启且媒体包含 live_url 时播放和保存实况，关闭保留普通封面；图库有静态/实况切换，保存 JPEG/MOV 共用 identifier 与定时封面标记",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Acceptance/evidence/media-gallery.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "upstream:feat/合集图片": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "合集图片"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveCollectionPanel.swift",
+          "symbol": "GalleryLink(photos, index: 0)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "struct NativeGallery"
+        },
+        {
+          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "symbol": "GalleryLink"
+        }
+      ],
+      "behavior": "合集可查看封面和实际分集封面；动态等多图合集在同一图库顺序浏览，保留初始索引，点选分享/保存单图或全部",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Acceptance/evidence/media-gallery.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "upstream:feat/安卓端 `loudnorm` 适配 by [@My-Responsitories](https://github.com/My-Responsitories)": {
+      "verdict": "not-ios",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "安卓端 `loudnorm` 适配 by [@My-Responsitories](https://github.com/My-Responsitories)"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Settings/AudioLevelSettings.swift",
+          "symbol": "struct SoundPreset"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/AudioFilterChoice.swift",
+          "symbol": "enum AudioFilterChoice"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/DashBridge.swift",
+          "symbol": "AudioSegment.convert"
+        }
+      ],
+      "behavior": "原 README 这一行只声明 Android 平台适配；iOS 对合格音轨的原生 loudnorm 另由音频均衡记录验证",
+      "evidence": [
+        "Checks/audio_segments.py",
+        "Checks/audio_gain.py"
+      ],
+      "device_or_remaining": "没有 Android 设备驱动或 mpv 插件"
+    },
+    "upstream:feat/视频截取动图 by [@My-Responsitories](https://github.com/My-Responsitories)": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "视频截取动图 by [@My-Responsitories](https://github.com/My-Responsitories)"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/FrameCapture.swift",
+          "symbol": "func record"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/FrameCapture.swift",
+          "symbol": "hasProtectedContent"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/FrameCapture.swift",
+          "symbol": "func gif"
+        }
+      ],
+      "behavior": "捕获真实 AVPlayerItem 媒体时刻帧合成 GIF，支持 1–10s、FPS、停止预览、分享和相册/文件夹；暂停/跳转/受保护资源不伪造帧",
+      "evidence": [
+        "Acceptance/evidence/frame-capture.md",
+        "Checks/PortBehaviorCheck.swift",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "upstream:feat/超分辨率": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "超分辨率"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/UpscaleGraph.swift",
+          "symbol": "func plan"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/UpscaleSurface.swift",
+          "symbol": "func frame"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/UpscaleSession.swift",
+          "symbol": "class UpscaleSession"
+        }
+      ],
+      "behavior": "效率/画质两套 Anime4K 管线按窗口和缩放选择阶段，Metal 纹理池按预算运行。外接输出、受保护或不允许的格式不强行叠加",
+      "evidence": [
+        "Checks/anime4k.py",
+        "Acceptance/evidence/native-upscale.md"
+      ],
+      "device_or_remaining": "真机 Metal 性能、耗电、外接屏色彩待验"
+    },
+    "upstream:opt/PIP": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "PIP"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/Theater.swift",
+          "symbol": "canStartPictureInPictureAutomaticallyFromInline"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/SystemPiPLifecycle.swift",
+          "symbol": "mutating func end"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/VideoTransport.swift",
+          "symbol": "func continuesInBackground"
+        }
+      ],
+      "behavior": "手动入口显示系统播放控件；可单独启用自动进入。恢复、启动失败、换源与后台关闭区分：仅仍为对应 AVPlayer 且不允许后台继续时主动暂停。原生系统接管播放/暂停和支持的跳转",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/player-layout-and-system-controls.md",
+        "Acceptance/evidence/media-system-final.md"
+      ],
+      "device_or_remaining": "PiP 窗口、系统接收器或中断按钮的实际触控在 iPhone 验收"
+    },
+    "upstream:opt/视频封面": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "视频封面"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/ArchiveCovers.swift",
+          "symbol": "func archiveCover"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/ArchiveCollectionPanel.swift",
+          "symbol": "GalleryLink(photos, index: 0)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func savePictures"
+        }
+      ],
+      "behavior": "视频卡和详情提供原封面查看、保存与分享；合集从当前服务真实视频封面去重得到一组图片",
+      "evidence": [
+        "Acceptance/evidence/media-gallery.md",
+        "Acceptance/evidence/frame-capture.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "upstream:功能/图片质量设定": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "图片质量设定"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "display(quality: quality, minimum: minimum)"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryPicture.swift",
+          "symbol": "func display"
+        }
+      ],
+      "behavior": "站内公开缩略图与大图预览分设 1–100，尊重原取图尺寸，分享和保存使用原图；签名及站外图片不改写参数",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Checks/MediaSystemCheck.swift",
+        "Acceptance/evidence/media-gallery.md"
+      ],
+      "device_or_remaining": ""
+    },
+    "upstream:功能/画质、音质、解码方式预设": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "画质、音质、解码方式预设"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "struct NetworkMediaRules"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderPreference.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "preferredQuality"
+        }
+      ],
+      "behavior": "默认与蜂窝画质/音质/编码顺序独立，账号只能用已授权的受支持轨，设置改变会进入实际选轨和解码分支",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "upstream:功能/画质选择（高清画质未解锁）": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "画质选择（高清画质未解锁）"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiVideo"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "preferredQuality"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "播放器可手选源站返回且本设备可解码的档位；普通服务与缓存均校验身份和权益，不凭登录/VIP广告字段创建播放源",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "upstream:功能/硬件加速（视机型而定）": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "硬件加速（视机型而定）"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderPreference.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Decoder/DecoderOptions.swift",
+          "symbol": "func routes"
+        },
+        {
+          "file": "Sources/PiliNative/Live/NativeLivePlayback.swift",
+          "symbol": "LiveDecoderSelection"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerModel.swift",
+          "symbol": "requiresIndex"
+        }
+      ],
+      "behavior": "允许直接使用 AVFoundation/VideoToolbox，关闭时支持的文件和直播用原生软件解码；若媒体没有获准的软解路径则停止，不暗中改回系统硬解",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/native_decode.py",
+        "Checks/live_decode.py",
+        "Acceptance/evidence/progressive-native-decode.md"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "upstream:功能/解码格式选择（视视频而定）": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "解码格式选择（视视频而定）"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiCodecs"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "codecOrder"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "存储默认或蜂窝下按顺序的 AVC、HEVC、AV1、DVH1 偏好；逐清晰度匹配当前可解码轨道，回退只用同一视频真实可播项",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    },
+    "upstream:功能/评论笔记图片查看、保存": {
+      "verdict": "implemented",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "评论笔记图片查看、保存"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Social/ReplyPictures.swift",
+          "symbol": "struct ReplyPictures"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryView.swift",
+          "symbol": "struct GalleryActions"
+        },
+        {
+          "file": "Sources/PiliNative/Library/GalleryFiles.swift",
+          "symbol": "func savePictures"
+        }
+      ],
+      "behavior": "评论和笔记预览的数据传入原生图库，单图/整组、分享文件、原图和实况选择都复用当前来源；支持相册与用户选的目录",
+      "evidence": [
+        "Checks/ArticleBodyCheck.swift",
+        "Acceptance/evidence/media-gallery.md",
+        "Checks/StorageLocationsCheck.swift"
+      ],
+      "device_or_remaining": "照片库配对、相册授权、分享目标和 Files 提供方在 iPhone 验收"
+    },
+    "upstream:功能/音质选择（视视频而定）": {
+      "verdict": "verified",
+      "upstream": {
+        "file": "README.md",
+        "symbol": "音质选择（视视频而定）"
+      },
+      "consumers": [
+        {
+          "file": "Sources/PiliNative/Playback/MediaPreferences.swift",
+          "symbol": "wifiAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlaybackOptions.swift",
+          "symbol": "chooseAudio"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/MediaNetwork.swift",
+          "symbol": "usesInterfaceType(.cellular)"
+        },
+        {
+          "file": "Sources/PiliNative/Playback/PlayerSessionPreferences.swift",
+          "symbol": "MediaNetwork.shared.cellular"
+        }
+      ],
+      "behavior": "播放选择器只列当前可播音轨，包括返回的普通/Dolby/Hi-Res；选择后带同一视频身份重新挂载，沿用播放位置与暂停状态",
+      "evidence": [
+        "Checks/MediaSystemCheck.swift",
+        "Checks/PortBehaviorCheck.swift",
+        "Acceptance/evidence/public-playback-quality.md",
+        "Checks/native_decode.py"
+      ],
+      "device_or_remaining": "系统最终解码能力和该内容实际获准的轨道，随账号、设备和资源而异"
+    }
+  }
+}
