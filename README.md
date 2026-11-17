@@ -43,7 +43,18 @@
 
 ## 安装
 
-目前不提供 App Store 或 TestFlight 版本，请自行构建并用个人开发者证书签名安装。
+在 [Releases](https://github.com/liuliuya2333/LiLite/releases/latest) 下载最新的未签名 IPA（`LiLite-版本号-unsigned.ipa`），再用以下任一工具签名安装：
+
+| 工具 | 说明 |
+|---|---|
+| [AltStore](https://altstore.io) / [SideStore](https://sidestore.io) | 免费 Apple ID 即可，7 天后需刷新签名 |
+| [Sideloadly](https://sideloadly.io) | 电脑端签名安装，支持免费或付费开发者账号 |
+| [TrollStore](https://github.com/opa334/TrollStore) | 支持的系统版本可永久安装 |
+
+- 需要 iOS 26 或更高版本。
+- 未签名包不含组播权限，DLNA 投屏改用 Bonjour 和指定 IP 发现设备。
+- 不提供 App Store 或 TestFlight 版本；也可以按下方说明自行构建。
+- 在「设置 → 版本与更新」打开「提醒新版本」，有新的 Release 时会收到提示。
 
 ## 交流
 
