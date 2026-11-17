@@ -35,7 +35,9 @@
 
 ## 截图
 
-> 截图待补充。
+<p align="center">
+  <img src="Resources/Screenshots/showcase.png" alt="轻哩界面截图" width="100%">
+</p>
 
 ## 安装
 
