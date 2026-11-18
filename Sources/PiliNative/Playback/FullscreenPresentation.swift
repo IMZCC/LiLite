@@ -57,6 +57,70 @@ struct FullscreenSwipe: ViewModifier {
     return (window?.traitCollection.userInterfaceIdiom ?? UIDevice.current.userInterfaceIdiom) == .pad ? .all : .allButUpsideDown
   }
 }
+/// The owner keeps its mask until the cover is gone, including the return rotation.
+@MainActor final class PlaybackOrientation {
+  private let token = UUID()
+  private weak var scene: UIWindowScene?
+  private var original: UIInterfaceOrientation = .unknown
+  private var last: UIInterfaceOrientationMask?
+  private var held: Bool { scene.map { TheaterOrientation.byScene[ObjectIdentifier($0)]?.token == token } ?? false }
+
+  func attach(_ window: UIWindow, original: UIInterfaceOrientation? = nil) {
+    guard let next = window.windowScene, scene !== next else { return }
+    release(restore: true)
+    scene = next
+    self.original = original ?? next.interfaceOrientation
+  }
+  func update(_ mode: FullscreenMode, picture: CGSize, denied: @escaping () -> Void = {}) -> Bool {
+    guard let scene else { return false }
+    let bounds = scene.screen.bounds
+    guard let wanted = mode.wanted(videoWidth: picture.width, videoHeight: picture.height,
+      screenWidth: bounds.width, screenHeight: bounds.height) else {
+      if last != nil { unlock() }
+      return false
+    }
+    return request(wanted == .landscape ? .landscape : .portrait, denied: denied)
+  }
+  func restore(denied: @escaping () -> Void = {}) -> Bool {
+    guard held, original != .unknown else { return false }
+    return request(UIInterfaceOrientationMask(rawValue: 1 << original.rawValue), denied: denied)
+  }
+  private func request(_ mask: UIInterfaceOrientationMask, denied: @escaping () -> Void) -> Bool {
+    guard let scene, last != mask else { return false }
+    last = mask
+    TheaterOrientation.byScene[ObjectIdentifier(scene)] = .init(token: token, mask: mask)
+    invalidate(scene)
+    let current = UIInterfaceOrientationMask(rawValue: 1 << scene.interfaceOrientation.rawValue)
+    guard mask.intersection(current).isEmpty else { return false }
+    scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { [weak self] _ in
+      guard let self, self.held, self.last == mask else { return }
+      TheaterOrientation.byScene[ObjectIdentifier(scene)] = nil
+      self.invalidate(scene)
+      denied()
+    }
+    return true
+  }
+  private func invalidate(_ scene: UIWindowScene) {
+    for window in scene.windows where window.isKeyWindow {
+      var top = window.rootViewController
+      while let next = top?.presentedViewController { top = next }
+      top?.setNeedsUpdateOfSupportedInterfaceOrientations()
+    }
+  }
+  private func unlock() {
+    if let scene, held {
+      TheaterOrientation.byScene[ObjectIdentifier(scene)] = nil
+      invalidate(scene)
+    }
+    last = nil
+  }
+  func release(restore: Bool) {
+    if restore { _ = self.restore() }
+    unlock()
+    scene = nil
+  }
+}
+
 struct TheaterGeometry: UIViewControllerRepresentable {
   let mode: FullscreenMode, size: CGSize
   func makeUIViewController(context: Context) -> Probe { Probe() }
@@ -65,119 +129,19 @@ struct TheaterGeometry: UIViewControllerRepresentable {
     p.size = size
     p.apply()
   }
-  static func dismantleUIViewController(_ p: Probe, coordinator: ()) { p.releaseScene() }
+  static func dismantleUIViewController(_ p: Probe, coordinator: ()) { p.orientation.release(restore: true) }
   final class Probe: UIViewController {
-    let token = UUID()
+    let orientation = PlaybackOrientation()
     var mode = FullscreenMode.keep, size = CGSize.zero
-    private weak var scene: UIWindowScene?
-    private var original: UIInterfaceOrientation?
-    private var last: UIInterfaceOrientationMask?
-    private var visible = false
-    override func loadView() {
-      view = UIView()
-      view.isUserInteractionEnabled = false
-    }
     override func viewDidAppear(_ animated: Bool) {
       super.viewDidAppear(animated)
-      visible = true
       apply()
     }
-    override func viewDidDisappear(_ animated: Bool) {
-      visible = false
-      super.viewDidDisappear(animated)
-    }
     func apply() {
-      guard visible, let w = viewIfLoaded?.window, let s = w.windowScene else { return }
-      if scene !== s {
-        releaseScene()
-        scene = s
-        original = s.interfaceOrientation
-        TheaterExit.original[ObjectIdentifier(s)] = s.interfaceOrientation
-      }
-      let bounds = s.screen.bounds.size
-      guard
-        let wanted = mode.wanted(
-          videoWidth: size.width, videoHeight: size.height, screenWidth: bounds.width,
-          screenHeight: bounds.height)
-      else {
-        if last != nil { releaseScene() }
-        return
-      }
-      let mask: UIInterfaceOrientationMask = wanted == .landscape ? .landscape : .portrait
-      guard mask != last else { return }
-      last = mask
-      TheaterOrientation.byScene[ObjectIdentifier(s)] = .init(token: token, mask: mask)
-      top(w.rootViewController)?.setNeedsUpdateOfSupportedInterfaceOrientations()
-      s.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { [weak self, weak s] _ in
-        guard let self, let s, TheaterOrientation.byScene[ObjectIdentifier(s)]?.token == self.token,
-          self.last == mask
-        else { return }
-        TheaterOrientation.byScene[ObjectIdentifier(s)] = nil
-      }
+      guard let window = viewIfLoaded?.window else { return }
+      orientation.attach(window)
+      _ = orientation.update(mode, picture: size)
     }
-    func top(_ c: UIViewController?) -> UIViewController? {
-      if let p = c?.presentedViewController { return top(p) }
-      return c
-    }
-    func releaseScene() {
-      guard let s = scene else { return }
-      defer {
-        scene = nil
-        last = nil
-        original = nil
-      }
-      guard TheaterOrientation.byScene[ObjectIdentifier(s)]?.token == token else { return }
-      TheaterOrientation.byScene[ObjectIdentifier(s)] = nil
-      for w in s.windows where w.isKeyWindow {
-        top(w.rootViewController)?.setNeedsUpdateOfSupportedInterfaceOrientations()
-      }
-      let mask: UIInterfaceOrientationMask
-      switch original {
-      case .portrait: mask = .portrait
-      case .landscapeRight: mask = .landscapeRight
-      case .landscapeLeft: mask = .landscapeLeft
-      default: return
-      }
-      s.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { _ in }
-    }
-  }
-}
-
-/// Leaving fullscreen rotates back to portrait while fullscreen still covers the page, then
-/// closes it. Closing first would show the page laid out sideways for the length of the
-/// rotation (and re-lay it out twice); this way the page only ever appears upright.
-@MainActor enum TheaterExit {
-  static var original: [ObjectIdentifier: UIInterfaceOrientation] = [:]
-  static func restore(then done: @escaping @MainActor () -> Void) {
-    let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-      .first { $0.activationState == .foregroundActive }
-    guard UIDevice.current.userInterfaceIdiom == .phone, !WindowCanvas.shared.large, let s = scene,
-      s.interfaceOrientation.isLandscape,
-      (original[ObjectIdentifier(s)] ?? .portrait) == .portrait
-    else {
-      done()
-      return
-    }
-    let id = ObjectIdentifier(s)
-    let token = UUID()
-    TheaterOrientation.byScene[id] = .init(token: token, mask: .portrait)
-    for w in s.windows where w.isKeyWindow { top(w.rootViewController)?.setNeedsUpdateOfSupportedInterfaceOrientations() }
-    s.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
-    Task { @MainActor in
-      // The system rotation takes about 0.4 s.
-      try? await Task.sleep(for: .milliseconds(430))
-      done()
-      // A page that holds portrait takes the lock over; otherwise free the orientation again.
-      try? await Task.sleep(for: .seconds(1.5))
-      if TheaterOrientation.byScene[id]?.token == token {
-        TheaterOrientation.byScene[id] = nil
-        for w in s.windows where w.isKeyWindow { top(w.rootViewController)?.setNeedsUpdateOfSupportedInterfaceOrientations() }
-      }
-    }
-  }
-  private static func top(_ c: UIViewController?) -> UIViewController? {
-    if let p = c?.presentedViewController { return top(p) }
-    return c
   }
 }
 
@@ -186,11 +150,13 @@ struct TheaterGeometry: UIViewControllerRepresentable {
 /// cover, so the only motion is the system's own rotation.
 struct RotateToFullscreen: ViewModifier {
   @Binding var theater: Bool
+  @Binding var byRotation: Bool
+  let covering: Bool
   let enabled: Bool
-  @State private var byRotation = false
   func body(content: Content) -> some View {
     content
-      .background(PortraitLock(active: enabled && !theater).allowsHitTesting(false))
+      .background(PortraitLock(active: enabled && !theater, handingOff: enabled && theater && !covering)
+        .allowsHitTesting(false))
       .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
         follow(UIDevice.current.orientation)
       }
@@ -217,16 +183,17 @@ struct RotateToFullscreen: ViewModifier {
 /// Holds the scene in portrait while active (shares `TheaterOrientation` with fullscreen, which
 /// takes over while it is shown).
 struct PortraitLock: UIViewControllerRepresentable {
-  let active: Bool
+  let active: Bool, handingOff: Bool
   func makeUIViewController(context: Context) -> Probe { Probe() }
   func updateUIViewController(_ p: Probe, context: Context) {
     p.active = active
+    p.handingOff = handingOff
     p.apply()
   }
   static func dismantleUIViewController(_ p: Probe, coordinator: ()) { p.release() }
   final class Probe: UIViewController {
     let token = UUID()
-    var active = false
+    var active = false, handingOff = false
     private weak var scene: UIWindowScene?
     private var visible = false
     override func loadView() {
@@ -240,17 +207,21 @@ struct PortraitLock: UIViewControllerRepresentable {
     }
     override func viewDidDisappear(_ animated: Bool) {
       visible = false
-      release()
+      if !handingOff { release() }
       super.viewDidDisappear(animated)
     }
     func apply() {
+      // Keep the existing portrait mask until the presented player has mounted and
+      // requested its own geometry, even if UIKit hides this probe in between.
+      if handingOff { return }
       guard visible, active, let w = viewIfLoaded?.window, let s = w.windowScene,
         w.traitCollection.userInterfaceIdiom == .phone, !WindowCanvas.isLarge(w.bounds.size)
       else {
         release()
         return
       }
-      if TheaterOrientation.byScene[ObjectIdentifier(s)]?.token == token { return }
+      // The fullscreen owner drives the return rotation and keeps the mask until dismissal.
+      if TheaterOrientation.byScene[ObjectIdentifier(s)] != nil { return }
       scene = s
       TheaterOrientation.byScene[ObjectIdentifier(s)] = .init(token: token, mask: .portrait)
       top(w.rootViewController)?.setNeedsUpdateOfSupportedInterfaceOrientations()

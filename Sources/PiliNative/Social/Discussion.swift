@@ -606,10 +606,13 @@ struct Discussion: View {
         Button {
           if let active = accounts.state.active { begin(nil, owner: active) }
         } label: {
-          Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .semibold))
-            .frame(width: 50, height: 50)
+          Image(systemName: "square.and.pencil").font(.system(size: 14.25, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 37.5, height: 37.5)
+            .glassEffect(.regular.tint(.accentColor).interactive(), in: .circle)
+            .frame(width: 50, height: 50).contentShape(Rectangle())
         }
-        .buttonStyle(.glassProminent).buttonBorderShape(.circle)
+        .buttonStyle(.plain)
         .disabled(inputDisabled).accessibilityLabel("发表评论")
         .padding(.trailing, 18).padding(.bottom, 18)
         .offset(y: composerHidden ? 120 : 0)

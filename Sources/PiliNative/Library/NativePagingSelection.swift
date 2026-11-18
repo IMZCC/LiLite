@@ -24,6 +24,12 @@ struct NativePagingSelection {
     selected = requested
     overridden = false
   }
+  /// A tap can also reselect the original tab while a swipe is coasting away from it.
+  mutating func request(_ page: Int) {
+    requested = min(max(0, page), max(0, count - 1))
+    pendingCommit = nil
+    overridden = true
+  }
   mutating func settle(at page: Int) -> Int? {
     selected = min(max(0, page), max(0, count - 1))
     guard !overridden else { return nil }

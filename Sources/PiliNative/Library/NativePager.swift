@@ -1,27 +1,37 @@
 import SwiftUI
 import UIKit
 
-/// UIKit owns every intermediate offset. SwiftUI sees only a settled page, and each page
-/// keeps its hosting controller (including list position, reply state and navigation context).
+/// Only the tab strip follows intermediate offsets. The page binding and page hosts
+/// keep their settled state throughout a gesture.
 struct NativePager<Page: View>: View {
   let count: Int
   @Binding var page: Int
+  let motion: NativePageMotion
   @ViewBuilder let content: (Int) -> Page
   var body: some View {
-    NativePagerHost(count: count, page: $page, content: content)
+    NativePagerHost(count: count, page: $page, motion: motion, content: content)
       .accessibilityAction(named: "上一页") { if page > 0 { page -= 1 } }
       .accessibilityAction(named: "下一页") { if page + 1 < count { page += 1 } }
   }
 }
 
+@MainActor @Observable final class NativePageMotion {
+  var position: CGFloat?
+  var interactive = false
+  @ObservationIgnored weak var pager: NativePagingController?
+}
+
 private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
   let count: Int
   @Binding var page: Int
+  let motion: NativePageMotion
   @ViewBuilder let content: (Int) -> Page
   func makeUIViewController(context: Context) -> NativePagingController { NativePagingController() }
   func updateUIViewController(_ controller: NativePagingController, context: Context) {
     let environment = context.environment
     let selection = $page
+    controller.motion = motion
+    motion.pager = controller
     controller.update(count: count, page: page, reduced: environment.accessibilityReduceMotion,
       select: { if selection.wrappedValue != $0 { selection.wrappedValue = $0 } }) { i in
       AnyView(content(i).environment(\.self, environment))
@@ -46,6 +56,7 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
   private var size = CGSize.zero
   private var selection = NativePagingSelection()
   private var animating = false
+  weak var motion: NativePageMotion?
   private var pending: (() -> Void)?
   private var select: ((Int) -> Void)?
   private weak var linkedNavigation: UINavigationController?
@@ -82,6 +93,7 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     scroll.setContentOffset(CGPoint(x: CGFloat(selection.selected) * size.width, y: 0), animated: false)
     DispatchQueue.main.async { [weak self] in
       guard let self, !self.closed, !self.moving else { return }
+      self.clearMotion()
       self.flush()
     }
   }
@@ -101,6 +113,15 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     // without evaluating page builders or touching host.rootView until motion has finished.
     pending = { [weak self] in self?.apply(count: count, reduced: reduced, content: content) }
     if !moving { flush() }
+  }
+  func move(to index: Int, reduced: Bool) {
+    guard hosts.indices.contains(index), !closed, size.width > 0 else { clearMotion(); return }
+    selection.request(index)
+    scroll.stopScrollingAndZooming()
+    let target = CGPoint(x: CGFloat(index) * size.width, y: 0)
+    animating = !reduced && view.window != nil && abs(scroll.contentOffset.x - target.x) > 0.5
+    scroll.setContentOffset(target, animated: animating)
+    if !animating { settled() }
   }
   private func flush() {
     let work = pending
@@ -152,10 +173,22 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     DispatchQueue.main.async { [weak self] in
       guard let self, !self.closed, !self.moving else { return }
       if let publish, self.selection.canPublish(publish) { self.select?(publish) }
+      self.clearMotion()
       self.flush()
     }
   }
   func scrollViewWillBeginDragging(_ scrollView: UIScrollView) { animating = false }
+  func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    let interactive = scrollView.isDragging || scrollView.isDecelerating
+    guard (interactive || animating), size.width > 0, !hosts.isEmpty, let motion else { return }
+    let position = min(max(0, scrollView.contentOffset.x / size.width), CGFloat(hosts.count - 1))
+    if motion.interactive != interactive { motion.interactive = interactive }
+    if motion.position != position { motion.position = position }
+  }
+  private func clearMotion() {
+    motion?.position = nil
+    motion?.interactive = false
+  }
   func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) { if !decelerate { settled() } }
   func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) { settled() }
   func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) { settled() }

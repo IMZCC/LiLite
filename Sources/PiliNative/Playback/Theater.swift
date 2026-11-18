@@ -225,20 +225,11 @@ struct TheaterSheet: View {
   @ObservedObject var model: PlayerModel
   @AppStorage("play.subtitleSize") var subtitleSize = 17.0
   var keyStep: ((Bool) -> Void)? = nil
-  /// The inline player's frame (window coordinates): the picture grows out of it on entry and
-  /// shrinks back into it on exit, like the original's single continuous player.
-  var origin: (() -> CGRect?)? = nil
-  /// Reports whether fullscreen fully covers the page (the page detaches its inline player
-  /// only then, and reattaches it as soon as leaving begins).
-  var covered: ((Bool) -> Void)? = nil
-  /// Bumped by the page to close from outside (turning upright, end of video).
-  var closeRequest = 0
-  @State private var closing = false
-  private enum Stage { case growing, shown, shrinking }
-  @State private var stage: Stage = .growing
-  @State private var expanded = false
-  @State private var bridge = false
-  @State private var frameFrom: CGRect?
+  var entry: InlinePlayerFrame.Snapshot?
+  let closing: Bool
+  var closeWhenUpright = false
+  let covered: (Bool) -> Void
+  let close: () -> Void
   private var showBullets: Bool {
     get { model.preferences.bullets }
     nonmutating set { model.preferences.bullets = newValue }
@@ -249,83 +240,27 @@ struct TheaterSheet: View {
   @State private var bulletSettings = false
   @Environment(\.dismiss) private var dismiss
   var body: some View {
-    ZStack {
-      // The backdrop fades in as the picture grows and out as it shrinks back into the page.
-      Color.black.opacity(expanded ? 1 : 0).ignoresSafeArea()
-      if stage == .shown {
-        TheaterWorkspace(open: drawer && !locked) { playback } panel: {
-          TheaterTools(model: model, subject: subject, playlist: playlist, close: { drawer = false },bulletSnapshot:{bulletInspector.snapshot?() ?? []})
-            .id(subject?.type)
-        }
-        // The safe-area bands (notch / home indicator) stay black in landscape.
-        .background { Color.black.ignoresSafeArea() }
-      }
-      if stage != .shown || bridge {
-        // Only the picture moves between the inline player and fullscreen.
-        GeometryReader { g in
-          let full = CGRect(origin: .zero, size: g.size)
-          let r = expanded ? full : (frameFrom ?? full)
-          PlayerPictureLayer(player: model.engine)
-            .frame(width: max(1, r.width), height: max(1, r.height))
-            .offset(x: r.minX, y: r.minY)
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+    FullscreenStage(mode: FullscreenMode(rawValue: orientation) ?? .video,
+      picture: model.engine.playbackSize, entry: entry, closing: closing,
+      inline: { InlinePlayerFrame.current(model.engine) }, covered: covered, finish: { dismiss() }) {
+      TheaterWorkspace(open: drawer && !locked) { playback } panel: {
+        TheaterTools(model: model, subject: subject, playlist: playlist, close: { drawer = false },
+          bulletSnapshot: { bulletInspector.snapshot?() ?? [] }).id(subject?.type)
       }
     }
+    .ignoresSafeArea()
     .presentationBackground(.clear)
-    .onAppear { enter() }
-    .onChange(of: closeRequest) { _, _ in close() }
-  }
-  private func enter() {
-    guard let from = origin?(), from.width > 20, from.height > 20 else {
-      expanded = true
-      stage = .shown
-      covered?(true)
-      return
+    .statusBarHidden(true)
+    .persistentSystemOverlays(.hidden)
+    .interactiveDismissDisabled()
+    .onAppear {
+      UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+      if closeWhenUpright && UIDevice.current.orientation == .portrait { close() }
     }
-    frameFrom = from
-    DispatchQueue.main.async {
-      withAnimation(.smooth(duration: 0.34)) {
-        expanded = true
-      } completion: {
-        // The full player takes over under the moving picture, which then fades away.
-        bridge = true
-        stage = .shown
-        covered?(true)
-        Task { @MainActor in
-          try? await Task.sleep(for: .milliseconds(200))
-          withAnimation(.easeOut(duration: 0.15)) { bridge = false }
-        }
-      }
+    .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+      if closeWhenUpright && UIDevice.current.orientation == .portrait { close() }
     }
-  }
-  /// Leave without the cover's slide: rotate upright first (still covering the page), then
-  /// shrink the picture back into the inline player while the backdrop fades out.
-  private func close() {
-    guard !closing else { return }
-    closing = true
-    covered?(false)
-    TheaterExit.restore {
-      guard let to = origin?(), to.width > 20, to.height > 20 else {
-        finish()
-        return
-      }
-      frameFrom = to
-      bridge = true
-      stage = .shrinking
-      withAnimation(.smooth(duration: 0.32)) {
-        expanded = false
-      } completion: {
-        finish()
-      }
-    }
-  }
-  private func finish() {
-    var t = Transaction()
-    t.disablesAnimations = true
-    withTransaction(t) { dismiss() }
+    .onDisappear { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
   }
   private func toggleLock() {
     TouchFeedback.light()
@@ -462,12 +397,6 @@ struct TheaterSheet: View {
           .black.opacity(0.85))
       }
     }.background { Color.black.ignoresSafeArea() }
-      .background(
-        TheaterGeometry(
-          mode: FullscreenMode(rawValue: orientation) ?? .video,
-          size: model.engine.playbackSize
-        ).allowsHitTesting(false)
-      )
       .modifier(
         PlayerKeyboard(
           player: model.engine, locked: locked, toggle: model.toggle,

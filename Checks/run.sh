@@ -2,8 +2,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 work=$(mktemp -d)
-trap 'rm -f -- "$work/sidx" "$work/content" "$work/behavior" "$work/article" "$work/backup" "$work/livechat" "$work/creator-sections" "$work/feed-columns" "$work/nav-shell" "$work/media-buffer" "$work/login-grant" "$work/liveinteraction" "$work/post-draft" "$work/interaction"; rmdir -- "$work"' EXIT
+trap 'rm -f -- "$work/sidx" "$work/content" "$work/behavior" "$work/article" "$work/backup" "$work/livechat" "$work/creator-sections" "$work/feed-columns" "$work/nav-shell" "$work/media-buffer" "$work/login-grant" "$work/liveinteraction" "$work/post-draft" "$work/interaction" "$work/phone-layout"; rmdir -- "$work"' EXIT
 src=Sources/PiliNative
+swiftc "$src/Library/FeedHeaderInsets.swift" "$src/Library/PlayerPageLayout.swift" Checks/PhoneLayoutCheck.swift -o "$work/phone-layout"
+"$work/phone-layout"
 swiftc "$src/Playback/SegmentIndex.swift" Checks/SegmentIndexCheck.swift -o "$work/sidx"
 "$work/sidx"
 swiftc "$src/Network/ServiceError.swift" "$src/Danmaku/Danmaku.swift" "$src/Danmaku/DanmakuStyle.swift" "$src/Danmaku/CloudBulletRule.swift" "$src/Danmaku/BulletTrackFrame.swift" "$src/Danmaku/BulletLayoutPlan.swift" "$src/Danmaku/DMProto.swift" "$src/Danmaku/SpecialBullet.swift" "$src/Discover/SharedLink.swift" "$src/Playback/RelayRange.swift" Checks/ContentContractCheck.swift -o "$work/content"

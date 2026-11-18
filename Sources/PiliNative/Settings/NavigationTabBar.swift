@@ -45,6 +45,17 @@ struct NavigationTabBarProbe: UIViewControllerRepresentable {
         nav.viewControllers.contains(where: { $0 === candidate }) ? candidate : nil
       } ?? nav.topViewController
       let hide = target !== root
+      if transition.initiallyInteractive {
+        // Changing SwiftUI toolbar visibility resizes both hosting controllers and their
+        // pagers. Keep that layout stable until the system finishes or cancels the swipe.
+        transition.animate(alongsideTransition: nil) { [weak self, weak nav] _ in
+          guard let self, let nav, self.generation == ticket else { return }
+          let hidden = nav.topViewController !== nav.viewControllers.first
+          bar.alpha = hidden ? 0 : 1
+          self.publish(hidden, ticket: ticket)
+        }
+        return
+      }
       if hide {
         // Push (or pop between two pushed pages): fade the bar out with the transition and only
         // commit the hidden state once it has finished, so nothing pops at the start.

@@ -43,6 +43,17 @@
     state.update(count: 2, page: 1, moving: false)
     state.applied()
     precondition(state.selected == 1 && state.settle(at: 1) == nil)
+    // Tapping the same tab while a swipe is coasting back must keep the tapped tab.
+    state.request(1)
+    precondition(state.settle(at: 0) == nil && state.requested == 1)
+    state.applied()
+    // A tap back during an animated move supersedes the first destination.
+    state.request(0)
+    state.update(count: 2, page: 0, moving: true)
+    state.request(1)
+    state.update(count: 2, page: 1, moving: true)
+    precondition(state.settle(at: 0) == nil && state.requested == 1)
+    state.applied()
     state.update(count: 2, page: 0, moving: false)
     state.applied()
     precondition(state.settle(at: 1) == 1)

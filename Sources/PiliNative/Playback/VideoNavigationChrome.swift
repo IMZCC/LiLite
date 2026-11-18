@@ -1,28 +1,68 @@
 import SwiftUI
 import UIKit
 
-/// The video page has no system back button (back and home live in the player, like the original
-/// client). UIKit ties its edge-swipe pop to that button, so this page brings its own, the way
-/// the original's page route does: a screen-edge pan that drives the pop transition with the
-/// finger, finishing or cancelling on release. While the page is on top the empty navigation bar
-/// also stops taking touches, so it cannot swallow the player's back / home buttons.
-///
-/// iOS 26's swipe-from-anywhere back gesture is switched off here: anywhere but the screen edge a
-/// rightward drag seeks the video or pages the tabs, as in the original.
-struct VideoNavigationChrome: UIViewControllerRepresentable {
-  let player: any PlaybackEngine
-  let contentPop: Bool
-  func makeUIViewController(context: Context) -> Probe { Probe() }
-  func updateUIViewController(_ controller: Probe, context: Context) { controller.scheduleInstall() }
-  static func dismantleUIViewController(_ controller: Probe, coordinator: ()) { controller.leave() }
+/// Keep the media and its UI alive while UIKit is deciding whether an interactive pop commits.
+@MainActor private final class VideoPageDeparture {
+  weak var navigation: UINavigationController?
+  private var generation = 0
 
-  @MainActor final class Probe: UIViewController, UIGestureRecognizerDelegate {
+  func appeared() { generation &+= 1 }
+
+  func leave(_ action: @escaping () -> Void) {
+    generation &+= 1
+    let ticket = generation
+    let finish = {
+      DispatchQueue.main.async {
+        guard self.generation == ticket else { return }
+        action()
+      }
+    }
+    if let transition = navigation?.transitionCoordinator {
+      if transition.animate(alongsideTransition: nil, completion: { context in
+        if !context.isCancelled { finish() }
+      }) { return }
+      if transition.isCancelled { return }
+    }
+    finish()
+  }
+}
+
+private struct VideoPageNavigation: ViewModifier {
+  let stopOnDisappear: Bool
+  let leave: () -> Void
+  @State private var departure = VideoPageDeparture()
+  func body(content: Content) -> some View {
+    content.background { VideoNavigationChrome(departure: departure).frame(width: 0, height: 0) }
+      .onAppear { departure.appeared() }
+      .onDisappear { if stopOnDisappear { departure.leave(leave) } }
+  }
+}
+
+extension View {
+  func videoPageNavigation(stopOnDisappear: Bool, leave: @escaping () -> Void) -> some View {
+    modifier(VideoPageNavigation(stopOnDisappear: stopOnDisappear, leave: leave))
+  }
+}
+
+/// The player supplies its own back button. Re-enable the navigation controller's built-in
+/// edge interaction for this page so UIKit owns the animation, its velocity and cancellation.
+private struct VideoNavigationChrome: UIViewControllerRepresentable {
+  let departure: VideoPageDeparture
+  func makeUIViewController(context: Context) -> Probe { Probe() }
+  func updateUIViewController(_ probe: Probe, context: Context) {
+    probe.departure = departure
+    probe.updateIfVisible()
+  }
+  static func dismantleUIViewController(_ probe: Probe, coordinator: ()) { probe.retire() }
+
+  final class Probe: UIViewController, UIGestureRecognizerDelegate {
+    fileprivate weak var departure: VideoPageDeparture?
     private weak var navigation: UINavigationController?
     private weak var owner: UIViewController?
-    private var saved: (interaction: Bool, contentPop: Bool?)?
-    private var edge: UIScreenEdgePanGestureRecognizer?
-    private var scheduled = false
-    private var driver: VideoPopDriver?
+    private weak var previousDelegate: UIGestureRecognizerDelegate?
+    private var saved: (bar: Bool, edge: Bool, content: Bool?)?
+    private var visible = false
+
     override func loadView() {
       view = UIView()
       view.isUserInteractionEnabled = false
@@ -30,250 +70,78 @@ struct VideoNavigationChrome: UIViewControllerRepresentable {
     }
     override func viewDidAppear(_ animated: Bool) {
       super.viewDidAppear(animated)
-      install()
+      visible = true
+      updateIfVisible()
     }
     override func viewWillDisappear(_ animated: Bool) {
-      // An in-flight swipe keeps its gesture until the transition ends.
-      if driver == nil { leave() }
       super.viewWillDisappear(animated)
+      visible = false
+      retire()
     }
-    func scheduleInstall() {
-      guard !scheduled else { return }
-      scheduled = true
-      DispatchQueue.main.async { [weak self] in
-        guard let self else { return }
-        self.scheduled = false
-        if self.viewIfLoaded?.window != nil { self.install() }
-      }
-    }
-    private func findOwner(in nav: UINavigationController) -> UIViewController? {
-      var c: UIViewController? = parent
-      while let current = c {
-        if nav.viewControllers.contains(where: { $0 === current }) { return current }
-        c = current.parent
-      }
-      return nil
-    }
-    private func install() {
-      guard driver == nil, let nav = navigationController, nav.viewControllers.count > 1,
-        let owner = findOwner(in: nav), owner === nav.topViewController
-      else { return }
+    func updateIfVisible() {
+      guard visible, let nav = navigationController, nav.viewControllers.count > 1,
+        let top = nav.topViewController, let host = top.viewIfLoaded,
+        viewIfLoaded?.isDescendant(of: host) == true,
+        let edge = nav.interactivePopGestureRecognizer else { return }
+      departure?.navigation = nav
       if navigation !== nav || saved == nil {
-        leave()
+        restore()
         navigation = nav
-        saved = (nav.navigationBar.isUserInteractionEnabled, nav.interactiveContentPopGestureRecognizer?.isEnabled)
+        owner = top
+        saved = (nav.navigationBar.isUserInteractionEnabled, edge.isEnabled, nav.interactiveContentPopGestureRecognizer?.isEnabled)
       }
-      self.owner = owner
+      guard nav.transitionCoordinator == nil || edge.delegate !== self else { return }
+      if edge.delegate !== self {
+        previousDelegate = edge.delegate
+        edge.delegate = self
+      }
+      if !edge.isEnabled { edge.isEnabled = true }
+      if nav.interactiveContentPopGestureRecognizer?.isEnabled == true {
+        nav.interactiveContentPopGestureRecognizer?.isEnabled = false
+      }
       nav.navigationBar.isUserInteractionEnabled = false
-      if let content = nav.interactiveContentPopGestureRecognizer,
-        content.state != .began, content.state != .changed
-      {
-        content.isEnabled = false
-      }
-      if edge == nil {
-        let g = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(panned(_:)))
-        g.edges = nav.view.effectiveUserInterfaceLayoutDirection == .rightToLeft ? .right : .left
-        g.delegate = self
-        nav.view.addGestureRecognizer(g)
-        edge = g
-      }
     }
-    func leave() {
-      if let g = edge { g.view?.removeGestureRecognizer(g) }
-      edge = nil
+    func retire() {
+      if let transition = navigation?.transitionCoordinator, transition.isInteractive,
+        transition.animate(alongsideTransition: nil, completion: { context in
+          if !context.isCancelled || !self.visible { self.restore() }
+        }) { return }
+      if let edge = navigation?.interactivePopGestureRecognizer,
+        edge.state == .began || edge.state == .changed { return }
+      restore()
+    }
+    override func viewDidDisappear(_ animated: Bool) {
+      super.viewDidDisappear(animated)
+      restore()
+    }
+    private func restore() {
       guard let nav = navigation, let saved else { return }
+      let edge = nav.interactivePopGestureRecognizer
+      if edge?.delegate === self {
+        edge?.delegate = previousDelegate
+        edge?.isEnabled = saved.edge
+      }
+      if !(edge?.delegate is Probe) {
+        nav.navigationBar.isUserInteractionEnabled = saved.bar
+        if let content = saved.content { nav.interactiveContentPopGestureRecognizer?.isEnabled = content }
+      }
       self.saved = nil
+      previousDelegate = nil
+      owner = nil
       navigation = nil
-      nav.navigationBar.isUserInteractionEnabled = saved.interaction
-      if let enabled = saved.contentPop { nav.interactiveContentPopGestureRecognizer?.isEnabled = enabled }
     }
-
-    // MARK: Gesture
-
-    func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
-      guard driver == nil, let nav = navigation, let owner, nav.topViewController === owner,
-        nav.viewControllers.count > 1, nav.transitionCoordinator == nil,
-        nav.presentedViewController == nil
-      else { return false }
+    func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+      guard visible, let nav = navigation, let owner, recognizer === nav.interactivePopGestureRecognizer,
+        nav.viewControllers.count > 1, nav.topViewController === owner, nav.transitionCoordinator == nil,
+        nav.presentedViewController == nil, owner.presentedViewController == nil else { return false }
       return true
     }
-    func gestureRecognizer(
-      _ g: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer
-    ) -> Bool {
-      // Everything on the page (pager, lists, player drags) waits for the edge swipe to fail.
-      guard let view = other.view, let host = owner?.viewIfLoaded else { return false }
-      return view.isDescendant(of: host)
+    override func responds(to selector: Selector!) -> Bool {
+      super.responds(to: selector) || previousDelegate?.responds(to: selector) == true
     }
-    func gestureRecognizer(
-      _ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
-    ) -> Bool { false }
-
-    @objc private func panned(_ g: UIScreenEdgePanGestureRecognizer) {
-      guard let nav = navigation, let container = nav.view else { return }
-      let width = max(1, container.bounds.width)
-      let sign: CGFloat = g.edges == .right ? -1 : 1
-      let progress = min(1, max(0, g.translation(in: container).x * sign / width))
-      switch g.state {
-      case .began:
-        let d = VideoPopDriver(navigation: nav)
-        driver = d
-        d.begin { [weak self] in
-          // The transition is over (finished or cancelled).
-          guard let self else { return }
-          self.driver = nil
-          if let nav = self.navigation, let owner = self.owner, nav.topViewController === owner {
-            self.install()
-          } else {
-            self.leave()
-          }
-        }
-      case .changed:
-        driver?.update(progress)
-      case .ended:
-        let v = g.velocity(in: container).x * sign
-        driver?.end(finish: v > 500 || (progress > 0.4 && v > -300))
-      case .cancelled, .failed:
-        driver?.end(finish: false)
-      default:
-        break
-      }
+    override func forwardingTarget(for selector: Selector!) -> Any? {
+      if previousDelegate?.responds(to: selector) == true { return previousDelegate }
+      return super.forwardingTarget(for: selector)
     }
-  }
-}
-
-/// Drives one interactive pop: a navigation-delegate proxy supplies the slide animation and the
-/// percent-driven interaction for exactly this pop, then hands the delegate back.
-@MainActor final class VideoPopDriver: NSObject, UINavigationControllerDelegate {
-  private weak var navigation: UINavigationController?
-  private weak var original: UINavigationControllerDelegate?
-  private let interaction = UIPercentDrivenInteractiveTransition()
-  private var done: (() -> Void)?
-  private var finished = false
-  init(navigation: UINavigationController) {
-    self.navigation = navigation
-    super.init()
-    interaction.completionCurve = .easeOut
-  }
-  func begin(_ done: @escaping () -> Void) {
-    guard let nav = navigation else {
-      done()
-      return
-    }
-    self.done = done
-    original = nav.delegate
-    nav.delegate = self
-    // Keep the proxy alive for the transition.
-    objc_setAssociatedObject(nav, &Self.key, self, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-    nav.popViewController(animated: true)
-    if nav.transitionCoordinator == nil { cleanUp() }
-  }
-  func update(_ progress: CGFloat) { interaction.update(progress) }
-  func end(finish: Bool) {
-    if finish {
-      // Faster finish for a short remaining distance.
-      interaction.completionSpeed = max(0.6, 1 - interaction.percentComplete)
-      interaction.finish()
-    } else {
-      interaction.completionSpeed = max(0.6, interaction.percentComplete)
-      interaction.cancel()
-    }
-  }
-  fileprivate func transitionEnded() {
-    guard !finished else { return }
-    finished = true
-    cleanUp()
-  }
-  private func cleanUp() {
-    if let nav = navigation {
-      if nav.delegate === self { nav.delegate = original }
-      objc_setAssociatedObject(nav, &Self.key, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-    }
-    let callback = done
-    done = nil
-    callback?()
-  }
-  private static var key: UInt8 = 0
-
-  // Everything else goes to SwiftUI's own delegate.
-  override func responds(to selector: Selector!) -> Bool {
-    super.responds(to: selector) || original?.responds(to: selector) == true
-  }
-  override func forwardingTarget(for selector: Selector!) -> Any? {
-    if original?.responds(to: selector) == true { return original }
-    return super.forwardingTarget(for: selector)
-  }
-  func navigationController(
-    _ nav: UINavigationController, animationControllerFor operation: UINavigationController.Operation,
-    from fromVC: UIViewController, to toVC: UIViewController
-  ) -> UIViewControllerAnimatedTransitioning? {
-    operation == .pop ? VideoPopAnimator(driver: self) : nil
-  }
-  func navigationController(
-    _ nav: UINavigationController,
-    interactionControllerFor animationController: UIViewControllerAnimatedTransitioning
-  ) -> UIViewControllerInteractiveTransitioning? {
-    animationController is VideoPopAnimator ? interaction : nil
-  }
-  func navigationController(
-    _ nav: UINavigationController, willShow viewController: UIViewController, animated: Bool
-  ) {
-    original?.navigationController?(nav, willShow: viewController, animated: animated)
-  }
-  func navigationController(
-    _ nav: UINavigationController, didShow viewController: UIViewController, animated: Bool
-  ) {
-    original?.navigationController?(nav, didShow: viewController, animated: animated)
-  }
-}
-
-/// The system's pop look: the page slides off to the right with a soft shadow while the page
-/// below slides in from a third of the way left, slightly dimmed.
-private final class VideoPopAnimator: NSObject, UIViewControllerAnimatedTransitioning {
-  weak var driver: VideoPopDriver?
-  init(driver: VideoPopDriver) { self.driver = driver }
-  func transitionDuration(using context: UIViewControllerContextTransitioning?) -> TimeInterval { 0.35 }
-  func animateTransition(using ctx: UIViewControllerContextTransitioning) {
-    guard let from = ctx.view(forKey: .from), let to = ctx.view(forKey: .to),
-      let toVC = ctx.viewController(forKey: .to)
-    else {
-      ctx.completeTransition(false)
-      return
-    }
-    let container = ctx.containerView
-    let w = container.bounds.width
-    let rtl = container.effectiveUserInterfaceLayoutDirection == .rightToLeft
-    let finalFrame = ctx.finalFrame(for: toVC)
-    to.frame = finalFrame.isEmpty ? container.bounds : finalFrame
-    container.insertSubview(to, belowSubview: from)
-    let dim = UIView(frame: to.bounds)
-    dim.backgroundColor = UIColor.black.withAlphaComponent(0.1)
-    dim.isUserInteractionEnabled = false
-    to.addSubview(dim)
-    let shadowOpacity = from.layer.shadowOpacity
-    from.layer.shadowColor = UIColor.black.cgColor
-    from.layer.shadowOpacity = 0.18
-    from.layer.shadowRadius = 8
-    from.layer.shadowOffset = .zero
-    from.layer.shadowPath = UIBezierPath(rect: from.bounds).cgPath
-    to.transform = CGAffineTransform(translationX: (rtl ? 1 : -1) * w * 0.3, y: 0)
-    UIView.animate(
-      withDuration: transitionDuration(using: ctx), delay: 0, options: [.curveLinear],
-      animations: {
-        from.transform = CGAffineTransform(translationX: (rtl ? -1 : 1) * w, y: 0)
-        to.transform = .identity
-        dim.alpha = 0
-      },
-      completion: { [weak self] _ in
-        let cancelled = ctx.transitionWasCancelled
-        from.transform = .identity
-        to.transform = .identity
-        dim.removeFromSuperview()
-        from.layer.shadowOpacity = shadowOpacity
-        from.layer.shadowPath = nil
-        if cancelled { to.removeFromSuperview() }
-        ctx.completeTransition(!cancelled)
-        let driver = self?.driver
-        DispatchQueue.main.async { driver?.transitionEnded() }
-      })
   }
 }

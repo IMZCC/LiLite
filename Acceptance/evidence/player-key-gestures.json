@@ -994,7 +994,7 @@
         "lib/plugin/pl_player/controller.dart#Platform.isAndroid ? Pref.angleDegrees : null"
       ],
       "native": [
-        "Playback/Theater.swift#TheaterGeometry"
+        "Playback/Theater.swift#FullscreenStage"
       ],
       "proof": "platform-scope",
       "note": "Android 传感器转动角度；iOS 场景请求方向"
@@ -1005,7 +1005,7 @@
         "lib/plugin/pl_player/view/view.dart#Platform.isIOS || plPlayerController.setSystemBrightness"
       ],
       "native": [
-        "Playback/PlayerGestures.swift#UIScreen.main.brightness"
+        "Playback/PlayerGestures.swift#WindowMetrics.brightness"
       ],
       "proof": "platform-scope",
       "note": "Android 分应用亮度选项；原版 iOS 直接用系统亮度"

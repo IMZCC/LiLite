@@ -44,7 +44,6 @@ import SwiftUI
       let layout = NavigationLayout.read(layoutData)
       let typeface = restoredFaceData == faceData ? TypefaceChoice.decode(faceData) : .standard
       MainNavShell(layout: layout, badge: badge, active: $active).id(homeRevision)
-        .tracksWindowCanvas()
         .onReceive(NotificationCenter.default.publisher(for: AppLinkPage.returnHome)) { _ in returnHome(layout) }
         .onChange(of: layout) { _, new in if !new.tabs.contains(active) { active = new.launch } }
         .id(
@@ -112,6 +111,7 @@ import SwiftUI
           }
         }
         .modifier(NativeInterfaceScale())
+        .tracksWindowCanvas()
         .task {
           NativeMetricSubscriber.start()
           await accounts.refresh()

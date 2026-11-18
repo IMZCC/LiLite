@@ -72,12 +72,8 @@ struct DetailView: View {
   @State private var danmakuList = false
   @State private var playbackOptions = false
   @State private var theater = false
-  /// Mirrors `theater` without animation, so the cover appears and leaves instantly and only the
-  /// system rotation moves.
-  @State private var theaterShown = false
-  /// Fullscreen fully covers the page: only then is the inline player detached.
+  @State private var theaterByRotation = false
   @State private var theaterCovering = false
-  @State private var theaterCloseRequest = 0
   @AppStorage("detail.replies") private var showReplies = true
   @State private var panelOverride: Bool?
   @State private var listen = false
@@ -690,29 +686,12 @@ struct DetailView: View {
           model: model, cid: cid, presented: $theater, inheritPresentation: resumeFullscreen)
       )
       .modifier(RotateToFullscreen(
-        theater: $theater,
+        theater: $theater, byRotation: $theaterByRotation, covering: theaterCovering,
         // Only on a phone-sized window: the Duo's inner display and iPad ignore orientation
         // locks, and there turning the device just resizes the page.
         enabled: UIDevice.current.userInterfaceIdiom == .phone && !WindowCanvas.shared.large
           && !horizontal && cid != nil))
-      .onChange(of: theater, initial: true) { _, open in
-        if !open && theaterShown {
-          // Closed from outside (turning the phone upright, end of video): fullscreen runs its
-          // own exit (rotate upright, shrink back) and then dismisses itself.
-          theaterCloseRequest += 1
-        } else {
-          var t = Transaction()
-          t.disablesAnimations = true
-          withTransaction(t) { theaterShown = open }
-        }
-      }
-      .piliFullScreenCover(
-        isPresented: Binding(get: { theaterShown }, set: { open in
-          theaterShown = open
-          if !open { theaterCovering = false }
-          if theater != open { theater = open }
-        })
-      ) {
+      .theaterCover(requested: $theater, player: model.engine, covering: $theaterCovering) { entry in
         TheaterSheet(
           subject: cid.map { TheaterSubject(cid: $0, oid: video.aid ?? ArchiveNumber.av(video.bvid), type: 1,
             bvid: video.bvid, aid: video.aid ?? ArchiveNumber.av(video.bvid), creator: video.owner?.mid,
@@ -721,8 +700,8 @@ struct DetailView: View {
           title: (video.pages?.count ?? 1) > 1
             ? video.pages?.first { $0.cid == cid }?.part ?? video.title : video.title,
           model:model, keyStep: keyboardStep,
-          origin: { [player = model.engine] in InlinePlayerFrame.current(player) },
-          covered: { theaterCovering = $0 }, closeRequest: theaterCloseRequest,
+          entry: entry, closing: !theater, closeWhenUpright: theaterByRotation,
+          covered: { theaterCovering = $0 }, close: { theater = false },
           engagement: video.aid.map {
             EngagementItem(bvid: video.bvid, aid: $0, episode: nil, copyright: video.copyright)
           })
@@ -762,12 +741,10 @@ struct DetailView: View {
       }
       .modifier(VideoPageAppearance()).modifier(PlaybackEdgeInsets())
       .onAppear { if brightness == nil { brightness = WindowMetrics.brightness } }
-      .onDisappear {
-        if !theater && !sponsorPanel && !playbackOptions && !danmakuList && !listen {
-          model.stop()
-          if let brightness { WindowMetrics.brightness = brightness }
-          brightness = nil
-        }
+      .videoPageNavigation(stopOnDisappear: !theater && !sponsorPanel && !playbackOptions && !danmakuList && !listen) {
+        model.stop()
+        if let brightness { WindowMetrics.brightness = brightness }
+        brightness = nil
       }
   }
 }

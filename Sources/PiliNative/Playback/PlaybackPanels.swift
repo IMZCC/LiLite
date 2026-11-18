@@ -29,41 +29,63 @@ import Combine
 
 /// Underlined text tabs, as in Apple's media apps, with an optional trailing accessory.
 struct PlaybackTab: Identifiable, Equatable { let id: Int, title: String }
+private struct TabBounds: PreferenceKey {
+  static var defaultValue: [Int: Anchor<CGRect>] { [:] }
+  static func reduce(value: inout [Int: Anchor<CGRect>], nextValue: () -> [Int: Anchor<CGRect>]) {
+    value.merge(nextValue()) { _, next in next }
+  }
+}
 struct PlaybackTabBar<Accessory: View>: View {
   let items: [PlaybackTab]
   let selected: Int
+  let motion: NativePageMotion
   let select: (Int) -> Void
   @ViewBuilder let accessory: () -> Accessory
-  @Namespace private var underline
+  @Environment(\.accessibilityReduceMotion) private var reduced
   var body: some View {
+    let selectedIndex = items.firstIndex { $0.id == selected } ?? 0
+    let position = min(max(0, motion.position ?? CGFloat(selectedIndex)), CGFloat(max(0, items.count - 1)))
+    let highlighted = motion.interactive ? Int(position.rounded()) : selectedIndex
     HStack(spacing: 0) {
       HStack(spacing: 30) {
         ForEach(items) { item in
-          let current = item.id == selected
+          let current = item.id == items[highlighted].id
           Button {
             TouchFeedback.light()
+            motion.interactive = false
+            motion.position = reduced ? nil : position
             select(item.id)
+            if let index = items.firstIndex(of: item) { motion.pager?.move(to: index, reduced: reduced) }
           } label: {
+            // Reserve the bold title's width so changing weight never moves the tab centers.
             Text(item.title)
-              .font(.body.weight(current ? .semibold : .regular))
-              .foregroundStyle(current ? Color.primary : Color.secondary)
-              .padding(.vertical, 12)
-              .overlay(alignment: .bottom) {
-                if current {
-                  Capsule().fill(Color.accentColor).frame(width: 18, height: 3)
-                    .matchedGeometryEffect(id: "underline", in: underline)
-                }
+              .font(.body.weight(.semibold)).hidden()
+              .overlay {
+                Text(item.title).font(.body.weight(current ? .semibold : .regular))
+                  .foregroundStyle(current ? Color.primary : Color.secondary)
               }
+              .padding(.vertical, 12)
               .contentShape(Rectangle())
-          }.buttonStyle(.plain).accessibilityAddTraits(current ? .isSelected : [])
+          }.buttonStyle(.plain).accessibilityLabel(item.title)
+            .accessibilityAddTraits(item.id == selected ? .isSelected : [])
+            .anchorPreference(key: TabBounds.self, value: .bounds) { [item.id: $0] }
         }
+      }
+      .overlayPreferenceValue(TabBounds.self) { anchors in
+        GeometryReader { g in
+          let lower = Int(position), upper = min(lower + 1, items.count - 1)
+          if !items.isEmpty, let left = anchors[items[lower].id], let right = anchors[items[upper].id] {
+            let a = g[left], b = g[right]
+            Capsule().fill(Color.accentColor).frame(width: 18, height: 3)
+              .position(x: a.midX + (b.midX - a.midX) * (position - CGFloat(lower)), y: a.maxY - 1.5)
+          }
+        }.allowsHitTesting(false).accessibilityHidden(true)
       }
       Spacer(minLength: 8)
       accessory()
     }
     .padding(.horizontal, 16).frame(height: 46)
     .overlay(alignment: .bottom) { Divider() }
-    .animation(.snappy(duration: 0.25), value: selected)
   }
 }
 
@@ -93,6 +115,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   @AppStorage("layout.verticalMedia") private var enlarge = false
   @AppStorage("player.edgeToEdge") private var edgeToEdge = false
   @State private var wantsList = false
+  @State private var pageMotion = NativePageMotion()
+  @Environment(\.inlinePlayerCovered) private var inlinePlayerCovered
   @State private var playback = PanelPlaybackState()
   @State private var gallery: GalleryRailRequest?
   @State private var fold = PanelFold()
@@ -132,10 +156,6 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .onChange(of: p.selected, initial: true) { _, tab in
         fold.offset = 0
       }
-      .background {
-        VideoNavigationChrome(player: model.engine, contentPop: p.selected == p.tabs.first && replyPanels.isEmpty)
-          .frame(width: 0, height: 0)
-      }
       .onChange(of: p.playerHeight, initial: true) { _, h in fold.limit = max(1, h - PanelFold.bar) }.onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
     }
     .padding(.top, topInset)
@@ -156,9 +176,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     .onPreferenceChange(PlayerControlsVisibleKey.self) { shown in
       withAnimation(.smooth(duration: 0.28)) { chromeShown = shown }
     }
-    // The original has no system back button: back and home live in the player header and hide
-    // with its controls. Like the original's page route, `VideoNavigationChrome` provides its
-    // own finger-following edge swipe back.
+    // Back and Home are part of the player controls. The system edge gesture remains available.
     .navigationBarBackButtonHidden(true)
     .onAppear { onScreen = true }
     .onDisappear { onScreen = false }
@@ -204,16 +222,9 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     p.mode = PlayerPageLayout.resolve(width: width, height: full, horizontal: horizontal || (p.wide && creator != nil))
     // A partly folded Duo: lay the halves out on either side of the hinge, as the system's own
     // split views do, instead of drawing the player or a list across it.
-    var foldEdge: CGFloat?
-    if let d = fold, d.width >= width * 0.8, d.minY >= 120, d.maxY <= height - 120 {
-      p.mode = .tabletop
-      foldEdge = d.minY
-      p.foldGap = d.height
-    } else if let d = fold, d.height >= height * 0.8, d.minX >= width * 0.3, d.maxX <= width * 0.8 {
-      p.mode = .side
-      foldEdge = d.minX
-      p.foldGap = d.width
-    }
+    let partition = PlayerPageLayout.partition(width: width, height: height, fold: fold)
+    let foldEdge = partition?.edge
+    if let partition { p.mode = partition.mode; p.foldGap = partition.gap }
     let side = p.mode == .side
     p.list = p.mode != .stacked && (playlistPref ?? horizontal) ? playlist : nil
     let picture = playback.pictureSize
@@ -250,9 +261,10 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     return p
   }
   private func playerSurface(_ p: Plan) -> some View {
-    surface().frame(width: p.playerWidth, height: p.playerHeight).clipped().background(.black)
+    surface().frame(width: p.playerWidth, height: p.playerHeight).clipped()
       .recordsInlinePlayerFrame(model.engine)
       .overlay(alignment: .topLeading) { headerButtons }
+      .opacity(inlinePlayerCovered ? 0 : 1).background(.black)
   }
   /// The original's landscape page: player (and intro, when it fits) on the left, tabs on the right.
   private func sideLayout(_ p: Plan) -> some View {
@@ -336,7 +348,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     selection = tab == 2 ? nil : tab == 1
   }
   private func tabBar(tabs: [Int], selected: Int) -> some View {
-    PlaybackTabBar(items: tabs.map { PlaybackTab(id: $0, title: tabTitle($0)) }, selected: selected) { tab in
+    PlaybackTabBar(items: tabs.map { PlaybackTab(id: $0, title: tabTitle($0)) }, selected: selected, motion: pageMotion) { tab in
       choose(tab)
     } accessory: {
       if let accessory { accessory }
@@ -352,7 +364,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       set: { i in
         guard tabs.indices.contains(i), tabs[i] != selected else { return }
         choose(tabs[i])
-      })) { i in
+      }), motion: pageMotion) { i in
         ActivePlaybackPanel(active: tabs[i] == selected) {
           switch tabs[i] {
           case 1: replies()
@@ -380,9 +392,10 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   /// the top, then intro, comments and episodes side by side, each column titled.
   private func squareLayout(playerWidth: CGFloat, playerHeight: CGFloat, list: AnyView?) -> some View {
     VStack(spacing: 0) {
-      surface().frame(width: playerWidth, height: playerHeight).clipped().background(.black)
+      surface().frame(width: playerWidth, height: playerHeight).clipped()
         .recordsInlinePlayerFrame(model.engine)
         .overlay(alignment: .topLeading) { headerButtons }
+        .opacity(inlinePlayerCovered ? 0 : 1).background(.black)
       HStack(alignment: .top, spacing: 0) {
         squareColumn(0, trailing: true) { info() }
         if canDiscuss {

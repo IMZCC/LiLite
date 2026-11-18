@@ -87,6 +87,7 @@ struct EpisodePlayer: View {
   @State private var panelOverride: Bool?
   @AppStorage("detail.episodeReplies") private var showReplies = true
   @State private var theater = false
+  @State private var theaterCovering = false
   @State private var reload = 0
   private func episodePlaylist(_ current: SeasonInfo.Episode) -> AnyView? {
     let items=catalogSequence;guard items.count>1 else{return nil}
@@ -138,7 +139,7 @@ struct EpisodePlayer: View {
               seek: model.seek)
           }
         }), caption: AnyView(PlaybackCaption(model: model)),
-      marks: AnyView(ViewportMarks(model: model)),timeline:model.timeline, detached: theater, toggle: model.toggle,
+      marks: AnyView(ViewportMarks(model: model)),timeline:model.timeline, detached: theaterCovering, toggle: model.toggle,
       seek: model.seek, expand: { theater = true }, upscale: model.upscale
     ).environment(\.styledSubtitles,model.captions).modifier(
       PlayerKeyboard(
@@ -278,16 +279,16 @@ struct EpisodePlayer: View {
       AutoTheater(
         model: model, cid: episode.cid, presented: $theater, inheritPresentation: resumeFullscreen)
     )
-    .piliFullScreenCover(isPresented: $theater) {
+    .theaterCover(requested: $theater, player: model.engine, covering: $theaterCovering) { entry in
       TheaterSheet(
         subject: .init(cid: episode.cid, oid: oid, type: course ? 33 : 1,bvid:episode.bvid, aid: episode.aid, comments: showReplies),
         playlist: JoinedPlaybackPanels.merge(libraryPanel, episodePlaylist(episode), fullscreen: true), model: model, keyStep: keyboardStep,
+        entry: entry, closing: !theater, covered: { theaterCovering = $0 }, close: { theater = false },
         engagement: course
           ? nil : .init(bvid: episode.bvid, aid: episode.aid, episode: episode.id, copyright: 1))
     }
     .mediaMomentSheet($sharingMoment)
-    .modifier(VideoPageAppearance()).modifier(PlaybackEdgeInsets()).onDisappear {
-      if !theater { model.stop() }
-    }
+    .modifier(VideoPageAppearance()).modifier(PlaybackEdgeInsets())
+    .videoPageNavigation(stopOnDisappear: !theater) { model.stop() }
   }
 }

@@ -328,56 +328,31 @@ struct PlayerStepButtons: View {
   }
 }
 
-/// A bare picture of the player, used while fullscreen grows out of / shrinks into the page.
-struct PlayerPictureLayer: View {
+/// Sample the inline player's window coordinates before presenting fullscreen.
+struct InlinePlayerFrame: UIViewRepresentable {
   let player: any PlaybackEngine
-  var body: some View {
-    if let native = player.nativePlayer { AVPlayerPictureLayer(player: native) }
-    else if let mpv = player as? MPVPlayer { MPVVideoView(player: mpv) }
+  private static let views = NSMapTable<AnyObject, UIView>.weakToWeakObjects()
+  struct Snapshot {
+    let window: ObjectIdentifier
+    let bounds: CGSize
+    let rect: CGRect
+    let orientation: UIInterfaceOrientation
   }
-}
-private struct AVPlayerPictureLayer: UIViewRepresentable {
-  let player: AVPlayer
-  final class LayerView: UIView {
-    override class var layerClass: AnyClass { AVPlayerLayer.self }
-    var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+  static func current(_ player: any PlaybackEngine) -> Snapshot? {
+    guard let marker = views.object(forKey: player), let window = marker.window, let scene = window.windowScene,
+      marker.bounds.width > 1, marker.bounds.height > 1 else { return nil }
+    return Snapshot(window: ObjectIdentifier(window), bounds: window.bounds.size,
+      rect: marker.convert(marker.bounds, to: window), orientation: scene.interfaceOrientation)
   }
-  func makeUIView(context: Context) -> LayerView {
-    let v = LayerView()
-    v.backgroundColor = .clear
-    v.isUserInteractionEnabled = false
-    v.playerLayer.videoGravity = .resizeAspect
-    v.playerLayer.player = player
-    return v
+  func makeUIView(context: Context) -> UIView {
+    let view = UIView()
+    view.isUserInteractionEnabled = false
+    return view
   }
-  func updateUIView(_ v: LayerView, context: Context) {
-    if v.playerLayer.player !== player { v.playerLayer.player = player }
-  }
-}
-
-/// Where the inline player sits on screen (window coordinates), per orientation, so fullscreen
-/// can grow out of it and shrink back into it. Kept outside view state: it changes every scroll.
-@MainActor enum InlinePlayerFrame {
-  private static var frames: [ObjectIdentifier: [Bool: CGRect]] = [:]
-  static func record(_ rect: CGRect, player: any PlaybackEngine) {
-    guard let portrait = scenePortrait else { return }
-    frames[ObjectIdentifier(player), default: [:]][portrait] = rect
-  }
-  static func current(_ player: any PlaybackEngine) -> CGRect? {
-    guard let portrait = scenePortrait else { return nil }
-    return frames[ObjectIdentifier(player)]?[portrait]
-  }
-  private static var scenePortrait: Bool? {
-    let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-      .first { $0.activationState == .foregroundActive }
-    return scene.map { $0.interfaceOrientation.isPortrait }
-  }
+  func updateUIView(_ view: UIView, context: Context) { Self.views.setObject(view, forKey: player) }
 }
 extension View {
-  /// Records this view's frame as the inline player's, for the fullscreen transition.
   func recordsInlinePlayerFrame(_ player: any PlaybackEngine) -> some View {
-    onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
-      InlinePlayerFrame.record($0, player: player)
-    }
+    background { InlinePlayerFrame(player: player).allowsHitTesting(false) }
   }
 }

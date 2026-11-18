@@ -95,19 +95,23 @@ struct FeedView: View {
   @State private var shelf = NavigationRules.firstChannel(NavigationLayout.current().channels)
   @State private var pageProgress: CGFloat = 0
   @State private var chipFrames: [HomeChannel: CGRect] = [:]
+  @State private var windowInsets = FeedHeaderInsets()
   var body: some View {
     PiliNavigationStack {
       let channels = NavigationLayout.read(layoutData).channels
-      deck(channels)
-        // The original client's header: one row (search, messages, menu, avatar) that scrolls
-        // away with the feed, and the channel chips under it, which always stay.
-        .safeAreaBar(edge: .top, spacing: 0) {
-          VStack(spacing: 0) {
-            headerRow.padding(.top, 2).padding(.bottom, 8).piliHomeSearchVisibility()
-            if channels.count > 1 { channelBar(channels).padding(.bottom, 6) }
-          }
-        }
-        .toolbar(.hidden, for: .navigationBar)
+      VStack(spacing: 0) {
+        VStack(spacing: 0) {
+          headerRow.padding(.top, 2).padding(.bottom, 8).piliHomeSearchVisibility()
+          if channels.count > 1 { channelBar(channels).padding(.bottom, 6) }
+        }.modifier(FeedHeaderPlacement())
+        deck(channels)
+      }
+      .padding(.top, windowInsets.top)
+      .padding(.leading, windowInsets.leading).padding(.trailing, windowInsets.trailing)
+      .background {
+        FeedWindowSafeArea { windowInsets = $0 }.allowsHitTesting(false).accessibilityHidden(true)
+      }
+      .toolbar(.hidden, for: .navigationBar)
       .task(id: accounts.state.active) {
         if let uid = accounts.state.active { await profiles.refresh(uid) }
       }
@@ -262,6 +266,82 @@ struct FeedView: View {
     }
   }
 }
+/// The tab container can extend a navigation root under the status bar. Measure just the
+/// uncovered part in the feed's own coordinates, including the user's interface scale.
+private struct FeedWindowSafeArea: UIViewRepresentable {
+  let change: (FeedHeaderInsets) -> Void
+
+  func makeUIView(context: Context) -> Probe { Probe() }
+  func updateUIView(_ view: Probe, context: Context) {
+    view.change = change
+    view.measureAfterLayout()
+  }
+
+  final class Probe: UIView {
+    var change: ((FeedHeaderInsets) -> Void)?
+    private var scheduled = false
+    private var last: FeedHeaderInsets?
+    private weak var observedTransition: UIViewControllerTransitionCoordinator?
+
+    private func deferDuringNavigation() -> Bool {
+      var responder = next
+      while let current = responder {
+        if let controller = current as? UIViewController,
+          let transition = controller.navigationController?.transitionCoordinator {
+          if transition === observedTransition { return true }
+          observedTransition = transition
+          // The navigation transition temporarily translates or scales the feed. Converting
+          // the window's safe rect at that point would resize every row under the finger.
+          if transition.animate(alongsideTransition: nil, completion: { [weak self] _ in
+            self?.observedTransition = nil
+            self?.measureAfterLayout()
+          }) { return true }
+          observedTransition = nil
+          return false
+        }
+        responder = current.next
+      }
+      return false
+    }
+    override func didMoveToWindow() { super.didMoveToWindow(); measureAfterLayout() }
+    override func safeAreaInsetsDidChange() { super.safeAreaInsetsDidChange(); measureAfterLayout() }
+    override func layoutSubviews() { super.layoutSubviews(); measureAfterLayout() }
+
+    func measureAfterLayout() {
+      guard !scheduled, window != nil else { return }
+      scheduled = true
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        self.scheduled = false
+        guard let window = self.window, self.bounds.height > 0, !self.deferDuringNavigation() else { return }
+        let safe = self.convert(window.safeAreaLayoutGuide.layoutFrame, from: window)
+        let overlap = FeedHeaderInsets.window(bounds: self.bounds, safe: safe,
+          rightToLeft: self.effectiveUserInterfaceLayoutDirection == .rightToLeft)
+        if self.last != overlap {
+          self.last = overlap
+          self.change?(overlap)
+        }
+      }
+    }
+  }
+}
+
+private struct FeedHeaderPlacement: ViewModifier {
+  @State private var insets = FeedHeaderInsets()
+  func body(content: Content) -> some View {
+    content
+      .padding(.top, insets.top)
+      .padding(.leading, insets.leading).padding(.trailing, insets.trailing)
+      .frame(maxWidth: .infinity)
+      .onGeometryChange(for: FeedHeaderInsets.self) { proxy in
+        guard #available(iOS 27.1, *) else { return FeedHeaderInsets() }
+        let regions = proxy.reservedRegions(kind: .division) + proxy.reservedRegions(kind: .occlusion)
+        return FeedHeaderInsets.avoiding(width: proxy.size.width, height: proxy.size.height - insets.top,
+          regions: regions.filter(\.isActive).map(\.frame))
+      } action: { insets = $0 }
+  }
+}
+
 private struct VideoShelf: View {
   @Environment(\.horizontalSizeClass) private var sizeClass
   struct Feedback {
