@@ -96,6 +96,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ipa", type=Path)
     parser.add_argument("--signed", action="store_true")
+    parser.add_argument("--firebase-plist", type=Path)
     parser.add_argument("--discovery", choices=("full","personal"),default="full")
     args = parser.parse_args()
     with zipfile.ZipFile(args.ipa) as z:
@@ -105,6 +106,13 @@ def main():
         require(len(matches) == 1, "Expected exactly one main app")
         info = plistlib.loads(z.read(matches[0]))
         prefix = matches[0][:-len("Info.plist")]
+        if args.firebase_plist:
+            config = prefix + "GoogleService-Info.plist"
+            require(config in names and plistlib.loads(z.read(config)) ==
+                    plistlib.loads(args.firebase_plist.read_bytes()), "Firebase app configuration mismatch")
+            for sdk in ("FirebaseCore", "FirebaseCrashlytics"):
+                require(prefix + sdk + "_Privacy.bundle/PrivacyInfo.xcprivacy" in names,
+                        "Missing privacy manifest for " + sdk)
         notices = Path(__file__).resolve().parents[1] / "Sources/PiliNative/Notices"
         required = {"PiliPlus-GPL.txt", "SwiftProtobuf-LICENSE.txt", "ZIPFoundation-LICENSE.txt", "FFmpeg-LGPL.txt", "dav1d-BSD.txt", "Anime4K.txt", "MaterialColorUtilities.txt", "FlexSeedScheme.txt", "libass-ISC.txt", "FreeType-FTL.txt", "HarfBuzz-MIT.txt", "FriBidi-LGPL.txt"}
         bundled = {p.name for p in notices.iterdir() if p.is_file()}

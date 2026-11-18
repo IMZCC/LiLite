@@ -1,3 +1,4 @@
+import CFirebaseTelemetry
 import SwiftUI
 
 @main struct PiliNativeApp: App {
@@ -74,6 +75,7 @@ import SwiftUI
           \.piliTypeface, typeface
         ).font(typeface.font(.body))
         .onReceive(sleepTimer.$homeRevision.dropFirst().removeDuplicates()) { _ in returnHome(layout) }
+        .onChange(of: active, initial: true) { _, tab in LiLiteRecordTab(tab.rawValue) }
         .onChange(of: phase) { _, v in if v == .active { sleepTimer.check() } }
         .onChange(of: "\(force120):\(phase == .active)", initial: true) { _, _ in
           HighRefreshRate.shared.set(force120 && phase == .active)
