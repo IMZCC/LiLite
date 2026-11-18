@@ -116,22 +116,32 @@ pull_source = (source / "Library/NativePullRefresh.swift").read_text()
 start = pull_source.index("  @MainActor @Observable final class PullState")
 end = pull_source.index("\n}\nprivate struct PullIndicator", start)
 pull = textwrap.dedent(pull_source[start:end])
+attachment = (source / "Settings/NavScrollAttachment.swift").read_text()
+start = attachment.index("    @objc private func moved(")
+end = attachment.index("  func makeUIView", start)
+pan_handler = attachment[start:end].replace("@objc private func moved", "func moved")
 
 observation_fixture = r'''
 import Foundation
 import Observation
 class UIView {var window:Bool?=true}
+final class UIPanGestureRecognizer {
+  enum Phase {case began, changed, ended, cancelled}
+  var state = Phase.began, movement = CGPoint.zero, speed = CGPoint.zero
+  func translation(in window:Bool)->CGPoint {movement}
+  func velocity(in window:Bool)->CGPoint {speed}
+}
 struct StubInset {var top:CGFloat=0}
 enum StubEvent {case valueChanged}
 final class StubRefresh {var isRefreshing=false;func sendActions(for:StubEvent){}}
 class UIScrollView:UIView {
   var contentOffset=CGPoint.zero,adjustedContentInset=StubInset(),refreshControl:StubRefresh?
+  let panGestureRecognizer=UIPanGestureRecognizer()
+  var isTracking=false,isDragging=false
   func setContentOffset(_ point:CGPoint,animated:Bool){contentOffset=point}
 }
 enum NavScrollAttachment {static func visible(_ child:UIView,in root:UIView)->Bool{true};static func primaryScroll(in root:UIView)->UIScrollView?{nil}}
 enum NativePullRefresh {static func repeatTab(on scroll:UIScrollView)->Bool{false}}
-struct StubAnimation {static func easeOut(duration:Double)->Self{Self()}}
-func withAnimation(_ animation:StubAnimation,_ action:()->Void){action()}
 final class ChangeCount:@unchecked Sendable {
   let lock=NSLock();var count=0
   func changed(){lock.lock();count+=1;lock.unlock()}
@@ -141,11 +151,30 @@ final class ChangeCount:@unchecked Sendable {
     let chrome=NavigationChrome(),root=ChangeCount(),strip=ChangeCount(),scroll=UIScrollView()
     chrome.show(.home,UUID());chrome.listen=true
     withObservationTracking{_ = chrome.visible[.home]}onChange:{root.changed()}
-    for i in 0..<120 {
-      withObservationTracking{_ = chrome.fraction}onChange:{strip.changed()}
-      chrome.drag(.home,delta:i.isMultiple(of:2) ? 0.5:-0.5,top:false,scroll:scroll)
-    }
-    precondition(root.count==0 && strip.count==120,"scroll progress invalidated the shell visibility dependency")
+    withObservationTracking{_ = chrome.searchVisible}onChange:{strip.changed()}
+    chrome.touch(.home, scroll:scroll)
+    let marker=Marker(), pan=scroll.panGestureRecognizer
+    marker.scroll=scroll
+    marker.ended={chrome.release(.home, scroll:$0, distance:$1, velocity:$2, atTop:$3)}
+    func drain() async { await withCheckedContinuation { c in DispatchQueue.main.async { c.resume() } } }
+    scroll.contentOffset.y=150
+    pan.state = .began; marker.moved(pan)
+    pan.state = .changed
+    for i in 1...120 {pan.movement.y = -CGFloat(i);marker.moved(pan)}
+    await drain()
+    precondition(root.count==0 && strip.count==0 && chrome.searchVisible)
+    pan.state = .cancelled;marker.moved(pan);await drain()
+    precondition(strip.count==0)
+    pan.state = .ended;pan.movement.x=200;marker.moved(pan);await drain()
+    precondition(strip.count==0)
+    pan.movement.x=0;marker.moved(pan);marker.interaction+=1;await drain()
+    precondition(strip.count==0)
+    marker.moved(pan);precondition(strip.count==0);await drain()
+    precondition(strip.count==1 && !chrome.searchVisible && root.count==0)
+    pan.movement.y=4;marker.moved(pan);await drain();precondition(!chrome.searchVisible)
+    pan.movement.y=45;marker.moved(pan);await drain();precondition(chrome.searchVisible)
+    pan.movement.y = -50;marker.moved(pan);await drain();precondition(!chrome.searchVisible)
+    scroll.contentOffset.y=0;marker.moved(pan);await drain();precondition(chrome.searchVisible)
     let token=UUID();chrome.show(.mine,token);chrome.leave(.mine,token)
     // Pull progress likewise belongs to the indicator, while refresh remains a single operation.
     let pull=PullState(),working=ChangeCount(),progress=ChangeCount(),actions=ChangeCount()
@@ -158,7 +187,7 @@ final class ChangeCount:@unchecked Sendable {
     try await Task.sleep(nanoseconds:40_000_000)
     precondition(actions.count==1 && !pull.working && working.count==1)
     pull.drag(20,height:20);pull.stop();precondition(pull.progress==0 && !pull.working)
-    print("Production Observation: 120 scroll changes reach only the strip; pull progress is isolated; refresh deduplication and cancellation retained")
+    print("Home pan: 120 drag samples caused zero header changes, vertical lift committed once; horizontal, cancelled, superseded, reverse and at-top gestures passed")
   }
 }
 '''
@@ -167,7 +196,9 @@ with tempfile.TemporaryDirectory(prefix="pili-runtime-shell-") as temporary:
     work = Path(temporary)
     for name, body, inputs in (
         ("Artwork", artwork + "\n" + image_fixture, [source / "Library/ArtworkCacheRules.swift"]),
-        ("Observation", observation_fixture + "\n" + chrome + "\n" + pull, [source / "Network/ServiceError.swift", source / "Settings/DecodedSettingCache.swift", source / "Settings/NavigationRules.swift", source / "Settings/InteractionPolicy.swift"]),
+        ("Observation", observation_fixture + "\n" + chrome + "\n" + pull
+         + "\n@MainActor final class Marker { var interaction=0; weak var scroll:UIScrollView?; var ended:((UIScrollView,CGFloat,CGFloat,Bool)->Void)?\n" + pan_handler,
+         [source / "Network/ServiceError.swift", source / "Settings/DecodedSettingCache.swift", source / "Settings/NavigationRules.swift", source / "Settings/InteractionPolicy.swift"]),
     ):
         swift = work / (name + ".swift")
         swift.write_text(body)

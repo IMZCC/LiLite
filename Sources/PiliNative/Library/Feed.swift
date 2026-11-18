@@ -110,7 +110,10 @@ struct FeedView: View {
             HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion).padding(.bottom, 6)
           }
         }.modifier(FeedHeaderPlacement())
-        deck(channels)
+        // Give the horizontal pager its viewport before it measures any vertical channel.
+        GeometryReader { viewport in
+          deck(channels).frame(width: viewport.size.width, height: viewport.size.height)
+        }
       }
       .padding(.top, windowInsets.top)
       .padding(.leading, windowInsets.leading).padding(.trailing, windowInsets.trailing)
