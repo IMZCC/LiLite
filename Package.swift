@@ -14,6 +14,13 @@ let sdkLinkFlags: [LinkerSetting] = linkedSDK.map {
 let fastBuild = ProcessInfo.processInfo.environment["PILI_FAST_BUILD"] == "1"
 let developmentFlags: [SwiftSetting] = fastBuild ? [.unsafeFlags(["-no-whole-module-optimization"])] : []
 
+// build.sh stages the official arm64 device frameworks for xtool's cross-linker.
+let firebaseDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+  .appendingPathComponent("FirebaseSDK")
+let firebaseFrameworks = (try? FileManager.default.contentsOfDirectory(atPath: firebaseDirectory.path)) ?? []
+let firebaseLinkFlags = firebaseFrameworks.sorted().filter { $0.hasSuffix(".framework") }
+  .flatMap { ["-framework", String($0.dropLast(".framework".count))] }
+
 let package = Package(
   name: "PiliNative",
   platforms: [.iOS("26.0")],
@@ -21,8 +28,17 @@ let package = Package(
   dependencies: [.package(path: "Wire"), .package(path: "ArchiveKit"), .package(path: "MediaKit"), .package(path: "ColorKit")],
   targets: [
     .target(
+      name: "CFirebaseTelemetry",
+      cSettings: [.unsafeFlags(["-F", firebaseDirectory.path])],
+      linkerSettings: [
+        .unsafeFlags(["-F", firebaseDirectory.path, "-Xlinker", "-ObjC"] + firebaseLinkFlags),
+        .linkedLibrary("sqlite3"), .linkedLibrary("z"), .linkedLibrary("c++"),
+        .linkedFramework("SystemConfiguration"), .linkedFramework("Security")
+      ]),
+    .target(
       name: "PiliNative",
       dependencies: [
+        "CFirebaseTelemetry",
         .product(name: "PiliWire", package: "Wire"),
         .product(name: "PiliArchive", package: "ArchiveKit"),
         .product(name: "MaterialColorUtilities", package: "ColorKit"),

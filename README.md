@@ -35,6 +35,8 @@
 | 账号 | 扫码 / 网页 / Cookie 登录、多账号切换 |
 | 数据 | WebDAV 备份、数据包导入导出 |
 
+轻哩使用 Firebase Analytics 统计活跃用户、会话和主导航页面访问，使用 Crashlytics 收集崩溃堆栈、应用版本和崩溃时的主标签页。页面事件只记录「发现」「搜索」「动态」「我的」四个固定分类
+
 ## 截图
 
 <p align="center">
@@ -81,6 +83,8 @@
 | `build.cmd --release` | 带 SSDP 组播能力的 Release 未签名 IPA |
 
 首次构建会编译 FFmpeg、libass、mpv 等依赖，耗时较长；之后为增量构建。Apple 账号、令牌、证书和描述文件都不会进入仓库。
+
+构建脚本会下载并校验 Firebase Apple SDK。自行维护分支时，可用 `LILITE_FIREBASE_PLIST` 指定自己的 Apple 应用配置。Release 和签名构建会在 `dist/` 生成对应的 `.dSYM.zip`，可上传至 Firebase 控制台 Crashlytics 的 dSYM 页面
 
 ## 目录
 

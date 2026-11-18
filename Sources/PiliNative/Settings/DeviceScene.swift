@@ -1,3 +1,4 @@
+import CFirebaseTelemetry
 import UIKit
 
 @MainActor final class DeviceSceneDelegate: NSObject, UIWindowSceneDelegate {
@@ -11,6 +12,7 @@ extension DownloadLifecycle {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
     application.applicationSupportsShakeToEdit = false
+    LiLiteConfigureFirebase()
     return true
   }
   func application(_ application: UIApplication, configurationForConnecting session: UISceneSession,
