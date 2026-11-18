@@ -118,6 +118,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   @State private var pageMotion = NativePageMotion()
   @Environment(\.inlinePlayerCovered) private var inlinePlayerCovered
   @State private var playback = PanelPlaybackState()
+  @State private var replyLink: SharedLink?
   @State private var gallery: GalleryRailRequest?
   @State private var fold = PanelFold()
   /// Comment threads opened from the comments, shown as panels under the player.
@@ -144,6 +145,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         case .stacked: stackedLayout(p)
         }
       }
+      .environment(\.replyOpenLink, { replyLink = $0 })
       .environment(\.presentGalleryRail, wide && galleryEnabled ? { gallery = $0 } : nil)
       .environment(\.replyPanelPresenter, ReplyPanelPresenter { title, content in
         guard onScreen else { return false }
@@ -153,9 +155,6 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .overlay {
         if wide && galleryEnabled, let gallery { GalleryRailPanel(request: gallery) { self.gallery = nil } }
       }
-      .onChange(of: p.selected, initial: true) { _, tab in
-        fold.offset = 0
-      }
       .onChange(of: p.playerHeight, initial: true) { _, h in fold.limit = max(1, h - PanelFold.bar) }.onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
     }
     .padding(.top, topInset)
@@ -164,6 +163,9 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         .ignoresSafeArea(edges: .top)
     }
     .ignoresSafeArea(.container, edges: .top)
+    .navigationDestination(item: $replyLink) { link in
+      LinkDestination(item: link).environment(\.replyOpenLink, nil)
+    }
     .toolbar(.hidden, for: .navigationBar)
     .modifier(HorizontalBarsOnly())
     // Light status bar over the black player; the system's own once it has folded into the bar.
@@ -178,6 +180,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     .onAppear { onScreen = true }
     .onDisappear { onScreen = false }
     .onChange(of: key) { _, _ in
+      fold.offset = 0
+      pageMotion.pager?.resetPanelOffsets()
       replyPanels = []
       gallery = nil
       selection = nil
@@ -313,16 +317,13 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   private func stackedLayout(_ p: Plan) -> some View {
     let header = p.playerHeight + (p.showTabs ? 46 : 0)
     return ZStack(alignment: .top) {
-      pager(tabs: p.tabs, selected: p.selected, list: p.list)
+      pager(tabs: p.tabs, selected: p.selected, list: p.list, sharedFold: fold)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(uiColor: .systemBackground))
         .environment(\.panelTopInset, header)
         // Only changes inside the fold range are published, so a fully folded player stops
         // invalidating on every scroll frame.
-        .environment(\.panelScroll, { [fold] y in
-          let v = min(max(y, 0), fold.limit + 1)
-          if v != fold.offset { fold.offset = v }
-        })
+        .environment(\.panelScroll, { [fold] old, new in fold.scrolled(from: old, to: new) })
       FoldingHeader(fold: fold, active: !playback.playing) {
         VStack(spacing: 0) {
           playerSurface(p)
@@ -340,8 +341,10 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
           }
         }
       }
-      FoldAwareReplyPanels(
-        fold: fold, active: !playback.playing, playerHeight: p.playerHeight, items: $replyPanels)
+      if !replyPanels.isEmpty {
+        FoldAwareReplyPanels(
+          fold: fold, active: !playback.playing, playerHeight: p.playerHeight, items: $replyPanels)
+      }
     }
     .clipped()
   }
@@ -359,7 +362,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     // No swipe on the tab bar itself: it fired its buttons (and 发弹幕) on sideways drags. The
     // pages below swipe, like the original's TabBarView.
   }
-  private func pager(tabs: [Int], selected: Int, list: AnyView?) -> some View {
+  private func pager(tabs: [Int], selected: Int, list: AnyView?, sharedFold: PanelFold? = nil) -> some View {
     // Both pages remain mounted before a drag begins. Only UIKit changes their intermediate
     // frames; selection and pending page roots are committed after deceleration ends.
     NativePager(count: tabs.count, page: Binding(
@@ -367,7 +370,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       set: { i in
         guard tabs.indices.contains(i), tabs[i] != selected else { return }
         choose(tabs[i])
-      }), motion: pageMotion) { i in
+      }), motion: pageMotion, fold: playback.playing ? nil : sharedFold) { i in
         ActivePlaybackPanel(active: tabs[i] == selected) {
           switch tabs[i] {
           case 1: replies()
@@ -481,6 +484,10 @@ private struct ActivePlaybackPanel<Content: View>: View {
   /// How far the player can fold away (its height minus the bar it leaves behind).
   var limit: CGFloat = 1
   static let bar: CGFloat = 44
+  func scrolled(from old: CGFloat, to new: CGFloat) {
+    let next = min(limit, max(0, new), offset + max(0, new - old))
+    if offset != next { offset = next }
+  }
   func progress(_ active: Bool) -> CGFloat {
     active ? min(max(offset, 0), limit) / max(limit, 1) : 0
   }
@@ -492,9 +499,14 @@ struct FoldingHeader<Content: View>: View {
   let fold: PanelFold
   /// Folding follows the list only while paused.
   let active: Bool
-  @ViewBuilder let content: () -> Content
+  let content: Content
+  init(fold: PanelFold, active: Bool, @ViewBuilder content: () -> Content) {
+    self.fold = fold
+    self.active = active
+    self.content = content()
+  }
   var body: some View {
-    content()
+    content
       .offset(y: -fold.progress(active) * fold.limit)
       .animation(.smooth(duration: 0.32), value: active)
   }

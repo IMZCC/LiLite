@@ -289,6 +289,6 @@ struct EpisodePlayer: View {
     }
     .mediaMomentSheet($sharingMoment)
     .modifier(VideoPageAppearance()).modifier(PlaybackEdgeInsets())
-    .videoPageNavigation(stopOnDisappear: !theater) { model.stop() }
+    .videoPageNavigation(stopOnDisappear: !theater) { model.leavePlaybackPage() }
   }
 }

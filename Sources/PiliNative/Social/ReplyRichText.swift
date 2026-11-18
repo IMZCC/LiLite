@@ -12,7 +12,18 @@ import SwiftUI
     return try? await ArtworkStore.shared.image(url, pixels: 128, maximum: 3 * ArtworkStore.mib)
   }
 }
+private struct ReplyLinkKey: EnvironmentKey {
+  static let defaultValue: (@MainActor (SharedLink) -> Void)? = nil
+}
+extension EnvironmentValues {
+  var replyOpenLink: (@MainActor (SharedLink) -> Void)? {
+    get { self[ReplyLinkKey.self] }
+    set { self[ReplyLinkKey.self] = newValue }
+  }
+}
+
 struct ReplyRichText: View {
+  @Environment(\.replyOpenLink) private var openLink
   private let origin: InlineDocument, reply: Reply.Content?
   @AppStorage("reply.wordSearch") private var wordSearch = false
   @Environment(\.replyPlayback) private var playback
@@ -64,7 +75,20 @@ struct ReplyRichText: View {
     if document.links.isEmpty && document.images.isEmpty && document.styles.isEmpty {
       // Most comment rows contain only prose. Let SwiftUI measure one text run, without a
       // selectable UIKit view, asynchronous overflow feedback or a sheet host in every row.
-      plain(document.text, collapsed: collapsed)
+      plain(Text(verbatim: document.text), collapsed: collapsed)
+    } else if let openLink, document.images.isEmpty, document.styles.isEmpty,
+      document.targets.values.allSatisfy({ if case .route = $0 { true } else { false } })
+    {
+      var text: AttributedString {
+        let string = NSMutableAttributedString(string: document.text)
+        for link in document.links { string.addAttribute(.link, value: link.url, range: link.range) }
+        return AttributedString(string)
+      }
+      plain(Text(text), collapsed: collapsed).environment(\.openURL, OpenURLAction { url in
+        guard case .route(let route) = document.target(url) else { return .discarded }
+        openLink(route)
+        return .handled
+      })
     } else {
     VStack(alignment: .leading, spacing: 2) {
       ReplyTextBody(
@@ -72,8 +96,12 @@ struct ReplyRichText: View {
         limit: collapsed ? maxLines : 0, lineSpacing: lineSpacing, preview: preview && permitsPreview,
         onOverflow: { b in if b != overflow { overflow = b } }
       ) { u in
-        if case .timestamp(let seconds) = document.target(u) { playback?.seek(Double(seconds)) }
-        else if let t = document.target(u) { destination = Destination(value: t) }
+        guard let target = document.target(u) else { return }
+        switch target {
+        case .timestamp(let seconds): playback?.seek(Double(seconds))
+        case .route(let route) where openLink != nil: openLink?(route)
+        default: destination = Destination(value: target)
+        }
       }
       // Re-create the text view on toggle so the list measures the new height immediately.
       .id(expanded)
@@ -129,9 +157,9 @@ struct ReplyRichText: View {
     }
     }
   }
-  @ViewBuilder private func plain(_ text: String, collapsed: Bool) -> some View {
+  @ViewBuilder private func plain(_ text: Text, collapsed: Bool) -> some View {
     let font = Font(UIFont.preferredFont(forTextStyle: textStyle))
-    let run = Text(verbatim: text).font(font).lineSpacing(lineSpacing)
+    let run = text.font(font).lineSpacing(lineSpacing)
     let capped = run.lineLimit(maxLines).fixedSize(horizontal: false, vertical: true)
     VStack(alignment: .leading, spacing: 2) {
       if expandable && collapsed {

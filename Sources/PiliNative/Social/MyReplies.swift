@@ -101,6 +101,7 @@ struct MyReplies: View {
         }
       }
     }
+    .environment(\.replyOpenLink, { route = .link($0) })
     .environment(\.inListRows, true)
     .navigationDestination(item: $route) { r in
       switch r {

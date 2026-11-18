@@ -37,7 +37,7 @@ private struct ScrollCollapseKey: EnvironmentKey {
 }
 private struct PanelTopInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
 private struct PanelScrollKey: EnvironmentKey {
-  static let defaultValue: (@MainActor (CGFloat) -> Void)? = nil
+  static let defaultValue: (@MainActor (CGFloat, CGFloat) -> Void)? = nil
 }
 extension EnvironmentValues {
   var scrollCollapse: ScrollCollapse? {
@@ -50,7 +50,7 @@ extension EnvironmentValues {
     set { self[PanelTopInsetKey.self] = newValue }
   }
   /// Receives the scroll offset of the visible list under such a header.
-  var panelScroll: (@MainActor (CGFloat) -> Void)? {
+  var panelScroll: (@MainActor (CGFloat, CGFloat) -> Void)? {
     get { self[PanelScrollKey.self] }
     set { self[PanelScrollKey.self] = newValue }
   }
@@ -68,17 +68,21 @@ private struct ReportsScrollCollapse: ViewModifier {
   @Environment(\.panelTopInset) private var inset
   @Environment(\.panelScroll) private var panel
   func body(content: Content) -> some View {
-    content
-      // Pages pushed or presented from inside this list are not under the header.
-      .environment(\.panelTopInset, 0).environment(\.panelScroll, nil)
-      // Only this list starts below an overlaid header; nested horizontal scrollers do not.
-      .safeAreaPadding(.top, inset)
-      .onScrollGeometryChange(for: CGFloat.self) { g in
-        g.contentOffset.y + g.contentInsets.top
-      } action: { old, new in
-        state?.scrolled(from: old, to: new)
-        panel?(new)
-      }
+    if state == nil && panel == nil && inset == 0 {
+      content
+    } else {
+      content
+        // Pages pushed or presented from inside this list are not under the header.
+        .environment(\.panelTopInset, 0).environment(\.panelScroll, nil)
+        // Only this list starts below an overlaid header; nested horizontal scrollers do not.
+        .safeAreaPadding(.top, inset)
+        .onScrollGeometryChange(for: CGFloat.self) { g in
+          g.contentOffset.y + g.contentInsets.top
+        } action: { old, new in
+          state?.scrolled(from: old, to: new)
+          panel?(old, new)
+        }
+    }
   }
 }
 

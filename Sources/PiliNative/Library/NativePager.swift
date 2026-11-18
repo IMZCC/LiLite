@@ -7,9 +7,10 @@ struct NativePager<Page: View>: View {
   let count: Int
   @Binding var page: Int
   let motion: NativePageMotion
+  let fold: PanelFold?
   @ViewBuilder let content: (Int) -> Page
   var body: some View {
-    NativePagerHost(count: count, page: $page, motion: motion, content: content)
+    NativePagerHost(count: count, page: $page, motion: motion, fold: fold, content: content)
       .accessibilityAction(named: "上一页") { if page > 0 { page -= 1 } }
       .accessibilityAction(named: "下一页") { if page + 1 < count { page += 1 } }
   }
@@ -25,11 +26,13 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
   let count: Int
   @Binding var page: Int
   let motion: NativePageMotion
+  let fold: PanelFold?
   @ViewBuilder let content: (Int) -> Page
   func makeUIViewController(context: Context) -> NativePagingController { NativePagingController() }
   func updateUIViewController(_ controller: NativePagingController, context: Context) {
     let environment = context.environment
     let selection = $page
+    controller.fold = fold
     controller.motion = motion
     motion.pager = controller
     controller.update(count: count, page: page, reduced: environment.accessibilityReduceMotion,
@@ -56,6 +59,8 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
   private var size = CGSize.zero
   private var selection = NativePagingSelection()
   private var animating = false
+  weak var fold: PanelFold?
+  private var pageFolds: [Int: CGFloat] = [:]
   weak var motion: NativePageMotion?
   private var pending: (() -> Void)?
   private var select: ((Int) -> Void)?
@@ -114,8 +119,30 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     pending = { [weak self] in self?.apply(count: count, reduced: reduced, content: content) }
     if !moving { flush() }
   }
+  func resetPanelOffsets() { pageFolds.removeAll() }
+
+  // Each list owns the offset below the shared header. Align just the header portion before
+  // UIKit exposes a neighbour, including during a drag that eventually cancels.
+  private func alignPanelOffsets() {
+    guard let fold, size.height > 0 else { return }
+    let shared = min(fold.limit, fold.offset)
+    pageFolds[selection.selected] = shared
+    for (index, host) in hosts.enumerated() where index != selection.selected {
+      let previous = pageFolds[index] ?? 0
+      guard abs(previous - shared) > 0.25,
+        let list = NavScrollAttachment.primaryScroll(in: host.view) else { continue }
+      let top = -list.adjustedContentInset.top
+      let depth = max(0, list.contentOffset.y - top - previous)
+      let bottom = max(top, list.contentSize.height + list.adjustedContentInset.bottom - list.bounds.height)
+      let y = min(bottom, top + shared + depth)
+      list.setContentOffset(CGPoint(x: list.contentOffset.x, y: y), animated: false)
+      pageFolds[index] = min(shared, max(0, y - top))
+    }
+  }
+
   func move(to index: Int, reduced: Bool) {
     guard hosts.indices.contains(index), !closed, size.width > 0 else { clearMotion(); return }
+    alignPanelOffsets()
     selection.request(index)
     scroll.stopScrollingAndZooming()
     let target = CGPoint(x: CGFloat(index) * size.width, y: 0)
@@ -152,6 +179,7 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     }
     scroll.isScrollEnabled = count > 1
     layoutPages()
+    if selection.requested != selection.selected { alignPanelOffsets() }
     selection.applied()
     accessibilityPage(selection.selected)
     let target = CGPoint(x: CGFloat(selection.selected) * size.width, y: 0)
@@ -177,7 +205,10 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
       self.flush()
     }
   }
-  func scrollViewWillBeginDragging(_ scrollView: UIScrollView) { animating = false }
+  func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+    animating = false
+    alignPanelOffsets()
+  }
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
     let interactive = scrollView.isDragging || scrollView.isDecelerating
     guard (interactive || animating), size.width > 0, !hosts.isEmpty, let motion else { return }

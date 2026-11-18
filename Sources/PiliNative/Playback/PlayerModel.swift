@@ -177,6 +177,7 @@ final class PlayerModel: ObservableObject {
   private var switchStamp = UUID()
   private var generation = UUID(), itemStamp = UUID()
   private var wantsStart = false
+  private var pageReturn: (memory: String, owner: String, time: Double, playing: Bool)?
   private var memoryID: String?
   private var pendingPart: (String, Int64)?
   private var resumeAt = 0.0
@@ -281,9 +282,8 @@ final class PlayerModel: ObservableObject {
     _ bvid: String, cid: Int64, aid: Int64? = nil, start: Double? = nil, rememberPart: Bool = false,
     playNow: Bool = false, mediaTitle: SystemMediaTitle? = nil, step: ((Bool) -> Void)? = nil
   ) async {
-    if playNow || VideoTransport.playsOnEntry { ListenQueue.shared.stop() }
     stop()
-    wantsStart = playNow || VideoTransport.playsOnEntry
+    wantsStart = false
     let gen = generation
     let user = try? await AccountJar.shared.current()?.id
     let owner: String
@@ -296,9 +296,9 @@ final class PlayerModel: ObservableObject {
     setupSystemMedia(mediaTitle ?? .init(title: bvid), step: step)
     timeline.reset(.init(bvid: bvid, aid: aid, cid: cid))
     history.begin(uid: reporter, fields: ["bvid": bvid, "cid": "\(cid)", "type": "3"])
-    memoryID = PlaybackMemory.id(cid, account: user)
+    restorePageOrStart(memory: PlaybackMemory.id(cid, account: user), owner: owner,
+      start: start, autoplay: playNow || VideoTransport.playsOnEntry)
     pendingPart = rememberPart ? (LastArchivePart.key(bvid, uid: user), cid) : nil
-    resumeAt = start ?? PlaybackMemory.read(memoryID!)
     reference = URL(string: "https://www.bilibili.com/video/\(bvid)/")
     startClock(gen)
     reloadSubtitleCatalog()
@@ -432,9 +432,8 @@ final class PlayerModel: ObservableObject {
     _ e: SeasonInfo.Episode, course: Bool = false, start: Double? = nil, playNow: Bool = false,
     step: ((Bool) -> Void)? = nil, seasonType: Int? = nil, seasonID: Int64? = nil
   ) async {
-    if playNow || VideoTransport.playsOnEntry { ListenQueue.shared.stop() }
     stop()
-    wantsStart = playNow || VideoTransport.playsOnEntry
+    wantsStart = false
     let gen = generation
     let user = try? await AccountJar.shared.current()?.id
     let reporter = try? await AccountJar.shared.current(.role(.heartbeat))?.id
@@ -451,8 +450,8 @@ final class PlayerModel: ObservableObject {
     setupSystemMedia(.init(title: e.label, cover: e.cover.flatMap(httpsURL)), step: step)
     timeline.reset(.init(bvid: e.bvid, aid: e.aid, cid: e.cid))
     history.begin(uid: reporter, fields: historyFields)
-    memoryID = PlaybackMemory.id(e.cid, account: user)
-    resumeAt = start ?? PlaybackMemory.read(memoryID!)
+    restorePageOrStart(memory: PlaybackMemory.id(e.cid, account: user), owner: episodeOwner,
+      start: start, autoplay: playNow || VideoTransport.playsOnEntry)
     startClock(gen)
     reference = URL(
       string: "https://www.bilibili.com/" + (course ? "cheese" : "bangumi") + "/play/ep\(e.id)")
@@ -1312,6 +1311,21 @@ final class PlayerModel: ObservableObject {
     if let mpv = engine as? MPVPlayer { mpv.onUpdate = nil; mpv.onEnd = nil; mpv.onFailure = nil; mpv.stop() }
     loader?.stop()
     loader = nil
+  }
+  func leavePlaybackPage() {
+    if ready, let memoryID, let activeVideoOwner {
+      let time = engine.currentTime().seconds
+      pageReturn = (memoryID, activeVideoOwner, time.isFinite ? max(0, time) : seconds, playing)
+    }
+    stop()
+  }
+  private func restorePageOrStart(memory: String, owner: String, start: Double?, autoplay: Bool) {
+    let returning = pageReturn.flatMap { $0.memory == memory && $0.owner == owner ? $0 : nil }
+    pageReturn = nil
+    memoryID = memory
+    resumeAt = returning?.time ?? start ?? PlaybackMemory.read(memory)
+    wantsStart = returning?.playing ?? autoplay
+    if wantsStart { ListenQueue.shared.stop() }
   }
   func stop() {
     chosenAddresses=nil

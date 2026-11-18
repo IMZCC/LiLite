@@ -1,17 +1,32 @@
 import SwiftUI
 import UIKit
 
+private struct IncomingTabLinkKey: EnvironmentKey {
+  static let defaultValue: Binding<IncomingRoute?>? = nil
+}
+extension EnvironmentValues {
+  var incomingTabLink: Binding<IncomingRoute?>? {
+    get { self[IncomingTabLinkKey.self] }
+    set { self[IncomingTabLinkKey.self] = newValue }
+  }
+}
+
 struct PiliNavigationStack<Content: View>: View {
   private let content: Content
+  @Environment(\.incomingTabLink) private var incoming
   @State private var tabBarHidden = false
   init(@ViewBuilder content: () -> Content) { self.content = content() }
   var body: some View {
     SwiftUI.NavigationStack {
-      content.background(MotionProbe().frame(width: 0, height: 0))
+      content.environment(\.incomingTabLink, nil)
+        .navigationDestination(item: incoming ?? .constant(nil)) { request in
+          LinkDestination(item: request.link).environment(\.incomingTabLink, nil)
+        }
+        .background(MotionProbe().frame(width: 0, height: 0))
         .background(NavigationTabBarProbe { hidden in
           if tabBarHidden != hidden { tabBarHidden = hidden }
         }.frame(width: 0, height: 0))
-    }.toolbarVisibility(tabBarHidden ? .hidden : .visible, for: .tabBar)
+    }.toolbarVisibility(tabBarHidden || incoming?.wrappedValue != nil ? .hidden : .visible, for: .tabBar)
   }
 }
 

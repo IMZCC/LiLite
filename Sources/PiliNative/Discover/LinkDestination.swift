@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct IncomingRoute: Identifiable {
+struct IncomingRoute: Identifiable, Hashable {
   let id = UUID()
   let link: SharedLink
 }

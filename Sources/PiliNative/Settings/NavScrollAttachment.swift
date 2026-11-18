@@ -19,8 +19,9 @@ struct NavScrollAttachment: UIViewRepresentable {
   @MainActor static func primaryScroll(in root: UIView) -> UIScrollView? {
     var best: UIScrollView?
     var area: CGFloat = 0
+    let fullArea = root.bounds.width * root.bounds.height
     func visit(_ view: UIView) {
-      guard !view.isHidden, view.alpha > 0.01, view.window != nil else { return }
+      guard area < fullArea, !view.isHidden, view.alpha > 0.01, view.window != nil else { return }
       if let s = view as? UIScrollView, s.isScrollEnabled,
         s.contentSize.width <= s.bounds.width + 2,
         s.alwaysBounceVertical || s.refreshControl != nil || s.contentSize.height > s.bounds.height

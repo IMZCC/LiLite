@@ -9,7 +9,7 @@ final class MPVPiPFrames: @unchecked Sendable {
   var sourceSize = CGSize.zero
   var renderSize = CGSize.zero
   var active = false
-  var enabled = true
+  var enabled = false
   var didEnqueue: (() -> Void)?
   private var pool: CVPixelBufferPool?
   private var poolSize = CGSize.zero

@@ -310,6 +310,7 @@ struct Discussion: View {
   @State private var reported: Reply?
   @State private var pictures = [ReplyComposePhoto]()
   @StateObject private var sessions = ReplyComposeSession()
+  @Environment(\.replyOpenLink) private var playerOpenLink
   @Environment(\.panelTopInset) private var panelInset
   @Environment(\.replyPlayback) private var playback
   @Environment(\.replyPanelPresenter) private var panelPresenter
@@ -323,11 +324,12 @@ struct Discussion: View {
   @State private var route: ReplyRoute?
   fileprivate enum ReplyRoute: Hashable {
     case space(Int64, String), thread(root: Int64, anchor: Int64?), dialogue(root: Int64, id: Int64)
-    case poster(Int64), vote(Int64)
+    case poster(Int64), vote(Int64), link(SharedLink)
   }
   @ViewBuilder private func routeDestination(_ target: ReplyRoute) -> some View {
     switch target {
       case .space(let mid, let name): CreatorSpace(mid: mid, name: name)
+    case .link(let link): LinkDestination(item: link)
       case .thread(let top, let anchor):
         Discussion(oid: oid, type: type, root: top, owner: subjectOwner, anchor: anchor)
       case .dialogue(let top, let id):
@@ -419,7 +421,8 @@ struct Discussion: View {
   @State private var writing = false
   @State private var composerHidden = false
   @State private var anchorGlow = true
-  @State private var fabAnchor: CGFloat = 0
+  private final class ComposerScroll { var anchor: CGFloat = 0 }
+  @State private var composerScroll = ComposerScroll()
   private func setComposerHidden(_ value: Bool) {
     guard composerHidden != value else { return }
     withAnimation(.easeInOut(duration: 0.18)) { composerHidden = value }
@@ -552,14 +555,15 @@ struct Discussion: View {
       // back on any scroll up (fab_mixin: UserScrollNotification, 100ms easeInOut).
       .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
         guard embeddedTitle != nil else { return }
-        if y <= 8 { setComposerHidden(false); fabAnchor = y; return }
+        if y <= 8 { setComposerHidden(false); composerScroll.anchor = y; return }
         if composerHidden {
-          if fabAnchor - y > 24 { setComposerHidden(false); fabAnchor = y } else { fabAnchor = max(fabAnchor, y) }
+          if composerScroll.anchor - y > 24 { setComposerHidden(false); composerScroll.anchor = y } else { composerScroll.anchor = max(composerScroll.anchor, y) }
         } else {
-          if y - fabAnchor > 24 { setComposerHidden(true); fabAnchor = y } else { fabAnchor = min(fabAnchor, y) }
+          if y - composerScroll.anchor > 24 { setComposerHidden(true); composerScroll.anchor = y } else { composerScroll.anchor = min(composerScroll.anchor, y) }
         }
       }
-    }.environment(\.replyPlayback, activePlayer == nil ? nil : playback).modifier(
+    }.environment(\.replyOpenLink, playerOpenLink ?? { route = .link($0) })
+    .environment(\.replyPlayback, activePlayer == nil ? nil : playback).modifier(
       ReplyEdgeDismiss(standalone: embeddedTitle == nil)
     ).navigationTitle(
       embeddedTitle ?? title

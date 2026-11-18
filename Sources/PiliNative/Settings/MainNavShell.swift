@@ -156,6 +156,7 @@ private struct AdaptiveTabStyle: ViewModifier {
 struct MainNavShell: View {
   let layout: NavigationLayout, badge: (MainTab) -> Text?
   @Binding var active: MainTab
+  @Binding var incoming: [MainTab: IncomingRoute]
   @State private var chrome = NavigationChrome()
   @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
   @Environment(\.accessibilityReduceMotion) private var reduce
@@ -187,6 +188,7 @@ struct MainNavShell: View {
     .environment(\.openPersonalPage, {
       if layout.tabs.contains(.mine) { select(.mine) } else { shortcut = .profile }
     })
+    .onChange(of: incoming[active]?.id) { _, id in if id != nil { shortcut = nil } }
     .onChange(of: active, initial: true) { _, value in
       chrome.reselect = RootTabReselect()
       chrome.active = value
@@ -221,6 +223,7 @@ struct MainNavShell: View {
   }
   private func root(_ tab: MainTab, collapseSearch: Bool) -> some View {
     tab.screen
+      .environment(\.incomingTabLink, Binding(get: { incoming[tab] }, set: { incoming[tab] = $0 }))
       .environment(\.activeCatalogPage, active == tab)
       .environment(\.preparedCatalogPage, active == tab)
       .environment(\.owningTab, tab)

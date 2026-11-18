@@ -43,6 +43,7 @@ struct DetailView: View {
   @Environment(\.listenOrigin) private var listenOrigin
   @AppStorage("play.continuePart") private var continuePart = true
   @State private var startHint: ArchiveStart?
+  @State private var loadedDetailRequest: String?
   @State private var detailOwner: String?
   var queueEnd: CloudAdvance? = nil
   var queueStep: CloudStep? = nil
@@ -483,6 +484,7 @@ struct DetailView: View {
   var body: some View {
     let source = following ?? initial
     let video = detail ?? following ?? initial
+    let detailRequest = "\(reload)|\(accounts.state.active ?? "")|\(source.bvid)"
     let firstPage = following == nil ? initialPage : 1
     let startSeconds = following == nil ? initialSeconds : 0
     let deferred: (() -> Void)? = cid.flatMap { target in
@@ -528,7 +530,8 @@ struct DetailView: View {
       .linkedDiscussion(oid: detail?.aid ?? detail.flatMap { ArchiveNumber.av($0.bvid) }, type: 1, author: detail?.owner?.mid,
         playback: ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model),
         selectComments:{if showReplies {sideAuthor=nil;panelOverride=true}})
-      .task(id: "\(reload)|\(accounts.state.active ?? "")|\(source.bvid)") {
+      .task(id: detailRequest) {
+        guard loadedDetailRequest != detailRequest || cid == nil else { return }
         let uid = accounts.state.active
         let pickedPart = sidebarPart.flatMap { $0.bvid == source.bvid ? $0.cid : nil }
         sidebarPart = nil
@@ -566,6 +569,7 @@ struct DetailView: View {
           }
           try Task.checkCancellation()
           guard accounts.state.active == uid else { return }
+          loadedDetailRequest = detailRequest
           detail = v
           detailOwner = uid ?? ""
           startHint = ArchiveStart.select(
@@ -742,7 +746,7 @@ struct DetailView: View {
       .modifier(VideoPageAppearance()).modifier(PlaybackEdgeInsets())
       .onAppear { if brightness == nil { brightness = WindowMetrics.brightness } }
       .videoPageNavigation(stopOnDisappear: !theater && !sponsorPanel && !playbackOptions && !danmakuList && !listen) {
-        model.stop()
+        model.leavePlaybackPage()
         if let brightness { WindowMetrics.brightness = brightness }
         brightness = nil
       }

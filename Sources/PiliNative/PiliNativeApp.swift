@@ -24,10 +24,10 @@ import SwiftUI
   @Environment(\.scenePhase) private var phase
   @AppStorage(NavigationLayout.key) private var layoutData = Data()
   @State private var active = NavigationLayout.current().launch
-  @State private var incoming: IncomingRoute?
+  @State private var incoming: [MainTab: IncomingRoute] = [:]
   @State private var homeRevision = 0
   private func returnHome(_ layout: NavigationLayout) {
-    incoming = nil
+    incoming.removeAll()
     active = layout.tabs.contains(.home) ? .home : layout.launch
     homeRevision &+= 1
   }
@@ -43,7 +43,7 @@ import SwiftUI
     WindowGroup {
       let layout = NavigationLayout.read(layoutData)
       let typeface = restoredFaceData == faceData ? TypefaceChoice.decode(faceData) : .standard
-      MainNavShell(layout: layout, badge: badge, active: $active).id(homeRevision)
+      MainNavShell(layout: layout, badge: badge, active: $active, incoming: $incoming).id(homeRevision)
         .onReceive(NotificationCenter.default.publisher(for: AppLinkPage.returnHome)) { _ in returnHome(layout) }
         .onChange(of: layout) { _, new in if !new.tabs.contains(active) { active = new.launch } }
         .id(
@@ -101,14 +101,7 @@ import SwiftUI
         .onOpenURL { url in
           if OfficialAppHandoff.shared.returnedToSender(url){return}
           guard let link = SharedLink.parse(url.absoluteString) else { return }
-          if link == .appPage(.root) { returnHome(layout) } else { incoming = IncomingRoute(link: link) }
-        }
-        .piliSheet(item: $incoming) { r in
-          PiliNavigationStack {
-            LinkDestination(item: r.link).toolbar {
-              ToolbarItem(placement: .cancellationAction) { Button("关闭") { incoming = nil } }
-            }
-          }
+          if link == .appPage(.root) { returnHome(layout) } else { incoming[active] = IncomingRoute(link: link) }
         }
         .modifier(NativeInterfaceScale())
         .tracksWindowCanvas()

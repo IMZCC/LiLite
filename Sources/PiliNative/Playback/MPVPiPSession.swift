@@ -18,6 +18,7 @@ import UIKit
   private var automaticPending = false
   private var active = false
   private var hasFrame = false
+  private var feeding = false
   private var restoring = false
   private var requestedStop = false
   private var enteredBackground = false
@@ -83,6 +84,20 @@ import UIKit
       player.renderer.resetPiP()
     }
     let size = player.playbackSize
+    let automatic = autoEnter
+    let needed = !player.audioOnly && player.playbackReady
+      && (keepsVideo || (automatic && UIApplication.shared.applicationState != .background))
+    guard needed else {
+      if feeding {
+        feeding = false
+        controller?.canStartPictureInPictureAutomaticallyFromInline = false
+        player.renderer.configurePiP(frames, source: size, render: renderSize, active: false, enabled: false)
+        player.renderer.resetPiP()
+        hasFrame = false
+      }
+      return
+    }
+    feeding = true
     if let window = source.window, size.width > 0, size.height > 0 {
       let width = window.bounds.width
       source.frame = CGRect(x: 0, y: window.safeAreaInsets.top, width: width,
@@ -91,10 +106,10 @@ import UIKit
     let playing = player.timeControlStatus == .playing
     CMTimebaseSetRateAndAnchorTime(frames.timebase, rate: playing ? Double(player.rate) : 0,
       anchorTime: player.currentTime(), immediateSourceTime: CMClockGetTime(CMClockGetHostTimeClock()))
-    controller?.canStartPictureInPictureAutomaticallyFromInline = autoEnter && hasFrame && player.playbackReady && !player.audioOnly
+    controller?.canStartPictureInPictureAutomaticallyFromInline = automatic && hasFrame
     controller?.invalidatePlaybackState()
     player.renderer.configurePiP(frames, source: size, render: renderSize, active: active,
-      enabled: !player.audioOnly && player.playbackReady && (UIApplication.shared.applicationState == .active || keepsVideo))
+      enabled: true)
   }
   @objc private func startRequested(_ note: Notification) {
     guard !invalidated, let player, player.playbackReady, !player.audioOnly, let controller else {
