@@ -43,8 +43,8 @@ struct DynamicPortal: Decodable {
 struct CommunityFilterPanel: View {
   @AppStorage("social.upPanelPosition") private var position = FeedPanelPosition.leftFixed.rawValue
   @AppStorage("social.waterfall") private var waterfall: Bool?
-  @AppStorage("layout.horizontal") private var horizontal =
-    UIDevice.current.userInterfaceIdiom == .pad
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage(FeedScope.setting) private var defaultFeed = 0
   @AppStorage("social.dispute") private var showDispute = false
   @AppStorage("social.interaction") private var showInteraction = true

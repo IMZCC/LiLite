@@ -327,7 +327,9 @@ struct PlainRowLink<Destination: View, Label: View>: View {
         label()
       }
     } else {
+      // Cards in grids and feeds: highlight under an iPad / Duo trackpad pointer.
       NavigationLink(destination: destination, label: label).buttonStyle(.plain)
+        .contentShape(.hoverEffect, .rect(cornerRadius: 12)).hoverEffect(.highlight)
     }
   }
 }

@@ -40,8 +40,8 @@ private struct PlayerWindowLayout: UIViewRepresentable {
 
 struct PlayerHeaderStatus: View {
   let fullscreen: Bool
-  @AppStorage("layout.horizontal") private var horizontal =
-    UIDevice.current.userInterfaceIdiom == .pad
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage("theater.battery") private var battery = true
   @State private var landscape = false
   var body: some View {

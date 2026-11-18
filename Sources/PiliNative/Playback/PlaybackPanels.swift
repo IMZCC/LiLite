@@ -67,12 +67,15 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   var accessory: AnyView? = nil
   /// Total comments, shown after the comments tab title.
   var commentCount: Int64? = nil
+  /// Related videos, shown as the first right-hand tab in the side layout (the original's
+  /// 相关视频 tab); everywhere else they stay at the end of the intro.
+  var related: AnyView? = nil
   @ViewBuilder let surface: () -> Surface
   @ViewBuilder let info: () -> Info
   @ViewBuilder let replies: () -> Replies
   @AppStorage("reply.openFirst") private var defaultComments = false
-  @AppStorage("layout.horizontal") private var horizontal =
-    UIDevice.current.userInterfaceIdiom == .pad
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage("layout.playlist") private var playlistPref: Bool?
   @AppStorage("layout.verticalMedia") private var enlarge = false
   @AppStorage("player.edgeToEdge") private var edgeToEdge = false
@@ -92,81 +95,13 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   var body: some View {
     let topInset = edgeToEdge ? 0 : WindowMetrics.statusBar
     GeometryReader { layout in
-      let width = layout.size.width
-      let height = layout.size.height
-      let wide = width > height && width >= 540
-      let side = wide && (horizontal || creator != nil)
-      let list = wide && (playlistPref ?? horizontal) ? playlist : nil
-      let selected = wantsList && list != nil && selection == nil ? 2 : comments ? 1 : 0
-      let vertical =
-        enlarge && playback.pictureSize.height > playback.pictureSize.width && playback.pictureSize.width > 0
-      let ratio: CGFloat = vertical ? (side ? 9.0 / 16 : 1) : 16.0 / 9
-      let usable = max(1, height - topInset)
-      let playerWidth = side ? max(130, min(width * 0.63, (usable - 44) * ratio)) : width
-      let playerHeight = max(
-        1,
-        min(
-          playerWidth / ratio,
-          side ? max(1, usable - 44) : usable * (vertical ? 0.72 : 0.6)))
-      let showTabs = !(wide && creator != nil) && (canDiscuss || list != nil || accessory != nil)
-      let tabs = [0] + (canDiscuss ? [1] : []) + (list != nil ? [2] : [])
+      let p = plan(width: layout.size.width, height: layout.size.height, topInset: topInset)
+      let wide = p.wide
       Group {
-        if side {
-          HStack(alignment: .top, spacing: 8) {
-            surface().frame(width: playerWidth, height: playerHeight).clipped().background(.black)
-              .recordsInlinePlayerFrame(model.engine)
-              .overlay(alignment: .topLeading) { headerButtons }
-            VStack(spacing: 0) {
-              if wide, let creator {
-                creator
-              } else {
-                if showTabs { tabBar(list: list, selected: selected) }
-                pager(tabs: tabs, selected: selected, list: list)
-              }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(Color(uiColor: .systemBackground))
-            .overlay { ReplyPanelStack(items: $replyPanels) }
-          }
-        } else {
-          // The original client's nested scroll: the player and tabs sit over the panels. While
-          // playing they stay pinned; while paused they move up 1:1 with the list, so the
-          // comments slide over the player following the finger.
-          let header = playerHeight + (showTabs ? 46 : 0)
-          ZStack(alignment: .top) {
-            pager(tabs: tabs, selected: selected, list: list)
-              .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-              .background(Color(uiColor: .systemBackground))
-              .environment(\.panelTopInset, header)
-              // Only changes inside the fold range are published, so a fully folded player
-              // stops invalidating on every scroll frame.
-              .environment(\.panelScroll, { [fold] y in
-                let v = min(max(y, 0), fold.limit + 1)
-                if v != fold.offset { fold.offset = v }
-              })
-            FoldingHeader(fold: fold, active: !playback.playing) {
-              VStack(spacing: 0) {
-                surface().frame(width: playerWidth, height: playerHeight).clipped().background(.black)
-                  .recordsInlinePlayerFrame(model.engine)
-                  .overlay(alignment: .topLeading) { headerButtons }
-                  .overlay(alignment: .bottom) {
-                    FoldBar(
-                      fold: fold, active: !playback.playing, played: playback.hasPlayed,
-                      back: { dismiss() }
-                    ) {
-                      model.toggle()
-                    }
-                  }
-                if showTabs {
-                  tabBar(list: list, selected: selected)
-                    .background(Color(uiColor: .systemBackground))
-                }
-              }
-            }
-            FoldAwareReplyPanels(
-              fold: fold, active: !playback.playing, playerHeight: playerHeight, items: $replyPanels)
-          }
-          .clipped()
+        switch p.mode {
+        case .square: squareLayout(playerWidth: p.playerWidth, playerHeight: p.playerHeight, list: p.list)
+        case .side: sideLayout(p)
+        case .stacked: stackedLayout(p)
         }
       }
       .environment(\.presentGalleryRail, wide && galleryEnabled ? { gallery = $0 } : nil)
@@ -178,14 +113,14 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .overlay {
         if wide && galleryEnabled, let gallery { GalleryRailPanel(request: gallery) { self.gallery = nil } }
       }
-      .onChange(of: selected, initial: true) { _, tab in
+      .onChange(of: p.selected, initial: true) { _, tab in
         fold.offset = 0
       }
       .background {
-        VideoNavigationChrome(player: model.engine, contentPop: selected == 0 && replyPanels.isEmpty)
+        VideoNavigationChrome(player: model.engine, contentPop: p.selected == p.tabs.first && replyPanels.isEmpty)
           .frame(width: 0, height: 0)
       }
-      .onChange(of: playerHeight, initial: true) { _, h in fold.limit = max(1, h - PanelFold.bar) }.onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
+      .onChange(of: p.playerHeight, initial: true) { _, h in fold.limit = max(1, h - PanelFold.bar) }.onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
     }
     .padding(.top, topInset)
     .background(alignment: .top) {
@@ -235,10 +170,127 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     .opacity(chromeShown ? 1 : 0)
     .allowsHitTesting(chromeShown)
   }
-  private func tabBar(list: AnyView?, selected: Int) -> some View {
-    PlaybackTabBar(items: tabItems(list: list != nil), selected: selected) { tab in
-      wantsList = tab == 2
-      selection = tab == 2 ? nil : tab == 1
+  /// Sizes and tabs for one window size.
+  private struct Plan {
+    var wide = false, mode = PlayerPageLayout.stacked
+    var list: AnyView?
+    var playerWidth: CGFloat = 1, playerHeight: CGFloat = 1
+    var introBelow = false, showTabs = false
+    var tabs = [0], selected = 0
+  }
+  private func plan(width: CGFloat, height: CGFloat, topInset: CGFloat) -> Plan {
+    var p = Plan()
+    let full = height + topInset
+    p.wide = width > height && width >= 540
+    p.mode = PlayerPageLayout.resolve(width: width, height: full, horizontal: horizontal || (p.wide && creator != nil))
+    let side = p.mode == .side
+    p.list = p.mode != .stacked && (playlistPref ?? horizontal) ? playlist : nil
+    let picture = playback.pictureSize
+    let vertical = enlarge && picture.width > 0 && picture.height > picture.width
+    let ratio: CGFloat = vertical ? (side ? 9.0 / 16 : 1) : 16.0 / 9
+    let usable = max(1, height - topInset)
+    // Side: the original's player width, capped so the picture fits the window's height.
+    let sideWidth = max(130, min(PlayerPageLayout.sideWidth(width: width, height: full), usable * ratio))
+    p.playerWidth = side ? sideWidth : width
+    let cap: CGFloat
+    switch p.mode {
+    case .side: cap = usable
+    case .square: cap = full / 2.5
+    case .stacked: cap = usable * (vertical ? 0.72 : 0.6)
+    }
+    p.playerHeight = max(1, min(p.playerWidth / ratio, cap))
+    // In the side layout the intro sits under the player when there is room for it; the
+    // right-hand tabs are then related videos, comments and episodes.
+    var others: [Int] = []
+    if canDiscuss { others.append(1) }
+    if p.list != nil { others.append(2) }
+    let besideIntro: [Int] = (related != nil ? [3] : []) + others
+    p.introBelow = side && creator == nil && usable - p.playerHeight >= 160 && !besideIntro.isEmpty
+    p.tabs = p.introBelow ? besideIntro : [0] + others
+    let preferred: Int
+    if wantsList && p.list != nil && selection == nil { preferred = 2 }
+    else if comments { preferred = 1 }
+    else { preferred = p.introBelow ? 3 : 0 }
+    p.selected = p.tabs.contains(preferred) ? preferred : p.tabs[0]
+    p.showTabs = !(p.wide && creator != nil)
+      && (canDiscuss || p.list != nil || accessory != nil || p.tabs.count > 1)
+    return p
+  }
+  private func playerSurface(_ p: Plan) -> some View {
+    surface().frame(width: p.playerWidth, height: p.playerHeight).clipped().background(.black)
+      .recordsInlinePlayerFrame(model.engine)
+      .overlay(alignment: .topLeading) { headerButtons }
+  }
+  /// The original's landscape page: player (and intro, when it fits) on the left, tabs on the right.
+  private func sideLayout(_ p: Plan) -> some View {
+    HStack(alignment: .top, spacing: 0) {
+      VStack(spacing: 0) {
+        playerSurface(p)
+        if p.introBelow {
+          info().environment(\.relatedHoisted, related != nil)
+            .frame(width: p.playerWidth).frame(maxHeight: .infinity, alignment: .top)
+        }
+      }.frame(width: p.playerWidth).frame(maxHeight: .infinity, alignment: .top)
+      Divider()
+      VStack(spacing: 0) {
+        if p.wide, let creator {
+          creator
+        } else {
+          if p.showTabs { tabBar(tabs: p.tabs, selected: p.selected) }
+          pager(tabs: p.tabs, selected: p.selected, list: p.list)
+        }
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+      .background(Color(uiColor: .systemBackground))
+      .overlay { ReplyPanelStack(items: $replyPanels) }
+    }
+  }
+  /// The original client's nested scroll: the player and tabs sit over the panels. While
+  /// playing they stay pinned; while paused they move up 1:1 with the list, so the comments
+  /// slide over the player following the finger.
+  private func stackedLayout(_ p: Plan) -> some View {
+    let header = p.playerHeight + (p.showTabs ? 46 : 0)
+    return ZStack(alignment: .top) {
+      pager(tabs: p.tabs, selected: p.selected, list: p.list)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color(uiColor: .systemBackground))
+        .environment(\.panelTopInset, header)
+        // Only changes inside the fold range are published, so a fully folded player stops
+        // invalidating on every scroll frame.
+        .environment(\.panelScroll, { [fold] y in
+          let v = min(max(y, 0), fold.limit + 1)
+          if v != fold.offset { fold.offset = v }
+        })
+      FoldingHeader(fold: fold, active: !playback.playing) {
+        VStack(spacing: 0) {
+          playerSurface(p)
+            .overlay(alignment: .bottom) {
+              FoldBar(
+                fold: fold, active: !playback.playing, played: playback.hasPlayed,
+                back: { dismiss() }
+              ) {
+                model.toggle()
+              }
+            }
+          if p.showTabs {
+            tabBar(tabs: p.tabs, selected: p.selected)
+              .background(Color(uiColor: .systemBackground))
+          }
+        }
+      }
+      FoldAwareReplyPanels(
+        fold: fold, active: !playback.playing, playerHeight: p.playerHeight, items: $replyPanels)
+    }
+    .clipped()
+  }
+  /// Tabs: 0 intro, 1 comments, 2 episodes, 3 related videos (side layout only).
+  private func choose(_ tab: Int) {
+    wantsList = tab == 2
+    selection = tab == 2 ? nil : tab == 1
+  }
+  private func tabBar(tabs: [Int], selected: Int) -> some View {
+    PlaybackTabBar(items: tabs.map { PlaybackTab(id: $0, title: tabTitle($0)) }, selected: selected) { tab in
+      choose(tab)
     } accessory: {
       if let accessory { accessory }
     }
@@ -252,27 +304,81 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       get: { tabs.firstIndex(of: selected) ?? 0 },
       set: { i in
         guard tabs.indices.contains(i), tabs[i] != selected else { return }
-        wantsList = tabs[i] == 2
-        selection = tabs[i] == 2 ? nil : tabs[i] == 1
+        choose(tabs[i])
       })) { i in
         ActivePlaybackPanel(active: tabs[i] == selected) {
           switch tabs[i] {
           case 1: replies()
           case 2: list
+          case 3:
+            if let related {
+              ScrollView { related.padding(.horizontal, 16).padding(.vertical, 12) }.reportsScrollCollapse()
+            }
           default: info()
           }
         }
       }
   }
-  private func tabItems(list: Bool) -> [PlaybackTab] {
-    var items = [PlaybackTab(id: 0, title: "简介")]
-    if canDiscuss {
+  private func tabTitle(_ tab: Int) -> String {
+    switch tab {
+    case 1:
       let n = commentCount.map { $0 > 0 ? " " + $0.formatted(.number.notation(.compactName)) : "" } ?? ""
-      items.append(.init(id: 1, title: "评论" + n))
+      return "评论" + n
+    case 2: return "选集"
+    case 3: return "相关视频"
+    default: return "简介"
     }
-    if list { items.append(.init(id: 2, title: "选集")) }
-    return items
   }
+  /// The original's "almost square" page (`childWhenDisabledAlmostSquare`): the player across
+  /// the top, then intro, comments and episodes side by side, each column titled.
+  private func squareLayout(playerWidth: CGFloat, playerHeight: CGFloat, list: AnyView?) -> some View {
+    VStack(spacing: 0) {
+      surface().frame(width: playerWidth, height: playerHeight).clipped().background(.black)
+        .recordsInlinePlayerFrame(model.engine)
+        .overlay(alignment: .topLeading) { headerButtons }
+      HStack(alignment: .top, spacing: 0) {
+        squareColumn(0, trailing: true) { info() }
+        if canDiscuss {
+          Divider()
+          squareColumn(1, trailing: false) { replies() }
+            .overlay { ReplyPanelStack(items: $replyPanels) }
+        }
+        if let list {
+          Divider()
+          squareColumn(2, trailing: false) { list }
+        }
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+      .background(Color(uiColor: .systemBackground))
+    }
+  }
+  private func squareColumn<C: View>(_ tab: Int, trailing: Bool, @ViewBuilder content: () -> C) -> some View {
+    VStack(spacing: 0) {
+      HStack(spacing: 8) {
+        Text(tabTitle(tab)).font(.body.weight(.semibold))
+        Spacer(minLength: 8)
+        if trailing, let accessory { accessory }
+      }
+      .padding(.horizontal, 16).frame(height: 46)
+      .overlay(alignment: .bottom) { Divider() }
+      content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+}
+
+private struct RelatedHoistedKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+  /// True when the page shows related videos in their own panel, so the intro leaves them out.
+  var relatedHoisted: Bool {
+    get { self[RelatedHoistedKey.self] }
+    set { self[RelatedHoistedKey.self] = newValue }
+  }
+}
+/// Related videos at the end of the intro, unless the page shows them in their own panel.
+struct IntroRelated<Content: View>: View {
+  @Environment(\.relatedHoisted) private var hoisted
+  @ViewBuilder let content: () -> Content
+  var body: some View { if !hoisted { content() } }
 }
 
 private struct PanelPlaybackState: Equatable {

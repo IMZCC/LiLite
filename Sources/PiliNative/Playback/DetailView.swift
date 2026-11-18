@@ -11,9 +11,10 @@ struct DetailView: View {
   @State private var wideViewport = false
   @State private var sideAuthor: Video.Owner?
   @State private var sidebarPart: (bvid: String, cid: Int64)?
-  @AppStorage("layout.horizontal") private var horizontal =
-    UIDevice.current.userInterfaceIdiom == .pad
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage("layout.member") private var memberPref: Bool?
+  @AppStorage("detail.related") private var relatedShown = true
   private var useMemberPanel: Bool { wideViewport && (memberPref ?? horizontal) }
   private var creatorPanel: AnyView? {
     guard useMemberPanel, let author = sideAuthor, let id = author.mid else { return nil }
@@ -404,8 +405,10 @@ struct DetailView: View {
         }.frame(maxWidth: .infinity)
       }
       if detail != nil {
-        Divider()
-        ArchiveRelatedList(bvid: video.bvid)
+        IntroRelated {
+          Divider()
+          ArchiveRelatedList(bvid: video.bvid)
+        }
       }
     }.padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 24)
       .animation(.easeOut(duration: 0.25), value: detail?.bvid)
@@ -495,7 +498,8 @@ struct DetailView: View {
       model: model, key: source.bvid, canDiscuss: showReplies, selection: $panelOverride,
       full: { theater = true }, startDeferred: deferred, playlist: JoinedPlaybackPanels.merge(libraryPanel, archivePlaylist(video), fullscreen: false), creator: creatorPanel,
       accessory: AnyView(bulletAccessory),
-      commentCount: commentCount ?? (detail ?? video).stat?.reply.map(Int64.init)
+      commentCount: commentCount ?? (detail ?? video).stat?.reply.map(Int64.init),
+      related: detail != nil && relatedShown ? AnyView(ArchiveRelatedList(bvid: video.bvid).id(video.bvid)) : nil
     ) {
       if let cid, prepared == ticket(video, cid) {
         videoSurface(video)

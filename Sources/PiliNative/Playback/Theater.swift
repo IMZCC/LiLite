@@ -216,8 +216,10 @@ struct TheaterSheet: View {
   @State private var showTimeline = false
   @State private var chromeVisible = true
   @State private var locked = false
-  @AppStorage("theater.orientation") private var orientation =
-    UIDevice.current.userInterfaceIdiom == .pad ? 1 : 0
+  @AppStorage("theater.orientation") private var orientationPref: Int?
+  /// Read once on entry: folding or unfolding a Duo mid-fullscreen must not rotate it back.
+  @State private var entryMode = TheaterOrientation.defaultMode
+  private var orientation: Int { orientationPref ?? entryMode }
   @AppStorage("theater.lockButton") private var allowLock = true
   @AppStorage("theater.captureButton") private var allowCapture = true
   @ObservedObject var model: PlayerModel

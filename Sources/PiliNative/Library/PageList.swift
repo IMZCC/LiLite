@@ -18,8 +18,8 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
   var controls: AnyView? = nil
   var refreshed: (() async -> Void)? = nil
   @AppStorage("social.waterfall") private var waterfall: Bool?
-  @AppStorage("layout.horizontal") private var horizontal =
-    UIDevice.current.userInterfaceIdiom == .pad
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage("grid.cardWidth") private var cardWidth = 240.0
   @Environment(\.libraryScrollToTop) private var libraryTop
   @Environment(\.dynamicTypeSize) private var textSize

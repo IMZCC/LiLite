@@ -196,7 +196,9 @@ struct LivePlayer: View {
   @State private var locked = false
   @State private var startedRoom: Int64?
   @AppStorage("theater.autoEnter") private var autoEnter = false
-  @AppStorage("theater.orientation") private var orientation = FullscreenMode.video.rawValue
+  @AppStorage("theater.orientation") private var orientationPref: Int?
+  @State private var entryOrientation = TheaterOrientation.defaultMode
+  private var orientation: Int { orientationPref ?? entryOrientation }
   @AppStorage("theater.lockButton") private var allowLock = true
   @AppStorage("theater.captureButton") private var allowCapture = true
   private func expand() { guard !locked else{return};enlarged.toggle();chat.presentation(enlarged) }
@@ -411,7 +413,28 @@ struct LivePlayer: View {
   }
   private var screen: some View {
     GeometryReader { geometry in
-    let pictureHeight = min(geometry.size.width * 9 / 16, max(80, geometry.size.height * 0.38))
+    let w = geometry.size.width, h = geometry.size.height
+    let pictureHeight = min(w * 9 / 16, max(80, h * 0.38))
+    if !enlarged, h > 0, w / h >= 1.2, w >= 540 {
+      // The original's landscape room (`_buildBodyH`): the picture on the left, chat on the
+      // right at most 400 pt wide. Used on iPad, the unfolded iPhone Duo and phones held sideways.
+      let chatWidth = min(400, w - min(0.7, max(0.56, h / w * 1.08)) * w)
+      let pictureWidth = w - chatWidth
+      HStack(alignment: .top, spacing: 0) {
+        VStack(alignment: .leading, spacing: 8) {
+          theater.frame(height: min(pictureWidth * 9 / 16, max(120, h - 96))).clipped().background(.black)
+          ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+              if let identity { LiveAnchorLine(room: identity, info: header, watched: chat.watched) }
+              controls
+            }.frame(maxWidth: .infinity, alignment: .leading)
+          }.scrollBounceBehavior(.basedOnSize)
+        }.frame(width: pictureWidth)
+        Divider()
+        VStack(alignment: .leading, spacing: 8) { conversation }.frame(width: chatWidth)
+          .frame(maxHeight: .infinity, alignment: .top)
+      }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    } else {
     VStack(alignment: .leading, spacing: 8) {
       theater.frame(height: enlarged ? nil : pictureHeight).clipped().background(.black)
       if enlarged && !locked {
@@ -430,6 +453,7 @@ struct LivePlayer: View {
         conversation
       }
     }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
     }.overlay(alignment:.topTrailing){
       if enlarged && (allowLock || locked) {
         Button {TouchFeedback.light(); locked.toggle()} label:{

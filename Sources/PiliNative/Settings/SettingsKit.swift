@@ -61,6 +61,12 @@ struct SettingStepper: View {
   }
 }
 
+extension Binding {
+  /// An optional setting shown with its live default while unset; editing stores the choice.
+  @MainActor func or<T>(_ fallback: @escaping @MainActor () -> T) -> Binding<T> where Value == T? {
+    Binding<T>(get: { wrappedValue ?? fallback() }, set: { wrappedValue = $0 })
+  }
+}
 extension Binding where Value == Int {
   /// Adapts an integer setting to the Double-based rows above.
   var asDouble: Binding<Double> {

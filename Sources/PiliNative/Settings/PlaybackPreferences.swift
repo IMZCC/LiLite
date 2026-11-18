@@ -105,8 +105,10 @@ struct PlayerPreferenceValues: Codable {
 struct PlayerPreferencePanel: View {
   @AppStorage(PlayerSessionPreferences.temporaryKey) private var temporary = false
   @AppStorage(SystemMediaControls.key) private var systemMedia = true
-  @AppStorage("layout.horizontal") private var horizontal =
-    UIDevice.current.userInterfaceIdiom == .pad
+  /// Unset follows the current window (the original's `isTablet`), so an unfolded iPhone Duo
+  /// or a full-screen iPad gets the side layout and a folded Duo or a narrow window does not.
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage("layout.playlist") private var sideList: Bool?
   @AppStorage("layout.member") private var sideMember: Bool?
   @AppStorage("layout.verticalMedia") private var tall = false
@@ -142,8 +144,8 @@ struct PlayerPreferencePanel: View {
   @AppStorage(VideoTransport.liveBufferKey) private var liveBuffer = 0.0
   @AppStorage("ui.haptics") private var haptics = false
   @AppStorage("play.autoPiP") private var pip = false
-  @AppStorage("theater.orientation") private var orientation =
-    UIDevice.current.userInterfaceIdiom == .pad ? 1 : 0
+  @AppStorage("theater.orientation") private var orientationPref: Int?
+  private var orientation: Int { orientationPref ?? TheaterOrientation.defaultMode }
   @AppStorage("theater.autoEnter") private var autoEnter = false
   @AppStorage("theater.autoExit") private var autoExit = true
   @AppStorage("theater.swipe") private var screenSwipe = true
@@ -190,7 +192,7 @@ struct PlayerPreferencePanel: View {
       }
       Section {
         NavigationLink("播放控件与画面缩放") { ViewportSettings() }.settingAnchor("PlayerPreferencePanel/播放控件与画面缩放")
-        Toggle("使用横屏布局", isOn: $horizontal).settingAnchor("PlayerPreferencePanel/使用横屏布局")
+        Toggle("使用横屏布局", isOn: $horizontalPref.or { WindowCanvas.shared.large }).settingAnchor("PlayerPreferencePanel/使用横屏布局")
         Toggle("横屏时在标签栏选集", isOn: Binding(get: { sideList ?? horizontal }, set: { sideList = $0 })).settingAnchor("PlayerPreferencePanel/横屏时在标签栏选集")
         Toggle(
           "横屏时在侧栏打开 UP 主空间",
@@ -233,7 +235,7 @@ struct PlayerPreferencePanel: View {
         Text("“横滑整屏”是手指横向划过整个画面时跳转的距离。")
       }.settingAnchor("PlayerPreferencePanel/播放手势")
       Section("全屏") {
-        Picker("全屏方向", selection: $orientation) {
+        Picker("全屏方向", selection: $orientationPref.or { TheaterOrientation.defaultMode }) {
           ForEach(FullscreenMode.allCases, id: \.rawValue) { v in Text(v.title).tag(v.rawValue) }
         }.settingAnchor("PlayerPreferencePanel/全屏方向")
         Toggle("开始播放时进入全屏", isOn: $autoEnter).settingAnchor("PlayerPreferencePanel/开始播放时进入全屏")

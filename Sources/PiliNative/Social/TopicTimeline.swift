@@ -135,7 +135,8 @@ private struct TopicTimeline: View {
   @Environment(\.dynamicTypeSize) private var typeSize
   @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
   @AppStorage("social.waterfall") private var waterfall: Bool?
-  @AppStorage("layout.horizontal") private var horizontal = UIDevice.current.userInterfaceIdiom == .pad
+  @AppStorage("layout.horizontal") private var horizontalPref: Bool?
+  private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
   @AppStorage("grid.cardWidth") private var cardWidth = 240.0
   private var item: TopicHeader.Item? { state.header?.topic_item }
   private var name: String { item?.name ?? topic.name }

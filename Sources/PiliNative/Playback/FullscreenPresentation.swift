@@ -47,6 +47,11 @@ struct FullscreenSwipe: ViewModifier {
 @MainActor enum TheaterOrientation {
   struct Entry { let token: UUID, mask: UIInterfaceOrientationMask }
   static var byScene: [ObjectIdentifier: Entry] = [:]
+  /// Fullscreen direction when the user has not chosen one: like the original, large screens
+  /// (iPad, unfolded iPhone Duo) keep the current direction and smaller ones follow the video.
+  static var defaultMode: Int {
+    (WindowCanvas.shared.large ? FullscreenMode.keep : FullscreenMode.video).rawValue
+  }
   static func allowed(_ window: UIWindow?) -> UIInterfaceOrientationMask {
     if let scene = window?.windowScene, let mask = byScene[ObjectIdentifier(scene)]?.mask { return mask }
     return (window?.traitCollection.userInterfaceIdiom ?? UIDevice.current.userInterfaceIdiom) == .pad ? .all : .allButUpsideDown

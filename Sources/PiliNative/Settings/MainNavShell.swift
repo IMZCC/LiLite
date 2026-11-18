@@ -224,6 +224,15 @@ struct MainNavShell: View {
       chrome.reset()
     }
     .background {
+      // Hardware keyboards (iPad, Magic Keyboard on a Duo): ⌘1… switches columns, ⌘F searches.
+      ForEach(Array(layout.tabs.prefix(9).enumerated()), id: \.element) { index, tab in
+        Button(tab.title) { select(tab) }
+          .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
+      }.frame(width: 0, height: 0).clipped().accessibilityHidden(true)
+      Button("搜索") {
+        if layout.tabs.contains(.search) { select(.search) } else { shortcut = .search }
+      }.keyboardShortcut("f", modifiers: .command)
+        .frame(width: 0, height: 0).clipped().accessibilityHidden(true)
       if !layout.directBack, let first = layout.tabs.first, first != active {
         Button("返回首个栏目") { select(first) }.keyboardShortcut(.escape, modifiers: [])
           .frame(width: 0, height: 0).clipped().accessibilityHidden(true)

@@ -72,7 +72,7 @@ for r in sorted(A,key=lambda x:x['kind']=='Section'):
  if not m:continue
  s=re.split(r'\n(?:private )?struct ',s[m.end():],maxsplit=1)[0]
  store={}
- for expression,var,default in re.findall(r'@AppStorage\(\s*("[^"]+"|[A-Za-z_]\w*(?:\.\w+)*)\s*\)\s+(?:private\s+)?var (\w+)(?:\s*:\s*[\w?]+)?\s*=\s*([^\n]+)',s):
+ for expression,var,default in re.findall(r'@AppStorage\(\s*("[^"]+"|[A-Za-z_]\w*(?:\.\w+)*)\s*\)\s+(?:private\s+)?var (\w+)(?:\s*:\s*[\w?]+)?(?:\s*=\s*([^\n]+))?',s):
   key=expression[1:-1] if expression.startswith('"') else literal_keys.get(expression)
   if key is not None:store[var]=(key,default.strip())
  keys=[];words=[];stored='';default=''
