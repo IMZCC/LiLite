@@ -257,15 +257,16 @@ private struct HomeChannelBar: View {
   @Binding var shelf: HomeChannel
   let motion: PagerIndicatorMotion
   @Environment(\.scrollHomeChannelToTop) private var channelToTop
-  @State private var chipFrames: [HomeChannel: CGRect] = [:]
+  @State private var chipWidths: [HomeChannel: CGFloat] = [:]
+  private let spacing: CGFloat = 4
 
   var body: some View {
     ScrollViewReader { proxy in
       ScrollView(.horizontal, showsIndicators: false) {
-        HStack(spacing: 4) {
+        HStack(spacing: spacing) {
           // The highlighted label follows the pager's nearest page, not the settled selection.
           let near = channels.indices.contains(motion.nearestIndex) ? channels[motion.nearestIndex] : shelf
-          ForEach(channels) { c in
+          ForEach(Array(channels.enumerated()), id: \.element) { index, c in
             let current = shelf == c
             Button {
               TouchFeedback.light()
@@ -276,16 +277,17 @@ private struct HomeChannelBar: View {
                 .foregroundStyle(near == c ? Color.primary : Color.secondary)
                 .padding(.horizontal, 16).padding(.vertical, 8)
                 .contentShape(Capsule())
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("channels")) } action: {
-                  if chipFrames[c] != $0 { chipFrames[c] = $0 }
-                }
-            }.buttonStyle(.plain).accessibilityAddTraits(current ? .isSelected : []).id(c)
+            }
+            .buttonStyle(.plain)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chipWidths[c] = $0 }
+            .background(alignment: .leading) {
+              HomeChannelHighlight(index: index, lastIndex: channels.count - 1, motion: motion,
+                nextWidth: channels.indices.contains(index + 1) ? chipWidths[channels[index + 1]] : nil,
+                spacing: spacing)
+            }
+            .accessibilityAddTraits(current ? .isSelected : []).id(c)
           }
         }
-        .background(alignment: .topLeading) {
-          PagerIndicator(choices: channels, motion: motion, frames: chipFrames)
-        }
-        .coordinateSpace(.named("channels"))
         .padding(.horizontal, 16)
       }.scrollClipDisabled()
         .onChange(of: shelf, initial: true) { _, c in
@@ -294,6 +296,29 @@ private struct HomeChannelBar: View {
     }
   }
 }
+/// Keep the capsule in its chip's coordinates when the entire header is settling vertically.
+private struct HomeChannelHighlight: View {
+  let index: Int, lastIndex: Int
+  let motion: PagerIndicatorMotion
+  let nextWidth: CGFloat?
+  let spacing: CGFloat
+
+  var body: some View {
+    let progress = min(max(0, motion.progress), CGFloat(lastIndex))
+    if Int(progress) == index {
+      GeometryReader { chip in
+        let step = progress - CGFloat(index)
+        let width = chip.size.width
+        Capsule().fill(Color(uiColor: .tertiarySystemFill))
+          .frame(width: width + ((nextWidth ?? width) - width) * step, height: chip.size.height)
+          .padding(.leading, (width + spacing) * step)
+          .frame(width: width, alignment: .leading)
+      }
+      .allowsHitTesting(false).accessibilityHidden(true)
+    }
+  }
+}
+
 /// The tab container can extend a navigation root under the status bar. Measure just the
 /// uncovered part in the feed's own coordinates, including the user's interface scale.
 private struct FeedWindowSafeArea: UIViewRepresentable {
