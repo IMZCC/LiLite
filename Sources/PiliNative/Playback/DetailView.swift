@@ -691,7 +691,10 @@ struct DetailView: View {
       )
       .modifier(RotateToFullscreen(
         theater: $theater,
-        enabled: UIDevice.current.userInterfaceIdiom == .phone && !horizontal && cid != nil))
+        // Only on a phone-sized window: the Duo's inner display and iPad ignore orientation
+        // locks, and there turning the device just resizes the page.
+        enabled: UIDevice.current.userInterfaceIdiom == .phone && !WindowCanvas.shared.large
+          && !horizontal && cid != nil))
       .onChange(of: theater, initial: true) { _, open in
         if !open && theaterShown {
           // Closed from outside (turning the phone upright, end of video): fullscreen runs its
@@ -758,11 +761,11 @@ struct DetailView: View {
         }
       }
       .modifier(VideoPageAppearance()).modifier(PlaybackEdgeInsets())
-      .onAppear { if brightness == nil { brightness = UIScreen.main.brightness } }
+      .onAppear { if brightness == nil { brightness = WindowMetrics.brightness } }
       .onDisappear {
         if !theater && !sponsorPanel && !playbackOptions && !danmakuList && !listen {
           model.stop()
-          if let brightness { UIScreen.main.brightness = brightness }
+          if let brightness { WindowMetrics.brightness = brightness }
           brightness = nil
         }
       }

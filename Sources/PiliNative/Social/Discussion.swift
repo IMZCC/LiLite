@@ -720,7 +720,7 @@ struct Discussion: View {
       NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
     ) { n in
       guard let end = n.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-      let height = max(0, UIScreen.main.bounds.height - end.minY)
+      let height = WindowMetrics.keyboardOverlap(end)
       if height > 120 { keyboardHeight = height }
     }
     .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) {
@@ -807,7 +807,8 @@ struct Discussion: View {
     .frame(maxWidth: 640)
     .frame(maxWidth: .infinity)
     .background {
-      UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14, style: .continuous)
+      // Fixed top corners; the bottom follows the display's corners (iPhone Duo, iPad, iPhone).
+      ConcentricRectangle(uniformTopCorners: .fixed(14), uniformBottomCorners: .concentric)
         .fill(Color(uiColor: .systemBackground))
         .shadow(color: .black.opacity(0.12), radius: 12, y: -2)
         .ignoresSafeArea(.container, edges: .bottom)

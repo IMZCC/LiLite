@@ -121,7 +121,7 @@ private struct GestureCanvas:View{
               if start == nil {
                 switchedScreen = false
                 start = model.seconds; originVolume = model.player.presentationVolume
-                originBrightness = UIScreen.main.brightness; clear?.cancel()
+                originBrightness = WindowMetrics.brightness; clear?.cancel()
               }
               switch axis {
               case .seek:
@@ -135,7 +135,7 @@ private struct GestureCanvas:View{
                 }
               case .brightness:
                 let n = PlayerSlide.level(originBrightness, dy: dy, height: g.size.height, brightness: true)
-                UIScreen.main.brightness = n
+                WindowMetrics.brightness = n
                 level = (PlayerLevelPill.brightnessSymbol(n), Int((n * 100).rounded()))
               case .volume:
                 let n = PlayerSlide.level(Double(originVolume), dy: dy, height: g.size.height, brightness: false)

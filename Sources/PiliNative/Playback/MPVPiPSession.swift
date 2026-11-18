@@ -239,7 +239,7 @@ import UIKit
   }
   func pictureInPictureControllerIsPlaybackPaused(_ c: AVPictureInPictureController) -> Bool { (player?.rate ?? 0) == 0 }
   func pictureInPictureController(_ c: AVPictureInPictureController, didTransitionToRenderSize newRenderSize: CMVideoDimensions) {
-    let scale = source.window?.screen.scale ?? UIScreen.main.scale
+    let scale = source.window?.screen.scale ?? max(1, source.traitCollection.displayScale)
     renderSize = CGSize(width: CGFloat(newRenderSize.width) * scale, height: CGFloat(newRenderSize.height) * scale)
     update()
     player?.renderer.refreshPiP()

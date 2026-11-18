@@ -151,7 +151,7 @@ struct TheaterGeometry: UIViewControllerRepresentable {
   static func restore(then done: @escaping @MainActor () -> Void) {
     let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
       .first { $0.activationState == .foregroundActive }
-    guard UIDevice.current.userInterfaceIdiom == .phone, let s = scene,
+    guard UIDevice.current.userInterfaceIdiom == .phone, !WindowCanvas.shared.large, let s = scene,
       s.interfaceOrientation.isLandscape,
       (original[ObjectIdentifier(s)] ?? .portrait) == .portrait
     else {
@@ -245,7 +245,7 @@ struct PortraitLock: UIViewControllerRepresentable {
     }
     func apply() {
       guard visible, active, let w = viewIfLoaded?.window, let s = w.windowScene,
-        w.traitCollection.userInterfaceIdiom == .phone
+        w.traitCollection.userInterfaceIdiom == .phone, !WindowCanvas.isLarge(w.bounds.size)
       else {
         release()
         return

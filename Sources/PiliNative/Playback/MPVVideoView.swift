@@ -238,7 +238,8 @@ struct MPVVideoView: UIViewRepresentable {
       backgroundColor = .black
       clipsToBounds = true
       isUserInteractionEnabled = false
-      contentScaleFactor = UIScreen.main.scale
+      // The real scale comes from the window's own screen once attached (didMoveToWindow).
+      contentScaleFactor = max(1, traitCollection.displayScale)
       drawable.isOpaque = true
       drawable.contentsScale = contentScaleFactor
       drawable.drawableProperties = [kEAGLDrawablePropertyRetainedBacking: false,
@@ -248,6 +249,13 @@ struct MPVVideoView: UIViewRepresentable {
     required init?(coder: NSCoder) { nil }
     override func didMoveToWindow() {
       super.didMoveToWindow()
+      // The screen this window is on, not UIScreen.main (iPhone Duo inner/outer, external display).
+      if let scale = window?.screen.scale, scale > 0, drawable.contentsScale != scale {
+        contentScaleFactor = scale
+        drawable.contentsScale = scale
+        lastSize = .zero
+        setNeedsLayout()
+      }
       if let window, !attached {
         attached = true
         player?.preparePiP(in: window)

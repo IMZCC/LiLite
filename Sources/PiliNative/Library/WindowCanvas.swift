@@ -37,7 +37,9 @@ import UIKit
 /// - `square`: nearly square large windows (unfolded Duo held sideways in Split View, 13" iPad
 ///   portrait): player across the top, intro / comments / episodes as columns below.
 enum PlayerPageLayout: Equatable {
-  case stacked, side, square
+  /// `tabletop`: an iPhone Duo stood partly folded with the hinge across the screen — the
+  /// picture above the fold, tabs below it, nothing laid across the division.
+  case stacked, side, square, tabletop
   /// The original's thresholds: landscape once width / height ≥ 1.2; "almost square" when a
   /// full-width 16:9 player would still leave 60% of the height.
   static func resolve(width: CGFloat, height: CGFloat, horizontal: Bool) -> Self {
@@ -51,6 +53,17 @@ enum PlayerPageLayout: Equatable {
     var w = min(0.7, max(0.5, height / width * 1.08)) * width
     if width >= 560 { w = width - min(425, max(280, width - w)) }
     return w
+  }
+}
+
+/// The device fold, as the system reports it: an active `.division` reserved region (iPhone Duo,
+/// iOS 27.1). Inactive while the device lies flat, so layouts only change in a folded posture.
+enum DeviceFold {
+  static func division(in proxy: GeometryProxy) -> CGRect? {
+    if #available(iOS 27.1, *) {
+      return proxy.reservedRegions(kind: .division).first(where: \.isActive)?.frame
+    }
+    return nil
   }
 }
 

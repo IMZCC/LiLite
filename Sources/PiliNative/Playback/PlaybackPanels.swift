@@ -12,6 +12,19 @@ import Combine
   }
   static var statusBar: CGFloat { window?.safeAreaInsets.top ?? 0 }
   static var homeIndicator: CGFloat { window?.safeAreaInsets.bottom ?? 0 }
+  /// Brightness of the screen the window is on (not `UIScreen.main`: on iPhone Duo the inner
+  /// and outer displays are different screens).
+  static var brightness: CGFloat {
+    get { window?.screen.brightness ?? 0.5 }
+    set { window?.screen.brightness = newValue }
+  }
+  /// How far the keyboard (frame in screen coordinates) covers the window, which in Split
+  /// View, Stage Manager or on a Duo is not the whole screen.
+  static func keyboardOverlap(_ end: CGRect) -> CGFloat {
+    guard let w = window else { return 0 }
+    let local = w.convert(end, from: w.screen.coordinateSpace)
+    return max(0, w.bounds.maxY - local.minY)
+  }
 }
 
 /// Underlined text tabs, as in Apple's media apps, with an optional trailing accessory.
@@ -95,12 +108,15 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   var body: some View {
     let topInset = edgeToEdge ? 0 : WindowMetrics.statusBar
     GeometryReader { layout in
-      let p = plan(width: layout.size.width, height: layout.size.height, topInset: topInset)
+      let p = plan(
+        width: layout.size.width, height: layout.size.height, topInset: topInset,
+        fold: DeviceFold.division(in: layout))
       let wide = p.wide
       Group {
         switch p.mode {
         case .square: squareLayout(playerWidth: p.playerWidth, playerHeight: p.playerHeight, list: p.list)
         case .side: sideLayout(p)
+        case .tabletop: tabletopLayout(p)
         case .stacked: stackedLayout(p)
         }
       }
@@ -129,6 +145,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     }
     .ignoresSafeArea(.container, edges: .top)
     .toolbarBackground(.hidden, for: .navigationBar)
+    .modifier(HorizontalBarsOnly())
     .toolbar { ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) } }
     // Light status bar over the black player; the system's own once it has folded into the bar.
     .toolbarColorScheme(fold.folded && !playback.playing ? nil : .dark, for: .navigationBar)
@@ -177,12 +194,26 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     var playerWidth: CGFloat = 1, playerHeight: CGFloat = 1
     var introBelow = false, showTabs = false
     var tabs = [0], selected = 0
+    /// Width (side) or height (tabletop) of the hinge region kept clear between the halves.
+    var foldGap: CGFloat = 0
   }
-  private func plan(width: CGFloat, height: CGFloat, topInset: CGFloat) -> Plan {
+  private func plan(width: CGFloat, height: CGFloat, topInset: CGFloat, fold: CGRect?) -> Plan {
     var p = Plan()
     let full = height + topInset
     p.wide = width > height && width >= 540
     p.mode = PlayerPageLayout.resolve(width: width, height: full, horizontal: horizontal || (p.wide && creator != nil))
+    // A partly folded Duo: lay the halves out on either side of the hinge, as the system's own
+    // split views do, instead of drawing the player or a list across it.
+    var foldEdge: CGFloat?
+    if let d = fold, d.width >= width * 0.8, d.minY >= 120, d.maxY <= height - 120 {
+      p.mode = .tabletop
+      foldEdge = d.minY
+      p.foldGap = d.height
+    } else if let d = fold, d.height >= height * 0.8, d.minX >= width * 0.3, d.maxX <= width * 0.8 {
+      p.mode = .side
+      foldEdge = d.minX
+      p.foldGap = d.width
+    }
     let side = p.mode == .side
     p.list = p.mode != .stacked && (playlistPref ?? horizontal) ? playlist : nil
     let picture = playback.pictureSize
@@ -191,14 +222,16 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     let usable = max(1, height - topInset)
     // Side: the original's player width, capped so the picture fits the window's height.
     let sideWidth = max(130, min(PlayerPageLayout.sideWidth(width: width, height: full), usable * ratio))
-    p.playerWidth = side ? sideWidth : width
+    p.playerWidth = side ? (foldEdge ?? sideWidth) : width
     let cap: CGFloat
     switch p.mode {
     case .side: cap = usable
     case .square: cap = full / 2.5
+    case .tabletop: cap = max(1, foldEdge ?? usable)  // the region is in this view's space
     case .stacked: cap = usable * (vertical ? 0.72 : 0.6)
     }
-    p.playerHeight = max(1, min(p.playerWidth / ratio, cap))
+    // Above the fold the picture takes the whole upper half (letterboxed by the player).
+    p.playerHeight = p.mode == .tabletop ? cap : max(1, min(p.playerWidth / ratio, cap))
     // In the side layout the intro sits under the player when there is room for it; the
     // right-hand tabs are then related videos, comments and episodes.
     var others: [Int] = []
@@ -231,7 +264,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
             .frame(width: p.playerWidth).frame(maxHeight: .infinity, alignment: .top)
         }
       }.frame(width: p.playerWidth).frame(maxHeight: .infinity, alignment: .top)
-      Divider()
+      if p.foldGap > 0 { Color.clear.frame(width: p.foldGap) } else { Divider() }
       VStack(spacing: 0) {
         if p.wide, let creator {
           creator
@@ -239,6 +272,20 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
           if p.showTabs { tabBar(tabs: p.tabs, selected: p.selected) }
           pager(tabs: p.tabs, selected: p.selected, list: p.list)
         }
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+      .background(Color(uiColor: .systemBackground))
+      .overlay { ReplyPanelStack(items: $replyPanels) }
+    }
+  }
+  /// Tabletop posture: the picture fills the half above the hinge, the tabs the half below.
+  private func tabletopLayout(_ p: Plan) -> some View {
+    VStack(spacing: 0) {
+      playerSurface(p)
+      Color.clear.frame(height: p.foldGap)
+      VStack(spacing: 0) {
+        if p.showTabs { tabBar(tabs: p.tabs, selected: p.selected) }
+        pager(tabs: p.tabs, selected: p.selected, list: p.list)
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       .background(Color(uiColor: .systemBackground))
@@ -363,6 +410,15 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .overlay(alignment: .bottom) { Divider() }
       content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+  }
+}
+
+/// The player page draws the original's header (back, home, tools) inside the picture; on the
+/// iPhone Duo's inner display the system would otherwise turn the hidden navigation bar into a
+/// vertical bar beside the player.
+private struct HorizontalBarsOnly: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 27.1, *) { content.toolbarVerticalBehavior(.disabled) } else { content }
   }
 }
 

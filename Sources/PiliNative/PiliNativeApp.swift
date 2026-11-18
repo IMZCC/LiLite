@@ -126,5 +126,19 @@ import SwiftUI
         // Include destinations presented by the app itself, in particular incoming video links.
         .environmentObject(accounts).environmentObject(indicators)
     }
+    // iPadOS menu bar (and the ⌘ shortcut overlay): one item per column, in the user's order.
+    .commands {
+      CommandMenu("前往") {
+        let tabs = NavigationLayout.read(layoutData).tabs
+        ForEach(Array(tabs.prefix(9).enumerated()), id: \.element) { index, tab in
+          Button(tab.title) { active = tab }
+            .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
+        }
+        if tabs.contains(.search) {
+          Divider()
+          Button("搜索") { active = .search }.keyboardShortcut("f", modifiers: .command)
+        }
+      }
+    }
   }
 }

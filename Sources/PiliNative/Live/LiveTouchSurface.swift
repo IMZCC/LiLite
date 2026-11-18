@@ -19,14 +19,14 @@ struct LiveTouchSurface: View {
           guard touch?.acceptsPan != false else{return}
           if axis == nil {
             axis=PlayerSlide.axis(dx:v.translation.width,dy:v.translation.height,x:v.startLocation.x,width:g.size.width,levels:levels,screen:screen)
-            if axis == .brightness { level=UIScreen.main.brightness }
+            if axis == .brightness { level=WindowMetrics.brightness }
             if axis == .volume { level=Double(player.presentationVolume) }
           }
           switch axis {
           case .brightness,.volume:
             let b=axis == .brightness
             let n=PlayerSlide.level(level,dy:v.translation.height,height:g.size.height,brightness:b)
-            if b {UIScreen.main.brightness=n}else{player.presentationVolume=Float(n)}
+            if b {WindowMetrics.brightness=n}else{player.presentationVolume=Float(n)}
             hint=(b ? "亮度 ":"音量 ")+"\(Int(n*100))%"
           case .fullscreen:
             if !changed, FullscreenMode.swipe(fullscreen:fullscreen,reverse:reverse,x:v.startLocation.x,width:g.size.width,dx:v.translation.width,dy:v.translation.height){

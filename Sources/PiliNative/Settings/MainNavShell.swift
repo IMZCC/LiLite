@@ -167,16 +167,12 @@ private struct CollapsingStrip<Content: View>: View {
   }
 }
 
-/// iPad keeps the sidebar-adaptable bar; iPhone uses the default tab bar, which places the
-/// search-role tab in its own Liquid Glass button at the trailing edge.
+/// One style for every device and pose, as Apple asks (no idiom checks for layout): a tab bar
+/// in compact width — the search-role tab in its own Liquid Glass button at the trailing edge —
+/// and a tab bar that can become a sidebar in regular width (iPad, the unfolded iPhone Duo).
+/// Folding or resizing the window changes only the size class, never this view's identity.
 private struct AdaptiveTabStyle: ViewModifier {
-  func body(content: Content) -> some View {
-    if UIDevice.current.userInterfaceIdiom == .pad {
-      content.tabViewStyle(.sidebarAdaptable)
-    } else {
-      content.tabViewStyle(.automatic)
-    }
-  }
+  func body(content: Content) -> some View { content.tabViewStyle(.sidebarAdaptable) }
 }
 struct MainNavShell: View {
   let layout: NavigationLayout, badge: (MainTab) -> Text?
@@ -224,15 +220,11 @@ struct MainNavShell: View {
       chrome.reset()
     }
     .background {
-      // Hardware keyboards (iPad, Magic Keyboard on a Duo): ⌘1… switches columns, ⌘F searches.
-      ForEach(Array(layout.tabs.prefix(9).enumerated()), id: \.element) { index, tab in
-        Button(tab.title) { select(tab) }
-          .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
-      }.frame(width: 0, height: 0).clipped().accessibilityHidden(true)
-      Button("搜索") {
-        if layout.tabs.contains(.search) { select(.search) } else { shortcut = .search }
-      }.keyboardShortcut("f", modifiers: .command)
-        .frame(width: 0, height: 0).clipped().accessibilityHidden(true)
+      // ⌘1… and ⌘F live in the app's 前往 menu; without a search column ⌘F opens search here.
+      if !layout.tabs.contains(.search) {
+        Button("搜索") { shortcut = .search }.keyboardShortcut("f", modifiers: .command)
+          .frame(width: 0, height: 0).clipped().accessibilityHidden(true)
+      }
       if !layout.directBack, let first = layout.tabs.first, first != active {
         Button("返回首个栏目") { select(first) }.keyboardShortcut(.escape, modifiers: [])
           .frame(width: 0, height: 0).clipped().accessibilityHidden(true)
