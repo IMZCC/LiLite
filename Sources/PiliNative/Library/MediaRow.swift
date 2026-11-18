@@ -13,8 +13,6 @@ struct MediaRow<Accessory: View>: View {
   var detail: String? = nil
   var dimmed = false
   var thumbWidth: CGFloat = 140
-  /// Source of a zoom transition into the opened page (the cover grows into the player).
-  var hero: (id: String, space: Namespace.ID)? = nil
   @ViewBuilder var accessory: () -> Accessory
 
   var body: some View {
@@ -49,7 +47,6 @@ struct MediaRow<Accessory: View>: View {
           }
         }
         .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
-        .modifier(HeroSource(hero: hero))
         .opacity(dimmed ? 0.5 : 1)
       VStack(alignment: .leading, spacing: 2) {
         Text(title).font(.subheadline.weight(.medium)).lineLimit(2)
@@ -75,29 +72,15 @@ extension MediaRow where Accessory == EmptyView {
   init(
     cover: URL?, title: String, badge: String? = nil, duration: String? = nil,
     progress: Double? = nil, subtitle: String? = nil, detail: String? = nil, dimmed: Bool = false,
-    thumbWidth: CGFloat = 140, hero: (id: String, space: Namespace.ID)? = nil
+    thumbWidth: CGFloat = 140
   ) {
     self.init(
       cover: cover, title: title, badge: badge, duration: duration, progress: progress,
-      subtitle: subtitle, detail: detail, dimmed: dimmed, thumbWidth: thumbWidth, hero: hero) {
+      subtitle: subtitle, detail: detail, dimmed: dimmed, thumbWidth: thumbWidth) {
       EmptyView()
     }
   }
 }
-/// Marks a cover as the origin of a zoom navigation transition.
-struct HeroSource: ViewModifier {
-  let hero: (id: String, space: Namespace.ID)?
-  func body(content: Content) -> some View {
-    if let hero { content.matchedTransitionSource(id: hero.id, in: hero.space) } else { content }
-  }
-}
-extension View {
-  /// Zooms this pushed page out of the cover marked with the same id.
-  @ViewBuilder func heroDestination(_ id: String, in space: Namespace.ID, enabled: Bool = true) -> some View {
-    if enabled { navigationTransition(.zoom(sourceID: id, in: space)) } else { self }
-  }
-}
-
 /// Compact "1.2万播放 · 300弹幕" text used by several rows.
 enum MediaStats {
   private static let monthDay = dateFormatter("MM-dd")

@@ -404,7 +404,6 @@ private struct VideoShelf: View {
   @State private var manualLoad: Task<Void, Never>?
   @State private var paging = FeedScrollPaging()
   @AppStorage("feed.retainedTip") private var tip = true
-  @Namespace private var hero
   @AppStorage("feed.hotEntrances") private var hotEntrances = false
   var body: some View {
     ScrollViewReader { proxy in shelfScroll(proxy) }
@@ -533,7 +532,7 @@ private struct VideoShelf: View {
           if let link = v.recommendLink.flatMap(SharedLink.parse) {
             LinkDestination(item: link)
           } else {
-            DetailView(initial: v).heroDestination(v.id, in: hero)
+            DetailView(initial: v)
           }
         } label: {
           VStack(alignment: .leading, spacing: featured ? 10 : 8) {
@@ -554,7 +553,6 @@ private struct VideoShelf: View {
                 }
               }
               .clipShape(RoundedRectangle(cornerRadius: featured ? NativeGlass.panelRadius : NativeGlass.cardRadius, style: .continuous))
-              .matchedTransitionSource(id: v.id, in: hero)
             VStack(alignment: .leading, spacing: 4) {
               Text(v.title).piliFont(featured ? .title3 : .subheadline, weight: .semibold)
                 .lineLimit(2).multilineTextAlignment(.leading)

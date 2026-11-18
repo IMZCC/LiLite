@@ -1,117 +1,156 @@
 import SwiftUI
 import UIKit
 
-/// Horizontal pagers (page-style TabView) otherwise capture the swipes that pop the navigation
-/// stack. This probe makes the enclosing pager's pan wait for the system pop gestures to fail.
-/// `contentPop` decides whether iOS 26's swipe-from-anywhere back gesture is active: on the first
-/// page a rightward swipe means "go back"; on later pages it must page back instead, so the
-/// content gesture is switched off there while the screen-edge gesture keeps working.
-/// As a child view controller it restores the gesture whenever its page is covered or removed.
-private struct EdgeSwipePriorityProbe: UIViewControllerRepresentable {
-  let contentPop: Bool
+/// A pushed page can reserve its leading edge for Back while keeping its horizontal pager
+/// or player controls interactive elsewhere. At the root, the pager owns the entire width.
+struct LeadingEdgeNavigation: UIViewControllerRepresentable {
+  var fullWidth = false
+  var didAttach: (UINavigationController) -> Void = { _ in }
   func makeUIViewController(context: Context) -> Probe { Probe() }
-  func updateUIViewController(_ controller: Probe, context: Context) {
-    controller.contentPop = contentPop
-    controller.install()
+  func updateUIViewController(_ probe: Probe, context: Context) {
+    probe.fullWidth = fullWidth
+    probe.didAttach = didAttach
   }
-  static func dismantleUIViewController(_ controller: Probe, coordinator: ()) { controller.restore() }
-  final class Probe: UIViewController {
-    var contentPop = true
-    private weak var linkedPager: UIScrollView?
-    private weak var linkedNavigation: UINavigationController?
+  static func dismantleUIViewController(_ probe: Probe, coordinator: ()) { probe.detach() }
+
+  final class Probe: UIViewController, UIGestureRecognizerDelegate {
+    var fullWidth = false
+    var didAttach: (UINavigationController) -> Void = { _ in }
+    private weak var nav: UINavigationController?
+    private weak var owner: UIViewController?
+    private var pan: UIPanGestureRecognizer?
+    private var contentWasEnabled: Bool?
+    private var driver: LeadingPopTransition?
+    private var visible = false
+
     override func loadView() {
       view = UIView()
       view.isUserInteractionEnabled = false
-      view.accessibilityElementsHidden = true
     }
-    override func viewWillAppear(_ animated: Bool) {
-      super.viewWillAppear(animated)
-      install()
-    }
-    override func didMove(toParent parent: UIViewController?) {
-      super.didMove(toParent: parent)
-      install()
-    }
-    override func viewDidLayoutSubviews() {
-      super.viewDidLayoutSubviews()
-      if linkedPager == nil { install() }
+    override func viewDidAppear(_ animated: Bool) {
+      super.viewDidAppear(animated)
+      visible = true
+      attach()
     }
     override func viewWillDisappear(_ animated: Bool) {
       super.viewWillDisappear(animated)
-      restore()
+      visible = false
+      detach()
     }
-    func install() {
-      guard view.window != nil else { return }
-      DispatchQueue.main.async { [weak self] in self?.link() }
-    }
-    func restore() {
-      linkedNavigation?.interactiveContentPopGestureRecognizer?.isEnabled = true
-    }
-    private func link() {
-      guard view.window != nil, let nav = navigationController ?? findNavigation() else { return }
-      // Root pages (home channels) never pop, so leave the shared back gestures alone there.
-      guard let owner = owningController(in: nav) else { return }
-      guard owner !== nav.viewControllers.first, owner === nav.topViewController else { return }
-      linkedNavigation = nav
-      nav.interactiveContentPopGestureRecognizer?.isEnabled = contentPop
-      guard let pager = enclosingPager() else { return }
-      guard pager !== linkedPager else { return }
-      if let edge = nav.interactivePopGestureRecognizer {
-        pager.panGestureRecognizer.require(toFail: edge)
+    private func attach() {
+      guard visible, driver == nil, let nav = navigationController, nav.viewControllers.count > 1,
+        let owner = nav.topViewController, let host = owner.viewIfLoaded,
+        view.isDescendant(of: host) else { return }
+      didAttach(nav)
+      if self.owner !== owner || pan == nil {
+        detach()
+        self.nav = nav
+        self.owner = owner
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(drag(_:)))
+        pan.maximumNumberOfTouches = 1
+        pan.delegate = self
+        host.addGestureRecognizer(pan)
+        self.pan = pan
       }
-      if let content = nav.interactiveContentPopGestureRecognizer {
-        // A disabled recognizer fails at once, so later pages still page normally.
-        pager.panGestureRecognizer.require(toFail: content)
+      if contentWasEnabled == nil, let content = nav.interactiveContentPopGestureRecognizer {
+        contentWasEnabled = content.isEnabled
+        content.isEnabled = false
       }
-      linkedPager = pager
     }
-    private func findNavigation() -> UINavigationController? {
-      var responder: UIResponder? = view
-      while let r = responder {
-        if let c = r as? UIViewController, let nav = c.navigationController { return nav }
-        responder = r.next
-      }
-      return nil
+    func detach() {
+      if let contentWasEnabled { nav?.interactiveContentPopGestureRecognizer?.isEnabled = contentWasEnabled }
+      contentWasEnabled = nil
+      // Restore the shared recognizer before the next page appears. Keep our own pan
+      // alive until UIKit finishes or cancels the interaction that it is driving.
+      guard driver == nil else { return }
+      if let pan { pan.view?.removeGestureRecognizer(pan) }
+      pan = nil
+      nav = nil
+      owner = nil
     }
-    private func enclosingPager() -> UIScrollView? {
-      var current = view.superview
-      while let v = current {
-        if let scroll = v as? UIScrollView,
-          scroll.isPagingEnabled || scroll.contentSize.width > scroll.bounds.width + 1
-        {
-          return scroll
+    private func sign(_ view: UIView) -> CGFloat {
+      view.effectiveUserInterfaceLayoutDirection == .rightToLeft ? -1 : 1
+    }
+    func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+      guard visible, let host = gesture.view, nav?.topViewController === owner else { return false }
+      let x = touch.location(in: host).x
+      return fullWidth || (sign(host) > 0 ? x - host.bounds.minX : host.bounds.maxX - x) <= 28
+    }
+    func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
+      guard let pan = gesture as? UIPanGestureRecognizer, let host = pan.view,
+        let nav, let owner, nav.topViewController === owner, nav.viewControllers.count > 1,
+        nav.transitionCoordinator == nil, driver == nil, nav.presentedViewController == nil,
+        owner.presentedViewController == nil else { return false }
+      let velocity = pan.velocity(in: host)
+      return velocity.x * sign(host) > abs(velocity.y)
+    }
+    func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+      if other === nav?.interactivePopGestureRecognizer || other === nav?.interactiveContentPopGestureRecognizer { return true }
+      guard let host = owner?.viewIfLoaded, let otherView = other.view else { return false }
+      return otherView.isDescendant(of: host)
+    }
+    @objc private func drag(_ pan: UIPanGestureRecognizer) {
+      guard let nav, let container = nav.viewIfLoaded else { return }
+      let direction = sign(container)
+      let progress = min(1, max(0, direction * pan.translation(in: container).x / max(1, container.bounds.width)))
+      switch pan.state {
+      case .began:
+        let transition = LeadingPopTransition()
+        driver = transition
+        transition.begin(in: nav, rtl: direction < 0) { [self] in
+          driver = nil
+          if let owner, nav.topViewController === owner { attach() } else { detach() }
         }
-        current = v.superview
+      case .changed:
+        driver?.interaction.update(progress)
+      case .ended:
+        let speed = pan.velocity(in: container).x * direction
+        if speed > 500 || (progress >= 0.4 && speed > -300) { driver?.interaction.finish() }
+        else { driver?.interaction.cancel() }
+      case .failed, .cancelled:
+        driver?.interaction.cancel()
+      default: break
       }
-      return nil
-    }
-    private func owningController(in nav: UINavigationController) -> UIViewController? {
-      var c: UIViewController? = parent ?? findOwnerByResponder()
-      while let current = c {
-        if nav.viewControllers.contains(where: { $0 === current }) { return current }
-        c = current.parent
-      }
-      return nil
-    }
-    private func findOwnerByResponder() -> UIViewController? {
-      var responder: UIResponder? = view.superview
-      while let r = responder {
-        if let c = r as? UIViewController { return c }
-        responder = r.next
-      }
-      return nil
     }
   }
 }
 
-extension View {
-  /// Apply to the first page of a horizontal pager inside a pushed screen. Pass whether that first
-  /// page is currently selected, so swiping back from anywhere only applies there.
-  func edgeSwipeBackPriority(firstPageSelected: Bool = true) -> some View {
-    background {
-      EdgeSwipePriorityProbe(contentPop: firstPageSelected).frame(width: 0, height: 0)
-        .accessibilityHidden(true)
+/// Supply the animator and its interaction only for this pop. SwiftUI continues receiving the
+/// navigation delegate callbacks that keep its stack in sync when the user finishes or cancels.
+@MainActor final class LeadingPopTransition: NSObject, UINavigationControllerDelegate {
+  let interaction = UIPercentDrivenInteractiveTransition()
+  private weak var original: UINavigationControllerDelegate?
+  private var animator: MotionAnimator?
+
+  func begin(in nav: UINavigationController, rtl: Bool, completion: @escaping () -> Void) {
+    original = nav.delegate
+    animator = MotionAnimator(mode: rtl ? .fromLeft : .fromRight, opening: false)
+    interaction.completionCurve = .easeOut
+    nav.delegate = self
+    let popped = nav.popViewController(animated: true)
+    let finish = { [self] in
+      if nav.delegate === self { nav.delegate = original }
+      completion()
     }
+    if popped != nil, let transition = nav.transitionCoordinator,
+      transition.animate(alongsideTransition: nil, completion: { _ in finish() }) { return }
+    finish()
+  }
+  override func responds(to selector: Selector!) -> Bool {
+    super.responds(to: selector) || original?.responds(to: selector) == true
+  }
+  override func forwardingTarget(for selector: Selector!) -> Any? {
+    if original?.responds(to: selector) == true { return original }
+    return super.forwardingTarget(for: selector)
+  }
+  func navigationController(_ nav: UINavigationController, animationControllerFor operation: UINavigationController.Operation,
+    from fromVC: UIViewController, to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    if operation == .pop { return animator }
+    return original?.navigationController?(nav, animationControllerFor: operation, from: fromVC, to: toVC)
+  }
+  func navigationController(_ nav: UINavigationController,
+    interactionControllerFor animation: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+    if animation === animator { return interaction }
+    return original?.navigationController?(nav, interactionControllerFor: animation)
   }
 }
-

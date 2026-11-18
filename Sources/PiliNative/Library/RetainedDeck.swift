@@ -59,13 +59,6 @@ extension View {
 }
 
 /// Keep each visited page's list, scroll position and controls until its owning identity changes.
-/// Only the first page carries the edge-swipe probe (see `edgeSwipeBackPriority`).
-private struct DeckEdgePriority: ViewModifier {
-  let first: Bool, selectedFirst: Bool
-  func body(content: Content) -> some View {
-    if first { content.edgeSwipeBackPriority(firstPageSelected: selectedFirst) } else { content }
-  }
-}
 struct RetainedDeck<Choice:Hashable,Content:View>:View {
   let choices:[Choice]
   @Binding var selection:Choice
@@ -113,11 +106,11 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
           HStack(spacing: 0) {
             ForEach(choices, id: \.self) { choice in
               sizedPage(choice)
-                .modifier(DeckEdgePriority(first: choice == choices.first, selectedFirst: selection == choices.first))
                 .id(choice)
             }
           }.scrollTargetLayout()
         }
+        .background { LeadingEdgeNavigation(fullWidth: selection == choices.first).frame(width: 0, height: 0) }
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(.paging)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)

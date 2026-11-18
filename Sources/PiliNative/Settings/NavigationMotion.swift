@@ -34,6 +34,7 @@ private final class MotionDelegate: NSObject, UINavigationControllerDelegate {
   private weak var original: UINavigationControllerDelegate?
   private static var scrollKey: UInt8 = 0
   static func install(_ nav: UINavigationController) {
+    guard !(nav.delegate is LeadingPopTransition) else { return }
     if objc_getAssociatedObject(nav, &scrollKey) == nil {
       objc_setAssociatedObject(nav, &scrollKey, ScrollRebound(host: nav.view), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
@@ -68,7 +69,7 @@ private final class MotionDelegate: NSObject, UINavigationControllerDelegate {
     return MotionAnimator(mode: mode, opening: operation != .pop)
   }
 }
-private final class MotionAnimator: NSObject, UIViewControllerAnimatedTransitioning {
+final class MotionAnimator: NSObject, UIViewControllerAnimatedTransitioning {
   let mode: PageMotion, opening: Bool
   init(mode: PageMotion, opening: Bool) { self.mode = mode; self.opening = opening }
   func transitionDuration(using context: UIViewControllerContextTransitioning?) -> TimeInterval { mode == .none ? 0 : 0.3 }
@@ -122,6 +123,6 @@ private final class MotionAnimator: NSObject, UIViewControllerAnimatedTransition
       ctx.completeTransition(!ctx.transitionWasCancelled)
     }
     if duration == 0 { finish(true) }
-    else { UIView.animate(withDuration: duration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState], animations: { apply(frontHidden: !self.opening) }, completion: finish) }
+    else { UIView.animate(withDuration: duration, delay: 0, options: [ctx.isInteractive ? .curveLinear : .curveEaseInOut, .beginFromCurrentState], animations: { apply(frontHidden: !self.opening) }, completion: finish) }
   }
 }

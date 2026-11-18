@@ -164,9 +164,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         .ignoresSafeArea(edges: .top)
     }
     .ignoresSafeArea(.container, edges: .top)
-    .toolbarBackground(.hidden, for: .navigationBar)
+    .toolbar(.hidden, for: .navigationBar)
     .modifier(HorizontalBarsOnly())
-    .toolbar { ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) } }
     // Light status bar over the black player; the system's own once it has folded into the bar.
     .toolbarColorScheme(fold.folded && !playback.playing ? nil : .dark, for: .navigationBar)
     .onReceive(model.$playing.combineLatest(model.$hasPlayed, model.$pictureSize)
@@ -176,8 +175,6 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     .onPreferenceChange(PlayerControlsVisibleKey.self) { shown in
       withAnimation(.smooth(duration: 0.28)) { chromeShown = shown }
     }
-    // Back and Home are part of the player controls. The system edge gesture remains available.
-    .navigationBarBackButtonHidden(true)
     .onAppear { onScreen = true }
     .onDisappear { onScreen = false }
     .onChange(of: key) { _, _ in

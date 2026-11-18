@@ -243,10 +243,9 @@ struct VideoLink: View {
   var rank: Int? = nil
   /// Inside one creator's space every row has the same author; show the date in its place.
   var hidesOwner = false
-  @Namespace private var hero
   var body: some View {
     PlainRowLink {
-      DetailView(initial: video).heroDestination(video.id, in: hero)
+      DetailView(initial: video)
     } label: {
       MediaRow(
         cover: video.cover, title: video.title, badge: rank.map { "TOP \($0)" },
@@ -254,8 +253,7 @@ struct VideoLink: View {
         subtitle: hidesOwner ? MediaStats.published(video.pubdate) : video.owner?.name,
         detail: MediaStats.line(
           views: video.stat?.view, danmaku: video.stat?.danmaku,
-          extra: hidesOwner ? [] : [MediaStats.published(video.pubdate)]),
-        hero: (video.id, hero))
+          extra: hidesOwner ? [] : [MediaStats.published(video.pubdate)]))
     }.archiveCover(video)
   }
 }
