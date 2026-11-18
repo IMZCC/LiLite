@@ -40,7 +40,8 @@ with (base/'ios.lock').open('a+b') as lock:
     ass = Path(subprocess.check_output(['python3', str(kit/'build-subtitles.py'), 'ios'], text=True).strip())
     ismac = sys.platform == 'darwin'
     sdk = Path(os.environ.get('PILI_IOS_SDK') or (subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True).strip() if ismac else str(Path.home()/'.swiftpm/swift-sdks/darwin.artifactbundle/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk')))
-    key = hashlib.sha256((digest(__file__)+str(ff)+str(ass)+str(sdk)).encode()).hexdigest()[:16]
+    chroma_patch = kit/'patches/mpv-0.41.0-ios-chroma.patch'
+    key = hashlib.sha256((digest(__file__)+digest(chroma_patch)+str(ff)+str(ass)+str(sdk)).encode()).hexdigest()[:16]
     out = base/('ios-'+key)
     prefix = out/'vendor'
     if (prefix/'.ready').exists():
@@ -65,11 +66,18 @@ with (base/'ios.lock').open('a+b') as lock:
     os.environ['PKG_CONFIG_PATH'] = os.pathsep.join(pc)
     cross = out/'cross.ini'
     cross.write_text("[binaries]\nc="+repr(apple('clang'))+"\ncpp="+repr(apple('clang++'))+"\nobjc="+repr(apple('clang'))+"\nar="+repr(apple('ar' if ismac else 'llvm-ar'))+"\npkg-config="+repr(tool('pkg-config'))+"\n[host_machine]\nsystem='darwin'\ncpu_family='aarch64'\ncpu='aarch64'\nendian='little'\n[properties]\nneeds_exe_wrapper=true\npkg_config_libdir="+repr(pc)+"\n[built-in options]\nc_args="+repr(args)+"\ncpp_args="+repr(args)+"\nobjc_args="+repr(args)+"\nc_link_args="+repr(ld)+"\ncpp_link_args="+repr(ld)+"\nobjc_link_args="+repr(ld)+"\n")
-    mpv = source('mpv','0.41.0','https://codeload.github.com/mpv-player/mpv/tar.gz/refs/tags/v0.41.0','ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209')
-    # Upstream enables ObjC through its macOS/Cocoa checks, which are off for this iOS-only build.
-    manifest = mpv/'meson.build'
-    text = manifest.read_text()
-    manifest.write_text(text.replace("project('mpv',\n        'c',", "project('mpv',\n        'c', 'objc',"))
+    upstream_mpv = source('mpv','0.41.0','https://codeload.github.com/mpv-player/mpv/tar.gz/refs/tags/v0.41.0','ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209')
+    mpv = out/'mpv-src'
+    if not mpv.exists():
+        with tempfile.TemporaryDirectory(dir=out) as staging:
+            tree = Path(staging)/'mpv'
+            shutil.copytree(upstream_mpv, tree)
+            run(['patch','-d',tree,'-p1','-i',chroma_patch])
+            # Upstream enables ObjC through macOS/Cocoa checks disabled in the iOS build.
+            manifest = tree/'meson.build'
+            text = manifest.read_text()
+            manifest.write_text(text.replace("project('mpv',\n        'c',", "project('mpv',\n        'c', 'objc',"))
+            tree.replace(mpv)
     placebo = source('libplacebo','7.360.1','https://codeload.github.com/haasn/libplacebo/tar.gz/refs/tags/v7.360.1','d05fdf90bea2f629eaa2d115e909fd356388ac639e54f77b87a018a6d76224bd')
     common = ['--cross-file',cross,'--prefix='+str(prefix),'--libdir=lib','--buildtype=release','--wrap-mode=nofallback','-Ddefault_library=static','-Db_staticpic=true','-Dauto_features=disabled']
     recipes = [

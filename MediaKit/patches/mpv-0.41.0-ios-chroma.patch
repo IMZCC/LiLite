@@ -1,0 +1,47 @@
+--- a/video/out/gpu/video.c
++++ b/video/out/gpu/video.c
+@@ -197,7 +197,7 @@
+     const struct ra_format *fbo_format;
+     struct ra_tex *merge_tex[4];
+     struct ra_tex *scale_tex[4];
+-    struct ra_tex *integer_tex[4];
++    struct ra_tex *normalized_tex[4];
+     struct ra_tex *chroma_tex[4];
+     struct ra_tex *indirect_tex;
+     struct ra_tex *blend_subs_tex;
+@@ -658,7 +658,7 @@
+     for (int n = 0; n < 4; n++) {
+         ra_tex_free(p->ra, &p->merge_tex[n]);
+         ra_tex_free(p->ra, &p->scale_tex[n]);
+-        ra_tex_free(p->ra, &p->integer_tex[n]);
++        ra_tex_free(p->ra, &p->normalized_tex[n]);
+         ra_tex_free(p->ra, &p->chroma_tex[n]);
+     }
+ 
+@@ -2224,15 +2224,19 @@
+         }
+     }
+ 
+-    // If any textures are still in integer format by this point, we need
+-    // to introduce an explicit conversion pass to avoid breaking hooks/scaling
++    // Filters expect consecutive channels. CoreVideo exposes NV12 chroma as
++    // LUMINANCE_ALPHA on iOS GLES: the sampled components are R and A.
++    // Normalize with copy_image() before any scaler or hook can discard A.
+     for (int n = 0; n < 4; n++) {
+-        if (img[n].tex && img[n].tex->params.format->ctype == RA_CTYPE_UINT) {
+-            GLSLF("// use_integer fix for plane %d\n", n);
++        if (!img[n].tex)
++            continue;
++        const struct ra_format *fmt = img[n].tex->params.format;
++        if (fmt->ctype == RA_CTYPE_UINT || fmt->luminance_alpha) {
++            GLSLF("// normalize plane %d\n", n);
+             copy_image(p, &(int){0}, img[n]);
+-            pass_describe(p, "use_integer fix");
+-            finish_pass_tex(p, &p->integer_tex[n], img[n].w, img[n].h);
+-            img[n] = image_wrap(p->integer_tex[n], img[n].type,
++            pass_describe(p, "normalize plane channels");
++            finish_pass_tex(p, &p->normalized_tex[n], img[n].w, img[n].h);
++            img[n] = image_wrap(p->normalized_tex[n], img[n].type,
+                                 img[n].components);
+         }
+     }
