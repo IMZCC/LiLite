@@ -225,7 +225,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     let side = p.mode == .side
     p.list = p.mode != .stacked && (playlistPref ?? horizontal) ? playlist : nil
     let picture = playback.pictureSize
-    let vertical = enlarge && picture.width > 0 && picture.height > picture.width
+    let portraitVideo = picture.width > 0 && picture.height > picture.width
+    let vertical = enlarge && portraitVideo
     let ratio: CGFloat = vertical ? (side ? 9.0 / 16 : 1) : 16.0 / 9
     let usable = max(1, height - topInset)
     // Side: the original's player width, capped so the picture fits the window's height.
@@ -239,7 +240,12 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     case .stacked: cap = usable * (vertical ? 0.72 : 0.6)
     }
     // Above the fold the picture takes the whole upper half (letterboxed by the player).
-    p.playerHeight = p.mode == .tabletop ? cap : max(1, min(p.playerWidth / ratio, cap))
+    if p.mode == .stacked, full > width, portraitVideo {
+      // PiliPlus expands the portrait pager's header while leaving the tabs below it.
+      p.playerHeight = max(1, min(max(width, full * 0.65), usable * 0.72))
+    } else {
+      p.playerHeight = p.mode == .tabletop ? cap : max(1, min(p.playerWidth / ratio, cap))
+    }
     // In the side layout the intro sits under the player when there is room for it; the
     // right-hand tabs are then related videos, comments and episodes.
     var others: [Int] = []

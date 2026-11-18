@@ -1,0 +1,23 @@
+--- a/video/out/vo_libmpv.c
++++ b/video/out/vo_libmpv.c
+@@ -54,6 +54,7 @@
+  */
+ 
+ struct vo_priv {
++    struct vo_driver driver;
+     struct mpv_render_context *ctx; // immutable after init
+ };
+ 
+@@ -729,6 +730,12 @@
+         return -1;
+     }
+ 
++    // The GPU backend rotates the frame in its shaders. The software backend
++    // needs the output chain to apply rotation before calculating crop rectangles.
++    p->driver = *vo->driver;
++    p->driver.caps = ctx->renderer->driver_caps;
++    vo->driver = &p->driver;
++
+     mp_mutex_lock(&ctx->lock);
+     ctx->vo = vo;
+     ctx->need_resize = true;

@@ -11,7 +11,7 @@
 // Exercise the production software render bridge, including context replacement while
 // audio continues. The iOS GL-to-SW handoff uses the same free/create/vid re-selection.
 static mpv_handle *player;
-static atomic_int operation, finished, frames, colorful, changes;
+static atomic_int operation, finished, frames, colorful, changes, portrait_frame;
 static atomic_uint_fast64_t checksum;
 static void *render_thread(void *unused) {
     mpv_render_context *context = NULL;
@@ -29,6 +29,14 @@ static void *render_thread(void *unused) {
         }
         if (context && (mpv_render_context_update(context) & MPV_RENDER_UPDATE_FRAME)) {
             assert(pili_mpv_render_software(context, pixels, 640, 360, 640 * 4) >= 0);
+            // A 90x160 white picture in a 640x360 target occupies about 203 columns.
+            int white = 0;
+            for (int x = 0; x < 640; x++) {
+                if (pixels[(180 * 640 + x) * 4] > 230) white++;
+            }
+            if (abs(white - 203) <= 3 && pixels[(180 * 640 + 320) * 4] > 230 &&
+                pixels[(180 * 640 + 10) * 4] < 10 && pixels[(180 * 640 + 630) * 4] < 10)
+                atomic_store(&portrait_frame, 1);
             uint64_t hash = 1469598103934665603ULL;
             int nonblack = 0;
             for (int i = 0; i < 640 * 360; i += 97) {
@@ -78,7 +86,7 @@ static void wait_picture(int previous) {
     assert(atomic_load(&colorful) > previous);
 }
 int main(int argc, char **argv) {
-    assert(argc == 3);
+    assert(argc == 4);
     player = mpv_create(); assert(player);
     const char *options[][2] = {{"config","no"},{"terminal","no"},{"vo","libmpv"},{"ao","null"},
       {"idle","yes"},{"keep-open","yes"},{"hwdec","no"},{"sws-fast","yes"},{"sws-scaler","bilinear"}};
@@ -129,9 +137,16 @@ int main(int argc, char **argv) {
     wait_picture(prior);
     assert(fabs(number("time-pos") - 2.5) < 0.2);
     assert(atomic_load(&changes) > 15);
+    const char *stop[] = {"stop", NULL};
+    assert(mpv_command(player, stop) >= 0);
+    atomic_store(&portrait_frame, 0);
+    assert(pili_mpv_load(player, argv[3], "", "", "PiliPlus", 0, 0) >= 0);
+    for (int n = 0; n < 5000 && !atomic_load(&portrait_frame); n++) usleep(1000);
+    assert(atomic_load(&portrait_frame));
+    assert(number("dheight") > number("dwidth") && number("video-out-params/rotate") == 0);
     atomic_store(&operation, 2);
     pthread_join(thread, NULL);
     mpv_terminate_destroy(player);
-    printf("{\"software_frames\":%d,\"changing_pictures\":%d,\"context_replacements\":4,\"preserved_audio_position\":true,\"paused_frame_stable\":true,\"seek\":2.5,\"speed\":3,\"advance_in_0_8s\":%.3f}\n",
+    printf("{\"software_frames\":%d,\"changing_pictures\":%d,\"context_replacements\":4,\"preserved_audio_position\":true,\"paused_frame_stable\":true,\"rotated_portrait\":true,\"seek\":2.5,\"speed\":3,\"advance_in_0_8s\":%.3f}\n",
       atomic_load(&frames), atomic_load(&changes), advance);
 }

@@ -39,7 +39,7 @@ export PKG_CONFIG_LIBDIR="$dav/lib/pkgconfig"
 export PKG_CONFIG_PATH="$dav/lib/pkgconfig"
 config=(--disable-everything --disable-autodetect --enable-network --disable-doc --disable-programs
  --disable-avdevice --enable-avfilter --enable-swscale --enable-swresample --disable-debug
- --enable-filter=abuffer,abuffersink,aformat,aresample,volume,loudnorm,dynaudnorm,anull,asetpts,atempo,buffer,buffersink,format,null,scale --enable-encoder=alac,png,mjpeg
+ --enable-filter=abuffer,abuffersink,aformat,aresample,volume,loudnorm,dynaudnorm,anull,asetpts,atempo,buffer,buffersink,format,null,scale,rotate --enable-encoder=alac,png,mjpeg
  --enable-static --disable-shared --enable-pic --disable-iconv --enable-zlib --disable-bzlib --disable-lzma
  --enable-libdav1d --enable-decoder=h264,hevc,vp9,libdav1d,aac,alac,flac,opus,mp3,ac3,eac3,ass,ssa,subrip,webvtt,png,mjpeg --enable-demuxer=flv,mov,mpegts,aac,mp3,ac3,eac3,hls,matroska,ogg,flac,ass,srt,webvtt --enable-muxer=hls,mp4,mpegts,image2 --enable-protocol=file,http,https,tcp,tls,crypto,data --enable-bsf=aac_adtstoasc,extract_extradata,h264_mp4toannexb
  --enable-parser=h264,hevc,aac,av1,vp9,mpegaudio,ac3,opus --pkg-config-flags=--static --extra-cflags="-I$dav/include" --extra-ldflags="-L$dav/lib")
@@ -70,7 +70,7 @@ if [[ ! -f "$out/.ready" ]];then
    make install-headers install-libs >&2)
   grep -q "^#define CONFIG_HLS_MUXER 1" "$out/build/config_components.h"
   grep -q "^#define CONFIG_MP4_MUXER 1" "$out/build/config_components.h"
-  for part in H264_DECODER HEVC_DECODER LIBDAV1D_DECODER VP9_DECODER MOV_DEMUXER MPEGTS_DEMUXER AAC_DEMUXER MP3_DEMUXER AC3_DEMUXER EAC3_DEMUXER MPEGTS_MUXER AAC_DECODER ALAC_ENCODER LOUDNORM_FILTER DYNAUDNORM_FILTER ARESAMPLE_FILTER; do
+  for part in H264_DECODER HEVC_DECODER LIBDAV1D_DECODER VP9_DECODER MOV_DEMUXER MPEGTS_DEMUXER AAC_DEMUXER MP3_DEMUXER AC3_DEMUXER EAC3_DEMUXER MPEGTS_MUXER AAC_DECODER ALAC_ENCODER LOUDNORM_FILTER DYNAUDNORM_FILTER ARESAMPLE_FILTER ROTATE_FILTER; do
     grep -q "^#define CONFIG_$part 1" "$out/build/config_components.h"
   done
   grep -q "^#define CONFIG_GPL 0" "$out/build/config.h"

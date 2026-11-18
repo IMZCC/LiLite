@@ -40,8 +40,8 @@ with (base/'ios.lock').open('a+b') as lock:
     ass = Path(subprocess.check_output(['python3', str(kit/'build-subtitles.py'), 'ios'], text=True).strip())
     ismac = sys.platform == 'darwin'
     sdk = Path(os.environ.get('PILI_IOS_SDK') or (subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True).strip() if ismac else str(Path.home()/'.swiftpm/swift-sdks/darwin.artifactbundle/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk')))
-    chroma_patch = kit/'patches/mpv-0.41.0-ios-chroma.patch'
-    key = hashlib.sha256((digest(__file__)+digest(chroma_patch)+str(ff)+str(ass)+str(sdk)).encode()).hexdigest()[:16]
+    patches = [kit/'patches/mpv-0.41.0-ios-chroma.patch', kit/'patches/mpv-0.41.0-render-caps.patch']
+    key = hashlib.sha256((digest(__file__)+"".join(digest(p) for p in patches)+str(ff)+str(ass)+str(sdk)).encode()).hexdigest()[:16]
     out = base/('ios-'+key)
     prefix = out/'vendor'
     if (prefix/'.ready').exists():
@@ -72,7 +72,8 @@ with (base/'ios.lock').open('a+b') as lock:
         with tempfile.TemporaryDirectory(dir=out) as staging:
             tree = Path(staging)/'mpv'
             shutil.copytree(upstream_mpv, tree)
-            run(['patch','-d',tree,'-p1','-i',chroma_patch])
+            for patch in patches:
+                run(['patch','-d',tree,'-p1','-i',patch])
             # Upstream enables ObjC through macOS/Cocoa checks disabled in the iOS build.
             manifest = tree/'meson.build'
             text = manifest.read_text()

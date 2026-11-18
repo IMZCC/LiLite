@@ -1,4 +1,5 @@
 import CMPV
+import Combine
 import CoreVideo
 import OpenGLES
 import QuartzCore
@@ -142,7 +143,8 @@ final class MPVRenderer: @unchecked Sendable {
     glBindFramebuffer(GLenum(GL_FRAMEBUFFER), fbo)
     glFramebufferTexture2D(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_TEXTURE_2D), CVOpenGLESTextureGetName(texture), 0)
     guard glCheckFramebufferStatus(GLenum(GL_FRAMEBUFFER)) == GLenum(GL_FRAMEBUFFER_COMPLETE) else { return }
-    if gl?.api == .openGLES3, let surface {
+    if gl?.api == .openGLES3, let surface, surface.height > 0,
+      abs(Double(surface.width) * Double(h) - Double(w) * Double(surface.height)) <= Double(max(h, surface.height)) {
       glDisable(GLenum(GL_SCISSOR_TEST))
       glBindFramebuffer(GLenum(GL_READ_FRAMEBUFFER), surface.fbo)
       glReadBuffer(GLenum(GL_COLOR_ATTACHMENT0))
@@ -227,6 +229,7 @@ struct MPVVideoView: UIViewRepresentable {
     private let drawable = CAEAGLLayer()
     private let id = UUID()
     private var attached = false
+    private var sizeWatch: AnyCancellable?
     private var lastSize = CGSize.zero
     private var sourceSize = CGSize.zero
     private var gravity = "fit"
@@ -245,6 +248,13 @@ struct MPVVideoView: UIViewRepresentable {
       drawable.drawableProperties = [kEAGLDrawablePropertyRetainedBacking: false,
         kEAGLDrawablePropertyColorFormat: kEAGLColorFormatRGBA8]
       layer.addSublayer(drawable)
+      sizeWatch = player.statePublisher.merge(with: player.itemPublisher.map { _ in () })
+        .map { [weak player] in player?.playbackSize ?? .zero }
+        .removeDuplicates()
+        .sink { [weak self] size in
+          guard let self else { return }
+          self.configure(size: size, gravity: self.gravity)
+        }
     }
     required init?(coder: NSCoder) { nil }
     override func didMoveToWindow() {
@@ -264,20 +274,26 @@ struct MPVVideoView: UIViewRepresentable {
     }
     override func layoutSubviews() {
       super.layoutSubviews()
-      var rect = bounds
-      if gravity != "stretch", sourceSize.width > 0, sourceSize.height > 0 {
-        let x = bounds.width / sourceSize.width
-        let y = bounds.height / sourceSize.height
+      var raster = bounds.size
+      let hasSource = sourceSize.width > 0 && sourceSize.height > 0
+      if hasSource {
+        let x = bounds.width / sourceSize.width, y = bounds.height / sourceSize.height
         let scale = gravity == "fill" ? max(x, y) : min(x, y)
-        let size = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
-        rect = CGRect(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2,
-          width: size.width, height: size.height)
+        raster = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
+      }
+      // The framebuffer always keeps the display aspect. Only an explicit stretch changes
+      // its on-screen transform; the decoder and the PiP copy retain the original geometry.
+      var transform = CGAffineTransform.identity
+      if gravity == "stretch", raster.width > 0, raster.height > 0 {
+        transform = CGAffineTransform(scaleX: bounds.width / raster.width, y: bounds.height / raster.height)
       }
       CATransaction.begin()
       CATransaction.setDisableActions(true)
-      drawable.frame = rect
+      drawable.bounds = CGRect(origin: .zero, size: raster)
+      drawable.position = CGPoint(x: bounds.midX, y: bounds.midY)
+      drawable.setAffineTransform(transform)
       CATransaction.commit()
-      if rect.size != lastSize { lastSize = rect.size; renderer.resize(id) }
+      if raster != lastSize { lastSize = raster; renderer.resize(id) }
     }
     func configure(size: CGSize, gravity: String) {
       guard sourceSize != size || self.gravity != gravity else { return }

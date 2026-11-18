@@ -42,7 +42,9 @@ struct Theater: View {
     GeometryReader { geo in
       let size = geo.size
       let chosen = PictureFit(rawValue: gravity) ?? .fit
-      let canvas = chosen.geometry(view: size, source: player.playbackSize, firstChoice: clock.picture.changedItem != clock.item)
+      let canvas = chosen.geometry(view: size, source: clock.pictureSize,
+        firstChoice: clock.item == nil || clock.picture.changedItem != clock.item)
+      let systemGravity = chosen == .stretch ? canvas.gravity : gravity
       let frame = system ? size : canvas.size
       ZStack {
         Color.black
@@ -59,7 +61,7 @@ struct Theater: View {
                     if let scripts{StyledSubtitleLayer(session:scripts,player:player,gravity:gravity)}
                     if let caption { caption }
                   }) : nil, live: live,
-              showsControls: showsControls && system, onPresentation: onPresentation, pictureGravity: system ? gravity : canvas.gravity,
+              showsControls: showsControls && system, onPresentation: onPresentation, pictureGravity: system ? systemGravity : canvas.gravity,
               pipError: { pipError = $0 }
             )
             } else if let mpv = player as? MPVPlayer {

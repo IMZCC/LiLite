@@ -9,6 +9,7 @@ import SwiftUI
 
 @MainActor final class ViewportClock: ObservableObject {
   let readout = ViewportReadout()
+  @Published private(set) var pictureSize = CGSize.zero
   @Published private(set) var duration = 0.0
   @Published private(set) var playing = false
   @Published private(set) var ready = false
@@ -44,6 +45,8 @@ import SwiftUI
     if ready != player.playbackReady { ready = player.playbackReady }
     let active = player.timeControlStatus != .paused
     if playing != active { playing = active }
+    let size = player.playbackSize
+    if pictureSize != size { pictureSize = size }
     let d = player.playbackDuration
     let length = d.isFinite && d > 0 && d < Double(Int.max) ? d : 0
     if duration != length { duration = length }
@@ -66,6 +69,7 @@ import SwiftUI
     source = nil
     publishedAt = -Double.infinity
     item = nil
+    pictureSize = .zero
     ready = false
     readout.buffers = []
     readout.seconds = 0

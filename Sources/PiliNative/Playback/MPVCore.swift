@@ -43,7 +43,7 @@ final class MPVCore: @unchecked Sendable {
       "config": "no", "terminal": "no", "input-default-bindings": "no",
       "input-vo-keyboard": "no", "osc": "no", "idle": "yes", "keep-open": "yes",
       "vo": "libmpv", "ao": "audiounit", "hwdec": "videotoolbox",
-      "keepaspect": "no",
+      "keepaspect": "yes",
       // 10-bit HEVC/AV1 (HDR, 杜比视界, HDR Vivid) decodes to P010 by default. The iOS GLES
       // interop has no 16-bit normalized textures, so P010 planes were sampled as the wrong
       // type and showed red/green garbage. VideoToolbox converts to 8-bit NV12 in hardware;
@@ -63,9 +63,7 @@ final class MPVCore: @unchecked Sendable {
     for property in ["pause", "paused-for-cache", "eof-reached"] {
       mpv_observe_property(handle, 0, property, MPV_FORMAT_FLAG)
     }
-    for property in ["dwidth", "dheight"] {
-      mpv_observe_property(handle, 0, property, MPV_FORMAT_INT64)
-    }
+    mpv_observe_property(handle, 0, "video-out-params", MPV_FORMAT_NODE)
     queue.async { [weak self] in self?.poll() }
   }
   static func message(_ code: Int32) -> String { String(cString: mpv_error_string(code)) }
@@ -193,8 +191,30 @@ final class MPVCore: @unchecked Sendable {
     snapshot.cacheEnd = number("demuxer-cache-time", fallback: snapshot.cacheEnd)
     snapshot.paused = flag("pause", fallback: snapshot.paused)
     snapshot.buffering = flag("paused-for-cache", fallback: snapshot.buffering)
-    mpv_get_property(handle, "dwidth", MPV_FORMAT_INT64, &snapshot.width)
-    mpv_get_property(handle, "dheight", MPV_FORMAT_INT64, &snapshot.height)
+    var params = mpv_node()
+    if mpv_get_property(handle, "video-out-params", MPV_FORMAT_NODE, &params) >= 0 {
+      updateVideoSize(params)
+      mpv_free_node_contents(&params)
+    }
+  }
+  // dw/dh include pixel aspect and crop. GL applies any remaining rotation when it draws.
+  private func updateVideoSize(_ params: mpv_node) {
+    guard params.format == MPV_FORMAT_NODE_MAP, let list = params.u.list?.pointee,
+      let keys = list.keys, let values = list.values else { return }
+    var width: Int64 = 0, height: Int64 = 0, rotation: Int64 = 0
+    for i in 0..<Int(list.num) where values[i].format == MPV_FORMAT_INT64 {
+      guard let key = keys[i] else { continue }
+      switch String(cString: key) {
+      case "dw": width = values[i].u.int64
+      case "dh": height = values[i].u.int64
+      case "rotate": rotation = values[i].u.int64
+      default: break
+      }
+    }
+    guard width > 0, height > 0 else { return }
+    let sideways = abs(rotation % 180) == 90
+    snapshot.width = sideways ? height : width
+    snapshot.height = sideways ? width : height
   }
   private func poll() {
     guard !stopped, let handle else { return }
@@ -252,10 +272,8 @@ final class MPVCore: @unchecked Sendable {
           case "eof-reached": snapshot.ended = flag
           default: break
           }
-        } else if value.format == MPV_FORMAT_INT64 {
-          let number = data.assumingMemoryBound(to: Int64.self).pointee
-          if name == "dwidth" { snapshot.width = number }
-          if name == "dheight" { snapshot.height = number }
+        } else if name == "video-out-params", value.format == MPV_FORMAT_NODE {
+          updateVideoSize(data.assumingMemoryBound(to: mpv_node.self).pointee)
         }
       default: break
       }
