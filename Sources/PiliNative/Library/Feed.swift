@@ -6,12 +6,18 @@ enum Shelf: String, CaseIterable {
 }
 @MainActor
 final class FeedModel: ObservableObject {
-  @Published var videos: [Video] = [] { didSet { contentRevision &+= 1 } }
+  @Published var videos: [Video] = [] {
+    didSet {
+      contentRevision &+= 1
+      retainedIndex = retainedStart.flatMap { id in videos.firstIndex { $0.id == id } }
+    }
+  }
   private var contentRevision = 0
   @Published var error: String?
   @Published var busy = false
   @Published var finished = false
-  @Published var retainedStart: String?
+  private var retainedStart: String?
+  private(set) var retainedIndex: Int?
   @Published var autoCursor:Int?
   private(set) var loaded = false
   private var page = 0, token = UUID()
@@ -80,7 +86,6 @@ struct FeedView: View {
   @State private var hintScope: String?
   @State private var hintRead: Date?
   @Environment(\.scenePhase) private var hintPhase
-  @Environment(\.scrollHomeChannelToTop) private var channelToTop
   @Environment(\.openPersonalPage) private var openProfile
   /// The avatar comes from the shared profile cache, so returning to this tab never shows the
   /// placeholder again before the same picture.
@@ -93,8 +98,7 @@ struct FeedView: View {
   @AppStorage("feed.mobile") private var mobile = true
   @AppStorage(NavigationLayout.key) private var layoutData = Data()
   @State private var shelf = NavigationRules.firstChannel(NavigationLayout.current().channels)
-  @State private var pageProgress: CGFloat = 0
-  @State private var chipFrames: [HomeChannel: CGRect] = [:]
+  @State private var channelMotion = PagerIndicatorMotion()
   @State private var windowInsets = FeedHeaderInsets()
   var body: some View {
     PiliNavigationStack {
@@ -102,7 +106,9 @@ struct FeedView: View {
       VStack(spacing: 0) {
         VStack(spacing: 0) {
           headerRow.padding(.top, 2).padding(.bottom, 8).piliHomeSearchVisibility()
-          if channels.count > 1 { channelBar(channels).padding(.bottom, 6) }
+          if channels.count > 1 {
+            HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion).padding(.bottom, 6)
+          }
         }.modifier(FeedHeaderPlacement())
         deck(channels)
       }
@@ -141,7 +147,7 @@ struct FeedView: View {
   private func deck(_ channels: [HomeChannel]) -> some View {
     let owner = accounts.state.owner(.role(.recommend)) ?? ""
     let shelfID = "\(mobile):\(rules.hashValue):\(owner)"
-    return RetainedDeck(choices: channels, selection: $shelf, progress: $pageProgress) { channel in
+    return RetainedDeck(choices: channels, selection: $shelf, onProgress: channelMotion.update) { channel in
       switch channel {
       case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
       case .popular: VideoShelf(shelf: .popular).id(shelfID)
@@ -218,27 +224,21 @@ struct FeedView: View {
       .piliGlass(in: Capsule(), interactive: true)
     }.buttonStyle(.plain).accessibilityLabel("搜索")
   }
-  /// One capsule interpolated between the two chips the pager sits between.
-  @ViewBuilder private func channelIndicator(_ channels: [HomeChannel]) -> some View {
-    let p = min(max(0, pageProgress), CGFloat(max(0, channels.count - 1)))
-    let i = Int(p.rounded(.down))
-    let f = p - CGFloat(i)
-    if channels.indices.contains(i), let a = chipFrames[channels[i]] {
-      let b = channels.indices.contains(i + 1) ? chipFrames[channels[i + 1]] ?? a : a
-      let x = a.minX + (b.minX - a.minX) * f
-      let w = a.width + (b.width - a.width) * f
-      Capsule().fill(Color(uiColor: .tertiarySystemFill))
-        .frame(width: w, height: a.height)
-        .offset(x: x, y: a.minY)
-        .allowsHitTesting(false)
-    }
-  }
-  private func channelBar(_ channels: [HomeChannel]) -> some View {
+}
+
+private struct HomeChannelBar: View {
+  let channels: [HomeChannel]
+  @Binding var shelf: HomeChannel
+  let motion: PagerIndicatorMotion
+  @Environment(\.scrollHomeChannelToTop) private var channelToTop
+  @State private var chipFrames: [HomeChannel: CGRect] = [:]
+
+  var body: some View {
     ScrollViewReader { proxy in
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 4) {
           // The highlighted label follows the pager's nearest page, not the settled selection.
-          let near = channels.indices.contains(Int(pageProgress.rounded())) ? channels[Int(pageProgress.rounded())] : shelf
+          let near = channels.indices.contains(motion.nearestIndex) ? channels[motion.nearestIndex] : shelf
           ForEach(channels) { c in
             let current = shelf == c
             Button {
@@ -251,12 +251,14 @@ struct FeedView: View {
                 .padding(.horizontal, 16).padding(.vertical, 8)
                 .contentShape(Capsule())
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("channels")) } action: {
-                  chipFrames[c] = $0
+                  if chipFrames[c] != $0 { chipFrames[c] = $0 }
                 }
             }.buttonStyle(.plain).accessibilityAddTraits(current ? .isSelected : []).id(c)
           }
         }
-        .background(alignment: .topLeading) { channelIndicator(channels) }
+        .background(alignment: .topLeading) {
+          PagerIndicator(choices: channels, motion: motion, frames: chipFrames)
+        }
         .coordinateSpace(.named("channels"))
         .padding(.horizontal, 16)
       }.scrollClipDisabled()
@@ -356,6 +358,7 @@ private struct VideoShelf: View {
   let shelf: Shelf
   @StateObject private var model = FeedModel()
   @State private var manualLoad: Task<Void, Never>?
+  @State private var paging = FeedScrollPaging()
   @AppStorage("feed.retainedTip") private var tip = true
   @Namespace private var hero
   @AppStorage("feed.hotEntrances") private var hotEntrances = false
@@ -363,71 +366,114 @@ private struct VideoShelf: View {
     ScrollViewReader { proxy in shelfScroll(proxy) }
   }
   private func shelfScroll(_ proxy:ScrollViewProxy)->some View {
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: 20) {
-        Color.clear.frame(height:1).id("discover.feed.top")
-        if shelf == .popular && hotEntrances {
-          HStack {
-            ForEach(Rankings.Mode.allCases, id: \.self) { mode in
-              NavigationLink {
-                Rankings(initial: mode)
-              } label: {
-                Text(mode.rawValue).frame(maxWidth: .infinity)
-              }
-            }
-          }.buttonStyle(.bordered)
+    let videos = model.videos
+    let boundary = tip ? model.retainedIndex : nil
+    let split = boundary.flatMap { $0 > 0 ? $0 : nil }
+    let firstSection = videos[..<(split ?? videos.endIndex)]
+    let featured = shelf == .recommended && sizeClass != .regular ? firstSection.first : nil
+    return ScrollView {
+      CatalogGrid(home: shelf == .recommended) {
+        Section {
+          ForEach(firstSection.dropFirst(featured == nil ? 0 : 1)) { archiveCard($0, featured: false) }
+        } header: {
+          VStack(alignment: .leading, spacing: 20) {
+            shelfHeader
+            if boundary == 0 { refreshPrevious(proxy) }
+            if let featured { archiveCard(featured, featured: true) }
+          }.frame(maxWidth: .infinity, alignment: .leading).id("discover.feed.top")
+        } footer: {
+          if split == nil { pagingFooter }
         }
-        if let feedback {
-          HStack {
-            Text(feedback.reason.toast ?? "已反馈").font(.footnote)
-            Spacer()
-            Button("撤销") { Task { await send(feedback, undo: true) } }
-          }.disabled(sending)
-        }
-        if let notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
-        if tip, let id = model.retainedStart,
-          let cut = model.videos.firstIndex(where: { $0.id == id })
-        {
-          if cut > 0 { cards(Array(model.videos[..<cut])) }
-          Button {
-            withAnimation {proxy.scrollTo("discover.feed.top",anchor:.top)}
-            startLoad(reset: true)
-          } label: {
-            Label("以下是上次推荐，点此刷新",systemImage:"arrow.up.circle").piliFont(.caption)
+        if let split {
+          Section {
+            ForEach(videos[split...]) { archiveCard($0, featured: false) }
+          } header: {
+            refreshPrevious(proxy)
+          } footer: {
+            pagingFooter
           }
-          cards(Array(model.videos[cut...]))
-        } else {
-          cards(model.videos)
-        }
-        if let error = model.error {
-          VStack(spacing: 12) {
-            Text(error).piliFont(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-            Button("重试") { startLoad(retry: true) }.buttonStyle(.glass)
-          }.frame(maxWidth: .infinity).padding(.vertical, 24)
-        } else if model.busy {
-          ProgressView().frame(maxWidth: .infinity).padding(.vertical, model.videos.isEmpty ? 120 : 16)
-        } else if !model.finished {
-          Button("加载更多") { startLoad() }
-            .buttonStyle(.glass).frame(maxWidth: .infinity)
-          if channelActive,let cursor=model.autoCursor {
-            Color.clear.frame(height:1).id("discover.feed.next.\(cursor)").onAppear {
-              if cursor == model.autoCursor { startLoad() }
-            }
-          }
-        } else if model.videos.isEmpty {
-          ContentUnavailableView("暂无视频", systemImage: "play.rectangle")
         }
       }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
-        .animation(.easeOut(duration: 0.25), value: model.videos.isEmpty)
-        .animation(.easeOut(duration: 0.2), value: model.busy)
-    }.environment(\.discoveryCardRemoval,{ change in
-      model.videos.removeAll{v in v.bvid==change.archive || (change.creator != nil && v.owner?.mid==change.creator)}
-    }).piliRefreshable { await model.load(shelf, reset: true) }
-      .task(id:channelPrepared) { if channelPrepared && !model.loaded { await model.load(shelf, reset: true) } }
-      .onChange(of: channelActive) { _, visible in
-        if !visible { manualLoad?.cancel(); manualLoad = nil }
+    }
+    .onScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
+      autoPage(nearEnd: near)
+    }
+    .onScrollPhaseChange { _, phase, context in
+      switch phase {
+      case .interacting:
+        paging.beginDrag()
+        autoPage(nearEnd: nearEnd(context.geometry))
+      case .decelerating: break
+      default: paging.endDrag()
       }
-      .onDisappear { manualLoad?.cancel(); manualLoad = nil }
+    }
+    .environment(\.discoveryCardRemoval,{ change in
+      model.videos.removeAll{v in v.bvid==change.archive || (change.creator != nil && v.owner?.mid==change.creator)}
+    }).piliRefreshable {
+      paging.endDrag()
+      await model.load(shelf, reset: true)
+    }
+    .task(id:channelPrepared) { if channelPrepared && !model.loaded { await model.load(shelf, reset: true) } }
+    .onChange(of: channelActive) { _, visible in
+      if !visible { paging.endDrag(); manualLoad?.cancel(); manualLoad = nil }
+    }
+    .onDisappear { paging.endDrag(); manualLoad?.cancel(); manualLoad = nil }
+  }
+
+  private func nearEnd(_ geometry: ScrollGeometry) -> Bool {
+    FeedScrollPaging.nearEnd(visible: geometry.visibleRect, contentHeight: geometry.contentSize.height)
+  }
+
+  private func autoPage(nearEnd: Bool) {
+    guard channelActive, !model.busy, model.error == nil, model.autoCursor != nil,
+      paging.takePage(nearEnd: nearEnd) else { return }
+    startLoad()
+  }
+
+  @ViewBuilder private var shelfHeader: some View {
+    if shelf == .popular && hotEntrances {
+      HStack {
+        ForEach(Rankings.Mode.allCases, id: \.self) { mode in
+          NavigationLink {
+            Rankings(initial: mode)
+          } label: {
+            Text(mode.rawValue).frame(maxWidth: .infinity)
+          }
+        }
+      }.buttonStyle(.bordered)
+    }
+    if let feedback {
+      HStack {
+        Text(feedback.reason.toast ?? "已反馈").font(.footnote)
+        Spacer()
+        Button("撤销") { Task { await send(feedback, undo: true) } }
+      }.disabled(sending)
+    }
+    if let notice { Text(notice).font(.footnote).foregroundStyle(.secondary) }
+  }
+
+  private func refreshPrevious(_ proxy: ScrollViewProxy) -> some View {
+    Button {
+      withAnimation { proxy.scrollTo("discover.feed.top", anchor: .top) }
+      startLoad(reset: true)
+    } label: {
+      Label("以下是上次推荐，点此刷新", systemImage: "arrow.up.circle").piliFont(.caption)
+    }
+  }
+
+  @ViewBuilder private var pagingFooter: some View {
+    if let error = model.error {
+      VStack(spacing: 12) {
+        Text(error).piliFont(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        Button("重试") { startLoad(retry: true) }.buttonStyle(.glass)
+      }.frame(maxWidth: .infinity).padding(.vertical, 24)
+    } else if model.busy {
+      ProgressView().frame(maxWidth: .infinity).padding(.vertical, model.videos.isEmpty ? 120 : 16)
+    } else if !model.finished {
+      Button("加载更多") { startLoad() }.buttonStyle(.glass).frame(maxWidth: .infinity)
+    } else if model.videos.isEmpty {
+      ContentUnavailableView("暂无视频", systemImage: "play.rectangle")
+    }
   }
   @MainActor private func startLoad(reset: Bool = false, retry: Bool = false) {
     guard reset || !model.busy else { return }
@@ -435,21 +481,6 @@ private struct VideoShelf: View {
     manualLoad = Task {
       if retry { await model.retry(shelf) }
       else { await model.load(shelf, reset: reset) }
-    }
-  }
-  @ViewBuilder private func cards(_ videos: [Video]) -> some View {
-    if shelf == .recommended, sizeClass != .regular, let first = videos.first,
-      first.id == model.videos.first?.id {
-      VStack(alignment: .leading, spacing: 24) {
-        archiveCard(first, featured: true)
-        CatalogGrid(home: true) {
-          ForEach(Array(videos.dropFirst())) { archiveCard($0, featured: false) }
-        }
-      }
-    } else {
-      CatalogGrid(home: shelf == .recommended) {
-        ForEach(videos) { archiveCard($0, featured: false) }
-      }
     }
   }
   private func archiveCard(_ v: Video, featured: Bool) -> some View {

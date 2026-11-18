@@ -24,7 +24,7 @@ swift test --package-path ArchiveKit --scratch-path "$HOME/.cache/piliplus-nativ
 swift test --package-path Wire --scratch-path "$HOME/.cache/piliplus-native/wire-tests"
 swiftc "$src/Discover/SharedLink.swift" "$src/Social/CreatorSections.swift" Checks/CreatorSectionsCheck.swift -o "$work/creator-sections"
 "$work/creator-sections"
-swiftc "$src/Social/FeedColumnPlan.swift" Checks/FeedColumnCheck.swift -o "$work/feed-columns"
+swiftc "$src/Social/FeedColumnPlan.swift" "$src/Library/FeedScrollPaging.swift" Checks/FeedColumnCheck.swift -o "$work/feed-columns"
 "$work/feed-columns"
 swiftc "$src/Decoder/AudioFilterChoice.swift" "$src/Network/ServiceError.swift" "$src/Discover/SharedLink.swift" "$src/Settings/DecodedSettingCache.swift" "$src/Library/RecommendationFilter.swift" "$src/Library/Video.swift" "$src/Settings/NavigationRules.swift" "$src/Account/ProfileShelfModels.swift" Checks/NavigationShellCheck.swift -o "$work/nav-shell"
 "$work/nav-shell"

@@ -219,7 +219,7 @@ struct CreatorSpace: View {
   @State private var busy = false
   @State private var collapse = ScrollCollapse()
   @State private var route: Route?
-  @State private var sectionMotion = CreatorSectionMotion()
+  @State private var sectionMotion = PagerIndicatorMotion()
   @Environment(\.colorScheme) private var scheme
   private enum Route: Hashable {
     case library, relations(fans: Bool), report(String), shared(String, also: Bool), chat

@@ -1,4 +1,37 @@
 import SwiftUI
+import Observation
+
+@MainActor @Observable final class PagerIndicatorMotion {
+  private(set) var progress: CGFloat = 0
+  private(set) var nearestIndex = 0
+
+  func update(_ value: CGFloat) {
+    guard value.isFinite, value != progress else { return }
+    progress = value
+    let nearest = Int(value.rounded())
+    if nearestIndex != nearest { nearestIndex = nearest }
+  }
+}
+
+/// Only the capsule observes the fractional position on every scrolling frame.
+struct PagerIndicator<Choice: Hashable>: View {
+  let choices: [Choice]
+  let motion: PagerIndicatorMotion
+  let frames: [Choice: CGRect]
+
+  var body: some View {
+    let p = min(max(0, motion.progress), CGFloat(max(0, choices.count - 1)))
+    let i = Int(p.rounded(.down))
+    let f = p - CGFloat(i)
+    if choices.indices.contains(i), let a = frames[choices[i]] {
+      let b = choices.indices.contains(i + 1) ? frames[choices[i + 1]] ?? a : a
+      Capsule().fill(Color(uiColor: .tertiarySystemFill))
+        .frame(width: a.width + (b.width - a.width) * f, height: a.height)
+        .offset(x: a.minX + (b.minX - a.minX) * f, y: a.minY)
+        .allowsHitTesting(false)
+    }
+  }
+}
 
 private struct ActiveCatalogPageKey:EnvironmentKey {static let defaultValue=true}
 private struct PreparedCatalogPageKey:EnvironmentKey {static let defaultValue=true}

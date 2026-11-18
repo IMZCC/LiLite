@@ -104,8 +104,22 @@ private struct PullMarker: UIViewRepresentable {
   final class Marker: UIView {
     var changed: ((Double) -> Void)?, released: ((Double) -> Void)?
     private static let owners = NSMapTable<UIScrollView, Marker>.weakToWeakObjects()
+    private static let mounted = NSHashTable<Marker>.weakObjects()
     var repeated: (() -> Void)?
     static func repeatTab(on scroll:UIScrollView) -> Bool {
+      // A reselected tab may never have been touched. Resolve its owner once here,
+      // outside layout, using the scroll view already selected by the navigation shell.
+      if owners.object(forKey: scroll) == nil, let window = scroll.window {
+        for marker in mounted.allObjects where marker.window === window {
+          guard let host = marker.host, scroll.isDescendant(of: host),
+            marker.bounds.width > 1, marker.bounds.height > 1 else { continue }
+          let center = marker.convert(CGPoint(x: marker.bounds.midX, y: marker.bounds.midY), to: window)
+          guard window.bounds.contains(center),
+            scroll.bounds.contains(scroll.convert(center, from: window)),
+            let hit = window.hitTest(center, with: nil), hit.isDescendant(of: scroll) else { continue }
+          marker.attach(hit)
+        }
+      }
       guard let m=owners.object(forKey:scroll), m.window != nil, m.scroll === scroll, let f=m.repeated else { return false }
       f(); return true
     }
@@ -128,6 +142,7 @@ private struct PullMarker: UIViewRepresentable {
     }
     func mount() {
       guard let window, host == nil else { return }
+      Self.mounted.add(self)
       var r: UIResponder? = self
       while let value = r {
         if let c = value as? UIViewController, let v = c.viewIfLoaded, isDescendant(of: v),
@@ -135,25 +150,15 @@ private struct PullMarker: UIViewRepresentable {
         {
           host = v
           v.addGestureRecognizer(watch)
-          findVisibleScroll()
           return
         }
         r = value.next
       }
       host = window
       window.addGestureRecognizer(watch)
-      findVisibleScroll()
-    }
-    private func findVisibleScroll() {
-      guard let window, scroll == nil, bounds.width > 1, bounds.height > 1 else { return }
-      let center = convert(CGPoint(x: bounds.midX, y: bounds.midY), to: window)
-      if let hit = window.hitTest(center, with: nil) { attach(hit) }
-    }
-    override func layoutSubviews() {
-      super.layoutSubviews()
-      findVisibleScroll()
     }
     func clear() {
+      Self.mounted.remove(self)
       if let s = scroll, Self.owners.object(forKey: s) === self {
         Self.owners.removeObject(forKey: s)
       }
@@ -189,12 +194,17 @@ private struct PullMarker: UIViewRepresentable {
           {
             return
           }
+          if scroll !== s {
+            if let old = scroll {
+              old.panGestureRecognizer.removeTarget(self, action: #selector(moved(_:)))
+              if Self.owners.object(forKey: old) === self { Self.owners.removeObject(forKey: old) }
+            }
+            scroll = s
+            s.panGestureRecognizer.addTarget(self, action: #selector(moved(_:)))
+          }
           Self.owners.setObject(self, forKey: s)
-          scroll?.panGestureRecognizer.removeTarget(self, action: #selector(moved(_:)))
-          scroll = s
           possible = s.contentOffset.y + s.adjustedContentInset.top <= 1
           pull = 0
-          s.panGestureRecognizer.addTarget(self, action: #selector(moved(_:)))
           return
         }
         if v === host { return }
