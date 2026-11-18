@@ -100,25 +100,48 @@ struct FeedView: View {
   @State private var shelf = NavigationRules.firstChannel(NavigationLayout.current().channels)
   @State private var channelMotion = PagerIndicatorMotion()
   @State private var windowInsets = FeedHeaderInsets()
+  @Environment(\.collapseHomeSearch) private var collapseSearch
+  @State private var reserved = FeedHeaderInsets()
+  @State private var searchHeight: CGFloat = 54
+  @State private var headerHeight: CGFloat = 0
   var body: some View {
     PiliNavigationStack {
       let channels = NavigationLayout.read(layoutData).channels
-      VStack(spacing: 0) {
+      let travel = collapseSearch ? searchHeight : 0
+      GeometryReader { safe in
         VStack(spacing: 0) {
-          headerRow.padding(.top, 2).padding(.bottom, 8).piliHomeSearchVisibility()
-          if channels.count > 1 {
-            HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion).padding(.bottom, 6)
+          VStack(spacing: 0) {
+            headerRow.padding(.top, 2).padding(.bottom, 8)
+              .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { searchHeight = $0 }
+              .homeSearchControls()
+            if channels.count > 1 {
+              HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion).padding(.bottom, 6)
+            }
           }
-        }.modifier(FeedHeaderPlacement())
-        // Give the horizontal pager its viewport before it measures any vertical channel.
-        GeometryReader { viewport in
-          deck(channels, viewport: viewport.size)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.leading, reserved.leading).padding(.trailing, reserved.trailing)
+          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
+          // Lay out the full exposed page once. The header and page then translate together.
+          GeometryReader { viewport in
+            deck(channels, viewport: viewport.size)
+              .environment(\.homeFeedBottomClearance, travel + safe.safeAreaInsets.bottom)
+          }.padding(.bottom, -travel)
         }
-      }
-      .padding(.top, windowInsets.top)
-      .padding(.leading, windowInsets.leading).padding(.trailing, windowInsets.trailing)
-      .background {
-        FeedWindowSafeArea { windowInsets = $0 }.allowsHitTesting(false).accessibilityHidden(true)
+        .homeSearchMotion(travel: travel)
+        .clipped()
+        .ignoresSafeArea(.container, edges: .bottom)
+        .padding(.top, reserved.top)
+        .onGeometryChange(for: FeedHeaderInsets.self) { proxy in
+          guard #available(iOS 27.1, *) else { return FeedHeaderInsets() }
+          let regions = proxy.reservedRegions(kind: .division) + proxy.reservedRegions(kind: .occlusion)
+          return FeedHeaderInsets.avoiding(width: proxy.size.width, height: headerHeight,
+            regions: regions.filter(\.isActive).map(\.frame))
+        } action: { reserved = $0 }
+        .padding(.top, windowInsets.top)
+        .padding(.leading, windowInsets.leading).padding(.trailing, windowInsets.trailing)
+        .background {
+          FeedWindowSafeArea { windowInsets = $0 }.allowsHitTesting(false).accessibilityHidden(true)
+        }
       }
       .toolbar(.hidden, for: .navigationBar)
       .task(id: accounts.state.active) {
@@ -331,23 +354,16 @@ private struct FeedWindowSafeArea: UIViewRepresentable {
   }
 }
 
-private struct FeedHeaderPlacement: ViewModifier {
-  @State private var insets = FeedHeaderInsets()
-  func body(content: Content) -> some View {
-    content
-      .padding(.top, insets.top)
-      .padding(.leading, insets.leading).padding(.trailing, insets.trailing)
-      .frame(maxWidth: .infinity)
-      .onGeometryChange(for: FeedHeaderInsets.self) { proxy in
-        guard #available(iOS 27.1, *) else { return FeedHeaderInsets() }
-        let regions = proxy.reservedRegions(kind: .division) + proxy.reservedRegions(kind: .occlusion)
-        return FeedHeaderInsets.avoiding(width: proxy.size.width, height: proxy.size.height - insets.top,
-          regions: regions.filter(\.isActive).map(\.frame))
-      } action: { insets = $0 }
+private struct HomeFeedBottomClearance: EnvironmentKey { static let defaultValue: CGFloat = 0 }
+extension EnvironmentValues {
+  var homeFeedBottomClearance: CGFloat {
+    get { self[HomeFeedBottomClearance.self] }
+    set { self[HomeFeedBottomClearance.self] = newValue }
   }
 }
 
 private struct VideoShelf: View {
+  @Environment(\.homeFeedBottomClearance) private var bottomClearance
   @Environment(\.horizontalSizeClass) private var sizeClass
   struct Feedback {
     let video: Video, group: String, reason: Video.FeedReason, uid: String, index: Int
@@ -396,8 +412,9 @@ private struct VideoShelf: View {
             pagingFooter
           }
         }
-      }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
+      }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16 + bottomClearance)
     }
+    .environment(\.homeFeedBottomClearance, 0)
     .onScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
       autoPage(nearEnd: near)
     }

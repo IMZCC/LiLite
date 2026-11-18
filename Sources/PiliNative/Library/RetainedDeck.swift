@@ -70,8 +70,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
   let choices:[Choice]
   @Binding var selection:Choice
   var swipe=true
-  // A collapsing sibling header changes the home pager's proposed size during a pan.
-  // Use that proposal directly so the page and its enclosing scroller do not size one another.
+  // A supplied viewport keeps the page and its enclosing scroller from sizing one another.
   let viewport: CGSize?
   /// Fractional page position while the pager moves (0 = first page), for tab indicators that
   /// follow the finger like the original client's TabBar.

@@ -19,6 +19,7 @@ extension BiliAPI {
   }
 }
 struct Rankings: View {
+  @Environment(\.homeFeedBottomClearance) private var bottomClearance
   enum Mode: String, CaseIterable {
     case rank = "排行榜"
     case weekly = "每周必看"
@@ -168,7 +169,7 @@ struct Rankings: View {
             .buttonStyle(.plain).id(z)
             .accessibilityAddTraits(current ? .isSelected : [])
           }
-        }.padding(.horizontal, 6).padding(.vertical, 6)
+        }.padding(.horizontal, 6).padding(.vertical, 6).padding(.bottom, bottomClearance)
       }
       .scrollIndicators(.hidden)
       .frame(width: 76)

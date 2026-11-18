@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
   let empty: String
+  @Environment(\.homeFeedBottomClearance) private var bottomClearance
   var focus: Item.ID? = nil
   var grid = false
   var gridItemWidth: Double? = nil
@@ -78,7 +79,8 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
             footer
           }.listStyle(.plain).environment(\.inListRows, true).reportsScrollCollapse()
         }
-      }.coordinateSpace(name: space)
+      }.environment(\.homeFeedBottomClearance, 0)
+      .coordinateSpace(name: space)
       .background { GeometryReader { frame in
         Color.clear.onChange(of: frame.size, initial: true) { _, size in viewport = size }
       } }
@@ -177,6 +179,10 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
       } else if let cursor = next {
         pageEdge(cursor).listRowSeparator(.hidden).listRowBackground(Color.clear)
       }
+    }
+    if bottomClearance > 0 {
+      Color.clear.frame(height: bottomClearance).listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden).listRowBackground(Color.clear).accessibilityHidden(true)
     }
   }
   private func pageEdge(_ cursor: String) -> some View {

@@ -24,7 +24,7 @@ extension EnvironmentValues {
     get { self[ShellTabKey.self] }
     set { self[ShellTabKey.self] = newValue }
   }
-  fileprivate var collapseHomeSearch: Bool {
+  var collapseHomeSearch: Bool {
     get { self[HomeSearchCollapseKey.self] }
     set { self[HomeSearchCollapseKey.self] = newValue }
   }
@@ -57,11 +57,10 @@ extension EnvironmentValues {
   func reset() { if fraction != 1 { fraction = 1 } }
   @ObservationIgnored private var travel: CGFloat = 0
   /// The header follows the finger at a calm rate after a small dead zone (so small
-  /// corrections never twitch it), animates any large jump, and settles with a spring when the
-  /// finger lifts, so even a fast flick reads as a slide rather than a cut.
+  /// corrections never twitch it). Only the release needs a settling animation.
   func drag(_ t: MainTab, delta: CGFloat, top: Bool, scroll: UIScrollView) {
     guard t == active, visible[t] == true else { return }
-    touched[t] = WeakView(scroll)
+    if touched[t]?.value !== scroll { touched[t] = WeakView(scroll) }
     guard listen, delta.isFinite else { return }
     if top {
       travel = 0
@@ -77,11 +76,7 @@ extension EnvironmentValues {
     }
     let v = max(0, min(1, fraction - Double(delta) / 96))
     guard v != fraction else { return }
-    if abs(v - fraction) > 0.18 {
-      withAnimation(.smooth(duration: 0.22)) { fraction = v }
-    } else {
-      fraction = v
-    }
+    fraction = v
   }
   func release(_ t: MainTab, velocity: CGFloat) {
     guard t == active, visible[t] == true, listen else { return }
@@ -132,38 +127,22 @@ private struct TabRootMarker: ViewModifier {
 }
 extension View {
   func piliTabRoot(_ tab: MainTab) -> some View { modifier(TabRootMarker(tab: tab)) }
-  func piliHomeSearchVisibility() -> some View { modifier(HomeSearchVisibility()) }
+  func homeSearchMotion(travel: CGFloat) -> some View { modifier(HomeSearchMotion(travel: travel)) }
+  func homeSearchControls() -> some View { modifier(HomeSearchControls()) }
 }
-private struct HomeSearchVisibility: ViewModifier {
+private struct HomeSearchMotion: ViewModifier {
+  @Environment(\.navChrome) private var chrome
+  let travel: CGFloat
+  func body(content: Content) -> some View {
+    content.offset(y: -travel * (1 - (chrome?.fraction ?? 1)))
+  }
+}
+private struct HomeSearchControls: ViewModifier {
   @Environment(\.navChrome) private var chrome
   @Environment(\.collapseHomeSearch) private var enabled
   func body(content: Content) -> some View {
-    if let chrome {
-      NavigationStrip(chrome: chrome, enabled: enabled, alignment: .bottom) { content }
-    } else { content }
-  }
-}
-private struct NavigationStrip<Content: View>: View {
-  let chrome: NavigationChrome, enabled: Bool, alignment: Alignment
-  @ViewBuilder let content: () -> Content
-  var body: some View {
-    // Scroll progress is observed only by the strip, never by the tab/page hierarchy.
-    CollapsingStrip(fraction: enabled ? chrome.fraction : 1, alignment: alignment, content: content)
-  }
-}
-private struct CollapsingStrip<Content: View>: View {
-  let fraction: CGFloat, alignment: Alignment
-  @ViewBuilder let content: () -> Content
-  @State private var measured: CGFloat = 52
-  var body: some View {
-    content().fixedSize(horizontal: false, vertical: true)
-      .onGeometryChange(for: CGFloat.self) {
-        $0.size.height
-      } action: { h in
-        if h > 0 { measured = h }
-      }
-      .frame(height: max(0, measured * fraction), alignment: alignment).clipped()
-      .allowsHitTesting(fraction > 0.65).accessibilityHidden(fraction < 0.65)
+    let accessible = !enabled || (chrome?.fraction ?? 1) > 0.65
+    content.allowsHitTesting(accessible).accessibilityHidden(!accessible)
   }
 }
 
