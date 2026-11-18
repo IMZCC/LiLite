@@ -31,10 +31,11 @@ extension EnvironmentValues {
 }
 @MainActor @Observable private final class NavigationChrome {
   private(set) var visible: [MainTab: Bool] = [:]
-  private(set) var searchVisible = true
+  private(set) var fraction = 1.0
   @ObservationIgnored private var owners: [MainTab: UUID] = [:]
   @ObservationIgnored var listen = false
   @ObservationIgnored var reduce = false
+  @ObservationIgnored var mode = NavigationHideMode.sync
   @ObservationIgnored var active = MainTab.home
   @ObservationIgnored private var mounted: [MainTab: WeakView] = [:]
   @ObservationIgnored private var touched: [MainTab: WeakView] = [:]
@@ -53,24 +54,45 @@ extension EnvironmentValues {
     guard owners[t] == token else { return }
     visible[t] = false
   }
-  func reset() { if !searchVisible { searchVisible = true } }
-
-  func touch(_ t: MainTab, scroll: UIScrollView) {
+  func reset() { if fraction != 1 { fraction = 1 } }
+  @ObservationIgnored private var travel: CGFloat = 0
+  /// The header follows the finger at a calm rate after a small dead zone (so small
+  /// corrections never twitch it), animates any large jump, and settles with a spring when the
+  /// finger lifts, so even a fast flick reads as a slide rather than a cut.
+  func drag(_ t: MainTab, delta: CGFloat, top: Bool, scroll: UIScrollView) {
     guard t == active, visible[t] == true else { return }
-    if touched[t]?.value !== scroll { touched[t] = WeakView(scroll) }
+    touched[t] = WeakView(scroll)
+    guard listen, delta.isFinite else { return }
+    if top {
+      travel = 0
+      settle(1)
+      return
+    }
+    if delta != 0, (delta > 0) != (travel > 0) { travel = 0 }
+    travel += delta
+    guard abs(travel) > 14 else { return }
+    if mode == .instant || reduce {
+      settle(travel > 0 ? 0 : 1)
+      return
+    }
+    let v = max(0, min(1, fraction - Double(delta) / 96))
+    guard v != fraction else { return }
+    if abs(v - fraction) > 0.18 {
+      withAnimation(.smooth(duration: 0.22)) { fraction = v }
+    } else {
+      fraction = v
+    }
   }
-
-  func release(_ t: MainTab, scroll: UIScrollView, distance: CGFloat, velocity: CGFloat, atTop: Bool) {
-    guard t == .home, t == active, visible[t] == true, listen, touched[t]?.value === scroll,
-      distance.isFinite, velocity.isFinite else { return }
-    let show: Bool
-    if atTop {
-      show = true
-    } else if abs(distance) >= 14 {
-      // A quick reversal at lift follows the final flick; slow gestures follow travel.
-      show = abs(velocity) > 260 ? velocity < 0 : distance < 0
-    } else { return }
-    if searchVisible != show { searchVisible = show }
+  func release(_ t: MainTab, velocity: CGFloat) {
+    guard t == active, visible[t] == true, listen else { return }
+    travel = 0
+    guard fraction > 0, fraction < 1 else { return }
+    let target: Double = velocity > 260 ? 0 : velocity < -260 ? 1 : (fraction < 0.5 ? 0 : 1)
+    settle(target)
+  }
+  private func settle(_ value: Double) {
+    guard fraction != value else { return }
+    withAnimation(reduce ? nil : .smooth(duration: 0.3)) { fraction = value }
   }
   func top(allowRefresh: Bool = true) {
     guard visible[active] == true, let root = mounted[active]?.value, root.window != nil else {
@@ -99,11 +121,9 @@ private struct TabRootMarker: ViewModifier {
   func body(content: Content) -> some View {
     content.background {
       if let chrome, owner == tab {
-        NavScrollAttachment(mounted: { chrome.mount($0, for: tab) },
-          touched: { chrome.touch(tab, scroll: $0) },
-          ended: { scroll, distance, velocity, top in
-            chrome.release(tab, scroll: scroll, distance: distance, velocity: velocity, atTop: top)
-          })
+        NavScrollAttachment(mounted: { chrome.mount($0, for: tab) }, change: { delta, top, scroll in
+          chrome.drag(tab, delta: delta, top: top, scroll: scroll)
+        }, ended: { velocity in chrome.release(tab, velocity: velocity) })
         .allowsHitTesting(false)
       }
     }.onAppear { if owner == tab { chrome?.show(tab, token) } }
@@ -118,10 +138,32 @@ private struct HomeSearchVisibility: ViewModifier {
   @Environment(\.navChrome) private var chrome
   @Environment(\.collapseHomeSearch) private var enabled
   func body(content: Content) -> some View {
-    let shown = !enabled || chrome?.searchVisible != false
-    content.fixedSize(horizontal: false, vertical: true)
-      .frame(height: shown ? nil : 0, alignment: .bottom).clipped()
-      .allowsHitTesting(shown).accessibilityHidden(!shown)
+    if let chrome {
+      NavigationStrip(chrome: chrome, enabled: enabled, alignment: .bottom) { content }
+    } else { content }
+  }
+}
+private struct NavigationStrip<Content: View>: View {
+  let chrome: NavigationChrome, enabled: Bool, alignment: Alignment
+  @ViewBuilder let content: () -> Content
+  var body: some View {
+    // Scroll progress is observed only by the strip, never by the tab/page hierarchy.
+    CollapsingStrip(fraction: enabled ? chrome.fraction : 1, alignment: alignment, content: content)
+  }
+}
+private struct CollapsingStrip<Content: View>: View {
+  let fraction: CGFloat, alignment: Alignment
+  @ViewBuilder let content: () -> Content
+  @State private var measured: CGFloat = 52
+  var body: some View {
+    content().fixedSize(horizontal: false, vertical: true)
+      .onGeometryChange(for: CGFloat.self) {
+        $0.size.height
+      } action: { h in
+        if h > 0 { measured = h }
+      }
+      .frame(height: max(0, measured * fraction), alignment: alignment).clipped()
+      .allowsHitTesting(fraction > 0.65).accessibilityHidden(fraction < 0.65)
   }
 }
 
@@ -173,6 +215,7 @@ struct MainNavShell: View {
     }
     .onChange(of: "\(layout.collapseTop):\(voiceOver):\(reduce)", initial: true) { _, _ in
       chrome.listen = !voiceOver && layout.collapseTop
+      chrome.mode = .sync
       chrome.reduce = reduce
       chrome.reset()
     }

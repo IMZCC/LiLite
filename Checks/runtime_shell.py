@@ -128,8 +128,8 @@ class UIView {var window:Bool?=true}
 final class UIPanGestureRecognizer {
   enum Phase {case began, changed, ended, cancelled}
   var state = Phase.began, movement = CGPoint.zero, speed = CGPoint.zero
-  func translation(in window:Bool)->CGPoint {movement}
-  func velocity(in window:Bool)->CGPoint {speed}
+  func translation(in view:UIScrollView)->CGPoint {movement}
+  func velocity(in view:UIScrollView)->CGPoint {speed}
 }
 struct StubInset {var top:CGFloat=0}
 enum StubEvent {case valueChanged}
@@ -140,6 +140,8 @@ class UIScrollView:UIView {
   var isTracking=false,isDragging=false
   func setContentOffset(_ point:CGPoint,animated:Bool){contentOffset=point}
 }
+struct StubAnimation {static func smooth(duration: Double)->Self {Self()}}
+func withAnimation(_ a:StubAnimation?,_ f:()->Void){f()}
 enum NavScrollAttachment {static func visible(_ child:UIView,in root:UIView)->Bool{true};static func primaryScroll(in root:UIView)->UIScrollView?{nil}}
 enum NativePullRefresh {static func repeatTab(on scroll:UIScrollView)->Bool{false}}
 final class ChangeCount:@unchecked Sendable {
@@ -151,30 +153,21 @@ final class ChangeCount:@unchecked Sendable {
     let chrome=NavigationChrome(),root=ChangeCount(),strip=ChangeCount(),scroll=UIScrollView()
     chrome.show(.home,UUID());chrome.listen=true
     withObservationTracking{_ = chrome.visible[.home]}onChange:{root.changed()}
-    withObservationTracking{_ = chrome.searchVisible}onChange:{strip.changed()}
-    chrome.touch(.home, scroll:scroll)
+    withObservationTracking{_ = chrome.fraction}onChange:{strip.changed()}
     let marker=Marker(), pan=scroll.panGestureRecognizer
     marker.scroll=scroll
-    marker.ended={chrome.release(.home, scroll:$0, distance:$1, velocity:$2, atTop:$3)}
-    func drain() async { await withCheckedContinuation { c in DispatchQueue.main.async { c.resume() } } }
+    marker.handle={chrome.drag(.home,delta:$0,top:$1,scroll:$2)}
+    marker.release={chrome.release(.home,velocity:$0)}
     scroll.contentOffset.y=150
     pan.state = .began; marker.moved(pan)
     pan.state = .changed
-    for i in 1...120 {pan.movement.y = -CGFloat(i);marker.moved(pan)}
-    await drain()
-    precondition(root.count==0 && strip.count==0 && chrome.searchVisible)
-    pan.state = .cancelled;marker.moved(pan);await drain()
-    precondition(strip.count==0)
-    pan.state = .ended;pan.movement.x=200;marker.moved(pan);await drain()
-    precondition(strip.count==0)
-    pan.movement.x=0;marker.moved(pan);marker.interaction+=1;await drain()
-    precondition(strip.count==0)
-    marker.moved(pan);precondition(strip.count==0);await drain()
-    precondition(strip.count==1 && !chrome.searchVisible && root.count==0)
-    pan.movement.y=4;marker.moved(pan);await drain();precondition(!chrome.searchVisible)
-    pan.movement.y=45;marker.moved(pan);await drain();precondition(chrome.searchVisible)
-    pan.movement.y = -50;marker.moved(pan);await drain();precondition(!chrome.searchVisible)
-    scroll.contentOffset.y=0;marker.moved(pan);await drain();precondition(chrome.searchVisible)
+    for i in 1...48 {pan.movement.y = -CGFloat(i);marker.moved(pan)}
+    precondition(chrome.fraction > 0 && chrome.fraction < 1 && strip.count == 1 && root.count == 0)
+    let halfway=chrome.fraction
+    for _ in 1...24 {pan.movement.y += 1;marker.moved(pan)}
+    precondition(chrome.fraction > halfway && chrome.fraction < 1)
+    pan.state = .ended;pan.speed.y=500;marker.moved(pan)
+    precondition(chrome.fraction == 1)
     let token=UUID();chrome.show(.mine,token);chrome.leave(.mine,token)
     // Pull progress likewise belongs to the indicator, while refresh remains a single operation.
     let pull=PullState(),working=ChangeCount(),progress=ChangeCount(),actions=ChangeCount()
@@ -187,7 +180,7 @@ final class ChangeCount:@unchecked Sendable {
     try await Task.sleep(nanoseconds:40_000_000)
     precondition(actions.count==1 && !pull.working && working.count==1)
     pull.drag(20,height:20);pull.stop();precondition(pull.progress==0 && !pull.working)
-    print("Home pan: 120 drag samples caused zero header changes, vertical lift committed once; horizontal, cancelled, superseded, reverse and at-top gestures passed")
+    print("Home search follows drag, reverses before lift and settles on release")
   }
 }
 '''
@@ -197,7 +190,7 @@ with tempfile.TemporaryDirectory(prefix="pili-runtime-shell-") as temporary:
     for name, body, inputs in (
         ("Artwork", artwork + "\n" + image_fixture, [source / "Library/ArtworkCacheRules.swift"]),
         ("Observation", observation_fixture + "\n" + chrome + "\n" + pull
-         + "\n@MainActor final class Marker { var interaction=0; weak var scroll:UIScrollView?; var ended:((UIScrollView,CGFloat,CGFloat,Bool)->Void)?\n" + pan_handler,
+         + "\n@MainActor final class Marker { var previous:CGFloat=0; weak var scroll:UIScrollView?; var handle:((CGFloat,Bool,UIScrollView)->Void)?; var release:((CGFloat)->Void)?\n" + pan_handler,
          [source / "Network/ServiceError.swift", source / "Settings/DecodedSettingCache.swift", source / "Settings/NavigationRules.swift", source / "Settings/InteractionPolicy.swift"]),
     ):
         swift = work / (name + ".swift")

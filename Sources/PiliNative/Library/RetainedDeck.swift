@@ -70,6 +70,9 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
   let choices:[Choice]
   @Binding var selection:Choice
   var swipe=true
+  // A collapsing sibling header changes the home pager's proposed size during a pan.
+  // Use that proposal directly so the page and its enclosing scroller do not size one another.
+  let viewport: CGSize?
   /// Fractional page position while the pager moves (0 = first page), for tab indicators that
   /// follow the finger like the original client's TabBar.
   let onProgress:((CGFloat)->Void)?
@@ -78,9 +81,9 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
   @State private var visited=Set<Choice>()
   @State private var scrolled:Choice?
   init(choices:[Choice], selection:Binding<Choice>, swipe:Bool=true, progress:Binding<CGFloat>?=nil,
-       onProgress:((CGFloat)->Void)?=nil,
+       viewport: CGSize? = nil, onProgress:((CGFloat)->Void)?=nil,
        @ViewBuilder content:@escaping (Choice)->Content) {
-    self.choices=choices; _selection=selection; self.swipe=swipe; self.content=content
+    self.choices=choices; _selection=selection; self.swipe=swipe; self.content=content; self.viewport=viewport
     // A write-only callback lets an indicator observe motion without subscribing the page.
     self.onProgress = onProgress ?? progress.map { binding in { binding.wrappedValue = $0 } }
   }
@@ -92,6 +95,10 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
           .environment(\.preparedCatalogPage,parentActive && (selection==key || adjacent(key)))
       } else {Color.clear}
     }.accessibilityHidden(selection != key).allowsHitTesting(selection == key)
+  }
+  @ViewBuilder private func sizedPage(_ choice: Choice) -> some View {
+    if let viewport { page(choice).frame(width: viewport.width, height: viewport.height) }
+    else { page(choice).containerRelativeFrame([.horizontal, .vertical]) }
   }
   private func adjacent(_ key:Choice)->Bool {
     guard swipe, let i=choices.firstIndex(of:selection), let j=choices.firstIndex(of:key) else{return false}
@@ -106,7 +113,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
         ScrollView(.horizontal) {
           HStack(spacing: 0) {
             ForEach(choices, id: \.self) { choice in
-              page(choice).containerRelativeFrame([.horizontal, .vertical])
+              sizedPage(choice)
                 .modifier(DeckEdgePriority(first: choice == choices.first, selectedFirst: selection == choices.first))
                 .id(choice)
             }

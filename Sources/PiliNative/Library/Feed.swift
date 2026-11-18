@@ -112,7 +112,7 @@ struct FeedView: View {
         }.modifier(FeedHeaderPlacement())
         // Give the horizontal pager its viewport before it measures any vertical channel.
         GeometryReader { viewport in
-          deck(channels).frame(width: viewport.size.width, height: viewport.size.height)
+          deck(channels, viewport: viewport.size)
         }
       }
       .padding(.top, windowInsets.top)
@@ -147,10 +147,10 @@ struct FeedView: View {
       .navigationDestination(for: Video.self) { DetailView(initial: $0) }
     }
   }
-  private func deck(_ channels: [HomeChannel]) -> some View {
+  private func deck(_ channels: [HomeChannel], viewport: CGSize) -> some View {
     let owner = accounts.state.owner(.role(.recommend)) ?? ""
     let shelfID = "\(mobile):\(rules.hashValue):\(owner)"
-    return RetainedDeck(choices: channels, selection: $shelf, onProgress: channelMotion.update) { channel in
+    return RetainedDeck(choices: channels, selection: $shelf, viewport: viewport, onProgress: channelMotion.update) { channel in
       switch channel {
       case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
       case .popular: VideoShelf(shelf: .popular).id(shelfID)

@@ -36,8 +36,9 @@ struct NavScrollAttachment: UIViewRepresentable {
     visit(root)
     return best
   }
-  let touched: (UIScrollView) -> Void
-  let ended: (UIScrollView, CGFloat, CGFloat, Bool) -> Void
+  let change: (CGFloat, Bool, UIScrollView) -> Void
+  /// Called when the finger lifts, with the vertical velocity (points/s, positive = scrolling down).
+  var ended: ((CGFloat) -> Void)? = nil
   final class TapProbe: UIGestureRecognizer {
     var touched: ((UIView) -> Void)?
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -49,11 +50,11 @@ struct NavScrollAttachment: UIViewRepresentable {
   }
   final class Marker: UIView {
     var mounted: ((UIView) -> Void)?
-    var touched: ((UIScrollView) -> Void)?
-    var ended: ((UIScrollView, CGFloat, CGFloat, Bool) -> Void)?
+    var handle: ((CGFloat, Bool, UIScrollView) -> Void)?
+    var release: ((CGFloat) -> Void)?
     private let probe = TapProbe()
     private weak var host: UIView?, scroll: UIScrollView?
-    private var interaction = 0
+    private var previous: CGFloat = 0
     override init(frame: CGRect) {
       super.init(frame: frame)
       isUserInteractionEnabled = false
@@ -69,7 +70,6 @@ struct NavScrollAttachment: UIViewRepresentable {
       if window != nil { DispatchQueue.main.async { [weak self] in self?.install() } }
     }
     func clear() {
-      interaction &+= 1
       host?.removeGestureRecognizer(probe)
       host = nil
       scroll?.panGestureRecognizer.removeTarget(self, action: #selector(moved(_:)))
@@ -102,7 +102,6 @@ struct NavScrollAttachment: UIViewRepresentable {
       }
     }
     private func begin(_ hit: UIView) {
-      interaction &+= 1
       var v: UIView? = hit
       while let item = v {
         if let sv = item as? UIScrollView, sv.isScrollEnabled,
@@ -110,12 +109,10 @@ struct NavScrollAttachment: UIViewRepresentable {
             .bounds.height + 1,
           sv.contentSize.width <= sv.bounds.width + 2
         {
-          if scroll !== sv {
-            scroll?.panGestureRecognizer.removeTarget(self, action: #selector(moved(_:)))
-            scroll = sv
-            sv.panGestureRecognizer.addTarget(self, action: #selector(moved(_:)))
-          }
-          touched?(sv)
+          scroll?.panGestureRecognizer.removeTarget(self, action: #selector(moved(_:)))
+          scroll = sv
+          previous = 0
+          sv.panGestureRecognizer.addTarget(self, action: #selector(moved(_:)))
           return
         }
         if item === host { break }
@@ -123,37 +120,37 @@ struct NavScrollAttachment: UIViewRepresentable {
       }
     }
     @objc private func moved(_ g: UIPanGestureRecognizer) {
-      guard g.state == .ended, let s = scroll, s.panGestureRecognizer === g,
-        let window = s.window else { return }
-      let distance = g.translation(in: window)
-      guard abs(distance.y) > abs(distance.x) else { return }
-      let velocity = -g.velocity(in: window).y
-      let top = s.contentOffset.y + s.adjustedContentInset.top <= 0.5
-      let ticket = interaction
-      // Let UIKit finish dispatching the pan before changing the tab's layout.
-      DispatchQueue.main.async { [weak self, weak s] in
-        guard let self, let s, ticket == self.interaction, s.window != nil,
-          self.scroll === s, !s.isTracking, !s.isDragging else { return }
-        self.ended?(s, -distance.y, velocity, top)
+      guard let s = scroll, s.panGestureRecognizer === g else { return }
+      let point = g.translation(in: s)
+      if g.state == .began { previous = 0 }
+      if g.state == .ended || g.state == .cancelled {
+        release?(-g.velocity(in: s).y)
+        return
       }
+      guard g.state == .began || g.state == .changed else { return }
+      let v = -point.y
+      let delta = v - previous
+      previous = v
+      guard abs(point.y) >= abs(point.x) else { return }
+      handle?(delta, s.contentOffset.y + s.adjustedContentInset.top <= 0.5 && delta <= 0, s)
     }
   }
   func makeUIView(context: Context) -> Marker {
     let v = Marker()
     v.mounted = mounted
-    v.touched = touched
-    v.ended = ended
+    v.handle = change
+    v.release = ended
     return v
   }
   func updateUIView(_ view: Marker, context: Context) {
     view.mounted = mounted
-    view.touched = touched
-    view.ended = ended
+    view.handle = change
+    view.release = ended
   }
   static func dismantleUIView(_ view: Marker, coordinator: ()) {
     view.clear()
-    view.touched = nil
-    view.ended = nil
+    view.handle = nil
+    view.release = nil
     view.mounted = nil
   }
 }
