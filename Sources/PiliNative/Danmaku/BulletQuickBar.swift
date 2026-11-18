@@ -25,16 +25,21 @@ struct BulletQuickBar: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
       if availability.closed(cid, owner: uid) {
-        Text("UP 主已关闭弹幕").font(.caption).foregroundStyle(.secondary)
+        Text("UP 主已关闭弹幕").font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
       } else if let issue {
-        Text(issue).font(.caption).foregroundStyle(.red).lineLimit(2)
+        Text(issue).font(.caption).foregroundStyle(.red).lineLimit(2).padding(.horizontal, 12)
       }
       HStack(spacing: 10) {
-        Button { styling = true } label: {
-          Image(systemName: "paintpalette").font(.system(size: 17, weight: .medium))
-            .foregroundStyle(BulletComposer.color(rgb) == .white ? Color.primary : BulletComposer.color(rgb))
+        // The original swaps the keyboard for the style panel in place.
+        Button {
+          TouchFeedback.light()
+          styling.toggle()
+          focused = !styling
+        } label: {
+          Image(systemName: "textformat").font(.system(size: 18, weight: .medium))
+            .foregroundStyle(styling ? Color.accentColor : Color.secondary)
             .frame(width: 38, height: 38)
-        }.buttonStyle(.glass).buttonBorderShape(.circle).accessibilityLabel("弹幕样式")
+        }.buttonStyle(.plain).accessibilityLabel("弹幕样式")
         TextField("发个友善的弹幕见证当下", text: $draft)
           .focused($focused).submitLabel(.send).onSubmit { Task { await send() } }
           .padding(.horizontal, 14).frame(height: 40)
@@ -55,18 +60,23 @@ struct BulletQuickBar: View {
         }.buttonStyle(.plain).disabled(!canSend).accessibilityLabel("发送弹幕")
           .animation(.snappy(duration: 0.2), value: canSend)
       }
+      .padding(.horizontal, 12)
+      if styling {
+        Divider().opacity(0.5)
+        BulletStylePanel().frame(minHeight: 240, alignment: .top)
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+      }
     }
-    .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 8)
+    .padding(.top, 8).padding(.bottom, 8)
     .background(.bar)
     .overlay(alignment: .top) { Divider() }
+    .animation(.snappy(duration: 0.25), value: styling)
     .onAppear { focused = true }
     .onChange(of: focused) { _, now in
-      if !now && !styling && !busy { close() }
+      if now { styling = false }
+      else if !styling && !busy { close() }
     }
     .onChange(of: accounts.state.active) { _, v in if v != uid { close() } }
-    .piliSheet(isPresented: $styling, onDismiss: { focused = true }) {
-      BulletStyleSheet().presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
-    }
     .task(id: "\(uid):\(cid)") {
       // Learn whether bullets are closed for this part before the first send.
       guard availability.status(cid, owner: uid) == nil else { return }
@@ -113,46 +123,83 @@ struct BulletQuickBar: View {
   }
 }
 
-/// Position, size and colour for new bullets.
-struct BulletStyleSheet: View {
+/// Position, size and colour for new bullets, laid out like the original's send panel:
+/// 弹幕字号 [小][标准], 弹幕样式 [滚动][顶部][底部], then the colour tiles with a custom tile last.
+struct BulletStylePanel: View {
   @AppStorage("dm.writeMode") private var mode = 1
   @AppStorage("dm.writeSize") private var size = 25
   @AppStorage("dm.writeRGB") private var rgb = 0xffffff
-  @Environment(\.dismiss) private var dismiss
+  /// Bound to the 会员渐变色 tile when the account can use it (nil hides the tile).
+  var gradient: Binding<Bool>? = nil
+  @State private var picking = false
+  private var custom: Binding<Color> {
+    Binding(get: { BulletComposer.color(rgb) }, set: { color in
+      var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+      guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else { return }
+      func byte(_ x: CGFloat) -> Int { Int((max(0, min(1, x)) * 255).rounded()) }
+      rgb = byte(r) << 16 | byte(g) << 8 | byte(b)
+      gradient?.wrappedValue = false
+    })
+  }
   var body: some View {
-    PiliNavigationStack {
-      Form {
-        Section {
-          Picker("位置", selection: $mode) {
-            Text("滚动").tag(1)
-            Text("顶部").tag(5)
-            Text("底部").tag(4)
-          }.pickerStyle(.segmented)
-          Picker("字号", selection: $size) {
-            Text("小").tag(18)
-            Text("标准").tag(25)
-          }.pickerStyle(.segmented)
-        }
-        Section("颜色") {
-          LazyVGrid(columns: [GridItem(.adaptive(minimum: 38), spacing: 12)], spacing: 12) {
-            ForEach(BulletComposer.colors, id: \.self) { value in
-              Button { TouchFeedback.light(); rgb = value } label: {
-                Circle().fill(BulletComposer.color(value))
-                  .overlay { Circle().strokeBorder(.secondary.opacity(0.4), lineWidth: 0.5) }
-                  .overlay {
-                    if value == rgb {
-                      Image(systemName: "checkmark").font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(value == 0xffffff || value == 0xffff00 || value == 0xffd302 ? Color.black : Color.white)
-                    }
-                  }
-                  .frame(width: 32, height: 32)
-              }.buttonStyle(.plain).accessibilityLabel(String(format: "颜色 %06X", value))
-            }
-          }.padding(.vertical, 6)
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(spacing: 16) {
+        Text("弹幕字号")
+        HStack(spacing: 5) { choice("小", size == 18) { size = 18 }; choice("标准", size == 25) { size = 25 } }
+      }
+      HStack(spacing: 16) {
+        Text("弹幕样式")
+        HStack(spacing: 5) {
+          choice("滚动", mode == 1) { mode = 1 }
+          choice("顶部", mode == 5) { mode = 5 }
+          choice("底部", mode == 4) { mode = 4 }
         }
       }
-      .navigationTitle("弹幕样式").navigationBarTitleDisplayMode(.inline)
-      .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+      HStack(alignment: .top, spacing: 16) {
+        Text("弹幕颜色").padding(.top, 8)
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 38, maximum: 42), spacing: 4)], spacing: 4) {
+          ForEach(BulletComposer.colors + (BulletComposer.colors.contains(rgb) ? [] : [rgb]), id: \.self) { value in
+            tile(selected: value == rgb && gradient?.wrappedValue != true) {
+              RoundedRectangle(cornerRadius: 6, style: .continuous).fill(BulletComposer.color(value))
+                .overlay { RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(.secondary.opacity(0.25), lineWidth: 0.5) }
+            } action: { rgb = value; gradient?.wrappedValue = false }
+            .accessibilityLabel(String(format: "颜色 %06X", value))
+          }
+          if let gradient {
+            tile(selected: gradient.wrappedValue) {
+              RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(LinearGradient(colors: [Color(red: 0.87, green: 0.58, blue: 0.85), Color(red: 0.45, green: 0.7, blue: 0.92)],
+                  startPoint: .leading, endPoint: .trailing))
+                .overlay { RoundedRectangle(cornerRadius: 4).fill(.white).padding(5) }
+            } action: { gradient.wrappedValue = true }
+            .accessibilityLabel("会员渐变色")
+          }
+          ColorPicker(selection: custom, supportsOpacity: false) {
+            Image(systemName: "pencil").font(.system(size: 18, weight: .semibold))
+          }
+          .labelsHidden()
+          .frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
+          .background(Color(uiColor: .tertiarySystemFill), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+          .accessibilityLabel("自选颜色")
+        }
+      }
     }
+    .font(.subheadline)
+    .padding(.horizontal, 16).padding(.vertical, 12)
+  }
+  private func choice(_ title: String, _ on: Bool, _ pick: @escaping () -> Void) -> some View {
+    Button { TouchFeedback.light(); pick() } label: {
+      Text(title).foregroundStyle(on ? Color.accentColor : Color.secondary)
+        .frame(maxWidth: .infinity).padding(.vertical, 5)
+        .background(on ? Color.accentColor.opacity(0.14) : Color(uiColor: .tertiarySystemFill),
+          in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }.buttonStyle(.plain)
+  }
+  private func tile<S: View>(selected: Bool, @ViewBuilder _ swatch: () -> S, action: @escaping () -> Void) -> some View {
+    Button { TouchFeedback.light(); action() } label: {
+      swatch().padding(2)
+        .overlay { if selected { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.accentColor, lineWidth: 2) } }
+        .aspectRatio(1, contentMode: .fit)
+    }.buttonStyle(.plain)
   }
 }

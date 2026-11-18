@@ -93,7 +93,8 @@ struct FeedView: View {
   @AppStorage("feed.mobile") private var mobile = true
   @AppStorage(NavigationLayout.key) private var layoutData = Data()
   @State private var shelf = NavigationRules.firstChannel(NavigationLayout.current().channels)
-  @Namespace private var channelSpace
+  @State private var pageProgress: CGFloat = 0
+  @State private var chipFrames: [HomeChannel: CGRect] = [:]
   var body: some View {
     PiliNavigationStack {
       let channels = NavigationLayout.read(layoutData).channels
@@ -136,7 +137,7 @@ struct FeedView: View {
   private func deck(_ channels: [HomeChannel]) -> some View {
     let owner = accounts.state.owner(.role(.recommend)) ?? ""
     let shelfID = "\(mobile):\(rules.hashValue):\(owner)"
-    return RetainedDeck(choices: channels, selection: $shelf) { channel in
+    return RetainedDeck(choices: channels, selection: $shelf, progress: $pageProgress) { channel in
       switch channel {
       case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
       case .popular: VideoShelf(shelf: .popular).id(shelfID)
@@ -157,46 +158,30 @@ struct FeedView: View {
   private var headerRow: some View {
     HStack(spacing: 10) {
       if !systemSearch || useHint { searchEntry } else { Spacer(minLength: 0) }
-      PiliGlassGroup {
-        HStack(spacing: 0) {
-          if accounts.state.active != nil {
-            NavigationLink {
-              Inbox()
-            } label: {
-              Image(systemName: "bell").font(.system(size: 17, weight: .medium))
-                .frame(width: 44, height: 44).contentShape(Rectangle())
-                .overlay(alignment: .topTrailing) {
-                  if let unreadMessages {
-                    unreadMessages.font(.system(size: 10, weight: .bold)).monospacedDigit()
-                      .foregroundStyle(.white).padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
-                      .background(.red, in: Capsule()).offset(x: -4, y: 4)
-                  }
-                }
-            }.accessibilityLabel("消息中心")
-          }
-          browseMenu
+      // The original header: search, the message bell (signed in only), then the avatar.
+      // Settings, rankings, live, the season index and "open link" live where the original
+      // puts them (我的 page, home channels, the PGC "索引" header, the search page).
+      if accounts.state.active != nil {
+        NavigationLink {
+          Inbox()
+        } label: {
+          Image(systemName: "bell").font(.system(size: 17, weight: .medium))
+            .frame(width: 44, height: 44).contentShape(Circle())
+            .overlay(alignment: .topTrailing) {
+              if let unreadMessages {
+                unreadMessages.font(.system(size: 10, weight: .bold)).monospacedDigit()
+                  .foregroundStyle(.white).padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
+                  .background(.red, in: Capsule()).offset(x: -2, y: 2)
+              }
+            }
         }
         .buttonStyle(.plain).foregroundStyle(.primary)
-        .piliGlass(in: Capsule(), interactive: true)
+        .piliGlass(in: Circle(), interactive: true)
+        .accessibilityLabel("消息中心")
       }
       if let openProfile { profileButton(openProfile) }
     }
     .padding(.horizontal, 16)
-  }
-  private var browseMenu: some View {
-    Menu {
-      NavigationLink { SettingsView() } label: { Label("设置", systemImage: "gearshape") }
-      NavigationLink { OpenSharedLink() } label: { Label("打开链接", systemImage: "link") }
-      Divider()
-      NavigationLink { Rankings() } label: { Label("榜单", systemImage: "chart.bar") }
-      NavigationLink { SeasonCatalog() } label: { Label("影视索引", systemImage: "film.stack") }
-      NavigationLink { LiveDirectory(area: nil, child: nil) } label: {
-        Label("直播", systemImage: "dot.radiowaves.left.and.right")
-      }
-    } label: {
-      Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium))
-        .frame(width: 44, height: 44).contentShape(Rectangle())
-    }.accessibilityLabel("浏览")
   }
   private func profileButton(_ open: @escaping @MainActor () -> Void) -> some View {
     let incognito = accounts.state.active != nil && accounts.state.owner(.role(.heartbeat)) == nil
@@ -229,32 +214,47 @@ struct FeedView: View {
       .piliGlass(in: Capsule(), interactive: true)
     }.buttonStyle(.plain).accessibilityLabel("搜索")
   }
+  /// One capsule interpolated between the two chips the pager sits between.
+  @ViewBuilder private func channelIndicator(_ channels: [HomeChannel]) -> some View {
+    let p = min(max(0, pageProgress), CGFloat(max(0, channels.count - 1)))
+    let i = Int(p.rounded(.down))
+    let f = p - CGFloat(i)
+    if channels.indices.contains(i), let a = chipFrames[channels[i]] {
+      let b = channels.indices.contains(i + 1) ? chipFrames[channels[i + 1]] ?? a : a
+      let x = a.minX + (b.minX - a.minX) * f
+      let w = a.width + (b.width - a.width) * f
+      Capsule().fill(Color(uiColor: .tertiarySystemFill))
+        .frame(width: w, height: a.height)
+        .offset(x: x, y: a.minY)
+        .allowsHitTesting(false)
+    }
+  }
   private func channelBar(_ channels: [HomeChannel]) -> some View {
     ScrollViewReader { proxy in
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 4) {
+          // The highlighted label follows the pager's nearest page, not the settled selection.
+          let near = channels.indices.contains(Int(pageProgress.rounded())) ? channels[Int(pageProgress.rounded())] : shelf
           ForEach(channels) { c in
             let current = shelf == c
             Button {
               TouchFeedback.light()
-              if current { channelToTop() } else {
-                withAnimation(.snappy(duration: 0.25)) { shelf = c }
-              }
+              if current { channelToTop() } else { shelf = c }
             } label: {
               Text(c.rawValue)
-                .font(.subheadline.weight(current ? .semibold : .regular))
-                .foregroundStyle(current ? Color.primary : Color.secondary)
+                .font(.subheadline.weight(near == c ? .semibold : .regular))
+                .foregroundStyle(near == c ? Color.primary : Color.secondary)
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background {
-                  if current {
-                    Capsule().fill(Color(uiColor: .tertiarySystemFill))
-                      .matchedGeometryEffect(id: "channel", in: channelSpace)
-                  }
-                }
                 .contentShape(Capsule())
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("channels")) } action: {
+                  chipFrames[c] = $0
+                }
             }.buttonStyle(.plain).accessibilityAddTraits(current ? .isSelected : []).id(c)
           }
-        }.padding(.horizontal, 16)
+        }
+        .background(alignment: .topLeading) { channelIndicator(channels) }
+        .coordinateSpace(.named("channels"))
+        .padding(.horizontal, 16)
       }.scrollClipDisabled()
         .onChange(of: shelf, initial: true) { _, c in
           withAnimation(.snappy) { proxy.scrollTo(c, anchor: .center) }
@@ -269,6 +269,7 @@ private struct VideoShelf: View {
   }
   @EnvironmentObject private var accounts: AccountContext
   @Environment(\.activeCatalogPage) private var channelActive
+  @Environment(\.preparedCatalogPage) private var channelPrepared
   @State private var feedback: Feedback?
   @State private var sending = false
   @State private var notice: String?
@@ -342,7 +343,7 @@ private struct VideoShelf: View {
     }.environment(\.discoveryCardRemoval,{ change in
       model.videos.removeAll{v in v.bvid==change.archive || (change.creator != nil && v.owner?.mid==change.creator)}
     }).piliRefreshable { await model.load(shelf, reset: true) }
-      .task(id:channelActive) { if channelActive && !model.loaded { await model.load(shelf, reset: true) } }
+      .task(id:channelPrepared) { if channelPrepared && !model.loaded { await model.load(shelf, reset: true) } }
       .onChange(of: channelActive) { _, visible in
         if !visible { manualLoad?.cancel(); manualLoad = nil }
       }

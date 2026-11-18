@@ -345,8 +345,9 @@ struct DetailView: View {
             video: d, cid: c, model: model, seconds: { model.seconds },
             onBullet: { model.didPost($0, cid: c) }, openComments: { panelOverride = true }))
         } })
-      toolRow(video)
-        .piliSheet(isPresented: $playbackOptions) { ArchivePlaybackOptions(model: model) }
+      // The original has no tool row under the intro: these live in the player's 更多 sheet.
+      Color.clear.frame(height: 0)
+        .piliSheet(isPresented: $playbackOptions) { ArchivePlaybackOptions(model: model, actions: moreActions) }
         .piliSheet(isPresented: $bulletSettings) {
           PiliNavigationStack {
             DanmakuStylePanel().toolbar { Button("完成") { bulletSettings = false } }
@@ -437,40 +438,24 @@ struct DetailView: View {
     }
   }
   /// Secondary tools on one horizontally scrolling line of quiet chips.
-  private func toolRow(_ video: Video) -> some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 8) {
-        if let detail, let cid {
-          Button {
-            let time = model.seconds
-            model.engine.pause()
-            model.playing = false
-            listenHandoff = ListenQueue.shared.handoff(ListenTrack(detail, cid: cid, origin: listenOrigin), at: time)
-            listen = true
-          } label: { ArchiveToolChip(title: "听视频", symbol: "headphones") }
-          Button {
-            ListenQueue.shared.add(ListenTrack(detail, cid: cid, origin: listenOrigin))
-            listen = true
-          } label: { ArchiveToolChip(title: "加入待播", symbol: "text.line.first.and.arrowtriangle.forward") }
-          VideoExtraChips(video: detail, cid: cid, jump: { model.seek($0) }, model: model, story: interactiveStory)
-          if !model.isPreview {
-            CastButton(subject: .archive(bvid: detail.bvid, aid: detail.aid, cid: cid, title: detail.title, quality: model.quality), player: model.engine)
-              .labelStyle(ToolChipLabelStyle())
-          }
-        }
-        if cid != nil {
-          Button { danmakuList = true } label: { ArchiveToolChip(title: "弹幕列表", symbol: "list.bullet") }
-        }
-        if sponsorEnabled {
-          Button { sponsorPanel = true } label: { ArchiveToolChip(title: "空降标记", symbol: "forward.end") }
-        }
-        Button { playbackOptions = true } label: { ArchiveToolChip(title: "播放设置", symbol: "slider.horizontal.3") }
-        SleepTimerButton().labelStyle(ToolChipLabelStyle())
-        OutputRouteButton().frame(width: 34, height: 34).disabled(!model.engine.supportsSystemVideo)
-          .background(Color(uiColor: .secondarySystemBackground), in: Circle())
+  /// Hands the 更多 sheet the page's own panels (listen, danmaku list/settings, SponsorBlock).
+  private var moreActions: ArchiveMoreActions {
+    var a = ArchiveMoreActions(video: detail, cid: cid, story: interactiveStory)
+    if let detail, let cid {
+      a.listen = {
+        let time = model.seconds
+        model.engine.pause()
+        model.playing = false
+        listenHandoff = ListenQueue.shared.handoff(ListenTrack(detail, cid: cid, origin: listenOrigin), at: time)
+        listen = true
       }
-      .buttonStyle(.plain).foregroundStyle(.primary).padding(.horizontal, 16)
-    }.scrollClipDisabled().padding(.horizontal, -16)
+      a.enqueue = { ListenQueue.shared.add(ListenTrack(detail, cid: cid, origin: listenOrigin)) }
+      a.danmakuList = { danmakuList = true }
+    }
+    a.danmakuSettings = { bulletSettings = true }
+    if sponsorEnabled { a.sponsor = { sponsorPanel = true } }
+    a.reload = { retryPlayback += 1 }
+    return a
   }
   /// Tab bar accessory: send a bullet and toggle bullets, as in the original client.
   private var bulletAccessory: some View {

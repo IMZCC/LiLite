@@ -11,8 +11,13 @@ struct ProfileAvatar: View {
   /// Avatar frame; drawn 1.75x the avatar around it, like the original's PendantAvatar. It does
   /// not change the layout size.
   var pendant: URL? = nil
+  /// Reserve the frame's vertical overhang in the layout, for places that clip (list rows).
+  var reservesPendant = false
   @AppStorage("appearance.decorate") private var decorate = true
   var body: some View {
+    avatar.padding(.vertical, reservesPendant && decorate && pendant != nil ? size * 0.375 : 0)
+  }
+  private var avatar: some View {
     SiteThumbnail(url: url) { image in
       image.resizable().scaledToFill()
     } placeholder: {

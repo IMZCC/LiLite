@@ -242,6 +242,7 @@ struct MainNavShell: View {
   private func root(_ tab: MainTab, collapseSearch: Bool) -> some View {
     tab.screen
       .environment(\.activeCatalogPage, active == tab)
+      .environment(\.preparedCatalogPage, active == tab)
       .environment(\.owningTab, tab)
       .environment(\.collapseHomeSearch, tab == .home && collapseSearch)
       .background {

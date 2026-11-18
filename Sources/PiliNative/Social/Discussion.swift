@@ -313,6 +313,7 @@ struct Discussion: View {
   @Environment(\.panelTopInset) private var panelInset
   @Environment(\.replyPlayback) private var playback
   @Environment(\.replyPanelPresenter) private var panelPresenter
+  @Environment(\.pendingReplyThread) private var pendingThread
   @State private var address: ReplyComposeAddress?
   @State private var importing = false
   @State private var mentionPicker = false
@@ -416,6 +417,13 @@ struct Discussion: View {
   }
   @State private var share = false
   @State private var writing = false
+  @State private var composerHidden = false
+  @State private var anchorGlow = true
+  @State private var fabAnchor: CGFloat = 0
+  private func setComposerHidden(_ value: Bool) {
+    guard composerHidden != value else { return }
+    withAnimation(.easeInOut(duration: 0.18)) { composerHidden = value }
+  }
   // Composer panel state (the original's bottom panel: keyboard, emotes or "more" grid).
   @State private var composerFocus = false
   @State private var composerPanel: ComposerPanel?
@@ -540,11 +548,30 @@ struct Discussion: View {
       }.id(
         "\(simple):\(sort):\(revision):\(replySettings.hashValue):\(accounts.state.active ?? ""):\(accounts.state.owner(.role(.heartbeat)) ?? "")"
       )
+      // The original slides the floating composer away while reading down and brings it
+      // back on any scroll up (fab_mixin: UserScrollNotification, 100ms easeInOut).
+      .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+        guard embeddedTitle != nil else { return }
+        if y <= 8 { setComposerHidden(false); fabAnchor = y; return }
+        if composerHidden {
+          if fabAnchor - y > 24 { setComposerHidden(false); fabAnchor = y } else { fabAnchor = max(fabAnchor, y) }
+        } else {
+          if y - fabAnchor > 24 { setComposerHidden(true); fabAnchor = y } else { fabAnchor = min(fabAnchor, y) }
+        }
+      }
     }.environment(\.replyPlayback, activePlayer == nil ? nil : playback).modifier(
       ReplyEdgeDismiss(standalone: embeddedTitle == nil)
     ).navigationTitle(
       embeddedTitle ?? title
     )
+    .task(id: pendingThread.map { ObjectIdentifier($0) }) {
+      // A link to a reply (消息 → 回复我的, shared comment links): open its floor exactly as a
+      // tap would, once this embedded list is on screen.
+      guard embeddedTitle != nil, root == nil, folded == nil, dialogue == nil,
+        let link = pendingThread?.take(oid: oid) else { return }
+      try? await Task.sleep(for: .milliseconds(250))
+      open(.thread(root: link.root, anchor: link.anchor))
+    }
     .onChange(of: subject?.count) { _, value in
       if let value, value >= 0 { readingCount?(Int64(value)) }
     }
@@ -579,12 +606,15 @@ struct Discussion: View {
         Button {
           if let active = accounts.state.active { begin(nil, owner: active) }
         } label: {
-          Image(systemName: "square.and.pencil").font(.system(size: 20, weight: .semibold))
-            .frame(width: 52, height: 52)
+          Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .semibold))
+            .frame(width: 50, height: 50)
         }
         .buttonStyle(.glassProminent).buttonBorderShape(.circle)
         .disabled(inputDisabled).accessibilityLabel("发表评论")
         .padding(.trailing, 18).padding(.bottom, 18)
+        .offset(y: composerHidden ? 120 : 0)
+        .opacity(composerHidden ? 0 : 1)
+        .allowsHitTesting(!composerHidden)
         .transition(.scale.combined(with: .opacity))
       }
     }
@@ -936,10 +966,6 @@ struct Discussion: View {
         }
         replyMeta(r).font(.caption2).foregroundStyle(.secondary).padding(.top, 1)
         VStack(alignment: .leading, spacing: 6) {
-          if r.id == anchor {
-            Label("提到的回复", systemImage: "arrow.right").font(.caption.weight(.semibold))
-              .foregroundStyle(.tint)
-          }
           if let label = r.optionLabel {
             if let id = r.optionID {
               Button(label) { route = .vote(id) }.font(.caption).buttonStyle(.plain).foregroundStyle(.tint)
@@ -966,6 +992,16 @@ struct Discussion: View {
       isFirst: threadHeaderInRow && r.id == root,
       sortRow: AnyView(threadSortRow(total: r.rcount ?? 0))))
     .padding(.top, 12).padding(.bottom, 6)
+    // The located reply flashes like the original's colorAnimController, then settles.
+    .background {
+      if r.id == anchor {
+        Color.accentColor.opacity(anchorGlow ? 0.16 : 0).padding(.horizontal, -14)
+          .task {
+            try? await Task.sleep(for: .milliseconds(1400))
+            withAnimation(.easeOut(duration: 0.6)) { anchorGlow = false }
+          }
+      }
+    }
     .contentShape(Rectangle())
     .onTapGesture { if opensThread { open(.thread(root: r.id, anchor: nil)) } }
     .listRowInsets(EdgeInsets(top: 0, leading: 14, bottom: 0, trailing: 12))

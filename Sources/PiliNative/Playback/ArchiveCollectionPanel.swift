@@ -54,14 +54,22 @@ struct ArchiveCollectionPanel: View {
                     }
                   }
                 }.buttonStyle(.plain).archiveCover(video)
+                // Parts sit under their episode as a horizontal strip, like the original's PagePanel.
                 if let parts=entry.pages,parts.count>1{
-                  DisclosureGroup("分 P（\(parts.count)）"){
-                    ForEach(parts){part in
-                      Button{play(video,part.cid);dismiss()}label:{
-                        HStack{Text("P\(part.page) · "+part.part);Spacer();if current==video.bvid,currentCID==part.cid{Image(systemName:"speaker.wave.2.fill")}}
+                  ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                      ForEach(parts){part in
+                        let on = current==video.bvid && currentCID==part.cid
+                        Button{play(video,part.cid);dismiss()}label:{
+                          Text("P\(part.page) "+part.part).font(.footnote).lineLimit(1)
+                            .foregroundStyle(on ? Color.accentColor : Color.primary)
+                            .padding(.horizontal, 12).padding(.vertical, 8).frame(maxWidth: 160)
+                            .background(on ? Color.accentColor.opacity(0.12) : Color(uiColor: .tertiarySystemFill),
+                              in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }.buttonStyle(.plain)
                       }
                     }
-                  }
+                  }.listRowSeparator(.hidden)
                 }
               }
             }
@@ -70,7 +78,7 @@ struct ArchiveCollectionPanel: View {
               Text(section.title ?? "合集")
               Spacer()
               if canReverse, (section.episodes?.count ?? 0) > 1 {
-                Button(reversed.contains(section.id) ? "改为顺序" : "改为倒序") {
+                Button {
                   if reversed.contains(section.id) {
                     reversed.remove(section.id)
                   } else {
@@ -83,7 +91,10 @@ struct ArchiveCollectionPanel: View {
                     play(first,section.ordered(reversed).first(where:{$0.bvid==first.bvid})?.cid)
                     dismiss()
                   }
-                }
+                } label: {
+                  Image(systemName: reversed.contains(section.id) ? "arrow.up.arrow.down.circle.fill" : "arrow.up.arrow.down.circle")
+                    .font(.system(size: 18))
+                }.accessibilityLabel(reversed.contains(section.id) ? "顺序播放" : "倒序播放")
               }
             }
           }

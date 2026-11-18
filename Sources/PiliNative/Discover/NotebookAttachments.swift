@@ -105,21 +105,37 @@ struct NotebookFrame: View {
     _capture = StateObject(wrappedValue: FrameCapture(model.engine))
   }
   var body: some View {
+    // Framed preview first, then 重新截取 / 加入笔记, like the screenshot panel.
     PiliNavigationStack {
-      Form {
-        if let img = capture.thumbnail {
-          Image(uiImage: img).resizable().scaledToFit()
-          Button("加入笔记") {
-            guard allowed(), let bytes = img.jpegData(compressionQuality: 0.85) else { return }
-            select(bytes)
+      VStack(spacing: 16) {
+        Group {
+          if let img = capture.thumbnail { Image(uiImage: img).resizable().scaledToFit() }
+          else { Rectangle().fill(.quaternary).overlay { if capture.busy { ProgressView() } } }
+        }
+        .frame(maxWidth: .infinity).aspectRatio(16 / 9, contentMode: .fit)
+        .padding(5).background(Color(uiColor: .systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: NativeGlass.cardRadius, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        if let n = capture.note { Text(n).font(.footnote).foregroundStyle(.secondary) }
+        HStack {
+          Button(capture.thumbnail == nil ? "截取当前画面" : "重新截取") {
+            if allowed() { capture.capture(gif: false, length: 1, fps: 1) }
+          }.buttonStyle(.glass).disabled(capture.busy || !allowed())
+          Spacer()
+          if let img = capture.thumbnail {
+            Button("加入笔记") {
+              guard allowed(), let bytes = img.jpegData(compressionQuality: 0.85) else { return }
+              select(bytes)
+            }.buttonStyle(.glassProminent)
           }
         }
-        if capture.busy { ProgressView() }
-        if let n = capture.note { Text(n) }
-        Button("截取当前画面") { if allowed() { capture.capture(gif: false, length: 1, fps: 1) } }
-          .disabled(capture.busy || !allowed())
-      }.navigationTitle("视频截图").toolbar { Button("取消") { dismiss() } }
+        Spacer(minLength: 0)
+      }
+      .padding(16)
+      .navigationTitle("视频截图").navigationBarTitleDisplayMode(.inline)
+      .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } } }
     }
+    .presentationDetents([.medium, .large])
     .onAppear { if allowed() { capture.capture(gif: false, length: 1, fps: 1) } }.onDisappear {
       capture.close()
     }

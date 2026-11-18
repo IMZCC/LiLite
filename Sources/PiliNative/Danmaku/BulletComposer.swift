@@ -45,56 +45,37 @@ struct BulletComposer: View {
       && time.isFinite && time >= 0 && time < Double(Int64.max) / 1000
   }
   var body: some View {
-    PiliNavigationStack {
-      Form {
-        Section {
-          TextField("输入弹幕内容", text: $draft, axis: .vertical).lineLimit(2...5)
-          Text(clockText(time) + " · " + String(draft.count) + "/100").font(.caption)
-            .foregroundStyle(.secondary)
+    // The original's send panel: one input row (style toggle, field, clear, send) with the
+    // 字号 / 样式 / 颜色 panel under it.
+    VStack(alignment: .leading, spacing: 0) {
+      HStack(spacing: 12) {
+        Image(systemName: "textformat").font(.system(size: 18, weight: .medium)).foregroundStyle(.tint)
+        TextField("输入弹幕内容", text: $draft).submitLabel(.send)
+          .onSubmit { Task { await send() } }
+        if !draft.isEmpty {
+          Button { draft = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
+            .buttonStyle(.plain).accessibilityLabel("清空")
         }
-        Section {
-          Picker("位置", selection: $mode) {
-            Text("滚动").tag(1)
-            Text("顶部").tag(5)
-            Text("底部").tag(4)
-          }
-          Picker("字号", selection: $size) {
-            Text("小").tag(18)
-            Text("标准").tag(25)
-          }
+        Button { Task { await send() } } label: {
+          if busy { ProgressView() } else { Image(systemName: "paperplane.fill").font(.system(size: 18)) }
         }
-        Section("弹幕颜色") {
-          LazyVGrid(columns: [GridItem(.adaptive(minimum: 35))]) {
-            ForEach(Self.colors, id: \.self) { value in
-              Button {
-                rgb = value
-                gradient = false
-              } label: {
-                Circle().fill(Self.color(value)).overlay {
-                  Circle().stroke(.secondary, lineWidth: 0.5)
-                }
-                .frame(width: 28, height: 28).overlay {
-                  if value == rgb && !gradient {
-                    Image(systemName: "checkmark.circle.fill").symbolRenderingMode(.palette)
-                      .foregroundStyle(.white, .black)
-                  }
-                }
-              }.accessibilityLabel(String(format: "颜色 %06X", value)).buttonStyle(.borderless)
-            }
-          }
-          ColorPicker("自选颜色", selection: selection, supportsOpacity: false)
-          if vip { Toggle("会员渐变色", isOn: $gradient) }
-        }
-        if !statusReady,issue != nil{Button("重新读取发言状态"){statusRetry+=1}}
-        if availability.closed(cid,owner:uid){Text("UP 主已关闭弹幕").foregroundStyle(.secondary)}
-        if let issue { Text(issue).foregroundStyle(.secondary) }
-      }.navigationTitle("发弹幕").toolbar {
-        ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-        ToolbarItem(placement: .confirmationAction) {
-          Button("发送") { Task { await send() } }.disabled(!canSend)
-        }
-      }.disabled(busy)
-    }.interactiveDismissDisabled(busy).task(id:"\(uid):\(cid):\(statusRetry)"){
+        .buttonStyle(.plain).foregroundStyle(canSend ? Color.accentColor : Color.secondary)
+        .disabled(!canSend).accessibilityLabel("发送")
+      }
+      .padding(.horizontal, 16).frame(height: 52)
+      HStack(spacing: 8) {
+        Text(clockText(time) + " · " + String(draft.count) + "/100").monospacedDigit()
+        if availability.closed(cid,owner:uid) { Text("UP 主已关闭弹幕") }
+        if let issue { Text(issue).foregroundStyle(.red).lineLimit(1) }
+        if !statusReady, issue != nil { Button("重试") { statusRetry += 1 }.font(.caption.weight(.semibold)) }
+      }
+      .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.bottom, 6)
+      Divider().opacity(0.5)
+      BulletStylePanel(gradient: vip ? $gradient : nil)
+      Spacer(minLength: 0)
+    }
+    .presentationDetents([.height(420), .large]).presentationDragIndicator(.visible)
+    .interactiveDismissDisabled(busy).task(id:"\(uid):\(cid):\(statusRetry)"){
       statusReady=false
       guard time.isFinite,time>=0,time<=31_536_000 else{return}
       if availability.status(cid,owner:uid)==nil{

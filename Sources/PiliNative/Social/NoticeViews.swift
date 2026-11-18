@@ -18,11 +18,13 @@ struct LikeNoticeDetail: View {
   @State private var card: LikeNoticePage.Card?
   var body: some View {
     VStack(alignment: .leading) {
+      // The original: "业务: 标题" as a row that opens the liked item, then one row per person.
       if let card {
         NoticeSource(
           title: [card.business, card.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(
-            separator: " · "), source: notice.source
-        ).padding(.horizontal)
+            separator: ": "), source: notice.source
+        ).font(.subheadline).lineLimit(2).padding(.horizontal, 16).padding(.vertical, 10)
+        Divider().opacity(0.5)
       }
       PageList(empty: "暂无点赞记录") { cursor in
         guard let id = notice.number else { throw ServiceError("点赞记录不存在") }
@@ -43,11 +45,19 @@ struct LikeNoticeDetail: View {
         PlainRowLink {
           CreatorSpace(mid: item.user.mid, name: item.user.nickname ?? "用户空间")
         } label: {
-          SessionRowLabel(
-            photo: item.user.avatar.flatMap(httpsURL),
-            name: item.user.nickname ?? String(item.user.mid),
-            summary: "赞了你的内容",
-            date: item.like_time.map { Date(timeIntervalSince1970: $0) })
+          HStack(spacing: 14) {
+            SiteThumbnail(url: item.user.avatar.flatMap(httpsURL)) { $0.resizable().scaledToFill() } placeholder: {
+              Circle().fill(.quaternary)
+            }.frame(width: 45, height: 45).clipShape(Circle())
+            VStack(alignment: .leading, spacing: 3) {
+              Text("\(Text(item.user.nickname ?? String(item.user.mid)).foregroundStyle(.tint).fontWeight(.medium))\(Text(" 赞了我").font(.footnote).foregroundStyle(.secondary))")
+                .lineLimit(2)
+              if let t = item.like_time {
+                Text(SessionRowLabel.stamp(Date(timeIntervalSince1970: t))).font(.footnote).foregroundStyle(.secondary)
+              }
+            }
+            Spacer(minLength: 0)
+          }.padding(.vertical, 4)
         }
       }
     }.navigationTitle("点赞详情")

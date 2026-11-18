@@ -16,6 +16,24 @@ private struct PackFile: FileDocument {
     .init(regularFileWithContents: bytes)
   }
 }
+extension PackPart {
+  /// Icon tile for the settings-style rows.
+  var symbol: (String, Color) {
+    switch self {
+    case .settings: return ("gearshape.fill", .gray)
+    case .search: return ("magnifyingglass", .blue)
+    case .blocked: return ("person.slash.fill", .red)
+    case .replies: return ("text.bubble.fill", .teal)
+    case .font: return ("textformat", .indigo)
+    case .accounts: return ("person.crop.circle.fill", .orange)
+    case .server: return ("externaldrive.fill.badge.icloud", .cyan)
+    case .contributor: return ("forward.end.fill", .green)
+    }
+  }
+}
+private func partToggle(_ p: PackPart, _ on: Binding<Bool>) -> some View {
+  SettingToggle(title: p.title, symbol: p.symbol.0, color: p.symbol.1, isOn: on)
+}
 struct DataPackPanel: View {
   var upload: ((Data) async throws -> Void)? = nil
   var remoteSource: (() async throws -> Data)? = nil
@@ -37,52 +55,70 @@ struct DataPackPanel: View {
       if remoteSource == nil, encrypted == nil {
         Section("导出内容") {
           ForEach(PackPart.allCases) { p in
-            Toggle(
-              p.title,
-              isOn: Binding(
-                get: { selected.contains(p) },
-                set: { if $0 { selected.insert(p) } else { selected.remove(p) } }))
+            partToggle(p, Binding(
+              get: { selected.contains(p) },
+              set: { if $0 { selected.insert(p) } else { selected.remove(p) } }))
           }
         }
-        Section("文件格式") {
+        Section {
           if upload == nil {
-            Picker("格式", selection: $secure) {
+            Picker(selection: $secure) {
               Text("加密数据包").tag(true)
               Text("原版兼容 ZIP").tag(false)
-            }
+            } label: { SettingsRowLabel(title: "文件格式", symbol: "doc.zipper", color: .brown) }
           }
           if secure || upload != nil {
             SecureField("备份密码（至少 10 个字符）", text: $password)
             SecureField("再次输入密码", text: $repeatPassword)
-            Text("换设备恢复也需要此密码，请妥善保存").font(.footnote).foregroundStyle(.secondary)
-          } else if selected.contains(where: \.sensitive) {
-            Text("普通 ZIP 内的登录凭据可被持有文件的人读取").foregroundStyle(.secondary)
           }
-          Button(upload == nil ? "导出数据包" : "上传加密数据包") {
+        } footer: {
+          if secure || upload != nil {
+            Text("换设备恢复也需要此密码，请妥善保存")
+          } else if selected.contains(where: \.sensitive) {
+            Text("普通 ZIP 内的登录凭据可被持有文件的人读取")
+          }
+        }
+        Section {
+          Button {
             if !secure && upload == nil && selected.contains(where: \.sensitive) {
               confirmPlain = true
             } else {
               Task { await make() }
             }
+          } label: {
+            SettingsRowLabel(title: upload == nil ? "导出数据包" : "上传加密数据包",
+              symbol: upload == nil ? "square.and.arrow.up.fill" : "icloud.and.arrow.up.fill", color: .blue)
           }.disabled(selected.isEmpty)
         }
       }
       if let bytes = encrypted {
         Section("解锁数据包") {
           SecureField("输入备份密码", text: $password)
-          Button("解锁并预览") { Task { await unlock(bytes) } }.disabled(password.isEmpty)
-          Button("取消") {
+          Button { Task { await unlock(bytes) } } label: {
+            SettingsRowLabel(title: "解锁并预览", symbol: "lock.open.fill", color: .green)
+          }.disabled(password.isEmpty)
+          Button("取消", role: .cancel) {
             encrypted = nil
             password = ""
           }
         }
       } else if let remoteSource {
-        Button("读取并预览数据包") { Task { await read(remoteSource) } }
+        Section {
+          Button { Task { await read(remoteSource) } } label: {
+            SettingsRowLabel(title: "读取并预览数据包", symbol: "icloud.and.arrow.down.fill", color: .blue)
+          }
+        }
       } else if upload == nil {
-        Button("从数据包恢复") { pick = true }
+        Section {
+          Button { pick = true } label: {
+            SettingsRowLabel(title: "从数据包恢复", symbol: "arrow.counterclockwise.circle.fill", color: .orange)
+          }
+        }
       }
-      if busy { ProgressView() }
-      if let message { Text(message).textSelection(.enabled) }
+      if busy { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
+      if let message {
+        Text(message).font(.footnote).foregroundStyle(.secondary).textSelection(.enabled).listRowBackground(Color.clear)
+      }
     }.disabled(busy).navigationTitle(upload != nil || remoteSource != nil ? "远程数据包" : "本地数据包")
       .confirmationDialog("将未加密的登录凭据写入 ZIP？", isPresented: $confirmPlain) {
         Button("导出普通 ZIP", role: .destructive) { Task { await make() } }
@@ -226,11 +262,9 @@ private struct PackRestorePanel: View {
       Form {
         Section("要恢复的内容") {
           ForEach(item.choices) { p in
-            Toggle(
-              p.title,
-              isOn: Binding(
-                get: { chosen.contains(p) },
-                set: { if $0 { chosen.insert(p) } else { chosen.remove(p) } }))
+            partToggle(p, Binding(
+              get: { chosen.contains(p) },
+              set: { if $0 { chosen.insert(p) } else { chosen.remove(p) } }))
           }
         }
         if hasReplies {
@@ -270,9 +304,15 @@ private struct PackRestorePanel: View {
           if let date = item.zip.exportedAt { LabeledContent("导出时间", value: date) }
           if let warning = item.warning { Label(warning, systemImage: "exclamationmark.triangle") }
         }
-        Button("恢复所选数据") { Task { await restore(chosen, owner.isEmpty ? nil : owner, viewedMain) } }
-          .disabled(chosen.isEmpty || (hasReplies && !ids.contains(owner)))
-      }.navigationTitle("恢复数据包").toolbar { Button("取消") { dismiss() } }
+      }
+      .navigationTitle("恢复数据包").navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+        ToolbarItem(placement: .confirmationAction) {
+          Button("恢复") { Task { await restore(chosen, owner.isEmpty ? nil : owner, viewedMain) } }
+            .disabled(chosen.isEmpty || (hasReplies && !ids.contains(owner)))
+        }
+      }
     }
   }
 }

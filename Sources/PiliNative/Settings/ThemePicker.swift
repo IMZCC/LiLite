@@ -5,10 +5,17 @@ import UIKit
 /// (0...18) and packed ARGB custom colors, so backups and older installs keep working.
 enum AccentPalette {
   struct Preset: Identifiable {
+    /// A legacy seed index (0...18) for system colours, or packed ARGB for named colours.
     let name: String, color: UIColor, storedIndex: Int
     var id: Int { storedIndex }
   }
+  private static func argb(_ v: Int) -> UIColor {
+    UIColor(red: CGFloat(v >> 16 & 255) / 255, green: CGFloat(v >> 8 & 255) / 255, blue: CGFloat(v & 255) / 255, alpha: 1)
+  }
   static let presets: [Preset] = [
+    .init(name: "哔哩粉", color: argb(0xfb7299), storedIndex: 0xfffb7299),
+    .init(name: "初音绿", color: argb(0x39c5bb), storedIndex: 0xff39c5bb),
+    .init(name: "天依蓝", color: argb(0x66ccff), storedIndex: 0xff66ccff),
     .init(name: "蓝色", color: .systemBlue, storedIndex: 0),
     .init(name: "靛蓝", color: .systemIndigo, storedIndex: 13),
     .init(name: "紫色", color: .systemPurple, storedIndex: 14),
@@ -29,6 +36,8 @@ enum AccentPalette {
   ]
   /// The preset a stored value resolves to, or nil for a custom color.
   static func preset(for stored: Int) -> Preset? {
+    // Named colours are stored as packed ARGB (older builds read them as a custom colour).
+    if let named = presets.first(where: { $0.storedIndex > 0xff_ffff && $0.storedIndex == stored }) { return named }
     guard let index = legacy[stored] else { return nil }
     return presets.first { $0.storedIndex == index }
   }

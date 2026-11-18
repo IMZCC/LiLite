@@ -340,45 +340,80 @@ struct CapturePanel: View {
     self.automatic = automatic
     _capture = StateObject(wrappedValue: FrameCapture(p))
   }
+  /// The original captures first and shows the framed picture; a tap saves it. Here the
+  /// preview leads, with 截图/动图 chips, the GIF length and rate inline, and 保存 / 分享.
   var body: some View {
     PiliNavigationStack {
-      Form {
-        Picker("类型", selection: $gif) {
-          Text("截图").tag(false)
-          Text("动图").tag(true)
-        }.pickerStyle(.segmented).disabled(capture.busy)
-        if gif {
-          Stepper("时长 · \(length) 秒", value: $length, in: 1...10).disabled(capture.busy)
-          Picker("帧率", selection: $fps) {
-            ForEach([5, 8, 10, 12, 15], id: \.self) { Text("\($0) fps").tag($0) }
+      ScrollView {
+        VStack(spacing: 16) {
+          Group {
+            if let file = capture.file {
+              GalleryZoom(file: file)
+            } else if let thumb = capture.thumbnail {
+              Image(uiImage: thumb).resizable().scaledToFit()
+            } else {
+              Rectangle().fill(.quaternary).overlay {
+                if capture.busy { ProgressView() } else {
+                  Image(systemName: "camera").font(.title2).foregroundStyle(.secondary)
+                }
+              }
+            }
+          }
+          .frame(maxWidth: .infinity).aspectRatio(16 / 9, contentMode: .fit)
+          .padding(5).background(Color(uiColor: .systemBackground))
+          .clipShape(RoundedRectangle(cornerRadius: NativeGlass.cardRadius, style: .continuous))
+          .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+          .onTapGesture { if capture.file != nil, !capture.busy { Task { await capture.save() } } }
+          HStack(spacing: 8) {
+            chip("截图", !gif) { gif = false }
+            chip("动图", gif) { gif = true }
+            if gif {
+              Menu { Picker("时长", selection: $length) { ForEach(1...10, id: \.self) { Text("\($0) 秒").tag($0) } } }
+                label: { chipLabel("\(length) 秒", false) }
+              Menu { Picker("帧率", selection: $fps) { ForEach([5, 8, 10, 12, 15], id: \.self) { Text("\($0) fps").tag($0) } } }
+                label: { chipLabel("\(fps) fps", false) }
+            }
+            Spacer(minLength: 0)
           }.disabled(capture.busy)
-        }
-        if capture.busy {
           if capture.recording {
             ProgressView(value: capture.progress)
-            Button("结束录制") { capture.stop() }
-          } else {
-            ProgressView()
           }
-        } else {
-          Button(gif ? "开始录制" : "截取当前画面") { capture.capture(gif: gif, length: length, fps: fps) }
+          if let note = capture.note { Text(note).font(.footnote).foregroundStyle(.secondary) }
+          HStack(spacing: 12) {
+            if capture.recording {
+              Button("结束录制") { capture.stop() }.buttonStyle(.glassProminent)
+            } else {
+              Button(gif ? "开始录制" : capture.file == nil ? "截取当前画面" : "重新截取") { capture.capture(gif: gif, length: length, fps: fps) }
+                .buttonStyle(.glass).disabled(capture.busy)
+            }
+            Spacer()
+            if let file = capture.file {
+              ShareLink(item: file) { Label("分享", systemImage: "square.and.arrow.up") }.buttonStyle(.glass)
+              Button("保存") { Task { await capture.save() } }.buttonStyle(.glassProminent).disabled(capture.busy)
+            }
+          }
         }
-        if let file = capture.file {
-          GalleryZoom(file: file).frame(height: 160)
-          Button("存入照片") { Task { await capture.save() } }.disabled(capture.busy)
-          ShareLink(item: file) { Label("分享", systemImage: "square.and.arrow.up") }
-        } else if let thumb = capture.thumbnail {
-          Image(uiImage: thumb).resizable().scaledToFit().frame(maxHeight: 150)
-        }
-        if let note = capture.note { Text(note) }
-      }.navigationTitle("截图与动图").toolbar { Button("完成") { dismiss() } }
+        .padding(16)
+      }
+      .navigationTitle(gif ? "动图" : "截图").navigationBarTitleDisplayMode(.inline)
+      .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
     }.task {
       capture.attach()
-      if automatic && !triggered {
+      // Opening the panel takes the shot at once, like the original's 截图 button.
+      if !triggered {
         triggered = true
         try? await Task.sleep(for: .milliseconds(100))
         if !Task.isCancelled { capture.capture(gif: false, length: 1, fps: 10) }
       }
     }.onDisappear { capture.close() }
+  }
+  private func chipLabel(_ title: String, _ on: Bool) -> some View {
+    Text(title).font(.subheadline.weight(on ? .semibold : .regular))
+      .foregroundStyle(on ? Color.accentColor : Color.primary)
+      .padding(.horizontal, 14).padding(.vertical, 7)
+      .background(on ? Color.accentColor.opacity(0.14) : Color(uiColor: .tertiarySystemFill), in: Capsule())
+  }
+  private func chip(_ title: String, _ on: Bool, _ pick: @escaping () -> Void) -> some View {
+    Button { TouchFeedback.light(); pick() } label: { chipLabel(title, on) }.buttonStyle(.plain)
   }
 }

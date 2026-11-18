@@ -101,20 +101,39 @@ struct PlaybackOptionsView: View {
   @AppStorage("dm.fullFontSize") private var full = 18.0
   var body: some View {
     Form {
-      NavigationLink("播放器内核") { PlaybackEngineSettings() }.settingAnchor("PlaybackOptionsView/播放器内核")
-      Picker("番剧片头片尾", selection: $episodeSkip) {
-        ForEach(EpisodeSkipMode.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
-      }.settingAnchor("PlaybackOptionsView/番剧片头片尾")
-      Toggle("游客播放优先使用可用的 1080P", isOn: $guestHD).settingAnchor("PlaybackOptionsView/游客播放优先使用可用的 1080P")
-      NavigationLink("视频解码") { DecoderSettings() }.settingAnchor("PlaybackOptionsView/视频解码")
-      NavigationLink("Wi-Fi 与有线网络") { MediaProfilePanel(cellular: false) }.settingAnchor("PlaybackOptionsView/Wi-Fi 与有线网络")
-      NavigationLink("蜂窝网络") { MediaProfilePanel(cellular: true) }.settingAnchor("PlaybackOptionsView/蜂窝网络")
-      Picker("视频比例", selection: $gravity) {
-        ForEach(PictureFit.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
-      }.settingAnchor("PlaybackOptionsView/视频比例")
-      MediaTextScaleControl(title: "字幕字号", points: $subtitle, base: 16)
-      MediaTextScaleControl(title: "弹幕字号", points: $bullet)
-      MediaTextScaleControl(title: "全屏弹幕字号", points: $full)
+      Section {
+        NavigationLink { PlaybackEngineSettings() } label: {
+          SettingsRowLabel(title: "播放器内核", symbol: "film.stack", color: .purple)
+        }.settingAnchor("PlaybackOptionsView/播放器内核")
+        NavigationLink { DecoderSettings() } label: {
+          SettingsRowLabel(title: "视频解码", symbol: "cpu", color: .gray)
+        }.settingAnchor("PlaybackOptionsView/视频解码")
+      }
+      Section("默认画质与音质") {
+        NavigationLink { MediaProfilePanel(cellular: false) } label: {
+          SettingsRowLabel(title: "Wi-Fi 与有线网络", symbol: "wifi", color: .blue)
+        }.settingAnchor("PlaybackOptionsView/Wi-Fi 与有线网络")
+        NavigationLink { MediaProfilePanel(cellular: true) } label: {
+          SettingsRowLabel(title: "蜂窝网络", symbol: "antenna.radiowaves.left.and.right", color: .green)
+        }.settingAnchor("PlaybackOptionsView/蜂窝网络")
+        SettingToggle(title: "游客播放优先使用可用的 1080P", symbol: "person.crop.circle.badge.questionmark", color: .orange, isOn: $guestHD)
+          .settingAnchor("PlaybackOptionsView/游客播放优先使用可用的 1080P")
+      }
+      Section {
+        Picker(selection: $episodeSkip) {
+          ForEach(EpisodeSkipMode.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+        } label: { SettingsRowLabel(title: "番剧片头片尾", symbol: "forward.end.alt", color: .pink) }
+          .settingAnchor("PlaybackOptionsView/番剧片头片尾")
+        Picker(selection: $gravity) {
+          ForEach(PictureFit.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+        } label: { SettingsRowLabel(title: "视频比例", symbol: "aspectratio", color: .indigo) }
+          .settingAnchor("PlaybackOptionsView/视频比例")
+      }
+      Section("字号") {
+        MediaTextScaleControl(title: "字幕字号", points: $subtitle, base: 16)
+        MediaTextScaleControl(title: "弹幕字号", points: $bullet)
+        MediaTextScaleControl(title: "全屏弹幕字号", points: $full)
+      }
     }.navigationTitle("画面与音轨")
   }
 }

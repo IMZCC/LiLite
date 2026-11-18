@@ -51,7 +51,26 @@ struct ReplyAvatar: View {
         }
         .frame(width: size * 1.34, height: size * 1.34).allowsHitTesting(false)
       }
+      // Drawn over the pendant at the avatar's own bottom-right corner, as PendantAvatar does.
+      let d = frame == nil ? size : size * 0.84
+      let side = max(12, size * 0.4)
+      badge(side).offset(x: (d - side) / 2 + 1, y: (d - side) / 2 + 1).allowsHitTesting(false)
     }.frame(width: size * 1.18, height: size * 1.25).accessibilityHidden(true)
+  }
+  /// The original's corner badge: official verification wins, otherwise 大会员.
+  @ViewBuilder private func badge(_ side: CGFloat) -> some View {
+    let official = member?.official_verify?.type ?? -1
+    if official == 0 || official == 1 {
+      Image(systemName: "bolt.circle.fill").resizable().scaledToFit()
+        .foregroundStyle(.white, official == 1 ? Color(red: 0.25, green: 0.77, blue: 1) : Color(red: 1, green: 0.7, blue: 0.1))
+        .frame(width: side, height: side)
+        .background(Circle().fill(Color(uiColor: .systemBackground)).padding(-1))
+    } else if (member?.vipStatus ?? 0) > 0 {
+      Text("大").font(.system(size: side * 0.62, weight: .heavy)).foregroundStyle(.white)
+        .frame(width: side, height: side)
+        .background(Circle().fill(Color(red: 0.98, green: 0.45, blue: 0.6)))
+        .background(Circle().fill(Color(uiColor: .systemBackground)).padding(-1))
+    }
   }
 }
 
@@ -68,13 +87,8 @@ struct ReplyAuthorLabel: View {
       if let level = member?.level {
         UserLevelBadge(level: level, height: 10, hardcore: member?.senior == true)
       }
-      if let badge = member?.official_verify?.type, badge >= 0 {
-        Image(systemName: "checkmark.seal.fill").foregroundStyle(
-          badge == 1 ? Color.blue : Color.orange
-        ).accessibilityLabel(badge == 1 ? "机构认证" : "个人认证")
-      } else if (member?.vipStatus ?? 0) > 0 {
-        Image(systemName: "diamond.fill").foregroundStyle(.pink).accessibilityLabel("大会员")
-      }
+      // Name, level, then the medal, as in the original. Verification and 大会员 are the
+      // avatar's corner badge (PendantAvatar), not marks beside the name.
       if showMedal && !isOwner, let m = member?.medal {
         let (bg, fg) = Self.medalColors(m)
         // The original's medal: small rounded plate, name then bold level.

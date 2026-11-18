@@ -44,6 +44,11 @@ final class MPVCore: @unchecked Sendable {
       "input-vo-keyboard": "no", "osc": "no", "idle": "yes", "keep-open": "yes",
       "vo": "libmpv", "ao": "audiounit", "hwdec": "videotoolbox",
       "keepaspect": "no",
+      // 10-bit HEVC/AV1 (HDR, 杜比视界, HDR Vivid) decodes to P010 by default. The iOS GLES
+      // interop has no 16-bit normalized textures, so P010 planes were sampled as the wrong
+      // type and showed red/green garbage. VideoToolbox converts to 8-bit NV12 in hardware;
+      // mpv still tone-maps from the stream's PQ/HLG metadata.
+      "hwdec-image-format": "nv12",
       "hwdec-codecs": "all", "audio-pitch-correction": "yes", "cache": "yes",
       "tls-verify": "yes", "network-timeout": "20", "video-sync": "audio",
       "sub-auto": "no", "audio-file-auto": "no", "ytdl": "no",

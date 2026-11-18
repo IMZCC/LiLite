@@ -418,73 +418,55 @@ struct CacheSelection: View {
   @State private var selected: Set<Int64> = []
   @State private var busy = false
   @State private var issue: String?
+  @State private var confirmAll = false
+  @ObservedObject private var downloads = Downloads.shared
   @Environment(\.dismiss) var dismiss
+  private struct Row: Identifiable { let cid: Int64, title: String, duration: Int?; var id: Int64 { cid } }
+  private var rows: [Row] {
+    if let parts = video.pages, !parts.isEmpty {
+      return parts.map { Row(cid: $0.cid, title: $0.part.isEmpty ? video.title : $0.part, duration: $0.duration) }
+    }
+    return [Row(cid: cid, title: video.title, duration: video.duration)]
+  }
+  private func cached(_ id: Int64) -> Bool {
+    downloads.list.contains { $0.bvid == video.bvid && $0.cid == id }
+  }
+  /// The original's download panel: 画质/音质 menus on top, one row per part (tap to cache it
+  /// right away), and 缓存全部 | 查看缓存 along the bottom.
   var body: some View {
-    Form {
-      Picker("画质", selection: $quality) {
-        Text(OfflineQuality.video(available).map { "默认 · " + StreamQuality.name($0) } ?? "默认").tag(0)
-        ForEach(available, id: \.self) { Text(StreamQuality.name($0)).tag($0) }
-      }
-      if !audioChoices.isEmpty {
-        Picker("音质", selection: $audio) {
-          Text(OfflineQuality.audio(audioChoices).map { "默认 · " + PlaybackOption.audioName($0) } ?? "默认").tag(0);
-          ForEach(audioChoices, id: \.self) { Text(PlaybackOption.audioName($0)).tag($0) }
+    VStack(spacing: 0) {
+      header
+      Divider().opacity(0.5)
+      ScrollViewReader { proxy in
+        ScrollView {
+          LazyVStack(spacing: 2) {
+            ForEach(rows) { row in partRow(row).id(row.cid) }
+          }.padding(.vertical, 6).padding(.bottom, 40)
         }
+        .onAppear { proxy.scrollTo(cid, anchor: .top) }
       }
-      Toggle("同时缓存字幕和弹幕", isOn: $extras)
-      if let collection, let owner {
-        NavigationLink("选择合集中的视频") {
-          OfflineCollectionSelection(
-            collection: collection, quality: quality == 0 ? nil : quality,
-            audio: audio == 0 ? nil : audio, owner: owner, extras: extras)
-        }
-      }
-      NavigationLink("查看缓存") { DownloadsView() }
-      if let parts = video.pages, !parts.isEmpty {
-        Section("选择分集") {
-          ForEach(parts) { p in
-            Button {
-              if !selected.insert(p.cid).inserted { selected.remove(p.cid) }
-            } label: {
-              HStack {
-                Text(p.part)
-                Spacer()
-                if selected.contains(p.cid) { Image(systemName: "checkmark") }
-              }
-            }
+      Divider().opacity(0.5)
+      footer
+    }
+    .navigationTitle("缓存视频").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        Menu {
+          Toggle("同时缓存字幕和弹幕", isOn: $extras)
+          if let collection, let owner {
+            NavigationLink {
+              OfflineCollectionSelection(
+                collection: collection, quality: quality == 0 ? nil : quality,
+                audio: audio == 0 ? nil : audio, owner: owner, extras: extras)
+            } label: { Label("缓存合集中的视频", systemImage: "square.stack") }
           }
-          Button(selected.count == parts.count ? "取消全选" : "全选") {
-            selected = selected.count == parts.count ? [] : Set(parts.map(\.cid))
-          }
-        }
+        } label: { Image(systemName: "ellipsis") }.accessibilityLabel("缓存选项")
       }
-      if let issue { Text(issue).piliFont(.caption).foregroundStyle(.secondary) }
-      Button("加入缓存队列") {
-        Task {
-          guard !busy, let owner else { return }
-          busy = true
-          let ids = video.pages?.map(\.cid).filter { selected.contains($0) } ?? selected.sorted()
-          let q = quality == 0 ? nil : quality
-          var problems = [String]()
-          for id in ids {
-            guard !Task.isCancelled, owner == (accounts.state.owner(.role(.video)) ?? "") else {
-              problems.append("视频账号已切换"); break
-            }
-            if let err = await Downloads.shared.add(
-              video, cid: id, quality: q, audioQuality: audio == 0 ? nil : audio, owner: owner,
-              extras: extras, singleFile: singleFile)
-            {
-              problems.append(err)
-            } else {
-              selected.remove(id)
-            }
-          }
-          busy = false
-          if problems.isEmpty { dismiss() } else { issue = problems.first }
-        }
-      }.disabled(selected.isEmpty || busy || owner == nil)
-      if issue != nil && owner == nil { Button("重试") { reload += 1 } }
-    }.navigationTitle("缓存视频").interactiveDismissDisabled(busy).disabled(busy)
+    }
+    .confirmationDialog("确定缓存全部？", isPresented: $confirmAll, titleVisibility: .visible) {
+      Button("缓存全部") { enqueue(rows.map(\.cid).filter { !cached($0) }) }
+    }
+    .interactiveDismissDisabled(busy)
       .task(id: (accounts.state.owner(.role(.video)) ?? "") + ":" + String(reload)) {
         selected = [cid]; owner = nil; collection = nil; singleFile = false; audio = 0; quality = 0;
         available = []; audioChoices = []; issue = nil
@@ -497,5 +479,123 @@ struct CacheSelection: View {
           owner = uid
         } catch { issue = error.localizedDescription }
       }
+  }
+  private var header: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 12) {
+        Text("画质").foregroundStyle(.secondary)
+        Menu {
+          Picker("画质", selection: $quality) {
+            Text(OfflineQuality.video(available).map { "默认 · " + StreamQuality.name($0) } ?? "默认").tag(0)
+            ForEach(available, id: \.self) { Text(StreamQuality.name($0)).tag($0) }
+          }
+        } label: { menuLabel(quality == 0 ? "默认" : StreamQuality.name(quality)) }
+        if !audioChoices.isEmpty {
+          Text("音质").foregroundStyle(.secondary)
+          Menu {
+            Picker("音质", selection: $audio) {
+              Text(OfflineQuality.audio(audioChoices).map { "默认 · " + PlaybackOption.audioName($0) } ?? "默认").tag(0)
+              ForEach(audioChoices, id: \.self) { Text(PlaybackOption.audioName($0)).tag($0) }
+            }
+          } label: { menuLabel(audio == 0 ? "默认" : PlaybackOption.audioName(audio)) }
+        }
+        Spacer(minLength: 0)
+        if busy { ProgressView().controlSize(.small) }
+      }
+      .font(.subheadline)
+      if let issue {
+        HStack(spacing: 8) {
+          Text(issue).font(.caption).foregroundStyle(.red).lineLimit(2)
+          if owner == nil { Button("重试") { reload += 1 }.font(.caption.weight(.semibold)) }
+        }
+      }
+    }
+    .padding(.horizontal, 16).padding(.vertical, 12)
+  }
+  private func menuLabel(_ text: String) -> some View {
+    HStack(spacing: 2) {
+      Text(text).foregroundStyle(.primary)
+      Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+    }
+  }
+  private func partRow(_ row: Row) -> some View {
+    let current = row.cid == cid
+    let done = cached(row.cid)
+    return Button {
+      guard !done else { return }
+      TouchFeedback.light()
+      enqueue([row.cid])
+    } label: {
+      HStack(spacing: 10) {
+        Rectangle().fill(.quaternary).frame(width: 160, height: 100)
+          .overlay {
+            SiteThumbnail(url: video.cover) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+          }
+          .overlay(alignment: .bottomTrailing) {
+            if let d = row.duration, d > 0 {
+              Text(clockText(Double(d))).font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.white).padding(.horizontal, 6).padding(.vertical, 2)
+                .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 4)).padding(6)
+            }
+          }
+          .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
+        VStack(alignment: .leading, spacing: 2) {
+          Text(row.title).font(.subheadline.weight(current ? .semibold : .regular))
+            .foregroundStyle(current ? Color.accentColor : Color.primary)
+            .lineLimit(2).multilineTextAlignment(.leading)
+          Spacer(minLength: 0)
+          HStack {
+            if let stat = video.stat, rows.count == 1 {
+              Text(MediaStats.line(views: stat.view, danmaku: stat.danmaku)).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if done {
+              Image(systemName: "arrow.down.circle").font(.caption).foregroundStyle(.secondary)
+                .accessibilityLabel("已加入缓存")
+            }
+          }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+      }
+      .frame(height: 100)
+      .padding(.horizontal, 12).padding(.vertical, 5)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .disabled(owner == nil)
+  }
+  private var footer: some View {
+    HStack(spacing: 0) {
+      Button { confirmAll = true } label: {
+        Text("缓存全部").frame(maxWidth: .infinity, minHeight: 44)
+      }.disabled(owner == nil || busy)
+      Divider().frame(height: 20)
+      NavigationLink { DownloadsView() } label: {
+        Text("查看缓存").frame(maxWidth: .infinity, minHeight: 44)
+      }
+    }
+    .buttonStyle(.plain).font(.subheadline)
+    .background(.bar)
+  }
+  /// Queues the given parts at the chosen quality; failures show under the menus.
+  private func enqueue(_ ids: [Int64]) {
+    guard !busy, let owner, !ids.isEmpty else { return }
+    busy = true
+    issue = nil
+    Task {
+      defer { busy = false }
+      let q = quality == 0 ? nil : quality
+      for id in ids {
+        guard !Task.isCancelled, owner == (accounts.state.owner(.role(.video)) ?? "") else {
+          issue = "视频账号已切换"; return
+        }
+        if let err = await Downloads.shared.add(
+          video, cid: id, quality: q, audioQuality: audio == 0 ? nil : audio, owner: owner,
+          extras: extras, singleFile: singleFile)
+        {
+          issue = err
+        }
+      }
+    }
   }
 }

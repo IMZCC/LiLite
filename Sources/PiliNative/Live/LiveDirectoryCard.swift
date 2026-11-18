@@ -82,47 +82,58 @@ struct LiveFeedbackSheet: View {
   @State private var done = false
   @State private var note: String?
   private var owner: String? { accounts.state.owner(.role(.recommend)) }
+  /// As the original's feedback dialog: each group's title and hint, its reasons as chips, and a
+  /// tap on a chip sends it.
   var body: some View {
     PiliNavigationStack {
-      Form {
-        Text(room.title)
-        ForEach(Array((room.feedback ?? []).enumerated()), id: \.offset) { _, group in
-          Section {
-            ForEach((group.reasons ?? []).filter(\.usable), id: \.self) { r in
-              Button {
-                chosen = r
-              } label: {
-                HStack {
-                  Text(r.name ?? "")
-                  Spacer()
-                  if chosen == r { Image(systemName: "checkmark") }
+      ScrollView {
+        VStack(alignment: .leading, spacing: 18) {
+          Text(room.title).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+          ForEach(Array((room.feedback ?? []).enumerated()), id: \.offset) { _, group in
+            VStack(alignment: .leading, spacing: 8) {
+              HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(group.title ?? "反馈原因").font(.subheadline.weight(.semibold))
+                if let s = group.subtitle, !s.isEmpty { Text(s).font(.caption).foregroundStyle(.secondary) }
+              }
+              WrappingActions(spacing: 8) {
+                ForEach((group.reasons ?? []).filter(\.usable), id: \.self) { r in
+                  Button { send(r) } label: {
+                    Text(r.name ?? "").font(.footnote)
+                      .foregroundStyle(chosen == r ? Color.accentColor : Color.primary)
+                      .padding(.horizontal, 12).padding(.vertical, 7)
+                      .background(chosen == r ? Color.accentColor.opacity(0.14) : Color(uiColor: .tertiarySystemFill),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                  }.buttonStyle(.plain).disabled(busy || done || owner == nil)
                 }
               }
             }
-          } header: {
-            Text(group.title ?? "反馈原因")
-          } footer: {
-            Text(group.subtitle ?? "")
           }
+          if owner == nil {
+            NavigationLink("登录后提交反馈") { QRLoginView() }.font(.subheadline)
+          }
+          if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
         }
-        if let owner, owner == room.viewer {
-          Button("提交反馈") {
-            guard !done, !busy, let chosen else { return }
-            busy = true
-            Task {
-              defer { busy = false }
-              do {
-                try await BiliAPI.shared.liveFeedback(room, reason: chosen, owner: owner)
-                done = true
-                note = "反馈已提交"
-              } catch { note = error.localizedDescription }
-            }
-          }.disabled(chosen == nil || done)
-        } else if owner == nil {
-          NavigationLink("登录后提交反馈") { QRLoginView() }
-        }
-        if let note { Text(note) }
-      }.disabled(busy).navigationTitle("直播推荐反馈").toolbar { Button("关闭") { dismiss() } }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+      }
+      .navigationTitle("我不想看").navigationBarTitleDisplayMode(.inline)
+      .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
+    }
+    .presentationDetents([.medium, .large])
+  }
+  private func send(_ r: LiveFeedbackGroup.Reason) {
+    guard !done, !busy, let owner else { return }
+    TouchFeedback.light()
+    chosen = r
+    busy = true
+    Task {
+      defer { busy = false }
+      do {
+        try await BiliAPI.shared.liveFeedback(room, reason: r, owner: owner)
+        done = true
+        note = "反馈已提交"
+        try? await Task.sleep(for: .milliseconds(700))
+        dismiss()
+      } catch { note = error.localizedDescription }
     }
   }
 }

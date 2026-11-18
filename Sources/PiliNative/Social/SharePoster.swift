@@ -101,31 +101,36 @@ struct SharePoster: View {
     init(image: UIImage) { self.image = image }
   }
   var body: some View {
+    // The original's poster: the card alone in the middle, a row of round actions under it.
+    // Card options move to the toolbar menu.
     ScrollView {
-      VStack(alignment: .leading, spacing: 18) {
-        card.frame(maxWidth: .infinity)
-        if cover != nil { Toggle("显示封面", isOn: $showCover) }
-        Toggle("显示二维码和页脚", isOn: $showBottom)
-        Toggle("深色卡片", isOn: $dark)
-        HStack {
-          Button {
-            Task { await save() }
-          } label: {
-            Label(pictureFolder == nil ? "存到照片" : "保存图片", systemImage: "square.and.arrow.down")
+      VStack(spacing: 22) {
+        card.frame(maxWidth: .infinity).shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+        HStack(spacing: 0) {
+          action(pictureFolder == nil ? "保存图片" : "保存", "arrow.down.to.line") { Task { await save() } }
+            .disabled((showBottom && qr == nil) || busy || load)
+          action("分享", "square.and.arrow.up") { if let img = render() { share = Artifact(image: img) } }
+            .disabled((showBottom && qr == nil) || busy || load)
+          action("复制链接", "link") {
+            UIPasteboard.general.url = content.link
+            result = "链接已复制"
           }
-          Button {
-            if let img = render() { share = Artifact(image: img) }
-          } label: {
-            Label("分享图片", systemImage: "square.and.arrow.up")
-          }
-        }.buttonStyle(.bordered).disabled((showBottom && qr == nil) || busy || load)
-        Button("复制链接") {
-          UIPasteboard.general.url = content.link
-          result = "链接已复制"
         }
         if let result { Text(result).font(.footnote).foregroundStyle(.secondary) }
       }.padding()
-    }.navigationTitle("分享卡片").task(id: content.link) {
+    }
+    .background(Color(uiColor: .secondarySystemBackground))
+    .navigationTitle("分享卡片").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        Menu {
+          if cover != nil { Toggle("显示封面", isOn: $showCover) }
+          Toggle("显示二维码和页脚", isOn: $showBottom)
+          Toggle("深色卡片", isOn: $dark)
+        } label: { Image(systemName: "slider.horizontal.3") }.accessibilityLabel("卡片选项")
+      }
+    }
+    .task(id: content.link) {
       qr = nil
       cover = nil
       load = true
@@ -155,6 +160,15 @@ struct SharePoster: View {
       })
     else { return nil }
     return try? await ArtworkStore.shared.image(url, pixels: pixels, maximum: 15 * ArtworkStore.mib)
+  }
+  private func action(_ title: String, _ symbol: String, _ run: @escaping () -> Void) -> some View {
+    Button(action: run) {
+      VStack(spacing: 6) {
+        Image(systemName: symbol).font(.system(size: 18, weight: .medium))
+          .frame(width: 48, height: 48).background(Color(uiColor: .systemBackground), in: Circle())
+        Text(title).font(.caption).foregroundStyle(.secondary)
+      }.frame(maxWidth: .infinity)
+    }.buttonStyle(.plain)
   }
   private var card: some View {
     VStack(alignment: .leading, spacing: 12) {

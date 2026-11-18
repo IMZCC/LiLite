@@ -58,7 +58,10 @@ extension BiliAPI {
     let headers = try ClientMetadata.headers(device: device, token: token,
       build: Int32(info?["CFBundleVersion"] as? String ?? "") ?? 1, version: info?["CFBundleShortVersionString"] as? String ?? "1.0")
     for (name, value) in headers { r.setValue(value, forHTTPHeaderField: name) }
-    r.setValue("PiliNative/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
+    // Same client identity as the metadata above and the android_hd token.
+    r.setValue("Mozilla/5.0 BiliDroid/2.0.1 (bbcallen@gmail.com) os/android model/android_hd mobi_app/android_hd build/2001100 channel/master innerVer/2001100 osVer/15 network/2",
+      forHTTPHeaderField: "User-Agent")
+    r.setValue("11111111111111111111111111111111:1111111111111111:0:0", forHTTPHeaderField: "x-bili-trace-id")
     let original = r
     let (bytes, raw) = try await ConnectionRetry.current().perform(readOnly: readOnly) { _ in
       let fresh = try await AccountJar.shared.current(credentials:.mobile)

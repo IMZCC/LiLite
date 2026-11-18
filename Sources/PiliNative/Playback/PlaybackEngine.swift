@@ -89,13 +89,28 @@ struct PlaybackEnginePicker: View {
   }
 }
 
+/// One checked row per engine with what it is for under the name, as the original's choice lists.
 struct PlaybackEngineSettings: View {
+  @AppStorage(PlaybackEngineKind.key) private var selected = PlaybackEngineKind.mpv.rawValue
   var body: some View {
-    Form {
+    List {
       Section {
-        PlaybackEnginePicker()
+        ForEach(PlaybackEngineKind.allCases, id: \.self) { kind in
+          Button {
+            TouchFeedback.light()
+            selected = kind.rawValue
+          } label: {
+            HStack(spacing: 12) {
+              SettingsRowLabel(title: kind.title, symbol: kind == .mpv ? "film.stack" : "play.rectangle", color: kind == .mpv ? .purple : .blue)
+              Spacer(minLength: 8)
+              if selected == kind.rawValue {
+                Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(.tint)
+              }
+            }.contentShape(Rectangle())
+          }.buttonStyle(.plain)
+        }
       } footer: {
-        Text("mpv：与原版同款内核，支持更多解码与倍速选项\n两种内核均支持画中画与投屏，AVPlayer 另支持隔空播放\n重新进入视频后生效")
+        Text("mpv 与原版同款内核，支持更多解码格式与倍速；AVPlayer 为系统播放器，另支持隔空播放。两种内核均支持画中画与投屏，重新进入视频后生效。")
       }
     }.navigationTitle("播放器内核")
   }

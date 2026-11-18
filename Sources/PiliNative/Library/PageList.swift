@@ -11,6 +11,7 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
   var embeddedComments = false
   var active = true
   @Environment(\.activeCatalogPage) private var channelActive
+  @Environment(\.preparedCatalogPage) private var channelPrepared
   var scrollToTopRequest = 0
   var prefetchFirstPage = false
   var heading: AnyView? = nil
@@ -91,7 +92,7 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
         await load(reset: true)
         await header
       }
-      .task(id: channelActive && (active || prefetchFirstPage)) { if channelActive && (active || prefetchFirstPage) && !loaded { await load(reset: true) } }
+      .task(id: channelPrepared && (active || prefetchFirstPage)) { if channelPrepared && (active || prefetchFirstPage) && !loaded { await load(reset: true) } }
       .onChange(of: channelActive && active) { _, visible in
         if !visible { manualLoad?.cancel(); manualLoad = nil }
       }
@@ -103,8 +104,15 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
         if let first = items.first { withAnimation { proxy.scrollTo(first.id, anchor: .top) } }
       }
       .onChange(of: loaded) { _, didLoad in
+        // The original reveals the located reply a quarter down the list once it is laid out
+        // (jumpToItem in a post-frame callback). Rows are lazy, so retry after layout settles.
         if didLoad, let focus, items.contains(where: { $0.id == focus }) {
-          proxy.scrollTo(focus, anchor: .center)
+          Task { @MainActor in
+            for wait in [30, 150, 400] {
+              try? await Task.sleep(for: .milliseconds(wait))
+              proxy.scrollTo(focus, anchor: UnitPoint(x: 0.5, y: 0.25))
+            }
+          }
         }
       }
     }

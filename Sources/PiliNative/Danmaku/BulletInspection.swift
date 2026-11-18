@@ -62,113 +62,6 @@ struct BulletTapSurface: UIViewRepresentable {
     if receipt.liked{ids.insert(key)}else{ids.remove(key)}
   }
 }
-struct BulletActionPanel: View {
-  let cid: Int64, bullet: Bullet
-  @EnvironmentObject private var accounts: AccountContext
-  @ObservedObject private var likes = BulletLikes.shared
-  @ObservedObject private var recall = BulletRecall.shared
-  @State private var confirmRecall: String?
-  @Environment(\.dismiss) private var dismiss
-  private var liked: Bool {
-    guard let uid = accounts.state.active, let id = bullet.entryID else { return false }
-    return likes.ids.contains(.init(uid: uid, cid: cid, id: id))
-  }
-  @State private var busy = false
-  @State private var report = false
-  @State private var result: String?
-  var body: some View {
-    Form {
-      Section(clockText(bullet.time)) {
-        Text(bullet.special?.text ?? bullet.text).textSelection(.enabled)
-      }
-      Section {
-        Button("复制内容") {
-          UIPasteboard.general.string = bullet.special?.text ?? bullet.text
-          result = "已复制"
-        }
-        if let id = bullet.entryID, id > 0 {
-          Button(liked ? "取消点赞" : "点赞") {
-            Task {
-              guard let uid = accounts.state.active, !busy else {
-                result = "请先登录"
-                return
-              }
-              busy = true
-              defer { busy = false }
-              do {
-                let desired = !liked
-                let receipt=try await BiliAPI.shared.bulletLike(id:id,cid:cid,on:desired,uid:uid)
-                guard accounts.state.active==uid else{return}
-                likes.record(.init(uid:uid,cid:cid,id:id),receipt:receipt,initial:bullet.likes ?? 0)
-                result=receipt.liked ? "已点赞":"已取消点赞"
-              } catch { result = error.localizedDescription }
-            }
-          }.disabled(busy)
-          if let uid = accounts.state.active, recall.owns(bullet, cid: cid, author: uid) {
-            if recall.visible(bullet, cid: cid) {
-              Button("撤回弹幕", role: .destructive) { confirmRecall = uid }.disabled(busy)
-            } else {
-              Text("已撤回").foregroundStyle(.secondary)
-            }
-          } else {
-            Button("举报弹幕") {
-              if accounts.state.active == nil { result = "请先登录" } else { report = true }
-            }
-          }
-        }
-        if let sender = bullet.sender, !sender.isEmpty {
-          if let uid = accounts.state.active {
-            Button("在账号中屏蔽该发送者") {
-              Task {
-                guard !busy else { return }
-                busy = true
-                defer { busy = false }
-                do {
-                  try await AccountBulletRules.shared.update(uid, type: 2, input: sender, senderHash: true)
-                  result = "已屏蔽"
-                } catch { result = error.localizedDescription }
-              }
-            }.disabled(busy)
-          }
-          Button("在本机屏蔽该发送者") {
-            do {
-              var s = DanmakuStyle.decode(
-                UserDefaults.standard.data(forKey: DanmakuStyle.key) ?? Data())
-              s.senders = Set(s.senders.split(whereSeparator: \.isNewline).map(String.init)).union([
-                sender
-              ]).sorted().joined(separator: "\n")
-              try s.save()
-              result = "已屏蔽"
-            } catch { result = error.localizedDescription }
-          }
-        }
-      }
-      if let result { Text(result) }
-    }.navigationTitle("弹幕")
-      .confirmationDialog(
-        "撤回自己发送的这条弹幕？",
-        isPresented: Binding(
-          get: { confirmRecall != nil }, set: { if !$0 { confirmRecall = nil } }),
-        presenting: confirmRecall
-      ) { uid in
-        Button("撤回", role: .destructive) {
-          Task {
-            guard !busy, accounts.state.active == uid else { return }
-            busy = true
-            defer { busy = false }
-            do {
-              try await recall.recall(bullet, cid: cid, author: uid)
-              dismiss()
-            } catch { result = error.localizedDescription }
-          }
-        }
-      }.piliSheet(isPresented: $report) {
-        if let id = bullet.entryID, let uid = accounts.state.active {
-          BulletReportSheet(cid:cid,id:id,uid:uid,sender:bullet.sender){result=$0}
-        }
-      }
-  }
-}
 extension BiliAPI {
   func bulletLike(id: Int64, cid: Int64, on: Bool, uid: String) async throws ->BulletVoteReceipt {
     do{try await submit(
@@ -189,7 +82,7 @@ extension BiliAPI {
     try BulletComplaintReceipt.verify(await submitResponse("/x/dm/report/add", f, expectedAccount: uid))
   }
 }
-private struct BulletReportSheet: View {
+struct BulletReportSheet: View {
   let cid:Int64,id:Int64,uid:String,sender:String?,done:(String)->Void
   @Environment(\.dismiss) private var dismiss
   @State private var reason = 1
@@ -201,16 +94,49 @@ private struct BulletReportSheet: View {
     1: "违法违禁", 2: "色情低俗", 3: "赌博诈骗", 4: "人身攻击", 5: "侵犯隐私", 6: "垃圾广告", 7: "引战", 8: "剧透", 9: "恶意刷屏",
     10: "视频无关", 11: "其它", 12: "青少年不良信息", 13: "违法信息外链",
   ]
+  /// The original's report dialog: a radio list of reasons, a note for 其它, 同时屏蔽, then submit.
   var body: some View {
     PiliNavigationStack {
-      Form {
-        Picker("举报原因", selection: $reason) {
-          ForEach(reasons.keys.sorted(), id: \.self) { k in Text(reasons[k] ?? "").tag(k) }
+      List {
+        Section {
+          ForEach(reasons.keys.sorted(), id: \.self) { k in
+            Button { TouchFeedback.light(); reason = k } label: {
+              HStack(spacing: 12) {
+                Image(systemName: reason == k ? "largecircle.fill.circle" : "circle")
+                  .font(.system(size: 19)).foregroundStyle(reason == k ? Color.accentColor : Color.secondary)
+                Text(reasons[k] ?? "").foregroundStyle(.primary)
+                Spacer(minLength: 0)
+              }.contentShape(Rectangle())
+            }.buttonStyle(.plain)
+          }
+        } header: { Text("请选择举报理由") }
+        if reason == 11 {
+          Section { TextField("请输入举报说明", text: $bodyText, axis: .vertical).lineLimit(2...5) }
         }
-        if reason == 11 { TextField("举报说明", text: $bodyText, axis: .vertical) }
-        if sender?.isEmpty==false{Toggle("同时屏蔽发送者",isOn:$block)}
-        if let issue { Text(issue) }
-        Button("提交举报", role: .destructive) {
+        if sender?.isEmpty == false {
+          Section {
+            Button { block.toggle() } label: {
+              HStack(spacing: 12) {
+                Image(systemName: block ? "checkmark.square.fill" : "square")
+                  .font(.system(size: 19)).foregroundStyle(block ? Color.accentColor : Color.secondary)
+                Text("拉黑该用户").foregroundStyle(.primary)
+                Spacer(minLength: 0)
+              }.contentShape(Rectangle())
+            }.buttonStyle(.plain)
+          }
+        }
+        if let issue { Text(issue).font(.footnote).foregroundStyle(.red).listRowBackground(Color.clear) }
+      }
+      .navigationTitle("举报弹幕").navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+        ToolbarItem(placement: .confirmationAction) { submit }
+      }
+    }
+    .presentationDetents([.medium, .large])
+  }
+  private var submit: some View {
+        Button("提交") {
           Task {
             guard !busy else { return }
             busy = true
@@ -230,59 +156,124 @@ private struct BulletReportSheet: View {
           }
         }.disabled(
           busy || reason == 11 && bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-      }.navigationTitle("举报弹幕").toolbar { Button("取消") { dismiss() } }
-    }
   }
 }
+/// The original's tap-on-danmaku tip: a small dark bubble under the bullet, its arrow pointing at
+/// it, holding icon actions — 赞 (with the count), 复制, 撤回 for your own or 举报, and 跳转 when
+/// the text names a time.
 struct PinnedBullet: View {
   @ObservedObject var inspector: BulletInspector
   let cid: Int64?
   var duration = 0.0
   var seek: ((Double) -> Void)? = nil
-  @State private var detail: BulletPick?
+  @EnvironmentObject private var accounts: AccountContext
+  @ObservedObject private var likes = BulletLikes.shared
+  @ObservedObject private var recall = BulletRecall.shared
+  @State private var reporting: BulletPick?
+  @State private var confirmRecall: BulletPick?
+  @State private var toast: String?
+  @State private var busy = false
+  private let item: CGFloat = 40
   var body: some View {
     GeometryReader { geo in
       if let pick = inspector.pick, let cid {
-        let w = min(240, max(1, geo.size.width - 16))
-        VStack(alignment: .leading, spacing: 4) {
-          Text(pick.text).lineLimit(2).bold().foregroundStyle(.white)
-          HStack {
-            if let seek, let t = BulletTrackFrame.timeLink(pick.text, duration: duration) {
-              Button(clockText(t)) {
-                seek(t)
-                inspector.pick = nil
-              }.foregroundStyle(.white)
-            }
-            Button("操作") { detail = pick }.foregroundStyle(.white)
-            Button("复制") {
+        let jump = seek == nil ? nil : BulletTrackFrame.timeLink(pick.text, duration: duration)
+        let count = 3 + (jump == nil ? 0 : 1)
+        let w = CGFloat(count) * item + 8
+        let x = min(max(w / 2 + 6, pick.rect.midX), geo.size.width - w / 2 - 6)
+        let below = pick.rect.maxY + 6 + 44 < geo.size.height
+        VStack(spacing: 0) {
+          if below { arrow(up: true).offset(x: pick.rect.midX - x) }
+          HStack(spacing: 0) {
+            likeItem(pick, cid: cid)
+            icon("doc.on.doc", "复制") {
               UIPasteboard.general.string = pick.text
-              inspector.pick = nil
-            }.foregroundStyle(.white)
-            Spacer()
-            Button {
-              inspector.pick = nil
-            } label: {
-              Image(systemName: "xmark").foregroundStyle(.white)
-            }.accessibilityLabel("关闭")
-          }
-        }.font(.caption).padding(8).frame(width: w).background(
-          .black.opacity(0.83), in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-        )
-        .position(
-          x: min(max(w / 2 + 4, pick.rect.midX), geo.size.width - w / 2 - 4),
-          y: min(max(34, pick.rect.midY), max(34, geo.size.height - 34))
-        )
-        .piliSheet(item: $detail, onDismiss: { inspector.pick = nil }) { item in
-          PiliNavigationStack {
-            BulletActionPanel(cid: cid, bullet: item.bullet).toolbar {
-              Button("完成") { detail = nil }
+              done("已复制")
             }
+            if let uid = accounts.state.active, recall.owns(pick.bullet, cid: cid, author: uid) {
+              icon("arrow.uturn.backward", "撤回") { confirmRecall = pick }
+            } else {
+              icon("exclamationmark.bubble", "举报") {
+                if accounts.state.active == nil { done("请先登录") } else { reporting = pick }
+              }
+            }
+            if let jump, let seek {
+              icon("scope", "跳转到 " + clockText(jump)) { seek(jump); inspector.pick = nil }
+            }
+          }
+          .padding(.horizontal, 4).frame(height: 38)
+          .background(.black.opacity(0.78), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+          if !below { arrow(up: false).offset(x: pick.rect.midX - x) }
+        }
+        .frame(width: w)
+        .position(x: x, y: below ? pick.rect.maxY + 4 + 25 : pick.rect.minY - 4 - 25)
+        .overlay(alignment: .top) {
+          if let toast {
+            Text(toast).font(.caption).foregroundStyle(.white).padding(.horizontal, 10).padding(.vertical, 6)
+              .background(.black.opacity(0.7), in: Capsule())
+              .position(x: geo.size.width / 2, y: 30)
+          }
+        }
+        .confirmationDialog("撤回自己发送的这条弹幕？", isPresented: Binding(
+          get: { confirmRecall != nil }, set: { if !$0 { confirmRecall = nil } }), presenting: confirmRecall
+        ) { p in
+          Button("撤回", role: .destructive) {
+            Task {
+              guard let uid = accounts.state.active, !busy else { return }
+              busy = true; defer { busy = false }
+              do { try await recall.recall(p.bullet, cid: cid, author: uid); done("删除成功") }
+              catch { done(error.localizedDescription) }
+            }
+          }
+        }
+        .piliSheet(item: $reporting, onDismiss: { inspector.pick = nil }) { p in
+          if let id = p.bullet.entryID, let uid = accounts.state.active {
+            BulletReportSheet(cid: cid, id: id, uid: uid, sender: p.bullet.sender) { done($0) }
           }
         }
       }
     }.onChange(of: cid) { _, _ in
       inspector.pick = nil
-      detail = nil
+      reporting = nil
     }.onDisappear { inspector.pick = nil }
+  }
+  private func arrow(up: Bool) -> some View {
+    Path { p in
+      p.move(to: CGPoint(x: 0, y: up ? 6 : 0)); p.addLine(to: CGPoint(x: 6, y: up ? 0 : 6))
+      p.addLine(to: CGPoint(x: 12, y: up ? 6 : 0)); p.closeSubpath()
+    }.fill(.black.opacity(0.78)).frame(width: 12, height: 6)
+  }
+  private func icon(_ symbol: String, _ label: String, _ action: @escaping () -> Void) -> some View {
+    Button { TouchFeedback.light(); action() } label: {
+      Image(systemName: symbol).font(.system(size: 16, weight: .medium)).foregroundStyle(.white)
+        .frame(width: item, height: 38).contentShape(Rectangle())
+    }.buttonStyle(.plain).accessibilityLabel(label)
+  }
+  @ViewBuilder private func likeItem(_ pick: BulletPick, cid: Int64) -> some View {
+    let uid = accounts.state.active
+    let liked = uid.flatMap { u in pick.bullet.entryID.map { likes.ids.contains(.init(uid: u, cid: cid, id: $0)) } } ?? false
+    let n = likes.count(pick.bullet, cid: cid, owner: uid)
+    icon(liked ? "hand.thumbsup.fill" : "hand.thumbsup", liked ? "取消点赞" : "点赞") {
+      guard let uid, let id = pick.bullet.entryID, !busy else { done("请先登录"); return }
+      Task {
+        busy = true; defer { busy = false }
+        do {
+          let receipt = try await BiliAPI.shared.bulletLike(id: id, cid: cid, on: !liked, uid: uid)
+          guard accounts.state.active == uid else { return }
+          likes.record(.init(uid: uid, cid: cid, id: id), receipt: receipt, initial: pick.bullet.likes ?? 0)
+          done(receipt.liked ? "点赞成功" : "取消点赞成功")
+        } catch { done(error.localizedDescription) }
+      }
+    }
+    .overlay(alignment: .topTrailing) {
+      if n > 0 { Text("\(n)").font(.system(size: 10.5)).foregroundStyle(.white).offset(x: -4, y: 2) }
+    }
+  }
+  private func done(_ message: String) {
+    toast = message
+    Task {
+      try? await Task.sleep(for: .seconds(1.4))
+      if toast == message { toast = nil; inspector.pick = nil }
+    }
   }
 }

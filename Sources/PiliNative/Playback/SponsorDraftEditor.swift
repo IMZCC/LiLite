@@ -13,78 +13,132 @@ struct SponsorEditor: View {
   var body: some View {
     if embedded { form } else { PiliNavigationStack { form } }
   }
-  private var form: some View {
-      Form {
-        ForEach($model.sponsorDrafts) { $row in
-          Section {
-            Picker("类别", selection: Binding(get: { row.category }, set: { row.select($0) })) {
-              ForEach(SponsorCategory.all) { c in Text(c.title).tag(c.id) }
-            }
-            Picker("操作", selection: $row.action) {
-              ForEach(row.kind.actions, id: \.self) { a in
-                Text(["skip": "跳过", "mute": "静音", "poi": "精彩时刻", "full": "整段视频"][a] ?? a).tag(a)
-              }
-            }
-            if row.action != "full" { point("开始", $row.start, edge: 0) }
-            if row.action != "full" && row.action != "poi" {
-              point("结束", $row.end, edge: model.duration)
-            }
-            HStack {
-              Button("预览") {
-                do {
-                  _ = try row.range(duration: model.duration)
-                  preview = row
-                } catch { issue = error.localizedDescription }
-              }
-              Spacer()
-              Button("移除", role: .destructive) {
-                let id = row.id
-                model.sponsorDrafts.removeAll { $0.id == id }
-              }
-            }.buttonStyle(.borderless)
-          }
-        }.onDelete { model.sponsorDrafts.remove(atOffsets: $0) }.onMove {
-          model.sponsorDrafts.move(fromOffsets: $0, toOffset: $1)
-        }
-        Button {
-          model.sponsorDrafts.insert(.init(end: fallback), at: 0)
-        } label: {
-          Label("添加片段", systemImage: "plus")
-        }
-        if let issue { Text(issue).foregroundStyle(.secondary) }
-      }.disabled(busy).modifier(ReplyEdgeDismiss(standalone: !busy)).navigationTitle("提交片段")
-        .toolbar {
-          ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() }.disabled(busy) }
-          ToolbarItem(placement: .primaryAction) { EditButton().disabled(busy) }
-          ToolbarItem(placement: .confirmationAction) {
-            Button("提交") {
-              do {
-                _ = try SponsorDraft.payload(model.sponsorDrafts, duration: model.duration)
-                issue = nil
-                confirm = true
-              } catch { issue = error.localizedDescription }
-            }
-            .disabled(busy || model.sponsorDrafts.isEmpty)
-          }
-        }.confirmationDialog(
-          "提交 \(model.sponsorDrafts.count) 个片段到当前空降助手服务器？", isPresented: $confirm,
-          titleVisibility: .visible
-        ) {
-          Button("确认提交") { Task { await publish() } }
-        }.piliSheet(item: $preview) { row in SponsorPreview(model: model, draft: row) }
-      .interactiveDismissDisabled(busy)
+  @State private var editing: (id: SponsorDraft.ID, start: Bool)?
+  @State private var editText = ""
+  private static func actionTitle(_ a: String) -> String {
+    ["skip": "跳过", "mute": "静音", "poi": "精彩时刻", "full": "整段视频"][a] ?? a
   }
-  private func point(_ label: String, _ value: Binding<Double>, edge: Double) -> some View {
-    HStack {
-      Text(label)
-      TextField("秒", value: value, format: .number).keyboardType(.decimalPad).monospacedDigit()
-      Menu {
-        Button("当前播放时间") { value.wrappedValue = fallback }
-        Button(edge == 0 ? "视频开头" : "视频结尾") { value.wrappedValue = edge }
-      } label: {
-        Image(systemName: "clock.arrow.circlepath").accessibilityLabel("设置" + label + "时间")
+  /// The original's 提交片段 panel: one rounded card per segment (开始/结束 with 当前 · 开头/结尾 ·
+  /// 编辑 icons, then 分类 ▾ and 行为类别 ▾), preview and remove in the card's corners, a ✓ button
+  /// floating at the bottom right.
+  private var form: some View {
+    ScrollView {
+      LazyVStack(spacing: 10) {
+        if model.sponsorDrafts.isEmpty {
+          Text("暂无数据").foregroundStyle(.secondary).padding(.top, 80)
+        }
+        ForEach($model.sponsorDrafts) { $row in card($row) }
+        if let issue { Text(issue).font(.footnote).foregroundStyle(.red).padding(.horizontal, 16) }
+      }
+      .padding(.vertical, 8).padding(.bottom, 88)
+    }
+    .overlay(alignment: .bottomTrailing) {
+      if !model.sponsorDrafts.isEmpty {
+        Button {
+          do {
+            _ = try SponsorDraft.payload(model.sponsorDrafts, duration: model.duration)
+            issue = nil
+            confirm = true
+          } catch { issue = error.localizedDescription }
+        } label: {
+          Group { if busy { ProgressView() } else { Image(systemName: "checkmark").font(.system(size: 19, weight: .semibold)) } }
+            .frame(width: 50, height: 50)
+        }
+        .buttonStyle(.glassProminent).buttonBorderShape(.circle).disabled(busy)
+        .accessibilityLabel("提交").padding(18)
       }
     }
+    .disabled(busy).modifier(ReplyEdgeDismiss(standalone: !busy))
+    .navigationTitle("提交片段").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() }.disabled(busy) }
+      ToolbarItem(placement: .primaryAction) {
+        Button { model.sponsorDrafts.insert(.init(end: fallback), at: 0) } label: { Image(systemName: "plus") }
+          .accessibilityLabel("添加片段").disabled(busy)
+      }
+    }
+    .alert("确定无误再提交", isPresented: $confirm) {
+      Button("取消", role: .cancel) {}
+      Button("确定提交") { Task { await publish() } }
+    }
+    .alert((editing?.start ?? true) ? "开始" : "结束", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
+      TextField("时:分:秒", text: $editText).keyboardType(.numbersAndPunctuation)
+      Button("取消", role: .cancel) {}
+      Button("确定") { applyEdit() }
+    }
+    .piliSheet(item: $preview) { row in SponsorPreview(model: model, draft: row) }
+    .interactiveDismissDisabled(busy)
+  }
+  private func card(_ row: Binding<SponsorDraft>) -> some View {
+    let r = row.wrappedValue
+    return VStack(alignment: .leading, spacing: 8) {
+      if r.action != "full" {
+        point(row, start: true)
+        if r.action != "poi" { point(row, start: false) }
+      }
+      HStack(spacing: 16) {
+        Menu {
+          ForEach(SponsorCategory.all) { c in
+            Button(c.title) { row.wrappedValue.select(c.id) }
+          }
+        } label: { menuText("分类", SponsorCategory.all.first { $0.id == r.category }?.title ?? r.category) }
+        Menu {
+          ForEach(r.kind.actions, id: \.self) { a in Button(Self.actionTitle(a)) { row.wrappedValue.action = a } }
+        } label: { menuText("行为类别", Self.actionTitle(r.action)) }
+      }
+    }
+    .font(.subheadline)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 12).padding(.top, 24).padding(.bottom, 12)
+    .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    .overlay(alignment: .topLeading) {
+      iconButton("eye", "预览") {
+        do { _ = try r.range(duration: model.duration); preview = r }
+        catch { issue = error.localizedDescription }
+      }
+    }
+    .overlay(alignment: .topTrailing) {
+      iconButton("xmark", "移除") { model.sponsorDrafts.removeAll { $0.id == r.id } }
+    }
+    .padding(.horizontal, 16)
+  }
+  private func point(_ row: Binding<SponsorDraft>, start: Bool) -> some View {
+    let value = start ? row.wrappedValue.start : row.wrappedValue.end
+    return HStack(spacing: 5) {
+      Text((start ? "开始: " : "结束: ") + clockText(value)).monospacedDigit()
+      iconButton("location", "设为当前") { set(row, start, fallback) }
+      iconButton(start ? "backward.end" : "forward.end", start ? "视频开头" : "视频结尾") {
+        set(row, start, start ? 0 : model.duration)
+      }
+      iconButton("pencil", "编辑") { editText = clockText(value); editing = (row.wrappedValue.id, start) }
+    }
+  }
+  private func set(_ row: Binding<SponsorDraft>, _ start: Bool, _ value: Double) {
+    if start { row.wrappedValue.start = value } else { row.wrappedValue.end = value }
+    if row.wrappedValue.action == "poi" { row.wrappedValue.end = row.wrappedValue.start }
+  }
+  /// "1:02:03", "2:03" or "123" seconds, as the original parses it.
+  private func applyEdit() {
+    guard let target = editing, let i = model.sponsorDrafts.firstIndex(where: { $0.id == target.id }) else { return }
+    let parts = editText.split(separator: ":").reversed().compactMap { Double($0) }
+    guard !parts.isEmpty else { return }
+    let seconds = parts.enumerated().reduce(0.0) { $0 + $1.element * pow(60, Double($1.offset)) }
+    guard seconds >= 0, seconds <= model.duration else { issue = "时间超出视频长度"; return }
+    if target.start { model.sponsorDrafts[i].start = seconds } else { model.sponsorDrafts[i].end = seconds }
+    if model.sponsorDrafts[i].action == "poi" { model.sponsorDrafts[i].end = model.sponsorDrafts[i].start }
+  }
+  private func menuText(_ title: String, _ value: String) -> some View {
+    HStack(spacing: 2) {
+      Text(title + ": ").foregroundStyle(.primary)
+      Text(value).foregroundStyle(.tint)
+      Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).foregroundStyle(.tint)
+    }
+  }
+  private func iconButton(_ symbol: String, _ label: String, _ action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: symbol).font(.system(size: 14, weight: .medium)).foregroundStyle(.secondary)
+        .frame(width: 30, height: 30).contentShape(Rectangle())
+    }.buttonStyle(.plain).accessibilityLabel(label)
   }
   @MainActor private func publish() async {
     guard !busy, let source = model.timeline.source, let bv = source.bvid else { return }

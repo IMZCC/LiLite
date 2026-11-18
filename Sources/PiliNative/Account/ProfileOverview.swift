@@ -10,7 +10,9 @@ struct ProfileOverview: View {
     VStack(spacing: 18) {
       Button { navigate(.space(uid, person?.uname ?? "我的空间")) } label: {
         VStack(spacing: 10) {
-          ProfileAvatar(url: person?.face.flatMap(httpsURL), size: 88, pendant: person?.pendantURL)
+          // The frame is 1.75x the avatar; the list row clips, so the row reserves its overhang.
+          ProfileAvatar(url: person?.face.flatMap(httpsURL), size: 88, pendant: person?.pendantURL,
+            reservesPendant: true)
             .padding(.vertical, 10)
           VStack(spacing: 4) {
             Text(person?.uname ?? accounts.state.accounts.first(where: { $0.id == uid })?.label ?? "当前账号")

@@ -9,32 +9,57 @@ extension EnvironmentValues {
   }
 }
 
+/// A thread a link asked for, handed to the page's own comment list once. The video detail's
+/// embedded comments open it the way a tap on a floor does (the panel under the player), as the
+/// original's videoPush(rootRpId:, secondRpId:) does.
+final class PendingReplyThread {
+  let oid: Int64, link: LinkedReply
+  private(set) var consumed = false
+  init(oid: Int64, link: LinkedReply) { self.oid = oid; self.link = link }
+  @MainActor func take(oid: Int64) -> LinkedReply? {
+    guard !consumed, oid == self.oid else { return nil }
+    consumed = true
+    return link
+  }
+}
+private struct PendingReplyThreadKey: EnvironmentKey { static let defaultValue: PendingReplyThread? = nil }
+extension EnvironmentValues {
+  var pendingReplyThread: PendingReplyThread? {
+    get { self[PendingReplyThreadKey.self] }
+    set { self[PendingReplyThreadKey.self] = newValue }
+  }
+}
+
 private struct LinkedDiscussion: ViewModifier {
   let oid: Int64?, type: Int, author: Int64?, playback: ReplyPlaybackTarget?
   let selectComments:(()->Void)?
   @Environment(\.linkedReply) private var requested
   @EnvironmentObject private var accounts: AccountContext
-  private struct Thread:Identifiable {
+  private struct Thread:Identifiable, Hashable {
     let id=UUID(), oid:Int64, type:Int, author:Int64?, reader:String?, link:LinkedReply
   }
   @State private var consumed:LinkedReply?
-  @State private var sheet:Thread?
+  @State private var pending:PendingReplyThread?
+  @State private var page:Thread?
   func body(content: Content) -> some View {
     content.environment(\.linkedReply, nil)
+      .environment(\.pendingReplyThread, pending)
       .task(id: "\(oid ?? 0):\(type):\(requested?.root ?? 0):\(requested?.anchor ?? 0):\(accounts.state.active ?? "")") {
-        if let old=sheet,old.oid != oid || old.type != type || old.reader != accounts.state.active || old.link != requested {sheet=nil}
         guard let oid,oid>0,type>0,let requested,consumed != requested else{return}
-        consumed=requested;selectComments?()
-        sheet=Thread(oid:oid,type:type,author:author,reader:accounts.state.active,link:requested)
-      }
-      .piliSheet(item:$sheet){target in
-        if target.oid==oid,target.type==type,target.reader==accounts.state.active {
-          PiliNavigationStack {
-            Discussion(oid:target.oid,type:target.type,root:target.link.root,owner:target.author,anchor:target.link.anchor)
-              .environment(\.replyPlayback,playback)
-              .toolbar{ToolbarItem(placement:.confirmationAction){Button("完成"){sheet=nil}}}
-          }
+        consumed=requested
+        if let selectComments {
+          // Pages with embedded comments (video, episode): switch to them and let the list
+          // open the thread as its own floor panel. No sheet over the page.
+          pending=PendingReplyThread(oid:oid,link:requested)
+          selectComments()
+        } else {
+          // Elsewhere the original pushes the reply page.
+          page=Thread(oid:oid,type:type,author:author,reader:accounts.state.active,link:requested)
         }
+      }
+      .navigationDestination(item:$page){target in
+        Discussion(oid:target.oid,type:target.type,root:target.link.root,owner:target.author,anchor:target.link.anchor)
+          .environment(\.replyPlayback,playback)
       }
   }
 }

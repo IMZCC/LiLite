@@ -202,45 +202,113 @@ struct SleepTimerButton: View {
     }
   }
 }
+/// The original's 定时关闭 panel: 禁用 / 15 / 30 / 45 / 60 (and the last custom length) with a
+/// check on the running one — a tap starts it and closes — then 自定义 (hour/minute wheels),
+/// 额外等待视频播放完毕, and the action chips; the countdown sits at the title's right.
 struct SleepTimerForm: View {
   let live: Bool
   @ObservedObject private var timer = PlaybackSleepTimer.shared
-  @State private var minutes = 30
-  @State private var wait = false
-  @State private var action = PlaybackSleepTimer.FinishAction.pause
+  @AppStorage("sleep.lastMinutes") private var chosen = 0
+  @AppStorage("sleep.waitItem") private var wait = false
+  @AppStorage("sleep.action") private var actionRaw = PlaybackSleepTimer.FinishAction.pause.rawValue
+  @State private var custom = false
+  @State private var hour = 0
+  @State private var minute = 30
   @Environment(\.dismiss) var dismiss
+  private var action: PlaybackSleepTimer.FinishAction {
+    PlaybackSleepTimer.FinishAction(rawValue: actionRaw) ?? .pause
+  }
+  private var running: Bool { timer.state != .off }
+  private static func label(_ m: Int) -> String {
+    if m == 0 { return "禁用" }
+    if m == 60 { return "60分钟" }
+    let h = m / 60, r = m % 60
+    return h > 0 && r > 0 ? "\(h)小时\(r)分钟" : h > 0 ? "\(h)小时" : "\(r)分钟"
+  }
   var body: some View {
-    Form {
-        switch timer.state {
-        case .off: EmptyView()
-        case .scheduled(let end, _):
-          LabeledContent("剩余时间") { Text(end, style: .timer).monospacedDigit() }
-          LabeledContent("停止时间") { Text(end, style: .time) }
-        case .finishingItem: Text("将在本集结束时停止")
-        }
-        Picker("时长", selection: $minutes) {
-          ForEach([15, 30, 45, 60], id: \.self) { Text("\($0) 分钟").tag($0) }
-          if ![15, 30, 45, 60].contains(minutes) { Text("\(minutes) 分钟").tag(minutes) }
-        }
-        Stepper("自定义：\(minutes) 分钟", value: $minutes, in: 1...1499)
-        if !live { Toggle("到时播完当前一集", isOn: $wait) }
-        Picker("到时", selection:Binding(get:{action},set:{new in
-          guard new != action else{return};action=new;TouchFeedback.light()
-        })) {
-          ForEach(PlaybackSleepTimer.FinishAction.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-        }
-        Button("开始计时") {
-          timer.schedule(minutes: minutes, afterItem: !live && wait, action: action)
-          dismiss()
-        }
-        if timer.state != .off || timer.preparingExit {
-          Button("取消定时", role: .destructive) {
-            timer.cancel()
-            dismiss()
+    List {
+      Section {
+        ForEach(Array(Set([0, 15, 30, 45, 60, chosen])).sorted(), id: \.self) { m in
+          Button { start(m) } label: {
+            HStack {
+              Text(Self.label(m)).foregroundStyle(.primary)
+              Spacer()
+              if (running ? chosen : 0) == m {
+                Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(.tint)
+              }
+            }.contentShape(Rectangle())
           }
         }
-      }.navigationTitle("定时停止").toolbar { Button("关闭") { dismiss() } }
-
+        Button {
+          hour = (chosen > 0 ? chosen : 30) / 60; minute = (chosen > 0 ? chosen : 30) % 60
+          custom = true
+        } label: {
+          HStack { Text("自定义").foregroundStyle(.primary); Spacer() }.contentShape(Rectangle())
+        }
+        if !live { Toggle("额外等待视频播放完毕", isOn: $wait) }
+      }
+      Section {
+        HStack(spacing: 10) {
+          Text("倒计时结束:")
+          ForEach(PlaybackSleepTimer.FinishAction.allCases, id: \.self) { a in
+            Button {
+              guard a != action else { return }
+              TouchFeedback.light()
+              actionRaw = a.rawValue
+            } label: {
+              Text(a.rawValue).font(.footnote.weight(a == action ? .semibold : .regular))
+                .foregroundStyle(a == action ? Color.accentColor : Color.secondary)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(a == action ? Color.accentColor.opacity(0.14) : Color(uiColor: .tertiarySystemFill),
+                  in: Capsule())
+            }.buttonStyle(.plain)
+          }
+        }
+      }
+    }
+    .navigationTitle("定时关闭").navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) { countdown }
+      ToolbarItem(placement: .topBarLeading) { Button("关闭") { dismiss() } }
+    }
+    .sheet(isPresented: $custom) {
+      NavigationStack {
+        HStack(spacing: 0) {
+          Picker("时", selection: $hour) { ForEach(0..<25, id: \.self) { Text(String(format: "%02d", $0)).tag($0) } }
+            .pickerStyle(.wheel)
+          Text("时")
+          Picker("分", selection: $minute) { ForEach(0..<60, id: \.self) { Text(String(format: "%02d", $0)).tag($0) } }
+            .pickerStyle(.wheel)
+          Text("分")
+        }
+        .padding(.horizontal, 20)
+        .navigationTitle("自定义").navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .cancellationAction) { Button("取消") { custom = false } }
+          ToolbarItem(placement: .confirmationAction) {
+            Button("确认") { custom = false; start(hour * 60 + minute) }
+          }
+        }
+      }
+      .presentationDetents([.height(300)])
+    }
+  }
+  @ViewBuilder private var countdown: some View {
+    switch timer.state {
+    case .off: EmptyView()
+    case .scheduled(let end, _): Text(end, style: .timer).monospacedDigit().font(.subheadline).foregroundStyle(.secondary)
+    case .finishingItem: Text("本集结束").font(.subheadline).foregroundStyle(.secondary)
+    }
+  }
+  private func start(_ m: Int) {
+    TouchFeedback.light()
+    if m <= 0 {
+      timer.cancel()
+    } else {
+      chosen = m
+      timer.schedule(minutes: m, afterItem: !live && wait, action: action)
+    }
+    dismiss()
   }
 }
 

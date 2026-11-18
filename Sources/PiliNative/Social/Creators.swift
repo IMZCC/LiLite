@@ -219,7 +219,7 @@ struct CreatorSpace: View {
   @State private var busy = false
   @State private var collapse = ScrollCollapse()
   @State private var route: Route?
-  @Namespace private var sectionSpace
+  @State private var sectionMotion = CreatorSectionMotion()
   @Environment(\.colorScheme) private var scheme
   private enum Route: Hashable {
     case library, relations(fans: Bool), report(String), shared(String, also: Bool), chat
@@ -242,9 +242,25 @@ struct CreatorSpace: View {
           }.padding(.horizontal, 16).padding(.bottom, 6)
         }
         if !tabs.isEmpty, let selected {
-          if tabs.count > 1 { sectionBar(selected) }
-          section(selected, space).id("\(mid):\(accounts.state.active ?? ""):\(selected.param)")
-            .frame(maxHeight: .infinity, alignment: .top)
+          if tabs.count > 1 {
+            CreatorSectionBar(tabs: tabs, selected: selected.param, motion: sectionMotion) { param in
+              if param == selected.param { collapse.expand() } else { selectedTab = param }
+            }
+          }
+          // Sections page horizontally like the original's TabBarView; visited ones stay alive.
+          RetainedDeck(
+            choices: tabs.map(\.param),
+            selection: Binding(get: { selected.param }, set: { selectedTab = $0 }),
+            swipe: tabs.count > 1, onProgress: sectionMotion.update
+          ) { param in
+            if let tab = tabs.first(where: { $0.param == param }) {
+              section(tab, space).id("\(mid):\(accounts.state.active ?? ""):\(tab.param)")
+                .frame(maxHeight: .infinity, alignment: .top)
+                // Retained neighbours can report offsets while loading or resizing too.
+                .environment(\.scrollCollapse, selected.param == param ? collapse : nil)
+            }
+          }
+          .frame(maxHeight: .infinity, alignment: .top)
         } else {
           ContentUnavailableView("暂无公开栏目", systemImage: "person.crop.rectangle")
             .frame(maxHeight: .infinity)
@@ -519,35 +535,6 @@ struct CreatorSpace: View {
     case 5: Color(red: 1, green: 0.55, blue: 0.21)
     default: Color(red: 0.96, green: 0.31, blue: 0.31)
     }
-  }
-  private func sectionBar(_ selected: CreatorSpaceRecord.Tab) -> some View {
-    ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 4) {
-        ForEach(tabs) { tab in
-          let active = selected.param == tab.param
-          Button {
-            TouchFeedback.light()
-            if active { collapse.expand() } else {
-              withAnimation(.snappy(duration: 0.25)) { selectedTab = tab.param }
-            }
-          } label: {
-            Text(tab.title ?? CreatorSection(param: tab.param)?.label ?? "")
-              .font(.subheadline.weight(active ? .semibold : .regular))
-              .foregroundStyle(active ? Color.primary : Color.secondary)
-              .padding(.horizontal, 16).padding(.vertical, 8)
-              .background {
-                if active {
-                  Capsule().fill(Color(uiColor: .tertiarySystemFill))
-                    .matchedGeometryEffect(id: "section", in: sectionSpace)
-                }
-              }
-              .contentShape(Capsule())
-          }.buttonStyle(.plain).accessibilityAddTraits(active ? .isSelected : [])
-        }
-      }.padding(.horizontal, 16)
-    }
-    .scrollClipDisabled()
-    .padding(.bottom, 6)
   }
   private var moreMenu: some View {
     Menu {

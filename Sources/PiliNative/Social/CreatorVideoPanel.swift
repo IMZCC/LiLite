@@ -34,9 +34,6 @@ struct CreatorVideoPanel: View {
       CreatorPanelIdentity(mid: mid, fallbackName: name)
       CreatorSpaceMetrics(mid: mid, fallback: nil)
       Section {
-        Picker("投稿排序", selection: $order) {
-          Text("最新发布").tag("pubdate"); Text("最多播放").tag("click")
-        }.pickerStyle(.segmented)
         if previous { Button("载入前面的投稿") { Task { await load(.newer) } }.disabled(busy) }
         ForEach(rows) { row in
           Button {
@@ -55,7 +52,19 @@ struct CreatorVideoPanel: View {
         else if let issue { Text(issue); Button("重试") { Task { await load(failed) } } }
         else if next { Button("载入更多投稿") { Task { await load(.older) } } }
         else if rows.isEmpty { Text("暂无投稿") }
-      } header: { Text(count.map { "投稿 · \($0)" } ?? "投稿") }
+      } header: {
+        // The original's list header: the count on the left, the order as a quiet toggle on the right.
+        HStack {
+          Text(count.map { "投稿 · \($0)" } ?? "投稿")
+          Spacer()
+          Button {
+            TouchFeedback.light()
+            order = order == "click" ? "pubdate" : "click"
+          } label: {
+            Label(order == "click" ? "最多播放" : "最新发布", systemImage: "arrow.up.arrow.down").font(.footnote)
+          }.buttonStyle(.plain).foregroundStyle(.secondary)
+        }
+      }
     }.listStyle(.plain).navigationTitle(name)
       .task(id: scope) { if loadedScope != scope { await load(.initial) } }
       .refreshable { guard !busy else { return }; await load(previous ? .newer : .initial) }
@@ -106,15 +115,18 @@ struct CreatorSpaceMetrics: View {
   @State private var stats: RelationStats?
   @State private var work: WorkStats?
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    // Counts as number-over-label columns, like the space header.
+    HStack(spacing: 0) {
       NavigationLink { RelationsList(uid: String(mid), fans: true) } label: {
-        LabeledContent("粉丝", value: (stats?.follower ?? fallback?.fans)?.formatted() ?? "查看")
+        column("粉丝", stats?.follower ?? fallback?.fans)
       }
       NavigationLink { RelationsList(uid: String(mid), fans: false) } label: {
-        LabeledContent("关注", value: (stats?.following ?? fallback?.following)?.formatted() ?? "查看")
+        column("关注", stats?.following ?? fallback?.following)
       }
-      if let likes = work?.likes ?? fallback?.likes { LabeledContent("获赞", value: likes.formatted()) }
-    }.task(id: "\(mid):\(accounts.state.active ?? "")") {
+      column("获赞", work?.likes ?? fallback?.likes)
+    }
+    .buttonStyle(.plain)
+    .task(id: "\(mid):\(accounts.state.active ?? "")") {
       let uid = accounts.state.active
       stats = nil; work = nil
       let api = BiliAPI.shared
@@ -125,6 +137,13 @@ struct CreatorSpaceMetrics: View {
       let w = await workResult
       if !Task.isCancelled && uid == accounts.state.active { work = w }
     }
+  }
+  private func column(_ title: String, _ value: Int64?) -> some View {
+    VStack(spacing: 2) {
+      Text(value.map { $0.formatted(.number.notation(.compactName)) } ?? "-")
+        .font(.headline.monospacedDigit()).foregroundStyle(.primary)
+      Text(title).font(.caption).foregroundStyle(.secondary)
+    }.frame(maxWidth: .infinity).contentShape(Rectangle())
   }
   private func loadWork(_ uid: String?) async -> WorkStats? {
     guard let uid else { return nil }

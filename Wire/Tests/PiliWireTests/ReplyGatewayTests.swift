@@ -26,7 +26,8 @@ final class ReplyGatewayTests: XCTestCase {
     XCTAssertEqual(signed.0.accessKey, "test-only")
     XCTAssertEqual(signed.0.buvid, signed.1.buvid)
     XCTAssertEqual(signed.1.buvid, "device-B")
-    XCTAssertEqual(signed.1.platform, "ios")
+    XCTAssertEqual(signed.1.platform, "android")
+    XCTAssertEqual(signed.0.mobiApp, "android_hd")
   }
   func testPresentZeroAndEmptyGoodsFieldsRemainDistinguishable() throws {
     typealias Extra = PiliBilibiliMainCommunityReplyV1_Url.Extra

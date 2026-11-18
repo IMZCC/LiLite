@@ -196,33 +196,37 @@ struct CastView: View {
     // fetches it directly, so locking/backgrounding the phone cannot suspend a relay.
     return CastLease(src.url, mime: "video/mp4") {}
   }
+  @State private var manual = false
+  /// The original's 投屏 page: a linear loader while searching, then just the devices (name, and
+  /// the address under it; the one in use tinted). An empty search shows 没有设备 with a retry.
+  /// The connected device's controls follow; manual add and AirPlay sit in the toolbar.
   var body: some View {
     List {
-      if directory.searching { ProgressView().progressViewStyle(.linear).listRowSeparator(.hidden) }
-      Section("可用设备") {
-        ForEach(directory.devices) { d in
-          Button { select(d) } label: {
-            HStack {
-              VStack(alignment: .leading, spacing: 4) {
-                Text(d.name)
-                Text(d.id).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-              }
-              Spacer()
-              if cast.device?.id == d.id { Image(systemName: "checkmark") }
-            }
+      if directory.searching {
+        ProgressView().progressViewStyle(.linear).listRowSeparator(.hidden).listRowBackground(Color.clear)
+      }
+      ForEach(directory.devices) { d in
+        let current = cast.device?.id == d.id
+        Button { if !current { select(d) } } label: {
+          VStack(alignment: .leading, spacing: 3) {
+            Text(d.name).foregroundStyle(current ? Color.accentColor : Color.primary)
+            Text(d.id).font(.caption).foregroundStyle(.secondary).lineLimit(1)
           }
-          .foregroundStyle(cast.device?.id == d.id ? Color.accentColor : Color.primary)
+          .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+      }
+      if !directory.searching, directory.devices.isEmpty {
+        VStack(spacing: 14) {
+          Text(directory.issue ?? "没有设备").foregroundStyle(.secondary).multilineTextAlignment(.center)
+          Button("重试") { directory.search() }.buttonStyle(.glass)
         }
-        if !directory.searching, directory.devices.isEmpty {
-          Text("没有设备").foregroundStyle(.secondary)
-          Button("重新搜索") { directory.search() }
-        }
-        if let issue = directory.issue { Text(issue).foregroundStyle(.secondary) }
+        .frame(maxWidth: .infinity).padding(.vertical, 60)
+        .listRowSeparator(.hidden).listRowBackground(Color.clear)
       }
       if let d = cast.device {
-        Section(d.name) {
-          if let s = cast.subject { Text(s.title).lineLimit(2) }
-          Text(cast.offline ? "设备已断开" : cast.now.state.label).foregroundStyle(.secondary)
+        Section {
+          if let s = cast.subject { Text(s.title).font(.subheadline.weight(.medium)).lineLimit(2) }
+          Text(cast.offline ? "设备已断开" : cast.now.state.label).font(.caption).foregroundStyle(.secondary)
           if let length = cast.now.duration, length > 0, cast.supports(.seek) {
             let at = min(length, max(0, seekValue ?? cast.now.position ?? 0))
             Slider(
@@ -285,31 +289,38 @@ struct CastView: View {
               }
             }
           }
-          Button(player?.isExternalPlaybackActive == true ? "交回系统播放器" : "在此设备继续播放") {
-            run { try await cast.perform(.phone) }
-          }
-          Button("停止投屏", role: .destructive) { run { try await cast.perform(.stop) } }
-          Button("断开本机连接") { cast.end() }
-        }
+          HStack(spacing: 12) {
+            Button(player?.isExternalPlaybackActive == true ? "交回系统播放器" : "在此设备继续") {
+              run { try await cast.perform(.phone) }
+            }
+            Spacer()
+            Button("停止投屏", role: .destructive) { run { try await cast.perform(.stop) } }
+            Button("断开") { cast.end() }
+          }.buttonStyle(.borderless).font(.subheadline)
+        } header: { Text("正在投屏 · " + d.name) }
       }
-      Section("手动连接") {
-        TextField("电视 IP 或设备描述地址", text: $address).keyboardType(.URL).textInputAutocapitalization(
-          .never
-        ).autocorrectionDisabled()
-        Button("添加设备") { run { try await directory.manual(address) } }.disabled(
-          address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        Button("本地网络设置") {
-          if let u = URL(string: UIApplication.openSettingsURLString) { openURL(u) }
-        }
+      if let player, player.supportsSystemVideo { Section { CastSystemRoute(player: player) } }
+      if let text = message ?? cast.issue {
+        Text(text).font(.footnote).foregroundStyle(.secondary).listRowBackground(Color.clear)
       }
-      if let player, player.supportsSystemVideo { Section("隔空播放") { CastSystemRoute(player: player) } }
-      if let text = message ?? cast.issue { Text(text).foregroundStyle(.secondary) }
-      if working || cast.busy { ProgressView() }
-    }.listStyle(.plain).navigationTitle("投屏").toolbar {
+      if working || cast.busy { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
+    }.listStyle(.plain).navigationTitle("投屏").navigationBarTitleDisplayMode(.inline).toolbar {
       ToolbarItem(placement: .cancellationAction) { Button("完成") { dismiss() } }
-      ToolbarItem(placement: .primaryAction) {
-        Button { directory.search() } label: { Image(systemName: "arrow.clockwise") }.accessibilityLabel("重新搜索")
+      ToolbarItemGroup(placement: .primaryAction) {
+        Button { directory.search() } label: { Image(systemName: "arrow.clockwise") }.accessibilityLabel("搜索")
+        Menu {
+          Button("手动添加设备", systemImage: "plus") { manual = true }
+          Button("本地网络设置", systemImage: "gear") {
+            if let u = URL(string: UIApplication.openSettingsURLString) { openURL(u) }
+          }
+        } label: { Image(systemName: "ellipsis") }
       }
+    }
+    .alert("手动添加设备", isPresented: $manual) {
+      TextField("电视 IP 或设备描述地址", text: $address).keyboardType(.URL)
+        .textInputAutocapitalization(.never).autocorrectionDisabled()
+      Button("取消", role: .cancel) {}
+      Button("添加") { run { try await directory.manual(address) } }
     }
     .onAppear { directory.search() }.onDisappear {
       directory.stop()

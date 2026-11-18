@@ -49,72 +49,90 @@ struct TheaterTools: View {
           .accessibilityLabel("关闭播放面板")
       }.padding(.horizontal).padding(.vertical, 4)
       Divider()
+      // Same icon rows as the inline 更多 sheet (the original shows one sheet in both modes).
       PiliNavigationStack {
         List {
-          if let playlist { NavigationLink("选集") { playlist.modifier(ReplyEdgeDismiss()).navigationTitle("选集") } }
-          if let s = subject {
-            if let id = s.oid, id > 0, s.comments {
-              NavigationLink("评论") {
-                Discussion(oid: id, type: s.type, owner: s.creator, intro: s.introduction)
-                  .environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model))
-                  .id("\(s.type):\(id)")
+          Section {
+            if let playlist {
+              NavigationLink { playlist.modifier(ReplyEdgeDismiss()).navigationTitle("选集") } label: { row("list.number", "选集") }
+            }
+            if let s = subject {
+              if let id = s.oid, id > 0, s.comments {
+                NavigationLink {
+                  Discussion(oid: id, type: s.type, owner: s.creator, intro: s.introduction)
+                    .environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model))
+                    .id("\(s.type):\(id)")
+                } label: { row("text.bubble", "评论") }
+              }
+              if let aid = s.aid, s.type == 1, s.bvid != nil {
+                NavigationLink { ArchiveNotes(aid: aid, interactive: s.interactive, model: model, cid: s.cid, videoTitle: nil) }
+                  label: { row("note.text", "查看笔记") }
+              }
+              if chapters, let bv = s.bvid {
+                NavigationLink { ArchiveChapterPanel(model:model,bvid:bv,cid:s.cid) } label: { row("list.bullet.rectangle", "分段") }
               }
             }
-            if let aid = s.aid, s.type == 1, s.bvid != nil {
-              NavigationLink("视频笔记") { ArchiveNotes(aid: aid, interactive: s.interactive, model: model, cid: s.cid, videoTitle: nil) }
-            }
-            if chapters, let bv = s.bvid {
-              NavigationLink("视频章节") { ArchiveChapterPanel(model:model,bvid:bv,cid:s.cid) }
-            }
-            if s.cid > 0 {
-              NavigationLink("弹幕列表") {
-                DanmakuList(cid: s.cid, aid: s.aid, duration: model.duration, current: model.seconds, seek: model.seek,snapshot:bulletSnapshot)
-                  .id(s.cid)
-              }
-            }
-            if sponsor && s.bvid != nil {
-              NavigationLink("空降标记") { SponsorList(model: model, inlineEditor: true) }
-            }
-          }
-          Section("播放") {
+            NavigationLink { SleepTimerForm(live: false) } label: { row("hourglass", "定时关闭") }
+            NavigationLink { AudioLevelSettings() } label: { row("speaker.wave.2", "播放器音量") }
             ArchiveSourceTools(model:model)
             ArchiveTrendToggle(timeline:model.timeline)
-            NavigationLink("视频解码"){DecoderSettings()}
+            PlaybackTrackSwitch(player: model.engine)
+          }
+          Section {
             if !model.availableQualities.isEmpty {
-              Menu("画质") {
+              Menu {
                 ForEach(model.availableQualities, id: \.self) { quality in
                   Button(StreamQuality.name(quality)) { Task { await model.changeQuality(quality, manualVideo: true) } }
                 }
-              }.disabled(model.switching)
+              } label: { row("play.circle", "选择画质", "当前画质 " + StreamQuality.name(model.quality)) }
+              .disabled(model.switching)
             }
             if !model.audioChoices.isEmpty {
-              Menu("音质") {
+              Menu {
                 ForEach(model.audioChoices, id: \.self) { id in
                   Button(PlaybackOption.audioName(id)) {
                     Task { await model.changeQuality(model.availableQualities.contains(model.quality) ? model.quality : model.availableQualities.first ?? 0, manualAudio: id) }
                   }
                 }
-              }.disabled(model.switching)
+              } label: { row("opticaldisc", "选择音质") }.disabled(model.switching)
             }
-            if let issue = model.qualityError { Text(issue).foregroundStyle(.secondary) }
-            Menu("播放速度") {
+            if let issue = model.qualityError { Text(issue).font(.footnote).foregroundStyle(.secondary) }
+            NavigationLink { DecoderSettings() } label: { row("av.remote", "解码格式") }
+            NavigationLink { PlaybackEngineSettings() } label: { row("cpu", "播放器内核") }
+            Menu {
               ForEach(SpeedPresets.decode(speeds), id: \.self) { speed in
                 Button("\(speed.formatted())×") { model.rate = Float(speed); if model.playing { model.engine.rate = Float(speed) } }
               }
+            } label: { row("gauge.with.needle", "播放速度", Double(model.rate).formatted() + "×") }
+            Menu { RepeatPicker(session: model.preferences) } label: { row("repeat", "播放顺序") }
+          }
+          Section {
+            if let s = subject, s.cid > 0 {
+              NavigationLink {
+                DanmakuList(cid: s.cid, aid: s.aid, duration: model.duration, current: model.seconds, seek: model.seek,snapshot:bulletSnapshot)
+                  .id(s.cid)
+              } label: { row("list.bullet", "弹幕列表") }
             }
-            NavigationLink("定时停止") { SleepTimerForm(live: false) }
-            NavigationLink("播放器音量") { AudioLevelSettings() }
-            PlaybackTrackSwitch(player: model.engine)
-            NavigationLink("播放器内核") { PlaybackEngineSettings() }
-            RepeatPicker(session: model.preferences)
+            Toggle(isOn: model.preferences.binding(\.bullets)) { row("text.bubble.fill", "显示弹幕") }
+            NavigationLink { DanmakuStylePanel() } label: { row("text.bubble.badge.gearshape", "弹幕设置") }
             SubtitlePicker(model: model)
             SpokenTrackPicker(model: model)
+            if sponsor, subject?.bvid != nil {
+              NavigationLink { SponsorList(model: model, inlineEditor: true) } label: { row("forward.end", "空降标记") }
+            }
           }
-          Section("弹幕") {
-            Toggle("显示弹幕", isOn: model.preferences.binding(\.bullets))
-            NavigationLink("弹幕样式与过滤") { DanmakuStylePanel() }
-          }
-        }.navigationTitle("播放工具").navigationBarTitleDisplayMode(.inline)
+        }
+        .listStyle(.insetGrouped).listSectionSpacing(12)
+        .navigationTitle("更多").navigationBarTitleDisplayMode(.inline)
+      }
+    }
+  }
+  private func row(_ symbol: String, _ title: String, _ subtitle: String? = nil) -> some View {
+    HStack(spacing: 14) {
+      Image(systemName: symbol).font(.system(size: 17)).foregroundStyle(.secondary).frame(width: 22)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(title).font(.subheadline).foregroundStyle(.primary)
+        if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
       }
     }
   }
