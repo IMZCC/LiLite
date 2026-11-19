@@ -331,7 +331,11 @@ struct PlayerStepButtons: View {
 /// Sample the inline player's window coordinates before presenting fullscreen.
 struct InlinePlayerFrame: UIViewRepresentable {
   let player: any PlaybackEngine
-  private static let views = NSMapTable<AnyObject, UIView>.weakToWeakObjects()
+  private final class Weak { weak var view: UIView?; init(_ view: UIView) { self.view = view } }
+  /// Every marker for a player, not just the last one updated: a page can briefly build a
+  /// second copy of its player surface (and drop it again) after the visible one, and the
+  /// visible marker is never updated again while its player stays the same.
+  private static var views: [ObjectIdentifier: [Weak]] = [:]
   struct Snapshot {
     let window: ObjectIdentifier
     let bounds: CGSize
@@ -339,8 +343,10 @@ struct InlinePlayerFrame: UIViewRepresentable {
     let orientation: UIInterfaceOrientation
   }
   static func current(_ player: any PlaybackEngine) -> Snapshot? {
-    guard let marker = views.object(forKey: player), let window = marker.window, let scene = window.windowScene,
-      marker.bounds.width > 1, marker.bounds.height > 1 else { return nil }
+    let live = (views[ObjectIdentifier(player)] ?? []).compactMap(\.view)
+    guard let marker = live.last(where: { m in
+        m.window != nil && m.bounds.width > 1 && m.bounds.height > 1 && !m.isHiddenOnScreen }),
+      let window = marker.window, let scene = window.windowScene else { return nil }
     return Snapshot(window: ObjectIdentifier(window), bounds: window.bounds.size,
       rect: marker.convert(marker.bounds, to: window), orientation: scene.interfaceOrientation)
   }
@@ -349,7 +355,23 @@ struct InlinePlayerFrame: UIViewRepresentable {
     view.isUserInteractionEnabled = false
     return view
   }
-  func updateUIView(_ view: UIView, context: Context) { Self.views.setObject(view, forKey: player) }
+  func updateUIView(_ view: UIView, context: Context) {
+    let id = ObjectIdentifier(player)
+    var list = (Self.views[id] ?? []).filter { $0.view != nil && $0.view !== view }
+    list.append(Weak(view))
+    Self.views[id] = list
+    Self.views = Self.views.filter { !$0.value.allSatisfy { $0.view == nil } }
+  }
+}
+private extension UIView {
+  var isHiddenOnScreen: Bool {
+    var view: UIView? = self
+    while let current = view {
+      if current.isHidden { return true }
+      view = current.superview
+    }
+    return false
+  }
 }
 extension View {
   func recordsInlinePlayerFrame(_ player: any PlaybackEngine) -> some View {

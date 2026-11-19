@@ -9,6 +9,33 @@ extension EnvironmentValues {
   }
 }
 
+/// The fullscreen cover must appear and leave in place: the only motion is the picture moving
+/// with the system rotation. SwiftUI still slides a full-screen cover in and out inside a
+/// transaction that disables animations (seen on iOS 27). The slide delayed the rotation by half a
+/// second and showed the fullscreen controls laid out upright, so UIKit animations are held off
+/// from the request until the cover has appeared or gone, with a timeout as a backstop.
+@MainActor enum CoverTransition {
+  private static var held = false
+  private static var ticket = 0
+  static func hold() {
+    ticket += 1
+    let mine = ticket
+    if !held {
+      held = true
+      UIView.setAnimationsEnabled(false)
+    }
+    Task { @MainActor in
+      try? await Task.sleep(for: .milliseconds(900))
+      if ticket == mine { release() }
+    }
+  }
+  static func release() {
+    guard held else { return }
+    held = false
+    UIView.setAnimationsEnabled(true)
+  }
+}
+
 private struct TheaterCover<Destination: View>: ViewModifier {
   @Binding var requested: Bool
   let player: any PlaybackEngine
@@ -22,11 +49,13 @@ private struct TheaterCover<Destination: View>: ViewModifier {
       .onChange(of: requested, initial: true) { _, open in
         guard open, !presented else { return }
         entry = InlinePlayerFrame.current(player)
+        CoverTransition.hold()
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { presented = true }
       }
       .piliFullScreenCover(isPresented: $presented, onDismiss: {
+        CoverTransition.release()
         covering = false
         requested = false
         entry = nil
@@ -117,8 +146,17 @@ struct FullscreenStage<Content: View>: UIViewControllerRepresentable {
     default: break
     }
   }
+  override func viewIsAppearing(_ animated: Bool) {
+    super.viewIsAppearing(animated)
+    // The first layout pass runs before the cover is in a window; place the picture on the
+    // inline player again now that its window coordinates mean something.
+    view.setNeedsLayout()
+    view.layoutIfNeeded()
+  }
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    // The cover is in place: the rotation and the picture's move must animate again.
+    CoverTransition.release()
     guard !visible, let window = view.window else { return }
     visible = true
     orientation.attach(window, original: entry?.orientation)
@@ -170,15 +208,18 @@ struct FullscreenStage<Content: View>: UIViewControllerRepresentable {
     animate(to: size, alongside: coordinator)
   }
   private func inlineRect(for size: CGSize) -> CGRect {
-    guard let window = view.window else { return CGRect(origin: .zero, size: size) }
+    // The first layout pass runs before the cover joins the window. The entry was sampled from
+    // the presenting window just before, so it still says where the inline player is; without
+    // it the picture would start out filling the screen.
+    let window = view.window.map { ObjectIdentifier($0) }
     // During the rotation callback the inline view may still have the outgoing layout.
     // Use the recorded landing rect when returning to the original window dimensions.
     let source: InlinePlayerFrame.Snapshot?
-    if let entry, entry.window == ObjectIdentifier(window),
+    if let entry, window == nil || entry.window == window, entry.bounds.height > 0,
       abs(entry.bounds.width * size.height / entry.bounds.height - size.width) < 2 {
       source = entry
-    } else { source = inline?() }
-    guard let source, source.window == ObjectIdentifier(window), source.bounds.width > 0,
+    } else if window != nil { source = inline?() } else { source = nil }
+    guard let source, window == nil || source.window == window, source.bounds.width > 0,
       source.bounds.height > 0 else { return CGRect(origin: .zero, size: size) }
     return source.rect.applying(CGAffineTransform(scaleX: size.width / source.bounds.width,
       y: size.height / source.bounds.height))
@@ -211,6 +252,13 @@ struct FullscreenStage<Content: View>: UIViewControllerRepresentable {
       place(at: start, canvas: canvas)
       host.view.layoutIfNeeded()
     }
+    if !exit, coordinator != nil {
+      // The page behind is laid out sideways for the rotation; hide it at once instead of
+      // letting it show through for the whole turn. The picture alone carries the motion.
+      UIView.animate(withDuration: reduced ? 0 : 0.12, delay: 0, options: [.beginFromCurrentState]) {
+        self.backdrop.alpha = 1
+      }
+    }
     let changes = {
       self.place(at: target, canvas: canvas)
       self.backdrop.alpha = exit ? 0 : 1
@@ -220,6 +268,8 @@ struct FullscreenStage<Content: View>: UIViewControllerRepresentable {
       self.rotating = false
       if exit && self.wantsClose {
         self.phase = .finished
+        // Leave in place as well: the picture already sits on the inline player.
+        CoverTransition.hold()
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) { self.finish?() }
