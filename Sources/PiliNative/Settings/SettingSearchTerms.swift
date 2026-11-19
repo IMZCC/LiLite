@@ -43,6 +43,7 @@ MotionSettings/过渡效果	pageTransition 页面过渡动画
 NavigationLayoutPanel/底部导航栏	hideTabBar
 NavigationLayoutPanel/首页搜索栏	hideSearchBar
 NavigationLayoutPanel/默认栏目	defaultHomePage 默认启动页
+NavigationLayoutPanel/改用侧边栏	useSideBar 侧边栏 iPad 平板 横屏
 PlaybackOptionsView/播放器内核	mpv AVPlayer libmpv 播放器内核 画中画 隔空播放
 PlaybackOptionsView/游客播放优先使用可用的 1080P	p1080 免登录1080P 免登录查看1080P视频	play.guestPublicHD	true
 PlayerPreferencePanel/上下滑动切换全屏	enableSlideFS 中间滑动进入/退出全屏	theater.swipe	true

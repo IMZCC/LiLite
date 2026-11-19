@@ -111,15 +111,28 @@ struct FeedView: View {
   var body: some View {
     PiliNavigationStack {
       let channels = NavigationLayout.read(layoutData).channels
-      let travel = collapseSearch ? searchHeight : 0
       GeometryReader { safe in
+        // A wide large window has room for the channels and the search row side by side, so the
+        // header is one row there and nothing needs to collapse while scrolling.
+        let oneRow = channels.count > 1 && WindowCanvas.shared.large && safe.size.width >= 700
+        let travel = collapseSearch && !oneRow ? searchHeight : 0
         VStack(spacing: 0) {
           VStack(spacing: 0) {
-            headerRow.padding(.top, 2).padding(.bottom, 8)
-              .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { searchHeight = $0 }
-              .homeSearchControls()
-            if channels.count > 1 {
-              HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion).padding(.bottom, 6)
+            if oneRow {
+              HStack(spacing: 0) {
+                HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .mask { Rectangle().padding(.vertical, -12) }
+                headerRow.padding(.leading, -6)
+                  .frame(width: min(400, max(300, safe.size.width * 0.36)))
+              }.padding(.top, 2).padding(.bottom, 8)
+            } else {
+              headerRow.padding(.top, 2).padding(.bottom, 8)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { searchHeight = $0 }
+                .homeSearchControls()
+              if channels.count > 1 {
+                HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion).padding(.bottom, 6)
+              }
             }
           }
           .fixedSize(horizontal: false, vertical: true)

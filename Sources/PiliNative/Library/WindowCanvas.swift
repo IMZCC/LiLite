@@ -12,10 +12,13 @@ import UIKit
   static let shared = WindowCanvas()
   private(set) var size: CGSize
   private(set) var large: Bool
+  /// Wider than tall; stored apart for the same reason as `large`.
+  private(set) var landscape: Bool
   private init() {
     let initial = WindowCanvas.keyWindowSize ?? CGSize(width: 390, height: 844)
     size = initial
     large = WindowCanvas.isLarge(initial)
+    landscape = initial.width > initial.height
   }
   static func isLarge(_ size: CGSize) -> Bool { PlayerPageLayout.isLargeWindow(size) }
   func update(_ next: CGSize) {
@@ -23,6 +26,8 @@ import UIKit
     if next != size { size = next }
     let l = Self.isLarge(next)
     if l != large { large = l }
+    let wide = next.width > next.height
+    if wide != landscape { landscape = wide }
   }
   private static var keyWindowSize: CGSize? {
     let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }

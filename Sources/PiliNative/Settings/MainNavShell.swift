@@ -146,12 +146,25 @@ private struct HomeSearchControls: ViewModifier {
   }
 }
 
-/// One style for every device and pose, as Apple asks (no idiom checks for layout): a tab bar
-/// in compact width — the search-role tab in its own Liquid Glass button at the trailing edge —
-/// and a tab bar that can become a sidebar in regular width (iPad, the unfolded iPhone Duo).
-/// Folding or resizing the window changes only the size class, never this view's identity.
+/// Like the original, the main columns are a tab bar unless 改用侧边栏 (`useSideBar`) is on: on iPad
+/// and other wide windows a tab bar at the top, as in the App Store, so a sidebar never takes the
+/// place of a page's back button. With the setting on, the sidebar is the default only in
+/// landscape (as in Files and Mail); portrait keeps the tab bar. Rotating changes only the default
+/// placement, never this view's identity.
 private struct AdaptiveTabStyle: ViewModifier {
-  func body(content: Content) -> some View { content.piliSidebarAdaptableTabs() }
+  let sidebar: Bool, landscape: Bool
+  @ViewBuilder func body(content: Content) -> some View {
+    if #available(iOS 18, *) {
+      if sidebar {
+        content.tabViewStyle(.sidebarAdaptable)
+          .defaultAdaptableTabBarPlacement(landscape ? .sidebar : .tabBar)
+      } else {
+        content.tabViewStyle(.tabBarOnly)
+      }
+    } else {
+      content
+    }
+  }
 }
 struct MainNavShell: View {
   let layout: NavigationLayout, badge: (MainTab) -> Text?
@@ -225,7 +238,7 @@ struct MainNavShell: View {
           }
         }
       }
-      .modifier(AdaptiveTabStyle())
+      .modifier(AdaptiveTabStyle(sidebar: layout.sidebar, landscape: WindowCanvas.shared.landscape))
     } else {
       TabView(selection: $active) {
         ForEach(contentTabs) { tab in

@@ -33,8 +33,13 @@ struct NavigationLayoutPanel: View {
         Toggle(isOn: Binding(get: { !draft.directBack }, set: { draft.directBack = !$0 })) {
           Label("返回键切至首个栏目", systemImage: "arrow.uturn.backward").labelStyle(SettingsIconLabelStyle(color: .blue))
         }.settingAnchor("NavigationLayoutPanel/返回键切至首个栏目")
+        Toggle(isOn: $draft.sidebar) {
+          Label("改用侧边栏", systemImage: "sidebar.left").labelStyle(SettingsIconLabelStyle(color: .teal))
+        }.settingAnchor("NavigationLayoutPanel/改用侧边栏")
       } header: {
         Text("导航外观")
+      } footer: {
+        Text("iPad 等大屏横屏时用侧边栏切换主栏目，竖屏和 iPhone 仍使用标签栏。关闭时大屏使用顶部标签栏。")
       }.settingAnchor("NavigationLayoutPanel/导航外观")
       Section {
         Toggle("首页搜索栏", isOn: $draft.collapseTop).settingAnchor("NavigationLayoutPanel/首页搜索栏")

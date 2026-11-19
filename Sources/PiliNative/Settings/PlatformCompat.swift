@@ -35,10 +35,6 @@ extension View {
       self
     }
   }
-  /// A tab bar that can turn into a sidebar in regular width (iOS 18).
-  @ViewBuilder func piliSidebarAdaptableTabs() -> some View {
-    if #available(iOS 18, *) { tabViewStyle(.sidebarAdaptable) } else { self }
-  }
 }
 
 extension UINavigationController {

@@ -110,6 +110,7 @@ NavigationLayoutPanel/导航外观
 NavigationLayoutPanel/底部导航栏
 NavigationLayoutPanel/恢复默认布局
 NavigationLayoutPanel/我的页预览
+NavigationLayoutPanel/改用侧边栏
 NavigationLayoutPanel/滚动时收起
 NavigationLayoutPanel/返回键切至首个栏目
 NavigationLayoutPanel/页面动画与回弹
