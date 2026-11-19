@@ -52,13 +52,13 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
         host.addGestureRecognizer(pan)
         self.pan = pan
       }
-      if contentWasEnabled == nil, let content = nav.interactiveContentPopGestureRecognizer {
+      if contentWasEnabled == nil, let content = nav.piliContentPopGesture {
         contentWasEnabled = content.isEnabled
         content.isEnabled = false
       }
     }
     func detach() {
-      if let contentWasEnabled { nav?.interactiveContentPopGestureRecognizer?.isEnabled = contentWasEnabled }
+      if let contentWasEnabled { nav?.piliContentPopGesture?.isEnabled = contentWasEnabled }
       contentWasEnabled = nil
       // Restore the shared recognizer before the next page appears. Keep our own pan
       // alive until UIKit finishes or cancels the interaction that it is driving.
@@ -85,7 +85,7 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
       return velocity.x * sign(host) > abs(velocity.y)
     }
     func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
-      if other === nav?.interactivePopGestureRecognizer || other === nav?.interactiveContentPopGestureRecognizer { return true }
+      if other === nav?.interactivePopGestureRecognizer || other === nav?.piliContentPopGesture { return true }
       guard let host = owner?.viewIfLoaded, let otherView = other.view else { return false }
       return otherView.isDescendant(of: host)
     }

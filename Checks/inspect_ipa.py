@@ -59,7 +59,7 @@ def device_executable(blob, info):
     version=info.get("MinimumOSVersion","").split(".")
     require(len(version) in (2,3) and all(s.isdecimal() for s in version),"Invalid minimum iOS version")
     declared=tuple(map(int,version))+(0,)*(3-len(version))
-    require(declared==(minimum>>16,(minimum>>8)&255,minimum&255) and declared==(26,0,0),"Deployment target mismatch")
+    require(declared==(minimum>>16,(minimum>>8)&255,minimum&255) and declared==(17,0,0),"Deployment target mismatch")
     sdk=platforms[0][2]
     sdk_version=(sdk>>16,(sdk>>8)&255,sdk&255)
     name=info.get("DTSDKName", "")

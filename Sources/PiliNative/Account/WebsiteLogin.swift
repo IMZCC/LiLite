@@ -148,8 +148,8 @@ struct WebsiteLogin: View {
           LoginSubmit(title: "使用此账号登录", busy: busy) { submit() }.disabled(busy)
         }
         .padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: .infinity)
-        // Concentric with the display's corners (they differ on iPhone Duo and iPad).
-        .glassEffect(.regular, in: ConcentricRectangle(corners: .concentric(minimum: .fixed(20)), isUniform: true))
+        // Concentric with the display's corners (they differ on iPhone Duo and iPad) from iOS 26.
+        .modifier(ConcentricGlassPanel())
         .padding(.horizontal, 12).padding(.bottom, 4)
       }
       .onDisappear {

@@ -241,7 +241,7 @@ struct DetailView: View {
           Button { retryPlayback += 1 } label: {
             Label("重新播放", systemImage: "arrow.clockwise").font(.subheadline.weight(.semibold))
           }
-          .buttonStyle(.glass).padding(.top, 4)
+          .piliGlassButton().padding(.top, 4)
         }
         .foregroundStyle(.white).padding(.horizontal, 32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -366,7 +366,7 @@ struct DetailView: View {
       if let error = model.bulletError, showBullets {
         HStack {
           Text(error).piliFont(.caption).foregroundStyle(.secondary)
-          Button("重试") { model.retryBullets() }.buttonStyle(.glass).controlSize(.small)
+          Button("重试") { model.retryBullets() }.piliGlassButton().controlSize(.small)
         }
       }
       if let error = model.qualityError {
@@ -398,7 +398,7 @@ struct DetailView: View {
       if let error = detailError {
         VStack(spacing: 10) {
           Text(error).foregroundStyle(.secondary).multilineTextAlignment(.center)
-          Button("重新加载详情") { reload += 1 }.buttonStyle(.glass)
+          Button("重新加载详情") { reload += 1 }.piliGlassButton()
         }.frame(maxWidth: .infinity)
       }
       if detail != nil {

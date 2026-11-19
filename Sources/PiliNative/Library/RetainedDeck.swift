@@ -115,7 +115,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
         .scrollTargetBehavior(.paging)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         .scrollPosition(id: $scrolled)
-        .onScrollGeometryChange(for: CGFloat.self) { g in
+        .piliOnScrollGeometryChange(for: CGFloat.self) { g in
           g.containerSize.width > 0 ? g.contentOffset.x / g.containerSize.width : 0
         } action: { _, value in
           onProgress?(min(max(0, value), CGFloat(max(0, choices.count - 1))))
@@ -123,7 +123,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
         .onAppear { if scrolled == nil { scrolled = selection } }
         // Commit only once the pager rests, so a tapped jump across several pages does not
         // feed intermediate pages back into the selection mid-animation.
-        .onScrollPhaseChange { _, phase in
+        .piliOnScrollPhaseChange { _, phase, _ in
           if phase == .idle, let value = scrolled, value != selection { selection = value }
         }
         .onChange(of: selection) { _, value in

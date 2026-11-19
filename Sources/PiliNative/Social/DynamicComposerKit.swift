@@ -123,7 +123,7 @@ struct ComposerScheduleButton: View {
           picking = true
         }
         .font(.subheadline.weight(.medium))
-        .buttonStyle(.glass).buttonBorderShape(.capsule)
+        .piliGlassButton().buttonBorderShape(.capsule)
         .disabled(disabled)
       }
     }

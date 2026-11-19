@@ -77,13 +77,13 @@ def check_stamp():
         assert staged["DTSDKName"] == "iphoneos27.1" and staged["DTSDKBuild"] == "24A94232"
         assert subprocess.run(cmd + ["--sdk", str(sdk), "--compiled-sdk", str(outer / "different.sdk")],
                               env=env, stderr=subprocess.DEVNULL).returncode != 0
-        staged.update(CFBundleSupportedPlatforms=["iPhoneOS"], MinimumOSVersion="26.0")
+        staged.update(CFBundleSupportedPlatforms=["iPhoneOS"], MinimumOSVersion="17.0")
         header = struct.pack("<8I", 0xFEEDFACF, 0x0100000C, 0, 2, 1, 24, 0, 0)
         def executable(linked):
-            return header + struct.pack("<6I", 0x32, 24, 2, 26 << 16, linked, 0)
+            return header + struct.pack("<6I", 0x32, 24, 2, 17 << 16, linked, 0)
         device_executable(executable((27 << 16) | (1 << 8)), staged)
         try:
-            device_executable(executable(26 << 16), staged)
+            device_executable(executable(17 << 16), staged)
         except SystemExit as error:
             assert "Linked SDK differs" in str(error)
         else:

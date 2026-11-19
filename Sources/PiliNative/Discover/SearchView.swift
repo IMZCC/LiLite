@@ -123,7 +123,7 @@ struct SearchView: View {
     content
       .searchable(text: $draft, placement: placement,
         prompt: useHint && !hint.isEmpty ? hint : "输入关键词或粘贴链接")
-      .searchFocused($fieldFocused)
+      .piliSearchFocused($fieldFocused)
       .onAppear {
         // Opening search should go straight to typing, as in the original client.
         if embedded && term.isEmpty {
@@ -231,7 +231,7 @@ struct SearchView: View {
         if useHint, !hint.isEmpty, draft.isEmpty {
           Button { submit(hint) } label: {
             Label(hint, systemImage: "magnifyingglass").font(.subheadline).lineLimit(1)
-          }.buttonStyle(.glass)
+          }.piliGlassButton()
         }
         if !recent.isEmpty {
           VStack(alignment: .leading, spacing: 12) {
@@ -274,7 +274,7 @@ struct SearchView: View {
     RetainedDeck(choices: SearchDomain.tabs, selection: $domain) { section in
       resultList(section).id(identity(section))
     }.id(owner + "\n" + term)
-      .safeAreaBar(edge: .top, spacing: 0) { domainBar }
+      .piliSafeAreaBar(edge: .top, spacing: 0) { domainBar }
   }
   private var domainBar: some View {
     HStack(spacing: 4) {
@@ -312,7 +312,7 @@ struct SearchView: View {
           showFilter = true
         } label: {
           Image(systemName: "line.3.horizontal.decrease")
-        }.buttonStyle(.glass).accessibilityLabel("筛选").padding(.trailing, 16)
+        }.piliGlassButton().accessibilityLabel("筛选").padding(.trailing, 16)
       }
     }.padding(.vertical, 6)
   }

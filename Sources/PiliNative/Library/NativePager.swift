@@ -91,7 +91,7 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     linkBackGestures()
     let next = view.bounds.size
     guard next != size, next.width > 0, next.height > 0 else { return }
-    if size != .zero { scroll.stopScrollingAndZooming() }
+    if size != .zero { scroll.piliStopScrolling() }
     animating = false
     size = next
     layoutPages()
@@ -144,7 +144,7 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     guard hosts.indices.contains(index), !closed, size.width > 0 else { clearMotion(); return }
     alignPanelOffsets()
     selection.request(index)
-    scroll.stopScrollingAndZooming()
+    scroll.piliStopScrolling()
     let target = CGPoint(x: CGFloat(index) * size.width, y: 0)
     animating = !reduced && view.window != nil && abs(scroll.contentOffset.x - target.x) > 0.5
     scroll.setContentOffset(target, animated: animating)
@@ -232,7 +232,7 @@ private struct NativePagerHost<Page: View>: UIViewControllerRepresentable {
     guard let nav = navigationController, nav !== linkedNavigation else { return }
     linkedNavigation = nav
     if let edge = nav.interactivePopGestureRecognizer { scroll.panGestureRecognizer.require(toFail: edge) }
-    if let content = nav.interactiveContentPopGestureRecognizer { scroll.panGestureRecognizer.require(toFail: content) }
+    if let content = nav.piliContentPopGesture { scroll.panGestureRecognizer.require(toFail: content) }
   }
   func close() {
     closed = true

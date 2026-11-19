@@ -74,7 +74,7 @@ struct InlinePagerFooter<Item: Identifiable>: View where Item.ID: Hashable {
       if let failure = pager.failure {
         VStack(spacing: 10) {
           Text(failure).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-          Button("重试") { pager.retry() }.buttonStyle(.glass)
+          Button("重试") { pager.retry() }.piliGlassButton()
         }
         .frame(maxWidth: .infinity).padding(.vertical, pager.items.isEmpty ? 60 : 16)
       } else if pager.busy || !pager.loaded {

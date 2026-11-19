@@ -81,7 +81,7 @@ struct CreatorSpace: View {
     .navigationTitle(header?.name ?? name)
     .navigationBarTitleDisplayMode(.inline)
     .toolbarBackground(Color(uiColor: .systemBackground), for: .navigationBar)
-    .toolbarBackgroundVisibility(barSolid ? .visible : .hidden, for: .navigationBar)
+    .toolbarBackground(barSolid ? .visible : .hidden, for: .navigationBar)
     .toolbar {
       ToolbarItem(placement: .principal) {
         Text(header?.name ?? name).font(.headline).lineLimit(1)
@@ -186,16 +186,16 @@ struct CreatorSpace: View {
     .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     // The pager is the scroll view next to the bar: without this its soft edge washed the banner
     // out behind the bar.
-    .scrollEdgeEffectHidden(!collapsed, for: .top)
+    .piliScrollEdgeEffectHidden(!collapsed, for: .top)
     // Pages sit below the bar; the banner draws above them, so neither scroller may clip it.
     .scrollClipDisabled()
     .scrollPosition(id: $paged)
-    .onScrollGeometryChange(for: CGFloat.self) { g in
+    .piliOnScrollGeometryChange(for: CGFloat.self) { g in
       g.containerSize.width > 0 ? g.contentOffset.x / g.containerSize.width : 0
     } action: { _, value in
       motion.update(min(max(0, value), CGFloat(max(0, list.count - 1))))
     }
-    .onScrollPhaseChange { old, phase in
+    .piliOnScrollPhaseChange { old, phase, _ in
       if phase == .interacting { swiping = true }
       // Line the neighbours up with this page before they slide into view.
       if old == .idle && phase != .idle { alignPages() }
@@ -264,8 +264,8 @@ struct CreatorSpace: View {
       // copies stay hidden) and to the bar's height above it, instead of to its frame.
       .scrollClipDisabled()
       .clipShape(RaisedClip(raise: topInset))
-      .scrollEdgeEffectHidden(!collapsed, for: .top)
-      .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+      .piliScrollEdgeEffectHidden(!collapsed, for: .top)
+      .piliOnScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
         guard key == (selected?.param ?? "") else { return }
         let fold = y > 110
         if fold != collapsed { collapsed = fold }
@@ -1326,7 +1326,7 @@ private struct SpaceFolderSection: View {
             ProgressView().frame(maxWidth: .infinity).padding(.vertical, 10)
           } else if model.next[i] > 0 {
             Button("加载更多") { Task { await model.more(i) } }
-              .buttonStyle(.glass).frame(maxWidth: .infinity).padding(.vertical, 8)
+              .piliGlassButton().frame(maxWidth: .infinity).padding(.vertical, 8)
           }
         }
         if let issue = model.issue {
@@ -1335,7 +1335,7 @@ private struct SpaceFolderSection: View {
       } else if let issue = model.issue {
         VStack(spacing: 10) {
           Text(issue).font(.footnote).foregroundStyle(.secondary)
-          Button("重试") { Task { await model.reload() } }.buttonStyle(.glass)
+          Button("重试") { Task { await model.reload() } }.piliGlassButton()
         }.frame(maxWidth: .infinity).padding(.vertical, 60)
       } else {
         ProgressView().frame(maxWidth: .infinity).padding(.vertical, 60)

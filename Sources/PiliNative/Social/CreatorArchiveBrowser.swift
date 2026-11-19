@@ -106,18 +106,18 @@ struct CreatorArchiveBrowser: View {
               Image(systemName: "play.fill")
               Text("播放全部")
             }.font(.subheadline.weight(.semibold))
-          }.buttonStyle(.glassProminent)
+          }.piliGlassButton(prominent: true)
           if hasLocal || scope.mayResume(effectiveHint) {
             Button {
               playlist = PlaylistStart(resume: true)
             } label: {
               Text("继续").font(.subheadline.weight(.medium))
-            }.buttonStyle(.glass)
+            }.piliGlassButton()
           }
           if !rows.isEmpty {
             Button { listen = true } label: {
               Image(systemName: "headphones").font(.subheadline.weight(.medium))
-            }.buttonStyle(.glass).accessibilityLabel("收听全部")
+            }.piliGlassButton().accessibilityLabel("收听全部")
           }
         }
         Spacer(minLength: 0)

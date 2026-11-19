@@ -174,7 +174,7 @@ struct FeedView: View {
       .piliTabRoot(.home)
       .navigationTitle("首页")
       .toolbarTitleDisplayMode(.inline)
-      .toolbar(removing: .title)
+      .piliRemovingToolbarTitle()
       .navigationDestination(for: Video.self) { DetailView(initial: $0) }
     }
   }
@@ -454,14 +454,14 @@ private struct VideoShelf: View {
       }.padding(.horizontal, HomeCardStyle.gap).padding(.top, 4).padding(.bottom, 16 + bottomClearance)
     }
     .environment(\.homeFeedBottomClearance, 0)
-    .onScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
+    .piliOnScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
       autoPage(nearEnd: near)
     }
-    .onScrollPhaseChange { _, phase, context in
+    .piliOnScrollPhaseChange { _, phase, geometry in
       switch phase {
       case .interacting:
         paging.beginDrag()
-        autoPage(nearEnd: nearEnd(context.geometry))
+        autoPage(nearEnd: nearEnd(geometry))
       case .decelerating: break
       default: paging.endDrag()
       }
@@ -479,7 +479,7 @@ private struct VideoShelf: View {
     .onDisappear { paging.endDrag(); manualLoad?.cancel(); manualLoad = nil }
   }
 
-  private func nearEnd(_ geometry: ScrollGeometry) -> Bool {
+  private func nearEnd(_ geometry: PiliScrollGeometry) -> Bool {
     FeedScrollPaging.nearEnd(visible: geometry.visibleRect, contentHeight: geometry.contentSize.height)
   }
 
@@ -528,12 +528,12 @@ private struct VideoShelf: View {
     if let error = model.error {
       VStack(spacing: 12) {
         Text(error).piliFont(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-        Button("重试") { startLoad(retry: true) }.buttonStyle(.glass)
+        Button("重试") { startLoad(retry: true) }.piliGlassButton()
       }.frame(maxWidth: .infinity).padding(.vertical, 24)
     } else if model.busy {
       ProgressView().frame(maxWidth: .infinity).padding(.vertical, model.videos.isEmpty ? 120 : 16)
     } else if !model.finished {
-      Button("加载更多") { startLoad() }.buttonStyle(.glass).frame(maxWidth: .infinity)
+      Button("加载更多") { startLoad() }.piliGlassButton().frame(maxWidth: .infinity)
     } else if model.videos.isEmpty {
       ContentUnavailableView("暂无视频", systemImage: "play.rectangle")
     }

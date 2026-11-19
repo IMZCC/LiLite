@@ -26,7 +26,7 @@ struct PiliNavigationStack<Content: View>: View {
         .background(NavigationTabBarProbe { hidden in
           if tabBarHidden != hidden { tabBarHidden = hidden }
         }.frame(width: 0, height: 0))
-    }.toolbarVisibility(tabBarHidden || incoming?.wrappedValue != nil ? .hidden : .visible, for: .tabBar)
+    }.toolbar(tabBarHidden || incoming?.wrappedValue != nil ? .hidden : .visible, for: .tabBar)
   }
 }
 
@@ -75,7 +75,7 @@ private final class MotionDelegate: NSObject, UINavigationControllerDelegate {
     from fromVC: UIViewController, to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
     let mode = PageMotion.current
     let state = nav.interactivePopGestureRecognizer?.state
-    let contentState = nav.interactiveContentPopGestureRecognizer?.state
+    let contentState = nav.piliContentPopGesture?.state
     let interactive = operation == .pop && (state == .began || state == .changed || contentState == .began
       || contentState == .changed || nav.transitionCoordinator?.isInteractive == true)
     if !mode.custom(reduced:UIAccessibility.isReduceMotionEnabled,interactivePop:interactive) {

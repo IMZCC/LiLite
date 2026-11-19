@@ -12,7 +12,7 @@ Run `python3 Native/MediaKit/build-mpv.py` from the repository root under WSL (P
 - The recipe explicitly enables Objective-C in mpv's Meson project for the iOS AudioUnit and VideoToolbox/OpenGL ES sources; no media behavior is patched
 - FFmpeg now includes HTTP/HTTPS/TCP/TLS/data/crypto protocols, SecureTransport, PNG encoding, HLS/Matroska/Ogg demuxers and the audio/video filters required for playback. Existing live/remux/decoder features remain enabled; GPL/nonfree components remain disabled
 
-`PILI_MPV_CACHE` selects the cache root (default `~/.cache/piliplus-native/tools/mpv`); `PILI_MPV_JOBS` controls compilation parallelism (default 8). `PILI_IOS_SDK` and `PILI_IOS_LINKER` follow the existing media recipes. The app remains iOS 26+, while the static media archives have an iOS 17 deployment floor. These archives target device arm64, not the simulator
+`PILI_MPV_CACHE` selects the cache root (default `~/.cache/piliplus-native/tools/mpv`); `PILI_MPV_JOBS` controls compilation parallelism (default 8). `PILI_IOS_SDK` and `PILI_IOS_LINKER` follow the existing media recipes. The app and the static media archives share an iOS 17 deployment floor. These archives target device arm64, not the simulator
 
 `CMPV` is the SwiftPM C module, with a module map, the upstream public headers, and a small loader/render bridge. `build.sh` stages `libmpv.a` and `libplacebo.a` beside the existing media libraries, and exports both archives, public mpv headers and the build receipt to `Native/dist/MPV/`
 

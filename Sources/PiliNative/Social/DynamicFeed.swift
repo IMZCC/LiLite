@@ -72,11 +72,11 @@ private struct AccountDynamicFeed: View {
               open(.creator(creator.mid, creator.uname ?? "UP 主"))
             } label: {
               HStack(spacing: 4) {
-                Text("进入 " + (creator.uname ?? String(creator.mid)) + " 的空间")
+                Text("进入 \(creator.uname ?? String(creator.mid)) 的空间")
                 Image(systemName: "chevron.right").font(.caption2.weight(.bold))
               }.font(.footnote)
             }
-            .buttonStyle(.glass).padding(.vertical, 6)
+            .piliGlassButton().padding(.vertical, 6)
             .transition(.opacity.combined(with: .move(edge: .top)))
           }
           ZStack {
@@ -97,7 +97,7 @@ private struct AccountDynamicFeed: View {
         }
       }
     }
-    .safeAreaBar(edge: .top, spacing: 0) {
+    .piliSafeAreaBar(edge: .top, spacing: 0) {
       HStack(spacing: 0) {
         if position == .leftDrawer { drawerButton.padding(.leading, 12) }
         UnderlineTabBar(
@@ -115,7 +115,7 @@ private struct AccountDynamicFeed: View {
     .animation(.snappy(duration: 0.25), value: kind)
     .navigationTitle("动态")
     .toolbarTitleDisplayMode(.inline)
-    .toolbar(removing: .title)
+    .piliRemovingToolbarTitle()
     .toolbar {
       Menu {
         NavigationLink("动态筛选") { CommunityFilterPanel() }

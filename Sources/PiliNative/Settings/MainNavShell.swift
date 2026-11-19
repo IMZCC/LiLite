@@ -151,7 +151,7 @@ private struct HomeSearchControls: ViewModifier {
 /// and a tab bar that can become a sidebar in regular width (iPad, the unfolded iPhone Duo).
 /// Folding or resizing the window changes only the size class, never this view's identity.
 private struct AdaptiveTabStyle: ViewModifier {
-  func body(content: Content) -> some View { content.tabViewStyle(.sidebarAdaptable) }
+  func body(content: Content) -> some View { content.piliSidebarAdaptableTabs() }
 }
 struct MainNavShell: View {
   let layout: NavigationLayout, badge: (MainTab) -> Text?
@@ -169,20 +169,8 @@ struct MainNavShell: View {
   private var contentTabs: [MainTab] { layout.tabs.filter { $0 != .search } }
   var body: some View {
     let collapseSearch = layout.collapseTop && !voiceOver
-    TabView(selection: $active) {
-      ForEach(contentTabs) { tab in
-        Tab(tab.title, systemImage: tab.icon, value: tab) {
-          root(tab, collapseSearch: collapseSearch)
-        }.badge(badge(tab))
-      }
-      if layout.tabs.contains(.search) {
-        Tab(MainTab.search.title, systemImage: MainTab.search.icon, value: MainTab.search, role: .search) {
-          root(.search, collapseSearch: false)
-        }
-      }
-    }
-    .modifier(AdaptiveTabStyle())
-    .tabBarMinimizeBehavior(layout.collapseBottom && !voiceOver ? .onScrollDown : .never)
+    tabs(collapseSearch: collapseSearch)
+    .piliTabBarMinimize(onScrollDown: layout.collapseBottom && !voiceOver)
     .environment(\.navChrome, chrome)
     .environment(\.usesSystemSearchTab, layout.tabs.contains(.search))
     .environment(\.openPersonalPage, {
@@ -219,6 +207,39 @@ struct MainNavShell: View {
         }
       }.environment(\.navChrome, nil).environment(\.owningTab, nil)
         .presentationDragIndicator(.visible)
+    }
+  }
+  /// iOS 18+: `Tab` values with the search role (its own button) and the adaptive sidebar.
+  /// iOS 17: the classic tab items, search last.
+  @ViewBuilder private func tabs(collapseSearch: Bool) -> some View {
+    if #available(iOS 18, *) {
+      TabView(selection: $active) {
+        ForEach(contentTabs) { tab in
+          Tab(tab.title, systemImage: tab.icon, value: tab) {
+            root(tab, collapseSearch: collapseSearch)
+          }.badge(badge(tab))
+        }
+        if layout.tabs.contains(.search) {
+          Tab(MainTab.search.title, systemImage: MainTab.search.icon, value: MainTab.search, role: .search) {
+            root(.search, collapseSearch: false)
+          }
+        }
+      }
+      .modifier(AdaptiveTabStyle())
+    } else {
+      TabView(selection: $active) {
+        ForEach(contentTabs) { tab in
+          root(tab, collapseSearch: collapseSearch)
+            .tabItem { Label(tab.title, systemImage: tab.icon) }
+            .tag(tab)
+            .badge(badge(tab))
+        }
+        if layout.tabs.contains(.search) {
+          root(.search, collapseSearch: false)
+            .tabItem { Label(MainTab.search.title, systemImage: MainTab.search.icon) }
+            .tag(MainTab.search)
+        }
+      }
     }
   }
   private func root(_ tab: MainTab, collapseSearch: Bool) -> some View {

@@ -381,15 +381,15 @@ struct CapturePanel: View {
           if let note = capture.note { Text(note).font(.footnote).foregroundStyle(.secondary) }
           HStack(spacing: 12) {
             if capture.recording {
-              Button("结束录制") { capture.stop() }.buttonStyle(.glassProminent)
+              Button("结束录制") { capture.stop() }.piliGlassButton(prominent: true)
             } else {
               Button(gif ? "开始录制" : capture.file == nil ? "截取当前画面" : "重新截取") { capture.capture(gif: gif, length: length, fps: fps) }
-                .buttonStyle(.glass).disabled(capture.busy)
+                .piliGlassButton().disabled(capture.busy)
             }
             Spacer()
             if let file = capture.file {
-              ShareLink(item: file) { Label("分享", systemImage: "square.and.arrow.up") }.buttonStyle(.glass)
-              Button("保存") { Task { await capture.save() } }.buttonStyle(.glassProminent).disabled(capture.busy)
+              ShareLink(item: file) { Label("分享", systemImage: "square.and.arrow.up") }.piliGlassButton()
+              Button("保存") { Task { await capture.save() } }.piliGlassButton(prominent: true).disabled(capture.busy)
             }
           }
         }

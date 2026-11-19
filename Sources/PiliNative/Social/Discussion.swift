@@ -553,7 +553,7 @@ struct Discussion: View {
       )
       // The original slides the floating composer away while reading down and brings it
       // back on any scroll up (fab_mixin: UserScrollNotification, 100ms easeInOut).
-      .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
+      .piliOnScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
         guard embeddedTitle != nil else { return }
         if y <= 8 { setComposerHidden(false); composerScroll.anchor = y; return }
         if composerHidden {
@@ -613,7 +613,7 @@ struct Discussion: View {
           Image(systemName: "square.and.pencil").font(.system(size: 14.25, weight: .semibold))
             .foregroundStyle(.white)
             .frame(width: 37.5, height: 37.5)
-            .glassEffect(.regular.tint(.accentColor).interactive(), in: .circle)
+            .piliGlass(in: Circle(), interactive: true, tint: .accentColor)
             .frame(width: 50, height: 50).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -814,11 +814,19 @@ struct Discussion: View {
     .frame(maxWidth: 640)
     .frame(maxWidth: .infinity)
     .background {
-      // Fixed top corners; the bottom follows the display's corners (iPhone Duo, iPad, iPhone).
-      ConcentricRectangle(uniformTopCorners: .fixed(14), uniformBottomCorners: .concentric)
-        .fill(Color(uiColor: .systemBackground))
-        .shadow(color: .black.opacity(0.12), radius: 12, y: -2)
-        .ignoresSafeArea(.container, edges: .bottom)
+      // Fixed top corners; from iOS 26 the bottom follows the display's corners (iPhone Duo, iPad,
+      // iPhone).
+      Group {
+        if #available(iOS 26, *) {
+          ConcentricRectangle(uniformTopCorners: .fixed(14), uniformBottomCorners: .concentric)
+            .fill(Color(uiColor: .systemBackground))
+        } else {
+          UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14, style: .continuous)
+            .fill(Color(uiColor: .systemBackground))
+        }
+      }
+      .shadow(color: .black.opacity(0.12), radius: 12, y: -2)
+      .ignoresSafeArea(.container, edges: .bottom)
     }
   }
   /// Emote, picture, @, formula, more and share-to-dynamic, then the send button.
@@ -870,7 +878,7 @@ struct Discussion: View {
         }
         .font(.subheadline.weight(.semibold)).frame(minWidth: 40)
       }
-      .buttonStyle(.glassProminent)
+      .piliGlassButton(prominent: true)
       .disabled(!canSend)
     }
     .padding(.horizontal, 12).frame(height: 52)

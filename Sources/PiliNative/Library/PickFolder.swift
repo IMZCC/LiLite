@@ -61,7 +61,7 @@ struct PickFolder: View {
     }
     .navigationTitle("选择收藏夹").navigationBarTitleDisplayMode(.inline).toolbar {
       ToolbarItem(placement: .confirmationAction) {
-        Button("完成") { Task { await save() } }.buttonStyle(.glassProminent)
+        Button("完成") { Task { await save() } }.piliGlassButton(prominent: true)
           .disabled(saving || loading || folders.isEmpty)
       }
     }

@@ -76,7 +76,7 @@ private struct ReportsScrollCollapse: ViewModifier {
         .environment(\.panelTopInset, 0).environment(\.panelScroll, nil)
         // Only this list starts below an overlaid header; nested horizontal scrollers do not.
         .safeAreaPadding(.top, inset)
-        .onScrollGeometryChange(for: CGFloat.self) { g in
+        .piliOnScrollGeometryChange(for: CGFloat.self) { g in
           g.contentOffset.y + g.contentInsets.top
         } action: { old, new in
           state?.scrolled(from: old, to: new)
