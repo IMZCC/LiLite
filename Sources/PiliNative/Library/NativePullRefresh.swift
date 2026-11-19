@@ -213,7 +213,7 @@ private struct PullMarker: UIViewRepresentable {
     }
     @objc func moved(_ gesture: UIPanGestureRecognizer) {
       guard let s = scroll, gesture === s.panGestureRecognizer,
-        Self.owners.object(forKey: s) === self
+        Self.owners.object(forKey: s) === self, !ReplyPanelPullClaim.owns(s)
       else { return }
       let t = gesture.translation(in: self)
       if gesture.state == .began {

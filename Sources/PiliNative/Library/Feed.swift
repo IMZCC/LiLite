@@ -181,9 +181,7 @@ struct FeedView: View {
       }
       // The original client opens search as a page with the field on top, not a sheet.
       .navigationDestination(isPresented: $search) {
-        SearchView(
-          initialHint: hint, embedded: true,
-          placement: .navigationBarDrawer(displayMode: .always))
+        SearchView(initialHint: hint)
       }
       .piliTabRoot(.home)
       .navigationTitle("首页")

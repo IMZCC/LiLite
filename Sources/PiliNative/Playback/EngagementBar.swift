@@ -64,14 +64,16 @@ struct ArchiveActionColumn: View {
       column
     }
   }
+  /// The official action row: solid grey icons over small grey counts, tinted when done.
   private var column: some View {
-    VStack(spacing: 5) {
-      Image(systemName: symbol).font(.system(size: 21, weight: .regular))
-        .frame(height: 26)
+    VStack(spacing: 6) {
+      Image(systemName: symbol).symbolVariant(.fill).font(.system(size: 23, weight: .regular))
+        .foregroundStyle(active ? Color.accentColor : Color.primary.opacity(0.62))
+        .frame(height: 28)
       Text(title).font(.caption).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+        .foregroundStyle(active ? Color.accentColor : Color.secondary)
     }
-    .foregroundStyle(active ? Color.accentColor : Color.primary)
-    .frame(minWidth: 56, maxWidth: fills ? .infinity : 64, minHeight: 52).contentShape(Rectangle())
+    .frame(minWidth: 56, maxWidth: fills ? .infinity : 64, minHeight: 56).contentShape(Rectangle())
   }
 }
 private struct ScopedEngagement: View {

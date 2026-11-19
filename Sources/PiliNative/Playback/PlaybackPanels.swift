@@ -59,9 +59,9 @@ struct PlaybackTabBar<Accessory: View>: View {
           } label: {
             // Reserve the bold title's width so changing weight never moves the tab centers.
             Text(item.title)
-              .font(.body.weight(.semibold)).hidden()
+              .font(.subheadline.weight(.semibold)).hidden()
               .overlay {
-                Text(item.title).font(.body.weight(current ? .semibold : .regular))
+                Text(item.title).font(.subheadline.weight(current ? .semibold : .regular))
                   .foregroundStyle(current ? Color.primary : Color.secondary)
               }
               .padding(.vertical, 12)

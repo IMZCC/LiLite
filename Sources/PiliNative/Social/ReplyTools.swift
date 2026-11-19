@@ -11,7 +11,7 @@ struct TranslatableReply: View {
   private var showing: Bool { (override ?? reply.showTranslation) && translated != nil }
   var body: some View {
     ReplyRichText(content: showing ? translated! : reply.content, maxLines: lines, lineSpacing: 4,
-      textStyle: .callout)
+      textStyle: .body)
       .id(showing)
     if reply.translateEnabled {
       Button {

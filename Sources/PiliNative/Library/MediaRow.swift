@@ -12,7 +12,7 @@ struct MediaRow<Accessory: View>: View {
   var subtitle: String? = nil
   var detail: String? = nil
   var dimmed = false
-  var thumbWidth: CGFloat = 140
+  var thumbWidth: CGFloat = 146
   @ViewBuilder var accessory: () -> Accessory
 
   var body: some View {
@@ -49,15 +49,16 @@ struct MediaRow<Accessory: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
         .opacity(dimmed ? 0.5 : 1)
       VStack(alignment: .leading, spacing: 2) {
-        Text(title).font(.subheadline.weight(.medium)).lineLimit(2)
+        // The official list row: a 16pt regular title, then 13pt grey lines.
+        Text(title).font(.callout).lineLimit(2)
           .multilineTextAlignment(.leading)
           .foregroundStyle(dimmed ? Color.secondary : Color.primary)
-        Spacer(minLength: 4)
+        Spacer(minLength: 2)
         if let subtitle, !subtitle.isEmpty {
-          Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+          Text(subtitle).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
         }
         if let detail, !detail.isEmpty {
-          Text(detail).font(.caption).foregroundStyle(.secondary).monospacedDigit().lineLimit(1)
+          Text(detail).font(.footnote).foregroundStyle(.secondary).monospacedDigit().lineLimit(1)
         }
       }
       .frame(maxWidth: .infinity, minHeight: thumbHeight, alignment: .topLeading)

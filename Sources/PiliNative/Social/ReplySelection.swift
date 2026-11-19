@@ -70,7 +70,7 @@ struct ReplySelection: View {
             } else if let u = ReplySelectedText.safeURL(v.text) {
               SitePage(url: u)
             } else {
-              SearchView(keyword: v.text, embedded: true)
+              SearchView(keyword: v.text)
             }
           }
           .toolbar { Button("关闭") { destination = nil } }

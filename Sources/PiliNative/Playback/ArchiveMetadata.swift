@@ -20,7 +20,9 @@ struct ArchiveMetadata:View{
         }.scrollClipDisabled()
       }
       HStack(alignment: .firstTextBaseline, spacing: 8) {
-        Text(video.title).piliFont(.title3,weight:.bold).textSelection(.enabled)
+        // The official app's proportions: the title at body size and regular weight over a
+        // 13pt line of counts, not a page heading.
+        Text(video.title).piliFont(.body).textSelection(.enabled)
           .lineLimit(expanded ? nil : 2)
           .fixedSize(horizontal: false, vertical: true).layoutPriority(1)
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -51,16 +53,23 @@ struct ArchiveMetadata:View{
     }
   }
   private func short(_ n:Int)->String{n.formatted(.number.notation(.compactName))}
-  /// One quiet metadata line, as Apple's media apps do: views · bullets · date.
+  /// One quiet metadata line, as the official app draws it: play and bullet counts each after
+  /// its small icon, then the date.
   private var summaryLine:some View{
-    var parts:[String]=[]
-    if let n=stat?.view{parts.append(short(n)+"次播放")}
-    if let n=stat?.danmaku{parts.append(short(n)+"条弹幕")}
-    if let t=video.pubdate,t>0{
-      parts.append(Date(timeIntervalSince1970:Double(t)).formatted(.dateTime.year().month().day()))
-    }
-    return Text(parts.joined(separator:" · ")).monospacedDigit()
-      .accessibilityLabel(parts.joined(separator:"，"))
+    var spoken:[String]=[]
+    if let n=stat?.view{spoken.append(short(n)+"次播放")}
+    if let n=stat?.danmaku{spoken.append(short(n)+"条弹幕")}
+    let date=video.pubdate.flatMap{$0>0 ? Date(timeIntervalSince1970:Double($0)).formatted(.dateTime.year().month().day()) : nil}
+    if let date{spoken.append(date)}
+    return HStack(spacing:12){
+      if let n=stat?.view{counter("play.rectangle",short(n))}
+      if let n=stat?.danmaku{counter("list.bullet.rectangle",short(n))}
+      if let date{Text(date)}
+    }.monospacedDigit()
+      .accessibilityElement(children:.ignore).accessibilityLabel(spoken.joined(separator:"，"))
+  }
+  private func counter(_ symbol:String,_ value:String)->some View{
+    HStack(spacing:3){Image(systemName:symbol).imageScale(.small);Text(value)}
   }
   private func chip(_ text:String)->some View{
     Text(text).font(.caption.weight(.semibold)).foregroundStyle(.tint)

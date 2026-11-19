@@ -31,7 +31,7 @@ struct LinkDestination: View {
     case .contextVote(let id, let dynamic): VoteView(id: id, dynamic: String(dynamic))
     case .appPage(let page): AppLinkPage(page: page)
     case .favorites(let tab): FavoriteTabDestination(tab: tab)
-    case .search(let word): SearchView(keyword: word, embedded: true)
+    case .search(let word): SearchView(keyword: word)
     case .relations(let uid, let fans): RelationsList(uid: String(uid), fans: fans)
     case .course(let id, let ep):
       if ep {HistoryCourseLink(id:id,byEpisode:true,aid:nil,seconds:start)} else { CourseDetail(id:id) }

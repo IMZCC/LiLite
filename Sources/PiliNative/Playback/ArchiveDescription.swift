@@ -45,7 +45,8 @@ struct ArchiveDescription: View {
     }
   }
   private var content: some View {
-      Text(Self.description(video)).piliFont(.callout).textSelection(.enabled)
+      Text(Self.description(video)).piliFont(.subheadline).lineSpacing(3).foregroundStyle(.secondary)
+        .textSelection(.enabled)
         .environment(
           \.openURL,
           OpenURLAction { url in

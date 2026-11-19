@@ -4,7 +4,7 @@ extension MainTab {
   @ViewBuilder var screen: some View {
     switch self {
     case .home: FeedView()
-    case .search: SearchView()
+    case .search: SearchView(standalone: true)
     case .dynamics: DynamicFeed()
     case .mine: ProfileView()
     }

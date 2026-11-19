@@ -219,7 +219,7 @@ struct MainNavShell: View {
     .piliSheet(item: $shortcut) { shortcut in
       Group {
         switch shortcut {
-        case .search: SearchView()
+        case .search: SearchView(standalone: true)
         case .profile: ProfileView()
         }
       }.environment(\.navChrome, nil).environment(\.owningTab, nil)

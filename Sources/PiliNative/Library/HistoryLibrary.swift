@@ -50,6 +50,8 @@ struct ProfileFullHistory: View {
   @State private var category = "all"
   @State private var tabs: [MineHistoryPage.Tab] = []
   @State private var search = ""
+  @State private var searching = false
+  @State private var searchFocus = false
   @State private var term = ""
   @State private var revision = 0
   @State private var loaded: [String: LibraryHistoryItem] = [:]
@@ -86,17 +88,36 @@ struct ProfileFullHistory: View {
       row(item)
     }
     .id(identity).navigationTitle("观看历史")
+    // The search row opens from the toolbar instead of the system's collapsing search drawer,
+    // which snapped in and out under the chips on a light swipe and shook the list.
     .piliSafeAreaBar(edge: .top, spacing: 0) {
-      if term.isEmpty && !tabs.isEmpty { categories.padding(.vertical, 6) }
+      VStack(spacing: 0) {
+        if searching {
+          LibrarySearchRow(text: $search, focused: $searchFocus, prompt: "搜索全部观看记录") {
+            setTerm($0)
+          } cancel: {
+            searching = false
+            search = ""
+            setTerm("")
+          }
+        }
+        if term.isEmpty && !tabs.isEmpty { categories.padding(.vertical, 6) }
+      }
     }
     .navigationDestination(item: $visit) { mid in
       CreatorSpace(mid: mid, name: loaded.values.first { $0.record.author_mid == mid }?.record.author_name ?? "用户空间")
     }
-    .searchable(text: $search, prompt: "搜索全部观看记录").onSubmit(of: .search) { setTerm(search) }
-    .onChange(of: search) { _, text in if text.isEmpty { setTerm("") } }
     .task(id: uid) { await readPause() }
     .toolbar {
       ToolbarItemGroup(placement: .primaryAction) {
+        if !searching && !selecting {
+          Button {
+            searching = true
+            searchFocus = true
+          } label: {
+            Image(systemName: "magnifyingglass")
+          }.accessibilityLabel("搜索观看记录")
+        }
         if selecting {
           Menu("已选 \(selected.count)") {
             Button("全选已加载记录") { selected = Set(loaded.keys) }

@@ -960,16 +960,19 @@ struct Discussion: View {
           Button {
             TouchFeedback.light()
             route = .space(mid, r.member?.uname ?? "用户")
-          } label: { ReplyAvatar(member: r.member, size: 34) }
+          } label: { ReplyAvatar(member: r.member, size: 36) }
             .buttonStyle(.plain).accessibilityLabel((r.member?.uname ?? "用户") + "的空间")
         } else {
-          ReplyAvatar(member: r.member, size: 34)
+          ReplyAvatar(member: r.member, size: 36)
         }
-      }.padding(.top, 1)
+      }.padding(.top, -2)
+      // The official row: name; the comment at body size; then time, place and 回复 on the
+      // left of the like row. Nothing sits between the name and the comment.
       VStack(alignment: .leading, spacing: 0) {
         HStack(alignment: .center, spacing: 5) {
-          let author = ReplyAuthorLabel(member: r.member, isOwner: isOwner, showsAvatar: false)
-            .font(.footnote.weight(.medium))
+          let author = ReplyAuthorLabel(member: r.member, isOwner: isOwner, showsAvatar: false,
+            plainName: .secondary)
+            .font(.subheadline)
           if let mid = r.mid, mid > 0 {
             Button { TouchFeedback.light(); route = .space(mid, r.member?.uname ?? "用户") }
               label: { author }.buttonStyle(.plain)
@@ -982,7 +985,6 @@ struct Discussion: View {
         .overlay(alignment: .topTrailing) {
           ReplyCardBadge(card: r.member?.card).offset(y: -4).allowsHitTesting(false)
         }
-        replyMeta(r).font(.caption2).foregroundStyle(.secondary).padding(.top, 1)
         VStack(alignment: .leading, spacing: 6) {
           if let label = r.optionLabel {
             if let id = r.optionID {
@@ -999,17 +1001,17 @@ struct Discussion: View {
             }
           }
           ReplyPictures(items: r.content.pictures ?? [])
-        }.padding(.top, 8)
-        replyActions(r).padding(.top, 2)
+        }.padding(.top, 5)
+        replyActions(r).padding(.top, 3)
         if root == nil, !r.previews.isEmpty || (r.rcount ?? 0) > 0 {
-          previewBox(r).padding(.top, 2)
+          previewBox(r).padding(.top, 4)
         }
       }
     }
     .modifier(ThreadFirstFloor(
       isFirst: threadHeaderInRow && r.id == root,
       sortRow: AnyView(threadSortRow(total: r.rcount ?? 0))))
-    .padding(.top, 12).padding(.bottom, 6)
+    .padding(.top, 16).padding(.bottom, 8)
     // The located reply flashes like the original's colorAnimController, then settles.
     .background {
       if r.id == anchor {
@@ -1056,7 +1058,7 @@ struct Discussion: View {
     if !r.location.isEmpty { parts.append(r.location) }
     // "UP主觉得很赞" arrives as a card label in the action row, as in the original client.
     if r.likedByOwner, r.cardLabels.isEmpty { parts.append("UP 主觉得很赞") }
-    return Text(parts.joined(separator: " · "))
+    return Text(parts.joined(separator: "  "))
   }
   /// Grey box with up to three replies, each a single two-line run "name: text", then the total.
   private func previewBox(_ r: Reply) -> some View {
@@ -1084,10 +1086,10 @@ struct Discussion: View {
           HStack(spacing: 2) {
             if r.repliedByOwner { Text("UP 主等人 ").foregroundStyle(.primary.opacity(0.85)) }
             Text("共 \(total) 条回复").foregroundStyle(.tint)
-            Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold)).foregroundStyle(.tint)
-          }.font(.caption)
+            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(.tint)
+          }.font(.subheadline)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 10).padding(.vertical, 6).contentShape(Rectangle())
+            .padding(.horizontal, 12).padding(.vertical, 8).contentShape(Rectangle())
         }.buttonStyle(.plain)
       }
     }
@@ -1104,12 +1106,10 @@ struct Discussion: View {
   }
   @ViewBuilder private func replyActions(_ r: Reply) -> some View {
     HStack(spacing: 14) {
+      replyMeta(r).lineLimit(1).layoutPriority(-1)
       if let active = accounts.state.active {
         Button { begin(r, owner: active) } label: {
-          HStack(spacing: 3) {
-            Image(systemName: "arrowshape.turn.up.left")
-            Text("回复")
-          }
+          Text("回复").foregroundStyle(Color.primary.opacity(0.7))
         }.buttonStyle(.plain).disabled(inputDisabled)
       }
       if !r.cardLabels.isEmpty {
@@ -1129,6 +1129,7 @@ struct Discussion: View {
             Task { await change(r, "hate", state == 2 ? "0" : "1", as: active) }
           } label: {
             Image(systemName: state == 2 ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+              .font(.system(size: 16))
               .foregroundStyle(state == 2 ? Color.accentColor : Color.secondary)
           }.buttonStyle(.plain).accessibilityLabel(state == 2 ? "取消点踩" : "点踩")
         }
@@ -1161,13 +1162,14 @@ struct Discussion: View {
             }
           }
         } label: {
-          Image(systemName: "ellipsis").frame(width: 26, height: 26).contentShape(Rectangle())
+          Image(systemName: "ellipsis").rotationEffect(.degrees(90))
+            .frame(width: 28, height: 30).contentShape(Rectangle())
         }.accessibilityLabel("更多操作")
       } else if let mid = r.mid {
         LocalMute(mid: mid) { revision += 1 }.labelStyle(.iconOnly)
       }
     }
-    .font(.caption).foregroundStyle(.secondary).frame(minHeight: 30)
+    .font(.footnote).foregroundStyle(.secondary).frame(minHeight: 32)
   }
   @MainActor private func load(_ cursor: String?) async throws -> Page<Reply> {
     if simple {
@@ -1245,7 +1247,7 @@ struct Discussion: View {
   }
   private func likeLabel(_ r: Reply, active: Bool) -> some View {
     HStack(spacing: 4) {
-      Image(systemName: active ? "hand.thumbsup.fill" : "hand.thumbsup")
+      Image(systemName: active ? "hand.thumbsup.fill" : "hand.thumbsup").font(.system(size: 16))
       if let n = r.like, n > 0 {
         Text(Int64(n).formatted(.number.notation(.compactName))).monospacedDigit()
       }

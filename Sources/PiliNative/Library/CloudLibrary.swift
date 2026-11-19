@@ -6,6 +6,8 @@ struct CloudLibraryView: View {
   var heading: AnyView? = nil
   @State private var descending = false
   @State private var text = ""
+  @State private var searching = false
+  @State private var searchFocus = false
   @State private var query = ""
   @State private var revision = 0
   @State private var clearKind: Int?
@@ -106,20 +108,31 @@ struct CloudLibraryView: View {
       .navigationTitle(
         kind.title
       )
+      // The search row opens from the toolbar instead of the system's collapsing search drawer,
+      // which snapped in and out under the chips on a light swipe and shook the list.
       .piliSafeAreaBar(edge: .top, spacing: 0) {
-        if isLater {
-          ChipBar(items: [0, 2], selection: $viewed, title: { $0 == 0 ? "全部" : "未看完" })
-            .padding(.vertical, 6).disabled(selecting)
+        VStack(spacing: 0) {
+          if searching {
+            LibrarySearchRow(text: $text, focused: $searchFocus, prompt: "搜索\(kind.title)") { value in
+              query = value.trimmingCharacters(in: .whitespacesAndNewlines)
+              selection = []
+            } cancel: {
+              searching = false
+              text = ""
+              query = ""
+              selection = []
+            }
+          }
+          if isLater {
+            ChipBar(items: [0, 2], selection: $viewed, title: { $0 == 0 ? "全部" : "未看完" })
+              .padding(.vertical, 6).disabled(selecting)
+          }
         }
       }
       .piliFullScreenCover(item: $playlist, onDismiss: { revision += 1 }) { start in
         LibraryPlaylist(
           kind: kind, uid: uid, query: query, order: order, viewed: viewed, ascending: ascending,
           start: start, allowChanges: allowChanges)
-      }
-      .searchable(text: $text, prompt: "搜索\(kind.title)").onSubmit(of: .search) {
-        query = text
-        selection = []
       }
       .onChange(of: viewed) { _, _ in
         selection = []
@@ -148,6 +161,14 @@ struct CloudLibraryView: View {
       }
       .modifier(SelectionCancelBack(active: selecting) { selection = []; selecting = false })
       .toolbar {
+        if !searching && !selecting {
+          Button {
+            searching = true
+            searchFocus = true
+          } label: {
+            Image(systemName: "magnifyingglass")
+          }.accessibilityLabel("搜索\(kind.title)")
+        }
         if kind.canTransfer && !selecting {
           Menu {
             Button("播放全部") {

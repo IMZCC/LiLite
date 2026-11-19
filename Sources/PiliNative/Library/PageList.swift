@@ -65,7 +65,8 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
               ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 0) {
                   row(item).padding(.leading, 14).padding(.trailing, 12)
-                  Divider().padding(.leading, 58)
+                  // Under the comment's text column, as in the official list.
+                  Divider().padding(.leading, 66)
                 }.id(item.id)
               }
               footer

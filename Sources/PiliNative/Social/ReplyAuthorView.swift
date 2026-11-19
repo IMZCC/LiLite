@@ -78,12 +78,14 @@ struct ReplyAuthorLabel: View {
   let member: ReplyAuthor?
   var isOwner = false
   var showsAvatar = true
+  /// The name's colour for members without 年度大会员 (grey in comment rows, as officially).
+  var plainName: Color = .primary
   @AppStorage("live.medal") private var showMedal = true
   var body: some View {
     HStack(spacing: 6) {
       if showsAvatar { ReplyAvatar(member: member) }
       Text(member?.uname ?? "用户").lineLimit(1).foregroundStyle(
-        member?.vipStatus == 1 && member?.vipType == 2 ? Color.pink : Color.primary)
+        member?.vipStatus == 1 && member?.vipType == 2 ? Color.pink : plainName)
       if let level = member?.level {
         UserLevelBadge(level: level, height: 10, hardcore: member?.senior == true)
       }

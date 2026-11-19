@@ -414,8 +414,8 @@ struct DetailView: View {
   @ViewBuilder private func creatorRow(_ video: Video) -> some View {
     if let owner = video.owner?.name {
       let identity = HStack(spacing: 10) {
-        ProfileAvatar(url: video.owner?.avatar, size: 38)
-        Text(owner).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(1)
+        ProfileAvatar(url: video.owner?.avatar, size: 36)
+        Text(owner).font(.subheadline).foregroundStyle(.primary).lineLimit(1)
       }
       HStack(spacing: 12) {
         if useMemberPanel, video.owner?.mid != nil {
