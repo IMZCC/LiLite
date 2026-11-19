@@ -26,6 +26,8 @@ import SwiftUI
   @State private var active = NavigationLayout.current().launch
   @State private var incoming: [MainTab: IncomingRoute] = [:]
   @State private var homeRevision = 0
+  /// Set once the signed-in account is known, so a restored page opens in the final columns.
+  @State private var accountsReady = false
   private func returnHome(_ layout: NavigationLayout) {
     incoming.removeAll()
     active = layout.tabs.contains(.home) ? .home : layout.launch
@@ -83,6 +85,7 @@ import SwiftUI
         .onChange(of: phase) { _, v in
           if v == .background { Task { try? await DiagnosticJournal.shared.flush() } }
         }
+        .modifier(SceneResume(active: $active, incoming: $incoming, layout: layout, ready: accountsReady))
         .modifier(SleepExitStatus())
         .modifier(NightCanvas())
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
@@ -108,6 +111,7 @@ import SwiftUI
         .task {
           NativeMetricSubscriber.start()
           await accounts.refresh()
+          accountsReady = true
         }
         .task(id: faceData) {
           let bytes = faceData

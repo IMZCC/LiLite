@@ -101,6 +101,7 @@ struct EpisodeLink: View {
   @State private var seasonType: Int?
   @State private var seasonTitle: String?
   @State private var sid: Int64?
+  @State private var season: SeasonInfo?
   var resumeFullscreen = false
   @State private var episode: SeasonInfo.Episode?
   @State private var error: String?
@@ -111,7 +112,8 @@ struct EpisodeLink: View {
         EpisodePlayer(
           episode: episode, initialSeconds: initialSeconds, sequence: sequence, queueEnd: queueEnd,
           queueStep: queueStep,
-          resumeFullscreen: resumeFullscreen, seasonType: seasonType, seasonTitle: seasonTitle,seasonID:sid)
+          resumeFullscreen: resumeFullscreen, seasonType: seasonType, seasonTitle: seasonTitle,seasonID:sid,
+          season: season)
       } else if let error {
         PageFailure(message: error) { retry += 1 }
       } else {
@@ -128,6 +130,7 @@ struct EpisodeLink: View {
         seasonType = s.type
         seasonTitle = s.title
         sid = s.season_id
+        season = s
         sequence=group.episodes.map{$0.id==e.id ? e:$0}
         episode = e
       } catch { if !Task.isCancelled { self.error = error.localizedDescription } }

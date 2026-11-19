@@ -61,6 +61,10 @@ private struct GestureCanvas:View{
   @AppStorage("player.slideRange") private var range = 90.0
   @AppStorage("player.holdSpeed") private var hold = 3.0
   @State private var boost = false
+  @State private var boostRate: Float?
+  /// The double-tap jump just made, kept on screen a moment after it lands.
+  @State private var echo: (time: Double, delta: Double)?
+  @State private var echoEnd: Task<Void, Never>?
   @State private var clear: Task<Void, Never>?
   var body: some View {
     GeometryReader { g in
@@ -94,7 +98,7 @@ private struct GestureCanvas:View{
                 boostedItem = model.player.playbackItem
                 let speed = doubleSpeed ? model.rate * 2 : Float(hold)
                 model.player.rate = speed
-                feedback = "\(speed.formatted())倍速中"
+                boostRate = speed
               }
             },
             onPressingChanged: { down in
@@ -128,8 +132,7 @@ private struct GestureCanvas:View{
                 if PlayerSlide.cancelsSeek(v.location, size: g.size) {
                   scrub = nil; feedback = "松开手指，取消进退"
                 } else {
-                  let t = target(dx, width: g.size.width)
-                  scrub = t; feedback = clockText(t) + "/" + clockText(model.duration)
+                  scrub = target(dx, width: g.size.width); feedback = nil
                 }
               case .fullscreen:
                 scrub = nil; feedback = nil
@@ -163,53 +166,73 @@ private struct GestureCanvas:View{
               hint(nil)
             })
         if burst != 0 {
+          // More taps on the same half keep adding to the jump.
           HStack(spacing: 0) {
             if burst > 0 { Spacer() }
             Button {
               accumulate(burst > 0 ? step : -step)
             } label: {
-              ZStack {
-                Rectangle().fill(Color.black.opacity(0.25))
-                Label("\(Int(abs(burst))) 秒", systemImage: burst > 0 ? "forward.fill" : "backward.fill")
-                  .font(.headline.monospacedDigit()).foregroundStyle(.white)
-              }
+              Color.clear.contentShape(Rectangle())
             }.buttonStyle(.plain).frame(width: g.size.width / 2)
             if burst < 0 { Spacer() }
           }
         }
-        if let level {
-          PlayerLevelPill(symbol: level.symbol, percent: level.percent)
-        }
-        // Long-press speed and drag-seek time sit near the top, as in the original.
-        if let feedback {
-          VStack(spacing: 6) {
-            PlayerTopToast(text: feedback, rounded: scrub == nil ? 16 : 32)
-            if preview,let scrub,let timeline=model.model?.timeline{ShotPreview(state:timeline,seconds:scrub)}
-            Spacer(minLength: 0)
+        // All gesture feedback is one glass capsule at the top centre.
+        VStack(spacing: 8) {
+          if burst != 0 {
+            PlayerSeekHUD(time: min(model.duration, max(0, model.seconds + burst)), duration: model.duration, delta: burst)
+          } else if let echo {
+            PlayerSeekHUD(time: echo.time, duration: model.duration, delta: echo.delta)
+          } else if let scrub {
+            PlayerSeekHUD(time: scrub, duration: model.duration, delta: scrub - (start ?? scrub))
+            if preview, let timeline = model.model?.timeline { ShotPreview(state: timeline, seconds: scrub) }
+          } else if let level {
+            PlayerLevelHUD(symbol: level.symbol, percent: level.percent)
+          } else if let boostRate {
+            PlayerRateHUD(rate: boostRate)
+          } else if let feedback {
+            PlayerHUDCapsule {
+              Text(feedback).font(.system(size: 14, weight: .medium))
+            }
           }
-          .padding(.top, fullscreen ? 44 : 26)
-          .modifier(ToastAlpha()).allowsHitTesting(false)
+          Spacer(minLength: 0)
         }
+        .padding(.top, fullscreen ? 26 : 10)
+        .frame(maxWidth: .infinity)
+        .allowsHitTesting(false)
+        .animation(.easeOut(duration: 0.18), value: burst != 0 || echo != nil)
+        .animation(.easeOut(duration: 0.18), value: scrub == nil)
+        .animation(.easeOut(duration: 0.18), value: level == nil)
+        .animation(.easeOut(duration: 0.18), value: boostRate)
+        .animation(.easeOut(duration: 0.18), value: feedback)
       }
     }.accessibilityHidden(true).onChange(of: scrub) { _, t in viewportTouch?.horizontalSeek = t }
       .onChange(of:scene){_,state in if state != .active{cancel()}}
       .onReceive(model.player.itemPublisher.dropFirst()){_ in cancel()}
       .onDisappear{cancel()}
   }
-  private func cancel(){level=nil;viewportTouch?.horizontalSeek=nil;clear?.cancel();burstEnd?.cancel();burst=0;start=nil;axis=nil;scrub=nil;feedback=nil;endBoost()}
+  private func cancel(){level=nil;viewportTouch?.horizontalSeek=nil;clear?.cancel();burstEnd?.cancel();echoEnd?.cancel();echo=nil;burst=0;start=nil;axis=nil;scrub=nil;feedback=nil;endBoost()}
   private func accumulate(_ delta: Double) {
     guard let item = model.player.playbackItem, model.ready, delta.isFinite, delta != 0 else { return }
     burstEnd?.cancel()
     burst = ((burst > 0) == (delta > 0) ? burst : 0) + delta
     let requested = burst
+    echoEnd?.cancel()
+    echo = nil
     burstEnd = Task { @MainActor in
       do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
+      echo = (min(model.duration, max(0, model.seconds + requested)), requested)
       burst = 0
+      echoEnd = Task { @MainActor in
+        do { try await Task.sleep(for: .milliseconds(900)) } catch { return }
+        echo = nil
+      }
       guard model.player.playbackItem === item, model.ready else { return }
       await model.quickSeek(requested, item: item)
     }
   }
   private func endBoost() {
+    boostRate = nil
     guard boost else { return }
     boost = false
     if boostedItem === model.player.playbackItem, model.player.rate != 0 { model.player.rate = model.rate }

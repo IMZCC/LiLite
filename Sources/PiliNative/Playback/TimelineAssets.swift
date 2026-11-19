@@ -148,6 +148,10 @@ private actor ShotImages {
 struct ShotPreview: View {
   @ObservedObject var state: TimelineState
   let seconds: Double
+  /// The largest the frame is drawn; the fullscreen scrub preview is bigger than the inline one.
+  var limit = CGSize(width: 160, height: 90)
+  var corner: CGFloat = 8
+  var framed = false
   @State private var sheet: CGImage?
   @State private var loaded: String?
   var body: some View {
@@ -159,8 +163,13 @@ struct ShotPreview: View {
         let cut = sheet.cropping(to: CGRect(x: t.x, y: t.y, width: t.width, height: t.height))
       {
         Image(decorative: cut, scale: 1).resizable().aspectRatio(contentMode: .fit).frame(
-          maxWidth: 160, maxHeight: 90
-        ).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+          maxWidth: limit.width, maxHeight: limit.height
+        ).clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+        .overlay {
+          if framed {
+            RoundedRectangle(cornerRadius: corner, style: .continuous).strokeBorder(.white, lineWidth: 2)
+          }
+        }
       }
     }.task(id: state.source) { state.requestShots() }.task(id: tile?.image) {
       loaded = nil

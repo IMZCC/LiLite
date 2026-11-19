@@ -37,6 +37,8 @@ struct TheaterTools: View {
   @ObservedObject var model: PlayerModel
   let subject: TheaterSubject?, playlist: AnyView?, close: () -> Void
   var bulletSnapshot:(()->[Bullet])?=nil
+  /// Like, coin and favourite, which fullscreen keeps here rather than over the picture.
+  var engagement: EngagementItem? = nil
   @AppStorage("detail.chapters") private var chapters = true
   @AppStorage("sponsor.enabled") private var sponsor = false
   @AppStorage(SpeedPresets.key) private var speeds = Data()
@@ -52,6 +54,9 @@ struct TheaterTools: View {
       // Same icon rows as the inline 更多 sheet (the original shows one sheet in both modes).
       PiliNavigationStack {
         List {
+          if let engagement {
+            Section { EngagementBar(item: engagement).frame(maxWidth: .infinity) }
+          }
           Section {
             if let playlist {
               NavigationLink { playlist.modifier(ReplyEdgeDismiss()).navigationTitle("选集") } label: { row("list.number", "选集") }

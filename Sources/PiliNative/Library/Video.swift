@@ -64,6 +64,8 @@ struct Video: Decodable, Identifiable, Hashable {
     var duration: Int? = nil
     let page: Int
     let part: String
+    /// The part's opening frame, the fullscreen 选集 card's picture.
+    var first_frame: String? = nil
     var id: Int64 { cid }
   }
 }

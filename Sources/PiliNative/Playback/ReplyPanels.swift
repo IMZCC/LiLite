@@ -79,6 +79,13 @@ private struct ReplyPanelChrome<Content: View>: View {
   }
 }
 
+/// Set by a panel's content while it has sideways pages to go back through, so a right swipe
+/// turns its page; on the first page the swipe closes the panel as usual.
+struct ReplyPanelSwipeLock: PreferenceKey {
+  static let defaultValue = false
+  static func reduce(value: inout Bool, nextValue: () -> Bool) { value = value || nextValue() }
+}
+
 /// Closes a panel by dragging it, following the finger: right to slide it away like the
 /// original's page, or down (from the title bar, or from the list once it is at its top) as in
 /// the official app. The offsets live in this modifier, so a drag never re-renders the thread.
@@ -92,6 +99,10 @@ private struct ReplyPanelDrag: ViewModifier {
   @State private var axis: Axis?
   @State private var fromHeader = false
   @State private var height: CGFloat = 600
+  @State private var locked = false
+  /// This drag began as a page turn inside the panel; it never becomes a close, even once the
+  /// pager reaches its first page mid-swipe.
+  @State private var passed = false
   @GestureState private var touching = false
   func body(content: Content) -> some View {
     content
@@ -113,8 +124,12 @@ private struct ReplyPanelDrag: ViewModifier {
           .updating($touching) { _, state, _ in state = true }
           .onChanged { g in
             let w = g.translation.width, h = g.translation.height
+            if passed { return }
             if axis == nil {
-              if w > 0, abs(w) > abs(h) * 1.4 {
+              if w > 0, abs(w) > abs(h) * 1.4, locked {
+                passed = true
+                return
+              } else if w > 0, abs(w) > abs(h) * 1.4 {
                 axis = .horizontal
               } else if h > 0, abs(h) > abs(w), g.startLocation.y <= Self.header {
                 axis = .vertical
@@ -126,6 +141,7 @@ private struct ReplyPanelDrag: ViewModifier {
             if axis == .horizontal { drag = max(0, w) } else if fromHeader { pull = max(0, h) }
           }
           .onEnded { g in
+            passed = false
             if axis == .horizontal {
               axis = nil
               let far = drag > 110 || (drag > 30 && g.predictedEndTranslation.width > 260)
@@ -145,6 +161,7 @@ private struct ReplyPanelDrag: ViewModifier {
         guard !now else { return }
         // A drag the system cancels never reaches onEnded: put the panel back.
         DispatchQueue.main.async {
+          passed = false
           if axis == .horizontal {
             axis = nil
             withAnimation(.smooth(duration: 0.25)) { drag = 0 }
@@ -156,6 +173,7 @@ private struct ReplyPanelDrag: ViewModifier {
         }
       }
       .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = max(1, $0) }
+      .onPreferenceChange(ReplyPanelSwipeLock.self) { locked = $0 }
       .coordinateSpace(.named(Self.space))
   }
   private func settle(_ value: CGFloat, velocity: CGFloat) {

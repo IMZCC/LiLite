@@ -37,6 +37,15 @@ struct Theater: View {
   @State private var routeVolume = false
   @State private var volumeSequence = 0
   @State private var pulse = 0
+  /// Fullscreen: the panel open under the bar, the scrubbed time, and the brief lock offer.
+  @State private var panel: String?
+  @State private var scrub: Double?
+  @State private var lockHint = false
+  @State private var lockPulse = 0
+  /// A menu opened from the chrome (speed, fit, subtitles) keeps it up until this uptime: hiding
+  /// the chrome takes the menu's anchor away and closes it.
+  @State private var holdUntil = 0.0
+  @AppStorage("player.seekPreview") private var previews = true
   @AccessibilityFocusState private var controlsFocused: Bool
   var body: some View {
     GeometryReader { geo in
@@ -119,6 +128,8 @@ struct Theater: View {
               guard case .second=value,showsControls,!system,!clock.picture.inPictureInPicture,touch.acceptsPan else{return}
               DispatchQueue.main.async{
                 guard ProcessInfo.processInfo.systemUptime-touch.lastBulletTap>0.08 else{return}
+                // A tap on the picture first puts an open panel away.
+                if panel != nil { closePanel(); return }
                 visible.toggle();wake()
               }
             },including:system || !showsControls ? .subviews:.all)
@@ -139,6 +150,10 @@ struct Theater: View {
               }
               Spacer()
             }.padding(.top, 4)
+          } else if fullscreen && slots.close != nil {
+            // Pages that fill the new chrome's slots (the theater); the offline file player
+            // keeps its own navigation bar and the classic bars.
+            fullscreenControls(size: size)
           } else {
             appControls(width: size.width)
           }
@@ -149,9 +164,16 @@ struct Theater: View {
           }
         }
         if let volumeHint {
-          PlayerLevelPill(
-            symbol: PlayerLevelPill.volumeSymbol(Double(volumeHint) / 100), percent: volumeHint
-          ).accessibilityHidden(true)
+          if fullscreen {
+            VStack {
+              PlayerLevelHUD(symbol: PlayerLevelPill.volumeSymbol(Double(volumeHint) / 100), percent: volumeHint)
+              Spacer(minLength: 0)
+            }.padding(.top, 26).accessibilityHidden(true)
+          } else {
+            PlayerLevelPill(
+              symbol: PlayerLevelPill.volumeSymbol(Double(volumeHint) / 100), percent: volumeHint
+            ).accessibilityHidden(true)
+          }
         }
       }.frame(width: size.width, height: size.height)
     }.preference(key: PlayerControlsVisibleKey.self, value: visible && showsControls && !system)
@@ -205,14 +227,202 @@ struct Theater: View {
       touch.horizontalSeek = nil
     }
     .task(id: pulse) {
-      guard visible, !system, showsControls, !editing else { return }
+      guard visible, !system, showsControls, !editing, panel == nil else { return }
       do { try await Task.sleep(for: .seconds(longer ? 30 : 3)) } catch { return }
+      if ProcessInfo.processInfo.systemUptime < holdUntil {
+        pulse &+= 1
+        return
+      }
       if !Task.isCancelled, !touch.pinching, touch.horizontalSeek == nil, !editing,
-        !controlsFocused, !voiceOver
+        !controlsFocused, !voiceOver, panel == nil
       {
         visible = false
       }
     }
+    .onChange(of: visible) { _, shown in
+      guard fullscreen else { return }
+      if shown {
+        lockHint = false
+      } else {
+        panel = nil
+        // As in the reference player: the lock stays where play was for a few seconds.
+        if showsControls, slots.lock != nil {
+          lockHint = true
+          lockPulse &+= 1
+        }
+      }
+    }
+    .task(id: lockPulse) {
+      guard lockHint else { return }
+      do { try await Task.sleep(for: .seconds(4)) } catch { return }
+      lockHint = false
+    }
+  }
+  // MARK: Fullscreen chrome
+
+  /// The fullscreen layout (FullscreenChrome.swift has the parts): status line and header on a
+  /// light top shade; progress, then play / next and the word buttons on a bottom shade that
+  /// deepens and blurs when a panel takes the buttons' place.
+  @ViewBuilder private func fullscreenControls(size: CGSize) -> some View {
+    let open = slots.panels.first { $0.id == panel }
+    ZStack {
+      if visible {
+        fullscreenShade(open: open != nil, height: size.height).transition(.opacity)
+        if open != nil {
+          Color.clear.contentShape(Rectangle()).onTapGesture { closePanel() }.accessibilityHidden(true)
+        }
+        VStack(alignment: .leading, spacing: 0) {
+          PlayerStatusRow().padding(.top, 6)
+          fullscreenHeader
+          if let info = slots.info {
+            info.padding(.top, 2).transition(.opacity.combined(with: .offset(y: -8)))
+          }
+          Spacer(minLength: 0)
+          if !live, clock.duration > 0 {
+            FullscreenSeekBar(
+              clock: clock, readout: clock.readout, seek: jump, editing: edit,
+              external: touch.horizontalSeek, marks: marks, scrub: $scrub)
+          }
+          ZStack(alignment: .topLeading) {
+            if let open {
+              open.content
+                .environment(\.playerPanelDismiss, { closePanel() })
+                .padding(.top, 6).padding(.bottom, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else {
+              fullscreenButtons.transition(.opacity)
+            }
+          }
+        }
+        // Landscape gets its margins from the safe area; a portrait screen has none at the sides.
+        .padding(.horizontal, size.width < size.height ? 16 : 0)
+        .transition(.opacity)
+        if previews, let scrub, let timeline {
+          VStack {
+            Spacer(minLength: 0)
+            HStack {
+              Spacer(minLength: 0)
+              ShotPreview(state: timeline, seconds: scrub, limit: CGSize(width: 228, height: 128), corner: 12, framed: true)
+                .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
+            }
+            .padding(.trailing, size.width < size.height ? 16 : 24).padding(.bottom, 124)
+          }
+          .allowsHitTesting(false).transition(.opacity)
+        }
+      } else if lockHint, let lock = slots.lock {
+        VStack {
+          Spacer(minLength: 0)
+          HStack {
+            Button { lock() } label: {
+              Image(systemName: "lock.open").font(.system(size: 22, weight: .medium))
+                .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
+                .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+            }
+            .accessibilityLabel("锁定播放控件")
+            Spacer(minLength: 0)
+          }
+        }
+        .padding(.horizontal, size.width < size.height ? 16 : 0)
+        .transition(.opacity)
+      }
+    }
+    .foregroundStyle(.white).buttonStyle(PlayerPressStyle())
+    .environment(\.colorScheme, .dark)
+    .animation(PlayerChromeMotion.fade, value: visible)
+    .animation(PlayerChromeMotion.fade, value: lockHint)
+    .animation(PlayerChromeMotion.panel, value: panel)
+    .animation(PlayerChromeMotion.fade, value: scrub == nil)
+    .accessibilityElement(children: .contain).accessibilityFocused($controlsFocused)
+  }
+  private func fullscreenShade(open: Bool, height: CGFloat) -> some View {
+    VStack(spacing: 0) {
+      LinearGradient(colors: [.black.opacity(0.5), .black.opacity(0)], startPoint: .top, endPoint: .bottom)
+        .frame(height: 120)
+      Spacer(minLength: 0)
+      ZStack {
+        if open {
+          // Under a panel the picture is frosted as well as darkened.
+          Rectangle().fill(.ultraThinMaterial)
+            .mask(LinearGradient(colors: [.clear, .black, .black], startPoint: .top, endPoint: .bottom))
+        }
+        LinearGradient(colors: [.black.opacity(0), .black.opacity(open ? 0.78 : 0.55)], startPoint: .top, endPoint: .bottom)
+      }
+      .frame(height: open ? height * 0.7 : 150)
+    }
+    .ignoresSafeArea().allowsHitTesting(false)
+  }
+  private var fullscreenHeader: some View {
+    HStack(spacing: 0) {
+      if let close = slots.close {
+        Button(action: close) {
+          Image(systemName: "xmark").font(.system(size: 19, weight: .medium))
+            .frame(width: 44, height: 44).contentShape(Rectangle())
+            .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+        }.accessibilityLabel("退出全屏")
+      }
+      if let title = slots.title {
+        Text(title).font(.system(size: 17, weight: .medium)).lineLimit(1)
+          .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+          .padding(.leading, 2).layoutPriority(-1)
+      }
+      Spacer(minLength: 16)
+      if let tools = slots.tools { tools.simultaneousGesture(TapGesture().onEnded { holdChrome() }) }
+    }
+    .frame(height: 44)
+    // The first and last glyphs line up with the bars' edges, not their 44 pt cells.
+    .padding(.horizontal, -11)
+  }
+  private var fullscreenButtons: some View {
+    HStack(spacing: 0) {
+      Button { playPause(); wake() } label: {
+        Image(systemName: clock.playing ? "pause.fill" : "play.fill")
+          .font(.system(size: 27, weight: .medium))
+          .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
+          .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+          .contentTransition(.symbolEffect(.replace))
+      }.accessibilityLabel(clock.playing ? "暂停" : "播放").disabled(!clock.ready)
+      if let next = slots.next {
+        Button { next(); wake() } label: {
+          Image(systemName: "forward.end.fill")
+            .font(.system(size: 21, weight: .medium))
+            .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
+            .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+        }.accessibilityLabel("下一集").padding(.leading, 26)
+      }
+      if live {
+        Text("直播").font(.system(size: 15, weight: .semibold)).padding(.leading, 12)
+      }
+      Spacer(minLength: 8)
+      HStack(spacing: 18) {
+        if let upscale { UpscaleButton(session: upscale) }
+        if abs(zoom.scale - 1) > 0.005 {
+          Button {
+            withAnimation(.easeOut(duration: 0.22)) { resetZoom() }
+            wake()
+          } label: { PlayerWordGlyph(text: "还原") }
+            .accessibilityLabel("还原画面").transition(.opacity)
+        }
+        ForEach(slots.panels) { p in
+          Button {
+            TouchFeedback.light()
+            withAnimation(PlayerChromeMotion.panel) { panel = p.id }
+            wake()
+          } label: { PlayerWordGlyph(text: p.title) }
+        }
+        if let menus = slots.menus { menus.simultaneousGesture(TapGesture().onEnded { holdChrome() }) }
+      }
+      .padding(.trailing, -10)
+    }
+    .frame(height: 48)
+  }
+  private func holdChrome() {
+    holdUntil = ProcessInfo.processInfo.systemUptime + 12
+    wake()
+  }
+  private func closePanel() {
+    withAnimation(PlayerChromeMotion.panel) { panel = nil }
+    wake()
   }
   /// The original client's player chrome: a header (back/title left, tools right) and a bottom
   /// bar (progress, then play/time left and menus/fullscreen right), each on a 75 % black
@@ -238,6 +448,19 @@ struct Theater: View {
           bottomBar(width: width)
         }
         .transition(.move(edge: .bottom).combined(with: .opacity))
+        if previews, let scrub, let timeline {
+          // The frame being scrubbed to, framed on the right above the bar as in fullscreen.
+          VStack {
+            Spacer(minLength: 0)
+            HStack {
+              Spacer(minLength: 0)
+              ShotPreview(state: timeline, seconds: scrub, limit: CGSize(width: 160, height: 90), framed: true)
+                .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+            }
+            .padding(.trailing, 12).padding(.bottom, 78)
+          }
+          .allowsHitTesting(false).transition(.opacity)
+        }
         if fullscreen && (slots.edgeLeading != nil || slots.edgeTrailing != nil) {
           HStack(spacing: 0) {
             slots.edgeLeading
@@ -300,22 +523,21 @@ struct Theater: View {
         .ignoresSafeArea(edges: .top).allowsHitTesting(false)
     }
   }
+  /// The inline bottom bar in the fullscreen chrome's style: the time, a thick white bar with no
+  /// thumb and the length on one row, then play and the menus under it.
   private func bottomBar(width: CGFloat) -> some View {
     VStack(spacing: 0) {
       if !live, clock.duration > 0 {
-        ViewportSeekBar(
-          clock: clock, readout: clock.readout, seek: jump, editing: edit, compact: false,
-          external: touch.horizontalSeek, marks: marks, timeline: timeline)
-          .padding(.horizontal, 10)
-          // Its 30 pt touch band ends where the buttons begin, so it never steals their taps.
-          .padding(.bottom, -2)
+        FullscreenSeekBar(
+          clock: clock, readout: clock.readout, seek: jump, editing: edit,
+          external: touch.horizontalSeek, marks: marks, scrub: $scrub, compact: true)
+          .padding(.horizontal, 12)
+          // Its touch band ends where the buttons begin, so it never steals their taps.
+          .padding(.bottom, -4)
       }
       HStack(spacing: 0) {
         playControl
-        if !live, clock.duration > 0 {
-          ViewportTimeLabel(readout: clock.readout, external: touch.horizontalSeek, duration: clock.duration)
-            .padding(.leading, 2)
-        } else if live {
+        if live {
           Text("直播").font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.92))
         }
         if let lead = slots.bottomLeading { lead }

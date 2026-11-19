@@ -48,7 +48,7 @@ struct SeasonCatalogEntry: View {
           initialSeconds: info.activeProgress?.last_ep_id == e.id
             ? info.activeProgress?.last_time.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } : nil,
           sequence: group.episodes.map { $0.id == e.id ? e : $0 }, seasonType: info.type,
-          seasonTitle: info.title, seasonID: id)
+          seasonTitle: info.title, seasonID: id, season: info)
       } else if let error {
         VStack {
           Text(error)

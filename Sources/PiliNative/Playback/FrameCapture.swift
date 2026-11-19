@@ -318,12 +318,18 @@ import UniformTypeIdentifiers
 }
 struct CaptureButton: View {
   let player: any PlaybackEngine
+  /// The fullscreen header's icon style.
+  var tool = false
   @State private var sheet = false
   var body: some View {
     Button {
       sheet = true
     } label: {
-      Image(systemName: "camera").accessibilityLabel("截图与动图")
+      if tool {
+        PlayerToolGlyph(symbol: "camera").accessibilityLabel("截图与动图")
+      } else {
+        Image(systemName: "camera").accessibilityLabel("截图与动图")
+      }
     }
     .piliSheet(isPresented: $sheet) { CapturePanel(player).presentationDetents([.medium, .large]) }
   }

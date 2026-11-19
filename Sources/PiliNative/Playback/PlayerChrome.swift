@@ -20,6 +20,21 @@ struct PlayerChromeSlots {
   var underHeader: AnyView? = nil
   var edgeLeading: AnyView? = nil
   var edgeTrailing: AnyView? = nil
+  // The fullscreen chrome (FullscreenChrome.swift) reads these instead of the bars above.
+  /// ✕ before the title.
+  var close: (() -> Void)? = nil
+  /// The header's icons on the right.
+  var tools: AnyView? = nil
+  /// The format chip under the title, while the page wants it shown.
+  var info: AnyView? = nil
+  /// ▶| after play / pause.
+  var next: (() -> Void)? = nil
+  /// Word buttons on the right that open a panel under the bar ("4K", "选集").
+  var panels: [PlayerPanelSlot] = []
+  /// Word buttons after the panels that act on their own ("倍速" menu).
+  var menus: AnyView? = nil
+  /// The lock, offered for a few seconds where play was once the controls hide.
+  var lock: (() -> Void)? = nil
 }
 private struct PlayerChromeKey: EnvironmentKey { static let defaultValue = PlayerChromeSlots() }
 extension EnvironmentValues {
@@ -98,6 +113,8 @@ struct PlayerEdgeButton: View {
 
 struct PlayerSpeedMenu: View {
   @ObservedObject var model: PlayerModel
+  /// Fullscreen: the word "倍速" (or the rate once changed) in the bottom row's style.
+  var word = false
   @AppStorage(SpeedPresets.key) private var data = Data()
   @State private var current = 1.0
   var body: some View {
@@ -112,8 +129,12 @@ struct PlayerSpeedMenu: View {
         }
       }
     } label: {
-      // Always the rate, like the original ("1.0X").
-      PlayerTextGlyph(text: current.formatted(.number.precision(.fractionLength(1...2))) + "X")
+      if word {
+        PlayerWordGlyph(text: current == 1 ? "倍速" : current.formatted() + "×")
+      } else {
+        // Always the rate, like the original ("1.0X").
+        PlayerTextGlyph(text: current.formatted(.number.precision(.fractionLength(1...2))) + "X")
+      }
     }
     .menuOrder(.fixed)
     .accessibilityLabel("倍速").accessibilityValue(current.formatted() + "倍")
@@ -147,6 +168,7 @@ struct PlayerQualityMenu: View {
 
 struct PlayerCaptionMenu: View {
   @ObservedObject var session: SubtitleSession
+  var tool = false
   var body: some View {
     if !session.tracks.isEmpty {
       Menu {
@@ -158,7 +180,11 @@ struct PlayerCaptionMenu: View {
           ForEach(session.tracks) { r in Text(r.name).tag(Optional(r.id)) }
         }
       } label: {
-        PlayerGlyph(symbol: session.first == nil ? "captions.bubble" : "captions.bubble.fill")
+        if tool {
+          PlayerToolGlyph(symbol: session.first == nil ? "captions.bubble" : "captions.bubble.fill")
+        } else {
+          PlayerGlyph(symbol: session.first == nil ? "captions.bubble" : "captions.bubble.fill")
+        }
       }
       .accessibilityLabel("字幕")
     }
@@ -168,6 +194,8 @@ struct PlayerCaptionMenu: View {
 struct PlayerFitMenu: View {
   let player: any PlaybackEngine
   @ObservedObject var session: PictureSession
+  /// Fullscreen header: an icon instead of the fit's name.
+  var tool = false
   @AppStorage("play.gravity") private var stored = PictureFit.fit.rawValue
   var body: some View {
     Menu {
@@ -180,7 +208,11 @@ struct PlayerFitMenu: View {
       Toggle("水平镜像", isOn: $session.mirrorX.withTouchFeedback)
       Toggle("垂直镜像", isOn: $session.mirrorY.withTouchFeedback)
     } label: {
-      PlayerTextGlyph(text: (PictureFit(rawValue: stored) ?? .fit).title)
+      if tool {
+        PlayerToolGlyph(symbol: "aspectratio")
+      } else {
+        PlayerTextGlyph(text: (PictureFit(rawValue: stored) ?? .fit).title)
+      }
     }
     .accessibilityLabel("画面比例与镜像")
   }
@@ -191,12 +223,13 @@ struct PlayerFitMenu: View {
 /// Picture in picture from the header, as in the original.
 struct PlayerPiPButton: View {
   let player: any PlaybackEngine
+  var tool = false
   var body: some View {
     Button {
       TouchFeedback.light()
       NotificationCenter.default.post(name: .piliStartPictureInPicture, object: player)
     } label: {
-      PlayerGlyph(symbol: "pip.enter")
+      if tool { PlayerToolGlyph(symbol: "pip.enter") } else { PlayerGlyph(symbol: "pip.enter") }
     }
     .accessibilityLabel("画中画")
   }

@@ -91,6 +91,27 @@ struct DetailView: View {
     nonmutating set { model.preferences.bullets = newValue }
   }
   @StateObject private var model = PlayerModel()
+  /// The fullscreen 选集 strip: the parts of this video, or else the collection it belongs to.
+  private func archiveEpisodes(_ video: Video) -> [PlayerEpisodeCard] {
+    if let pages = video.pages, pages.count > 1 {
+      return (descendingParts ? Array(pages.reversed()) : pages).map { part in
+        PlayerEpisodeCard(
+          id: "p\(part.cid)", cover: part.first_frame.flatMap(httpsURL) ?? video.cover,
+          heading: "P\(part.page)", title: part.part,
+          current: part.cid == cid
+        ) { if cid != part.cid { cid = part.cid } }
+      }
+    }
+    let entries = (video.ugc_season?.sections ?? []).flatMap { $0.ordered(reversedSections) }
+    guard entries.count > 1 else { return [] }
+    return entries.enumerated().compactMap { index, entry in
+      guard let target = entry.playable(by: video.owner?.name) else { return nil }
+      return PlayerEpisodeCard(
+        id: "s\(target.bvid)", cover: target.cover, heading: "第 \(index + 1) 个", title: target.title,
+        current: target.bvid == video.bvid
+      ) { if target.bvid != video.bvid { following = target } }
+    }
+  }
   private func archivePlaylist(_ video: Video) -> AnyView? {
     guard (video.pages?.count ?? 0) > 1 || !(video.ugc_season?.sections ?? []).isEmpty else {
       return nil
@@ -527,6 +548,9 @@ struct DetailView: View {
       wideViewport = $0
       if !$0 { sideAuthor = nil }
     }.navigationTitle("").navigationBarTitleDisplayMode(.inline)
+      .screenResume(key: "\(source.bvid):\(cid ?? 0)") { [model] in
+        ScreenResume.video(source.bvid, cid: cid, seconds: model.seconds)
+      }
       .linkedDiscussion(oid: detail?.aid ?? detail.flatMap { ArchiveNumber.av($0.bvid) }, type: 1, author: detail?.owner?.mid,
         playback: ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model),
         selectComments:{if showReplies {sideAuthor=nil;panelOverride=true}})
@@ -704,7 +728,8 @@ struct DetailView: View {
           subject: cid.map { TheaterSubject(cid: $0, oid: video.aid ?? ArchiveNumber.av(video.bvid), type: 1,
             bvid: video.bvid, aid: video.aid ?? ArchiveNumber.av(video.bvid), creator: video.owner?.mid,
             introduction: video.desc, interactive: video.rights?.is_stein_gate == 1, comments: showReplies,shortcutCanFollow: detail?.bvid==video.bvid && (video.staff ?? []).isEmpty) },
-          playlist: JoinedPlaybackPanels.merge(libraryPanel, archivePlaylist(video), fullscreen: true),continueBadge:continueBadge(video),
+          playlist: JoinedPlaybackPanels.merge(libraryPanel, archivePlaylist(video), fullscreen: true),
+          episodes: libraryPanel == nil ? archiveEpisodes(video) : [], continueBadge:continueBadge(video),
           title: (video.pages?.count ?? 1) > 1
             ? video.pages?.first { $0.cid == cid }?.part ?? video.title : video.title,
           model:model, keyStep: keyboardStep,

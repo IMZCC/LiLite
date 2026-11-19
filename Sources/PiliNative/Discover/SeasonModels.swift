@@ -20,7 +20,7 @@ struct Season: Decodable, Identifiable {
 struct SeasonInfo: Decodable {
   var type: Int?
   var staff: String?, alias: String?, jp_title: String?, styles: [String]?,
-    up_info: CourseCatalog.Teacher?, rights: Rights?, season_title: String?
+    up_info: CourseCatalog.Teacher?, rights: Rights?, season_title: String?, badge: String?
   var usesHistoryOwner: Bool?, historyProgress: User.Progress?
   var activeProgress: User.Progress? {
     usesHistoryOwner == true ? historyProgress : user_status?.progress
@@ -41,7 +41,10 @@ struct SeasonInfo: Decodable {
   struct Area: Decodable { let name: String? }
   struct Publish: Decodable { let pub_time_show: String? }
   struct Latest: Decodable { let desc: String?, title: String? }
-  struct Stats: Decodable { let views: Int64?, danmakus: Int64? }
+  struct Stats: Decodable {
+    let views: Int64?, danmakus: Int64?
+    var likes: Int64? = nil, coins: Int64? = nil, favorites: Int64? = nil, share: Int64? = nil
+  }
   struct User: Decodable {
     struct Progress: Decodable { let last_ep_id: Int64?, last_time: Double? }
     let favored: Int?, progress: Progress?

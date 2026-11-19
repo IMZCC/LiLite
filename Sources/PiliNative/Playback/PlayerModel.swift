@@ -41,6 +41,16 @@ final class PlayerModel: ObservableObject {
   @Published var availableQualities: [Int] = []
   @Published var qualityError: String?
   @Published var switching = false
+  /// The video and audio renditions now playing, for the fullscreen format chip.
+  @Published private(set) var streamInfo: PlayerStreamInfo?
+  /// What each offered quality would play (codec, bit rate, size), for the quality cards.
+  func streamInfo(for id: Int) -> PlayerStreamInfo? {
+    guard let dash, let video = chooseVideo(dash.video.filter { $0.id == id }) else {
+      return id == quality ? streamInfo : nil
+    }
+    let audio = chooseAudio(dash.audio ?? [], requested: audioID ?? preferences.overridden(audio: true))
+    return PlayerStreamInfo(quality: id, video: video, audio: audio)
+  }
   var rate: Float {
     get { engine.defaultRate }
     set {
@@ -332,6 +342,7 @@ final class PlayerModel: ObservableObject {
       progressivePreview = source.preview
       progressiveVolume = source.volume
       quality = source.quality
+      streamInfo = .progressive(source.quality)
       mirrors = Array(source.backups.prefix(3))
       try await open(source.url, owner: owner)
     } catch {
@@ -740,6 +751,7 @@ final class PlayerModel: ObservableObject {
       progressivePreview = source.preview
       progressiveVolume = source.volume
       quality = source.quality
+      streamInfo = .progressive(source.quality)
       qualityError = nil
       error = nil
       try await open(source.url, owner: owner)
@@ -793,6 +805,7 @@ final class PlayerModel: ObservableObject {
       spokenLanguage = plan.body.cur_language
       audioChoices = []
       audioID = nil
+      streamInfo = PlayerStreamInfo(quality: quality)
       error = nil
       qualityError = nil
       mpvFallbacks = []
@@ -812,6 +825,7 @@ final class PlayerModel: ObservableObject {
       availableQualities = Array(Set((plan.body.accept_quality ?? []) + [quality])).filter { $0 > 0 }.sorted(by: >)
       spokenTracks = plan.body.language?.ordered ?? []; spokenLanguage = plan.body.cur_language
       audioChoices = []; audioID = nil; mirrors = []; error = nil; qualityError = nil
+      streamInfo = PlayerStreamInfo(quality: quality)
       if manual { preferences.record(quality, audio: false) }
       observe(AVPlayerItem(url: url), autoplay: shouldPlay)
     } catch { next.close(); throw error }
@@ -924,6 +938,7 @@ final class PlayerModel: ObservableObject {
         if let candidate { adoptFormats(candidate) }
         quality = id
         audioID = audio?.id
+        streamInfo = PlayerStreamInfo(quality: id, video: stream, audio: audio)
         if manualVideo { preferences.record(id, audio: false) }
         if let manualAudio, manualAudio == audio?.id { preferences.record(manualAudio, audio: true) }
         mpvFallbacks = Array(videoURLs.dropFirst().prefix(2)).map { ($0.absoluteString, audioURLs.first?.absoluteString) }
@@ -951,6 +966,7 @@ final class PlayerModel: ObservableObject {
       if let candidate { adoptFormats(candidate) }
       quality = id
       audioID = audio?.id
+      streamInfo = PlayerStreamInfo(quality: id, video: stream, audio: audio)
       if manualVideo { preferences.record(id, audio: false) }
       if let manualAudio, manualAudio == audio?.id { preferences.record(manualAudio, audio: true) }
       mirrors = []
@@ -1383,6 +1399,7 @@ final class PlayerModel: ObservableObject {
     availableQualities = []
     audioID = nil
     audioChoices = []
+    streamInfo = nil
     qualityError = nil
     bulletTask?.cancel()
     bulletTask = nil

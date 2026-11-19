@@ -10,7 +10,7 @@ struct VideoPageAppearance: ViewModifier {
       .toolbarColorScheme(dark ? .dark : nil, for: .navigationBar)
   }
 }
-@MainActor private enum BatteryLease {
+@MainActor enum BatteryLease {
   static var holders = Set<UUID>(), wasEnabled = false
   static func begin(_ id: UUID) {
     if holders.isEmpty { wasEnabled = UIDevice.current.isBatteryMonitoringEnabled }

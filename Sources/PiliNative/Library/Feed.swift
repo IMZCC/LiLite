@@ -116,6 +116,9 @@ struct FeedView: View {
         // header is one row there and nothing needs to collapse while scrolling.
         let oneRow = channels.count > 1 && WindowCanvas.shared.large && safe.size.width >= 700
         let travel = collapseSearch && !oneRow ? searchHeight : 0
+        // The page runs under the status bar so the glass covers it too. Depending on the tab
+        // container the bar is either this reader's safe area or measured by the probe.
+        let top = max(windowInsets.top, safe.safeAreaInsets.top)
         VStack(spacing: 0) {
           VStack(spacing: 0) {
             if oneRow {
@@ -139,23 +142,29 @@ struct FeedView: View {
           .fixedSize(horizontal: false, vertical: true)
           .padding(.leading, reserved.leading).padding(.trailing, reserved.trailing)
           .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
+          // As Coolapk does: the header, status bar included, is frosted glass the feed scrolls
+          // under, instead of a band the feed stops at.
+          .padding(.top, top)
+          .background { FeedHeaderShade() }
+          .zIndex(1)
           // Lay out the full exposed page once. The header and page then translate together.
           GeometryReader { viewport in
-            deck(channels, viewport: viewport.size)
+            deck(channels, viewport: viewport.size, under: headerHeight + top)
               .environment(\.homeFeedBottomClearance, travel + safe.safeAreaInsets.bottom)
-          }.padding(.bottom, -travel)
+          }
+          .padding(.top, -(headerHeight + top))
+          .padding(.bottom, -travel)
         }
         .homeSearchMotion(travel: travel)
         .clipped()
-        .ignoresSafeArea(.container, edges: .bottom)
+        .ignoresSafeArea(.container, edges: [.top, .bottom])
         .padding(.top, reserved.top)
         .onGeometryChange(for: FeedHeaderInsets.self) { proxy in
           guard #available(iOS 27.1, *) else { return FeedHeaderInsets() }
           let regions = proxy.reservedRegions(kind: .division) + proxy.reservedRegions(kind: .occlusion)
-          return FeedHeaderInsets.avoiding(width: proxy.size.width, height: headerHeight,
+          return FeedHeaderInsets.avoiding(width: proxy.size.width, height: headerHeight + top,
             regions: regions.filter(\.isActive).map(\.frame))
         } action: { reserved = $0 }
-        .padding(.top, windowInsets.top)
         .padding(.leading, windowInsets.leading).padding(.trailing, windowInsets.trailing)
         .background {
           FeedWindowSafeArea { windowInsets = $0 }.allowsHitTesting(false).accessibilityHidden(true)
@@ -190,21 +199,29 @@ struct FeedView: View {
       .navigationDestination(for: Video.self) { DetailView(initial: $0) }
     }
   }
-  private func deck(_ channels: [HomeChannel], viewport: CGSize) -> some View {
+  /// Each channel page runs under the frosted header: its top `under` points are safe area, so
+  /// lists start below the header and scroll on beneath it, and anything fixed sits below it.
+  private func deck(_ channels: [HomeChannel], viewport: CGSize, under: CGFloat) -> some View {
     let owner = accounts.state.owner(.role(.recommend)) ?? ""
     let shelfID = "\(mobile):\(rules.hashValue):\(owner)"
     return RetainedDeck(choices: channels, selection: $shelf, viewport: viewport, onProgress: channelMotion.update) { channel in
-      switch channel {
-      case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
-      case .popular:
-        // The original's 排行榜 entrance switches to the ranking channel when the home page has it.
-        VideoShelf(shelf: .popular, openRank: channels.contains(.rank) ? { shelf = .rank } : nil)
-          .id(shelfID)
-      case .rank: Rankings(embedded: true)
-      case .live: LiveDirectory(area: nil, child: nil, embedded: true)
-      case .bangumi: PGCHome(cinema: false)
-      case .cinema: PGCHome(cinema: true)
+      Group {
+        switch channel {
+        case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
+        case .popular:
+          // The original's 排行榜 entrance switches to the ranking channel when the home page has it.
+          VideoShelf(shelf: .popular, openRank: channels.contains(.rank) ? { shelf = .rank } : nil)
+            .id(shelfID)
+        case .rank: Rankings(embedded: true)
+        case .live: LiveDirectory(area: nil, child: nil, embedded: true)
+        case .bangumi: PGCHome(cinema: false)
+        case .cinema: PGCHome(cinema: true)
+        }
       }
+      .safeAreaInset(edge: .top, spacing: 0) { Color.clear.frame(height: under).allowsHitTesting(false) }
+      // The header is the glass here. iOS 26's own top edge effect sits above the whole page at
+      // the status bar and would hide the header and the feed under an opaque strip.
+      .piliScrollEdgeEffectHidden(true, for: .top)
     }.id("\(accounts.state.active ?? ""):\(owner)")
       .onChange(of: channels) { _, new in
         if !new.contains(shelf) { shelf = NavigationRules.firstChannel(new) }
@@ -257,11 +274,15 @@ struct FeedView: View {
       SiteThumbnail(url: avatar) { $0.resizable().scaledToFill() } placeholder: {
         Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary)
       }
-      .frame(width: 38, height: 38).clipShape(Circle())
+      .frame(width: 36, height: 36).clipShape(Circle())
+      // Set in a glass ring the size of the bell beside the search, as Coolapk does.
+      .frame(width: 44, height: 44)
+      .contentShape(Circle())
+      .piliGlass(in: Circle(), interactive: true)
       .overlay(alignment: .bottomTrailing) {
         if incognito {
           Image(systemName: "eye.slash.fill").font(.system(size: 9, weight: .semibold))
-            .padding(3).background(.regularMaterial, in: Circle()).offset(x: 3, y: 3)
+            .padding(3).background(.regularMaterial, in: Circle()).offset(x: 1, y: 1)
         }
       }
     }.buttonStyle(.plain)
@@ -281,6 +302,17 @@ struct FeedView: View {
       .contentShape(Capsule())
       .piliGlass(in: Capsule(), interactive: true)
     }.buttonStyle(.plain).accessibilityLabel("搜索")
+  }
+}
+
+/// The home header's frosted glass, as Coolapk's: the feed shows blurred beneath it, lightly
+/// tinted so the search and the channels stay legible, with a hairline at its foot.
+private struct FeedHeaderShade: View {
+  var body: some View {
+    Rectangle().fill(.ultraThinMaterial)
+      .overlay { Color(uiColor: .systemGroupedBackground).opacity(0.4) }
+      .overlay(alignment: .bottom) { Rectangle().fill(Color.primary.opacity(0.07)).frame(height: 0.5) }
+      .allowsHitTesting(false)
   }
 }
 

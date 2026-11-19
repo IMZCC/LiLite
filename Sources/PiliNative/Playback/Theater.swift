@@ -210,6 +210,8 @@ struct TheaterSheet: View {
   @State private var drawer = false
   var subject: TheaterSubject? = nil
   var playlist: AnyView? = nil
+  /// 选集 as cover cards under the bar; without them 选集 opens the side panel's list.
+  var episodes: [PlayerEpisodeCard] = []
   var continueBadge:AnyView?=nil
   /// Shown in the header, like the original client's fullscreen title.
   var title: String? = nil
@@ -238,6 +240,9 @@ struct TheaterSheet: View {
   @AppStorage("theater.actionBar") private var actionsEnabled = true
   @State private var showEngagement = false
   @State private var bulletSettings = false
+  /// The format chip shows for a few seconds whenever a stream starts.
+  @State private var infoShown = false
+  @State private var infoPulse = 0
   @Environment(\.dismiss) private var dismiss
   var body: some View {
     FullscreenStage(mode: FullscreenMode(rawValue: orientation) ?? .video,
@@ -245,7 +250,8 @@ struct TheaterSheet: View {
       inline: { InlinePlayerFrame.current(model.engine) }, covered: covered, finish: { dismiss() }) {
       TheaterWorkspace(open: drawer && !locked) { playback } panel: {
         TheaterTools(model: model, subject: subject, playlist: playlist, close: { drawer = false },
-          bulletSnapshot: { bulletInspector.snapshot?() ?? [] }).id(subject?.type)
+          bulletSnapshot: { bulletInspector.snapshot?() ?? [] },
+          engagement: actionsEnabled ? engagement : nil).id(subject?.type)
       }
     }
     .ignoresSafeArea()
@@ -262,6 +268,10 @@ struct TheaterSheet: View {
     }
     .onDisappear { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
   }
+  private func showInfo() {
+    withAnimation(.easeOut(duration: 0.25)) { infoShown = true }
+    infoPulse &+= 1
+  }
   private func toggleLock() {
     TouchFeedback.light()
     locked.toggle()
@@ -271,67 +281,80 @@ struct TheaterSheet: View {
       showEngagement = false
     }
   }
-  /// The original client's fullscreen layout, filled with native controls.
+  /// The fullscreen chrome's contents (laid out by Theater's fullscreen controls): ✕ and the
+  /// title, a row of white icons, then play / next and the 4K · 选集 · 倍速 words.
   private var slots: PlayerChromeSlots {
-    PlayerChromeSlots(
-      title: title,
-      headerLeading: AnyView(
-        HStack(spacing: 0) {
-          Button { close() } label: { PlayerGlyph(symbol: "chevron.left", size: 20) }
-            .accessibilityLabel("退出全屏")
-          PlayerHomeButton()
-        }),
-      // The original's fullscreen header: send bullet, bullets on/off, bullet settings, picture
-      // in picture, more (plus our timeline).
-      headerTrailing: AnyView(
-        HStack(spacing: 0) {
-          if let cid = subject?.cid, let bvid = subject?.bvid {
-            EpisodeBulletAction(cid: cid, bvid: bvid, model: model, glyph: true)
-          }
+    var s = PlayerChromeSlots(title: title)
+    s.close = { close() }
+    s.tools = AnyView(tools)
+    s.info = infoShown ? model.streamInfo.map { AnyView(PlayerFormatChip(info: $0)) } : nil
+    s.next = keyStep.map { step in { TouchFeedback.light(); step(true) } }
+    if !model.availableQualities.isEmpty {
+      s.panels.append(PlayerPanelSlot(
+        id: "quality", title: model.switching ? "切换中" : PlayerStreamInfo.shortName(model.quality),
+        content: AnyView(PlayerQualityPanel(model: model))))
+    }
+    if episodes.count > 1 {
+      s.panels.append(PlayerPanelSlot(id: "episodes", title: "选集", content: AnyView(PlayerEpisodeStrip(cards: episodes))))
+    }
+    s.menus = AnyView(
+      HStack(spacing: 18) {
+        // Lists without covers (the library queue) keep the side panel.
+        if episodes.count <= 1, playlist != nil {
           Button {
-            TouchFeedback.light()
-            showBullets.toggle()
-          } label: {
-            PlayerGlyph(symbol: showBullets ? "text.bubble.fill" : "text.bubble", dimmed: !showBullets)
-          }.accessibilityLabel(showBullets ? "关闭弹幕" : "开启弹幕")
-          Button { bulletSettings = true } label: { PlayerGlyph(symbol: "text.bubble.badge.gearshape") }
-            .accessibilityLabel("弹幕设置")
-          PlayerPiPButton(player: model.engine)
-          Button {
-            withAnimation(.snappy(duration: 0.3)) { showTimeline.toggle() }
-          } label: {
-            PlayerGlyph(symbol: "timeline.selection", dimmed: !showTimeline)
-          }.accessibilityLabel("时间轴")
-          Button {
-            withAnimation(.snappy(duration: 0.3)) { drawer.toggle() }
-          } label: {
-            PlayerGlyph(symbol: "ellipsis")
-          }.accessibilityLabel(drawer ? "关闭播放面板" : "更多")
-        }),
-      bottomTrailing: AnyView(
-        HStack(spacing: 0) {
-          PlayerCaptionMenu(session: model.captions)
-          PlayerSpeedMenu(model: model)
-          PlayerQualityMenu(model: model)
-        }),
-      bottomLeading: keyStep.map { step in AnyView(PlayerStepButtons(step: step)) },
-      bottomEpisode: playlist == nil ? nil : AnyView(
-        Button {
-          withAnimation(.snappy(duration: 0.3)) { drawer = true }
-        } label: {
-          PlayerGlyph(symbol: "list.bullet")
-        }.accessibilityLabel("选集")),
-      underHeader: actionsEnabled ? engagement.map {
-        AnyView(EngagementBar(item: $0).environment(\.engagementCompact, true))
-      } : nil,
-      edgeLeading: allowLock ? AnyView(
-        PlayerEdgeButton(symbol: "lock.open.fill", label: "锁定播放控件") { toggleLock() }) : nil,
-      edgeTrailing: allowCapture ? AnyView(
-        CaptureButton(player: model.engine)
-          .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
-          .frame(width: 44, height: 44)
-          .piliGlass(in: RoundedRectangle(cornerRadius: 12, style: .continuous), interactive: true,
-            fallback: AnyShapeStyle(Color.black.opacity(0.3)))) : nil)
+            withAnimation(.snappy(duration: 0.3)) { drawer = true }
+          } label: { PlayerWordGlyph(text: "选集") }
+        }
+        PlayerSpeedMenu(model: model, word: true)
+      })
+    s.lock = allowLock ? { toggleLock() } : nil
+    return s
+  }
+  /// The header icons: cast, bullets, send a bullet, picture in picture, capture, picture fit,
+  /// subtitles, more. A portrait (vertical video) screen has room for the essentials only; the
+  /// rest stay in 更多.
+  private var tools: some View {
+    ViewThatFits(in: .horizontal) {
+      toolRow(full: true)
+      toolRow(full: false)
+    }
+  }
+  @ViewBuilder private func toolRow(full: Bool) -> some View {
+    // 44 pt cells 52 pt apart, as in the reference header.
+    HStack(spacing: full ? 8 : 2) {
+      if full { PlayerRoutePicker().accessibilityLabel("隔空播放") }
+      Button {
+        TouchFeedback.light()
+        showBullets.toggle()
+      } label: {
+        PlayerBulletGlyph(on: showBullets)
+      }
+      .accessibilityLabel(showBullets ? "关闭弹幕" : "开启弹幕")
+      .contextMenu {
+        Button("弹幕设置", systemImage: "text.bubble.badge.gearshape") { bulletSettings = true }
+      }
+      if let cid = subject?.cid, let bvid = subject?.bvid {
+        EpisodeBulletAction(cid: cid, bvid: bvid, model: model, glyph: true)
+      }
+      PlayerPiPButton(player: model.engine, tool: true)
+      if full {
+        if allowCapture { CaptureButton(player: model.engine, tool: true) }
+        PlayerFitMenu(player: model.engine, session: PictureSession.shared(model.engine), tool: true)
+        PlayerCaptionMenu(session: model.captions, tool: true)
+      }
+      Button {
+        withAnimation(.snappy(duration: 0.3)) { drawer.toggle() }
+      } label: {
+        PlayerToolGlyph(symbol: "ellipsis.circle")
+      }
+      .accessibilityLabel(drawer ? "关闭播放面板" : "更多")
+      .contextMenu {
+        Button(showTimeline ? "隐藏时间轴" : "显示时间轴", systemImage: "timeline.selection") {
+          withAnimation(.snappy(duration: 0.3)) { showTimeline.toggle() }
+        }
+        Button("弹幕设置", systemImage: "text.bubble.badge.gearshape") { bulletSettings = true }
+      }
+    }
   }
   private var playback: some View {
     ZStack(alignment: .topTrailing) {
@@ -372,17 +395,33 @@ struct TheaterSheet: View {
         Color.clear.contentShape(Rectangle()).ignoresSafeArea().accessibilityHidden(true)
       }
       if locked {
-        // Controls are hidden while locked; keep the unlock button where the lock was.
-        HStack {
-          PlayerEdgeButton(symbol: "lock.fill", label: "解锁播放控件") { toggleLock() }
-          Spacer()
+        // Controls are hidden while locked; the closed lock sits where it was offered.
+        GeometryReader { frame in
+          VStack {
+            Spacer(minLength: 0)
+            HStack {
+              Button { toggleLock() } label: {
+                Image(systemName: "lock").font(.system(size: 22, weight: .medium)).foregroundStyle(.white)
+                  .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
+                  .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+              }
+              .buttonStyle(PlayerPressStyle()).accessibilityLabel("解锁播放控件")
+              Spacer(minLength: 0)
+            }
+          }
+          .padding(.horizontal, frame.size.width < frame.size.height ? 16 : 0)
         }
-        .padding(.horizontal, 14).offset(y: -16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)
       }
     }
     .animation(.smooth(duration: 0.25), value: locked)
+    .onAppear { if model.streamInfo != nil { showInfo() } }
+    .onChange(of: model.streamInfo) { _, info in if info != nil { showInfo() } }
+    .task(id: infoPulse) {
+      guard infoShown else { return }
+      do { try await Task.sleep(for: .seconds(5)) } catch { return }
+      withAnimation(.easeOut(duration: 0.25)) { infoShown = false }
+    }
     .piliSheet(isPresented: $bulletSettings) {
       PiliNavigationStack {
         DanmakuStylePanel().toolbar { Button("完成") { bulletSettings = false } }

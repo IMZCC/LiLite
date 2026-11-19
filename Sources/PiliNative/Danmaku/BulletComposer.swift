@@ -151,7 +151,7 @@ struct EpisodeBulletAction: View {
       writing = true
     } label: {
       if glyph {
-        PlayerGlyph(symbol: "square.and.pencil")
+        PlayerToolGlyph(symbol: "square.and.pencil")
       } else {
         Label("发弹幕", systemImage: "text.bubble")
       }

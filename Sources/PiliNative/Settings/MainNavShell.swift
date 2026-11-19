@@ -141,8 +141,11 @@ private struct HomeSearchControls: ViewModifier {
   @Environment(\.navChrome) private var chrome
   @Environment(\.collapseHomeSearch) private var enabled
   func body(content: Content) -> some View {
-    let accessible = !enabled || (chrome?.fraction ?? 1) > 0.65
-    content.allowsHitTesting(accessible).accessibilityHidden(!accessible)
+    let fraction = chrome?.fraction ?? 1
+    let accessible = !enabled || fraction > 0.65
+    // The folded row slides up under the status bar, which is glass now: fade it out on the way.
+    content.opacity(enabled ? min(1, max(0, (fraction - 0.25) / 0.6)) : 1)
+      .allowsHitTesting(accessible).accessibilityHidden(!accessible)
   }
 }
 

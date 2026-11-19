@@ -5,7 +5,7 @@ struct ListenEpisodeReference: Codable, Equatable {
   var aid: Int64?, preview: Bool?, barred: Bool?
 }
 extension SeasonInfo.Episode {
-  fileprivate var listenBV: String { bvid.isEmpty ? (aid.flatMap(ArchiveNumber.bv) ?? "") : bvid }
+  var listenBV: String { bvid.isEmpty ? (aid.flatMap(ArchiveNumber.bv) ?? "") : bvid }
 }
 extension ListenTrack {
   init(_ ep: SeasonInfo.Episode, course: Bool, show: String?, origin: ListenOrigin? = nil) {
