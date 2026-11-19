@@ -1387,7 +1387,7 @@
           "symbol": "struct NativeGallery"
         },
         {
-          "file": "Sources/PiliNative/Social/DynamicDetail.swift",
+          "file": "Sources/PiliNative/Social/DynamicCard.swift",
           "symbol": "GalleryLink"
         }
       ],

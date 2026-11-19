@@ -120,6 +120,7 @@ struct CreatorSearch: View {
         dynCount = data["total"] as? Int ?? 0
         return result
       } row: { entry in DynamicCard(entry: entry) }
+      .momentNavigation()
     }
   }
 }

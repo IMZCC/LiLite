@@ -129,7 +129,9 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
         : 1
       let limit = max(150, min(500, cardWidth)) * 2
       ScrollView {
-        LazyVStack(alignment: .center, spacing: 4) {
+        // One column is the original's and the official app's feed: cards run edge to edge and
+        // carry their own 8pt separator. Wider windows keep the padded waterfall.
+        LazyVStack(alignment: .center, spacing: columns > 1 ? 4 : 0) {
           if let heading { heading.id(refreshHeader) }
           if let controls { controls.id("pili.page.controls") }
           if columns > 1 {
@@ -138,14 +140,14 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
             )
           } else {
             ForEach(items) { item in
-              row(item).frame(maxWidth: min(full, limit), alignment: .leading).id(item.id)
+              row(item).frame(maxWidth: min(frame.size.width, max(limit, 640)), alignment: .leading).id(item.id)
             }
           }
           footer
           if channelActive, active, autoPage, let next, message == nil {
             pageEdge(next)
           }
-        }.padding(.horizontal, 16).padding(.vertical, 6)
+        }.padding(.horizontal, columns > 1 ? 16 : 0).padding(.vertical, columns > 1 ? 6 : 0)
           .frame(maxWidth: .infinity)
       }.reportsScrollCollapse()
     }

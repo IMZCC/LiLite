@@ -97,13 +97,18 @@ struct CreatorSpaceRecord: Decodable {
   }
   struct Media: Identifiable {
     let destination: Destination, title: String, cover: String?, note: String?
+    var plays: Int64? = nil, danmaku: Int64? = nil, seconds: Int64? = nil
     var id: Destination { destination }
   }
   struct Item: Decodable {
     let title: String?, cover: String?, uri: String?, bvid: String?, param: Int64?, id: Int64?,
       mediaID: Int64?, kind: String?, note: String?, pgc: Bool
+    let plays: Int64?, danmaku: Int64?, seconds: Int64?
     init(from d: Decoder) throws {
       let c = try d.container(keyedBy: SpaceKey.self)
+      plays = c.number("play")
+      danmaku = c.number("danmaku")
+      seconds = c.number("duration")
       title = c.string("title")
       cover = c.string("cover") ?? c.items("origin_image_urls", String.self).first
       uri = c.string("uri")
@@ -142,7 +147,9 @@ struct CreatorSpaceRecord: Decodable {
       case .season: dest = key.map { .link(.season($0)) } ?? uriRoute.map(Destination.link)
       }
       guard let dest else { return nil }
-      return Media(destination: dest, title: title ?? type.label, cover: cover, note: note)
+      return Media(
+        destination: dest, title: title ?? type.label, cover: cover, note: note, plays: plays,
+        danmaku: danmaku, seconds: seconds)
     }
   }
   struct Group: Identifiable {

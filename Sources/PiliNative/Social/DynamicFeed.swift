@@ -100,16 +100,17 @@ private struct AccountDynamicFeed: View {
     .safeAreaBar(edge: .top, spacing: 0) {
       HStack(spacing: 0) {
         if position == .leftDrawer { drawerButton.padding(.leading, 12) }
-        ChipBar(
+        UnderlineTabBar(
           items: FeedScope.allCases.map(\.request) + ["up"], selection: $kind,
           title: { r in
             r == "up"
               ? (creator?.uname ?? "UP 主")
               : FeedScope.allCases.first { $0.request == r }?.label ?? r
           },
+          fill: false,
           reselect: { revisions[kind, default: 0] += 1 })
         if position == .rightDrawer { drawerButton.padding(.trailing, 12) }
-      }.padding(.vertical, 6)
+      }
     }
     .animation(.snappy(duration: 0.25), value: kind)
     .navigationTitle("动态")
@@ -153,6 +154,7 @@ private struct AccountDynamicFeed: View {
         case .followedLive: LiveFollows()
         }
       }
+      .momentNavigation()
       .task(id: allFollowed) { await directory.configure(uid, all: allFollowed) }
       .task { await directory.profile(uid) }
   }
@@ -211,11 +213,8 @@ private struct AccountDynamicFeed: View {
       return Page(items: [], next: next)
     } row: { (d: DynamicEntry) in
       if d.visible || expanded.contains(d.id) {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 0) {
           DynamicCard(entry: d, changed: { revisions[scope, default: 0] += 1 })
-            .overlay(alignment: .bottom) {
-              Rectangle().fill(Color(uiColor: .separator)).frame(height: 0.5).opacity(0.6)
-            }
           if !d.foldIDs.isEmpty, !Set(d.foldIDs).isSubset(of: expanded) {
             Button {
               withAnimation(.snappy) { unfolded[scope, default: []].formUnion(d.foldIDs) }
@@ -224,10 +223,12 @@ private struct AccountDynamicFeed: View {
                 Text(d.foldTitle)
                 Image(systemName: "chevron.down").font(.caption2.weight(.bold))
               }
-              .font(.footnote).foregroundStyle(.tint)
-              .frame(maxWidth: .infinity).padding(.vertical, 8)
-              .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
-            }.buttonStyle(.plain).padding(.horizontal, 12)
+              .font(.footnote).foregroundStyle(.secondary)
+              .frame(maxWidth: .infinity).padding(.vertical, 10)
+              .background(Color(uiColor: .systemBackground))
+              .contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            Rectangle().fill(Color(uiColor: .secondarySystemBackground)).frame(height: 8)
           }
         }
       }

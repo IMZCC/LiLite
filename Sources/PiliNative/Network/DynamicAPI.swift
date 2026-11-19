@@ -1,12 +1,73 @@
 import Foundation
 
-struct TopicLink: Decodable, Identifiable {
+struct TopicLink: Decodable, Identifiable, Hashable {
   let id: Int64, name: String
   var description: String? = nil
   var view: Int64? = nil, discuss: Int64? = nil
 }
+/// The video-like attachment of a moment (an upload, a collection, an episode or a course), shown
+/// as a full-width cover like the original client's videoSeasonWidget.
+struct MomentVideo {
+  let title: String, cover: URL?, duration: String?, plays: String?, danmaku: String?,
+    badge: String?, route: SharedLink, preview: Video?
+  init?(_ major: [String: Any], author: String?) {
+    typealias Map = [String: Any]
+    func text(_ v: Any?) -> String? {
+      if let s = v as? String, !s.isEmpty { return s }
+      if let n = v as? NSNumber { return n.stringValue }
+      return nil
+    }
+    func number(_ v: Any?) -> Int64? {
+      ((v as? NSNumber)?.int64Value ?? (v as? String).flatMap(Int64.init)).flatMap { $0 > 0 ? $0 : nil }
+    }
+    func jump(_ v: Any?) -> SharedLink? {
+      guard var s = v as? String, !s.isEmpty else { return nil }
+      if s.hasPrefix("//") { s = "https:" + s }
+      return SharedLink.parse(s)
+    }
+    for key in ["archive", "ugc_season", "pgc", "courses"] {
+      guard let card = major[key] as? Map else { continue }
+      let bvid = (card["bvid"] as? String).flatMap { SharedLink.parse($0) != nil ? $0 : nil }
+      let route: SharedLink?
+      switch key {
+      case "pgc":
+        route = number(card["epid"]).map(SharedLink.episode) ?? jump(card["jump_url"])
+          ?? number(card["season_id"]).map(SharedLink.season)
+      case "courses":
+        route = jump(card["jump_url"]) ?? number(card["season_id"] ?? card["id"]).map { .course($0, false) }
+      default:
+        route = bvid.flatMap(SharedLink.parse) ?? jump(card["jump_url"])
+          ?? number(card["aid"]).map { .archive($0, nil) }
+      }
+      guard let route else { continue }
+      let stat = card["stat"] as? Map
+      title = text(card["title"]) ?? "查看视频"
+      cover = text(card["cover"]).flatMap(httpsURL)
+      duration = text(card["duration_text"])
+      plays = text(stat?["play"])
+      danmaku = text(stat?["danmaku"])
+      badge = text((card["badge"] as? Map)?["text"])
+      self.route = route
+      preview = bvid.map {
+        Video.preview(id: $0, title: text(card["title"]) ?? $0, cover: text(card["cover"]) ?? "", author: author)
+      }
+      return
+    }
+    return nil
+  }
+}
 struct DynamicEntry: Identifiable {
   let id: String, author: String, body: String, date: String
+  /// Seconds since 1970 (`pub_ts`) and the "IP属地" line, for the detail page header.
+  let timestamp: Int64?, location: String?
+  /// The attached video, collection, episode or course, if any.
+  let card: MomentVideo?
+  let opusTitle: String?
+  /// The reposted moment's own attachments, shown inside the forwarded band.
+  let originalCard: MomentVideo?, originalMedia: [GalleryPicture], originalTopic: TopicLink?,
+    originalVote: Int64?, originalHasOpus: Bool, originalDate: String?, originalNavigable: Bool
+  /// The reposted moment's other resources (live, music, goods…), without the ones above.
+  let originalExtras: MomentResources?
   let signature: ReplyAuthor, originalAuthor: ReplyAuthor?
   let originalAuthorID: Int64?, tag: String?, authorBadge: String?, authorNavigable: Bool
   let forwardCount: Int64?, likeCount: Int64?, commentCount: Int64?
@@ -45,8 +106,12 @@ struct DynamicEntry: Identifiable {
     likeCount = int((stat?["like"] as? Map)?["count"])
     date = [a["pub_time"] as? String, a["pub_action"] as? String, authorBadge].compactMap { $0 }
       .filter { !$0.isEmpty }.joined(separator: " · ")
+    timestamp = int(a["pub_ts"]).flatMap { $0 > 0 ? $0 : nil }
+    location = (a["pub_location_text"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     voteID = int(((d["additional"] as? Map)?["vote"] as? Map)?["vote_id"])
     let major = d["major"] as? Map ?? [:]
+    card = MomentResources.restricted(major) ? nil : MomentVideo(major, author: a["name"] as? String)
+    opusTitle = ((major["opus"] as? Map)?["title"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     resources = MomentResources(d)
     interactionLines = (((m["module_interaction"] as? Map)?["items"]) as? [Map] ?? []).compactMap {
       item in
@@ -113,6 +178,22 @@ struct DynamicEntry: Identifiable {
     originalResources =
       originalVisible
       ? originalModule.map { MomentResources($0, quotedID: orig?["id_str"] as? String) } : nil
+    originalExtras = originalVisible ? originalModule.map { MomentResources($0) } : nil
+    let origMajorMap = origDyn?["major"] as? Map ?? [:]
+    originalCard = origDyn == nil ? nil : MomentVideo(origMajorMap, author: srcAuthor?["name"] as? String)
+    let origOpus = origMajorMap["opus"] as? Map
+    originalMedia = (origOpus?["pics"] as? [Map] ?? (origMajorMap["draw"] as? Map)?["items"] as? [Map] ?? [])
+      .compactMap(GalleryPicture.init)
+    originalHasOpus = origOpus != nil
+    if let t = origDyn?["topic"] as? Map, let tid = int(t["id"]), let name = t["name"] as? String {
+      originalTopic = TopicLink(id: tid, name: name)
+    } else {
+      originalTopic = nil
+    }
+    originalVote = int(((origDyn?["additional"] as? Map)?["vote"] as? Map)?["vote_id"])
+    originalNavigable = (srcAuthor?["type"] as? String).map { $0 == "AUTHOR_TYPE_NORMAL" } ?? true
+    let origTime = (srcAuthor?["pub_time"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+    originalDate = origTime ?? int(srcAuthor?["pub_ts"]).flatMap { $0 > 0 ? MediaStats.published($0) : nil }
     func watched(_ m: Map?) -> String? {
       guard let m, !MomentResources.restricted(m) else { return nil }
       return

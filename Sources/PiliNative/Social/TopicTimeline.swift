@@ -8,6 +8,7 @@ struct TopicFeed: View {
     let main = accounts.state.active ?? ""
     TopicTimeline(topic: topic, recommend: recommend, main: main)
       .id("\(topic.id):\(recommend):\(main)")
+      .momentNavigation()
   }
 }
 

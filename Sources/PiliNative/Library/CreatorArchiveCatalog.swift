@@ -20,6 +20,17 @@ enum CreatorArchiveCatalog {
     let bvid: String?, aid: Int64?, title: String?, pic: String?, author: String?, duration: Int?,
       length: String?
     var play: Int? = nil, video_review: Int? = nil, created: Int64? = nil
+    /// Collections and series report counts under `stat` and the date as `pubdate`.
+    struct Stat: Decodable {
+      let view: Int?, danmaku: Int?
+      enum K: String, CodingKey { case view, danmaku }
+      init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: K.self)
+        view = try? c.decode(Int.self, forKey: .view)
+        danmaku = try? c.decode(Int.self, forKey: .danmaku)
+      }
+    }
+    var stat: Stat? = nil, pubdate: Int64? = nil
     var video: Video? {
       guard
         let b = bvid.flatMap({ ArchiveNumber.av($0) != nil ? $0 : nil })
@@ -39,8 +50,8 @@ enum CreatorArchiveCatalog {
           return parts.reduce(0) { $0 * 60 + $1 }
         }
       return .preview(
-        id: b, title: title ?? b, cover: pic ?? "", author: author, duration: time, views: play,
-        danmaku: video_review, published: created)
+        id: b, title: title ?? b, cover: pic ?? "", author: author, duration: time,
+        views: play ?? stat?.view, danmaku: video_review ?? stat?.danmaku, published: created ?? pubdate)
     }
   }
   private struct Button: Decodable { let text: String?, uri: String? }

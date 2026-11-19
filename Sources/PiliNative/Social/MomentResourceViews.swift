@@ -1,5 +1,13 @@
 import SwiftUI
 
+extension MomentDestination {
+  var momentTarget: MomentTarget {
+    switch self {
+    case .native(let r): .link(r)
+    case .web(let u): .web(u)
+    }
+  }
+}
 struct MomentDestinationView: View {
   let destination: MomentDestination
   var body: some View {
@@ -20,11 +28,7 @@ struct MomentResourceViews: View {
     ForEach(Array(values.cards.enumerated()), id: \.offset) { _, card in
       Group {
         if let d = card.target {
-          NavigationLink {
-            MomentDestinationView(destination: d)
-          } label: {
-            label(card)
-          }.buttonStyle(.borderless)
+          MomentGo(target: d.momentTarget) { label(card) }
         } else {
           label(card)
         }
@@ -77,17 +81,13 @@ private struct MomentReservationView: View {
       if !info.isEmpty { Text(info).piliFont(.caption).foregroundStyle(.secondary) }
       if !value.prize.isEmpty {
         if let t = value.prizeLink {
-          NavigationLink {
-            MomentDestinationView(destination: t)
-          } label: {
-            Label(value.prize, systemImage: "gift")
-          }
+          MomentGo(target: t.momentTarget) { Label(value.prize, systemImage: "gift").foregroundStyle(.tint) }
         } else {
           Text(value.prize)
         }
       }
       if let target = value.jump {
-        NavigationLink(value.buttonLabel) { MomentDestinationView(destination: target) }
+        MomentGo(target: target.momentTarget) { Text(value.buttonLabel).foregroundStyle(.tint) }
       } else if value.buttonType != nil {
         if let uid = accounts.state.active {
           Button(needsRead ? "查看预约状态" : value.buttonLabel) { Task { await update(uid) } }.disabled(
