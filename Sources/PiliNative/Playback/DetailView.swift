@@ -54,7 +54,7 @@ struct DetailView: View {
   @State private var visited: [String] = []
   @State private var lastOpened: Int64?
   @AppStorage(InterfaceInteraction.preinitialize) private var early = false
-  @AppStorage(VideoTransport.autoKey) private var autoplay = true
+  @AppStorage(VideoTransport.autoKey) private var autoplay = false
   @State private var manualTicket: PlaybackEntryID?
   @State private var prepared: PlaybackEntryID?
   private func ticket(_ video: Video, _ cid: Int64) -> PlaybackEntryID {
@@ -69,7 +69,7 @@ struct DetailView: View {
   @State private var reload = 0
   @State private var retryPlayback = 0
   @State private var brightness: CGFloat?
-  @AppStorage("play.subtitleSize") private var subtitleSize = 17.0
+  @AppStorage("play.subtitleSize") private var subtitleSize = 16.0
   @State private var danmakuList = false
   @State private var playbackOptions = false
   @State private var theater = false
@@ -558,8 +558,9 @@ struct DetailView: View {
           let pointFromList =
             (pageFromList != nil || (mark != nil && mark?.cid == v.cid)) ? mark : nil
           var remote: ServiceWatchPoint?
+          // Like the original, a signed-in account always resumes from the service's progress;
+          // the local "记住播放进度" switch only covers what this device stores itself.
           if pointFromList==nil,startSeconds==nil,let uid,
-             PlaybackMemory.enabled || (continuePart && parts.count>1),
              let readCID=requestedCID ?? explicitPage.flatMap({p in parts.first(where:{$0.page==p})?.cid}) ?? first{
             let api = BiliAPI.shared
             if let q = try? await api.sign(["bvid":v.bvid,"cid":String(readCID)]) {
@@ -579,11 +580,11 @@ struct DetailView: View {
             from: startSeconds ?? pointFromList?.seconds,
             continuePart: false,
             local: LastArchivePart.recall(LastArchivePart.key(v.bvid, uid: uid)), remote: remote,
-            saveTime: PlaybackMemory.enabled)
+            saveTime: true)
           cid=startHint?.cid
           if following==nil,requestedCID==nil,firstPage==nil,startSeconds==nil,pointFromList==nil{
             offeredOn=cid
-            offeredPart=ArchiveStart.offer(parts,current:cid,enabled:continuePart,local:LastArchivePart.recall(LastArchivePart.key(v.bvid,uid:uid)),remote:remote,keepTime:PlaybackMemory.enabled)
+            offeredPart=ArchiveStart.offer(parts,current:cid,enabled:continuePart,local:LastArchivePart.recall(LastArchivePart.key(v.bvid,uid:uid)),remote:remote,keepTime:true)
           }
           if cid == nil { detailError = "没有可播放的分集" }
         } catch { if !Task.isCancelled { detailError = error.localizedDescription } }
@@ -648,14 +649,17 @@ struct DetailView: View {
             do {
               let items = try await BiliAPI.shared.read(
                 "/x/web-interface/archive/related", ["bvid": video.bvid], as: [Video].self)
-              let seen = Set(chain.wrappedValue + [video.bvid])
+              // Like the original: the first related video that passes the filters.
               let filtering = Task.detached(priority: .userInitiated) {
                 let policy = RecommendationFilter()
-                return items.first { !Task.isCancelled && !seen.contains($0.bvid) && policy.allows($0, from: .related) }
+                return items.first { !Task.isCancelled && policy.allows($0, from: .related) }
               }
               let destination = await withTaskCancellationHandler { await filtering.value } onCancel: { filtering.cancel() }
-              guard !Task.isCancelled, valid(), let dest = destination
-              else { return .end }
+              guard !Task.isCancelled, valid() else { return .end }
+              guard let dest = destination else {
+                AppToast.show("暂无相关视频，停止连播")
+                return .end
+              }
               chain.wrappedValue = Array((chain.wrappedValue + [video.bvid]).suffix(80))
               nextArchive.wrappedValue = dest
               return .advanced

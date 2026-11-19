@@ -16,6 +16,7 @@ extension BiliAPI {
     f["cur_language"] = language
     let owner = try await AccountJar.shared.current(.role(.video))?.id ?? ""
     if let expectedAccount, expectedAccount != owner { throw ServiceError("视频账号已切换") }
+    f.merge(ArchiveStreamGrant.requestFields(guest: owner.isEmpty)) { current, _ in current }
     func request(_ quality: Int) async throws -> ArchiveGrantResponse<Play> {
       var fields = f; fields["qn"] = String(quality)
       return try await read("/x/player/wbi/playurl", try await sign(fields), expectedAccount: owner, as: ArchiveGrantResponse<Play>.self)

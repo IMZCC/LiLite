@@ -190,8 +190,8 @@ extension BiliAPI {
       var all: [Reply] = []
       if root != nil, cursor == nil, let first = page.root { all.append(first) }
       if root == nil, cursor == nil {
+        // Only the uploader's pinned reply, as in the original.
         if let upper = page.top?.upper { all.append(upper) }
-        all.append(contentsOf: page.top_replies ?? [])
       }
       all.append(contentsOf: page.replies ?? [])
       var seen = Set<Int64>()

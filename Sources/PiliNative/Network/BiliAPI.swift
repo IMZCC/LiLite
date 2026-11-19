@@ -193,8 +193,8 @@ actor BiliAPI {
       let r = try await read(
         "/x/v2/feed/index", MobileFeed.fields(page: page), host: "app.bilibili.com",
         as: MobileFeed.self)
-      return Page(
-        items: r.items.compactMap(\.video), next: r.items.isEmpty ? nil : String(page + 1))
+      // The original's recommendation feed never ends; an empty page just asks again.
+      return Page(items: r.items.compactMap(\.video), next: String(page + 1))
     }
     struct Feed: Decodable {
       struct Item: Decodable {
@@ -209,12 +209,14 @@ actor BiliAPI {
       }
       let item: [Item]
     }
+    // Pages are counted from 1 here; the original's first web request uses fresh_idx 0.
+    let idx = max(0, page - 1)
     let q = try await sign([
-      "version": "1", "feed_version": "V8", "homepage_ver": "1", "ps": "20", "fresh_idx": "\(page)",
-      "brush": "\(page)", "fresh_type": "4",
+      "version": "1", "feed_version": "V8", "homepage_ver": "1", "ps": "20", "fresh_idx": "\(idx)",
+      "brush": "\(idx)", "fresh_type": "4",
     ])
     let items = try await read("/x/web-interface/wbi/index/top/feed/rcmd", q, as: Feed.self).item
-    return Page(items: items.compactMap(\.video), next: items.isEmpty ? nil : "\(page+1)")
+    return Page(items: items.compactMap(\.video), next: "\(page+1)")
   }
   func popular(_ page: Int) async throws -> Page<Video> {
     struct List: Decodable { let list: [Video] }
@@ -239,13 +241,14 @@ actor BiliAPI {
     }
     let owner = try await AccountJar.shared.current(.role(.video))?.id ?? ""
     if let expectedAccount, owner != expectedAccount { throw ServiceError("视频账号已切换") }
+    var fields = [
+      "bvid": bvid, "cid": "\(cid)", "qn": "64", "fnval": "1", "platform": "html5",
+      "voice_balance": AudioFilterChoice.requestsProcessing ? "1" : "0",
+    ]
+    fields.merge(ArchiveStreamGrant.requestFields(guest: owner.isEmpty)) { current, _ in current }
     let packet = try await read(
-      "/x/player/wbi/playurl",
-      try await sign([
-        "bvid": bvid, "cid": "\(cid)", "qn": "64", "fnval": "1", "platform": "html5",
-        "voice_balance": AudioFilterChoice.requestsProcessing ? "1" : "0",
-      ]
-      ), expectedAccount: owner, as: ArchiveGrantResponse<Play>.self)
+      "/x/player/wbi/playurl", try await sign(fields), expectedAccount: owner,
+      as: ArchiveGrantResponse<Play>.self)
     let p = packet.body
     guard !packet.grant.protected, !forExport || packet.grant.permitsCache,
       packet.grant.permits(p.quality ?? 0, guest: owner.isEmpty) else {

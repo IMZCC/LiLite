@@ -7,6 +7,7 @@ struct RecommendationSettings: View {
   @AppStorage("feed.mobile") private var mobile = true
   @AppStorage("feed.keepPrevious") private var keep = true
   @AppStorage("feed.retainedTip") private var tip = true
+  @AppStorage(HomeCardStyle.featuredKey) private var featured = false
   @State private var draft = RecommendationRules.current()
   @State private var issue: String?
   @State private var creator = ""
@@ -17,6 +18,13 @@ struct RecommendationSettings: View {
         SettingStepper(title: "首页推荐", value: $recWidth, range: 150...500, step: 10) { "\(Int($0)) 点" }
         SettingStepper(title: "其他页面", value: $cardWidth, range: 150...500, step: 10) { "\(Int($0)) 点" }
       }.settingAnchor("RecommendationSettings/卡片最大列宽")
+      Section {
+        Toggle("首个推荐使用大卡片", isOn: $featured).settingAnchor("RecommendationSettings/首个推荐使用大卡片")
+      } header: {
+        Text("卡片样式")
+      } footer: {
+        Text("关闭时与官方客户端一样，全部推荐都以双列卡片显示。")
+      }.settingAnchor("RecommendationSettings/卡片样式")
       Section("热门") { Toggle("显示榜单快捷入口", isOn: $hotEntrances).settingAnchor("RecommendationSettings/显示榜单快捷入口") }.settingAnchor("RecommendationSettings/热门")
       Section("推荐来源") { Toggle("使用移动端推荐", isOn: $mobile).settingAnchor("RecommendationSettings/使用移动端推荐") }.settingAnchor("RecommendationSettings/推荐来源")
       Section("下拉刷新") {

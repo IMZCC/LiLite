@@ -50,6 +50,12 @@ enum PlayerSlide {
     if x >= width * 2 / 3 { return levels ? .volume : nil }
     return screen ? .fullscreen : nil
   }
+  /// The original cancels a horizontal seek while the finger is in a top corner (the top eighth,
+  /// within an eighth of either side) and shows "松开手指，取消进退".
+  static func cancelsSeek(_ p: CGPoint, size: CGSize) -> Bool {
+    guard size.width > 0, size.height > 0 else { return false }
+    return p.y <= size.height * 0.125 && (p.x >= size.width * 0.875 || p.x <= size.width * 0.125)
+  }
   static func level(_ initial: Double, dy: Double, height: Double, brightness: Bool) -> Double {
     min(1, max(0, initial - dy / (max(1, height) * (brightness ? 3 : 0.5))))
   }

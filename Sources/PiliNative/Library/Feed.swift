@@ -20,7 +20,7 @@ final class FeedModel: ObservableObject {
   private(set) var retainedIndex: Int?
   @Published var autoCursor:Int?
   private(set) var loaded = false
-  private var page = 0, token = UUID()
+  private var page = 0, token = UUID(), emptyRun = 0
   private struct Request { let shelf:Shelf, reset:Bool, page:Int }
   private var failed:Request?
   func load(_ shelf: Shelf, reset: Bool) async {
@@ -67,10 +67,14 @@ final class FeedModel: ObservableObject {
       }
       let result = await withTaskCancellationHandler { await filtering.value } onCancel: { filtering.cancel() }
       guard token == t, revision == contentRevision, !Task.isCancelled else { return }
-      if reset { retainedStart = result.1 }
+      if reset { retainedStart = result.1; emptyRun = 0 }
       videos = result.0
       page = next
-      autoCursor = result.2 && batch.next != nil ? next + 1 : nil
+      // The original keeps loading recommendations as the list scrolls even when a page is
+      // filtered away; stop auto-loading only after a few empty pages in a row.
+      emptyRun = result.2 ? 0 : emptyRun + 1
+      let keepGoing = shelf == .recommended ? emptyRun < 3 : result.2
+      autoCursor = keepGoing && batch.next != nil ? next + 1 : nil
       finished = batch.next == nil
       loaded = true
     } catch { if token == t && !Task.isCancelled { failed=request;self.error=error.localizedDescription } }
@@ -143,6 +147,10 @@ struct FeedView: View {
           FeedWindowSafeArea { windowInsets = $0 }.allowsHitTesting(false).accessibilityHidden(true)
         }
       }
+      // Official cards sit on the grouped background so their own surface reads as a card. It is
+      // drawn behind the whole home page and never inside a pager page, where a colour reaching
+      // into the safe area would feed the header inset and the page size into each other.
+      .background { Color(uiColor: .systemGroupedBackground).ignoresSafeArea() }
       .toolbar(.hidden, for: .navigationBar)
       .task(id: accounts.state.active) {
         if let uid = accounts.state.active { await profiles.refresh(uid) }
@@ -164,7 +172,7 @@ struct FeedView: View {
           placement: .navigationBarDrawer(displayMode: .always))
       }
       .piliTabRoot(.home)
-      .navigationTitle("发现")
+      .navigationTitle("首页")
       .toolbarTitleDisplayMode(.inline)
       .toolbar(removing: .title)
       .navigationDestination(for: Video.self) { DetailView(initial: $0) }
@@ -176,7 +184,10 @@ struct FeedView: View {
     return RetainedDeck(choices: channels, selection: $shelf, viewport: viewport, onProgress: channelMotion.update) { channel in
       switch channel {
       case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
-      case .popular: VideoShelf(shelf: .popular).id(shelfID)
+      case .popular:
+        // The original's 排行榜 entrance switches to the ranking channel when the home page has it.
+        VideoShelf(shelf: .popular, openRank: channels.contains(.rank) ? { shelf = .rank } : nil)
+          .id(shelfID)
       case .rank: Rankings(embedded: true)
       case .live: LiveDirectory(area: nil, child: nil, embedded: true)
       case .bangumi: PGCHome(cinema: false)
@@ -400,11 +411,13 @@ private struct VideoShelf: View {
   @State private var sending = false
   @State private var notice: String?
   let shelf: Shelf
+  var openRank: (() -> Void)? = nil
   @StateObject private var model = FeedModel()
   @State private var manualLoad: Task<Void, Never>?
   @State private var paging = FeedScrollPaging()
   @AppStorage("feed.retainedTip") private var tip = true
   @AppStorage("feed.hotEntrances") private var hotEntrances = false
+  @AppStorage(HomeCardStyle.featuredKey) private var featuredFirst = false
   var body: some View {
     ScrollViewReader { proxy in shelfScroll(proxy) }
   }
@@ -413,30 +426,32 @@ private struct VideoShelf: View {
     let boundary = tip ? model.retainedIndex : nil
     let split = boundary.flatMap { $0 > 0 ? $0 : nil }
     let firstSection = videos[..<(split ?? videos.endIndex)]
-    let featured = shelf == .recommended && sizeClass != .regular ? firstSection.first : nil
+    // The large first card is optional (设置 › 推荐过滤 › 首个推荐使用大卡片); by default every
+    // recommendation is an official double-column card.
+    let featured = featuredFirst && shelf == .recommended && sizeClass != .regular ? firstSection.first : nil
     return ScrollView {
-      CatalogGrid(home: shelf == .recommended) {
+      CatalogGrid(home: shelf == .recommended, gap: HomeCardStyle.gap, rowSpacing: CGFloat(HomeCardStyle.gap)) {
         Section {
-          ForEach(firstSection.dropFirst(featured == nil ? 0 : 1)) { archiveCard($0, featured: false) }
+          ForEach(firstSection.dropFirst(featured == nil ? 0 : 1)) { gridCard($0) }
         } header: {
-          VStack(alignment: .leading, spacing: 20) {
+          VStack(alignment: .leading, spacing: 12) {
             shelfHeader
             if boundary == 0 { refreshPrevious(proxy) }
-            if let featured { archiveCard(featured, featured: true) }
+            if let featured { archiveCard(featured, featured: true).padding(.bottom, 8) }
           }.frame(maxWidth: .infinity, alignment: .leading).id("discover.feed.top")
         } footer: {
           if split == nil { pagingFooter }
         }
         if let split {
           Section {
-            ForEach(videos[split...]) { archiveCard($0, featured: false) }
+            ForEach(videos[split...]) { gridCard($0) }
           } header: {
             refreshPrevious(proxy)
           } footer: {
             pagingFooter
           }
         }
-      }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16 + bottomClearance)
+      }.padding(.horizontal, HomeCardStyle.gap).padding(.top, 4).padding(.bottom, 16 + bottomClearance)
     }
     .environment(\.homeFeedBottomClearance, 0)
     .onScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
@@ -478,10 +493,14 @@ private struct VideoShelf: View {
     if shelf == .popular && hotEntrances {
       HStack {
         ForEach(Rankings.Mode.allCases, id: \.self) { mode in
-          NavigationLink {
-            Rankings(initial: mode)
-          } label: {
-            Text(mode.rawValue).frame(maxWidth: .infinity)
+          if mode == .rank, let openRank {
+            Button(action: openRank) { Text(mode.rawValue).frame(maxWidth: .infinity) }
+          } else {
+            NavigationLink {
+              Rankings(initial: mode)
+            } label: {
+              Text(mode.rawValue).frame(maxWidth: .infinity)
+            }
           }
         }
       }.buttonStyle(.bordered)
@@ -527,13 +546,85 @@ private struct VideoShelf: View {
       else { await model.load(shelf, reset: reset) }
     }
   }
+  /// The official client's double-column card on the grouped background.
+  private func gridCard(_ v: Video) -> some View {
+    NavigationLink { destination(v) } label: {
+      HomeVideoCard(video: v)
+    }
+    .buttonStyle(.plain)
+    .overlay(alignment: .bottomTrailing) { moreMenu(v) }
+    .archiveCover(v) { feedbackMenus(v) }
+    .disabled(sending)
+  }
+  @ViewBuilder private func destination(_ v: Video) -> some View {
+    if let link = v.recommendLink.flatMap(SharedLink.parse) {
+      LinkDestination(item: link)
+    } else {
+      DetailView(initial: v)
+    }
+  }
+  /// The official card's trailing "⋮": 稍后再看 and the feed's own feedback reasons.
+  @ViewBuilder private func moreMenu(_ v: Video) -> some View {
+    let aid = v.aid ?? ArchiveNumber.av(v.bvid)
+    let viewer = accounts.state.active
+    if (viewer != nil && aid != nil) || hasFeedback(v) {
+      Menu {
+        if let viewer, let aid {
+          Button("添加到稍后再看", systemImage: "clock") { addLater(aid, owner: viewer) }
+        }
+        feedbackMenus(v)
+      } label: {
+        Image(systemName: "ellipsis").rotationEffect(.degrees(90))
+          .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+          .frame(width: 30, height: 30).contentShape(Rectangle())
+      }
+      .tint(Color(uiColor: .secondaryLabel))
+      .padding(.trailing, 2).padding(.bottom, 2)
+      .accessibilityLabel("更多操作")
+    }
+  }
+  private func hasFeedback(_ v: Video) -> Bool {
+    accounts.state.owner(.role(.recommend)) != nil
+      && (v.recommendMenu ?? []).contains {
+        ["dislike", "feedback"].contains($0.type) && !($0.reasons ?? []).isEmpty
+      }
+  }
+  @ViewBuilder private func feedbackMenus(_ v: Video) -> some View {
+    if let uid = accounts.state.owner(.role(.recommend)) {
+      ForEach(Array((v.recommendMenu ?? []).enumerated()), id: \.offset) { _, group in
+        if ["dislike", "feedback"].contains(group.type), let reasons = group.reasons,
+          !reasons.isEmpty
+        {
+          Menu(group.type == "dislike" ? "不感兴趣" : "反馈") {
+            ForEach(reasons) { r in
+              Button(r.name) {
+                Task {
+                  await send(
+                    .init(
+                      video: v, group: group.type, reason: r, uid: uid,
+                      index: model.videos.firstIndex(where: { $0.id == v.id }) ?? 0),
+                    undo: false)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  private func addLater(_ aid: Int64, owner: String) {
+    Task { @MainActor in
+      do {
+        try await BiliAPI.shared.submit(
+          "/x/v2/history/toview/add", ["aid": String(aid)], expectedAccount: owner)
+        AppToast.show("已加入稍后再看")
+      } catch { notice = error.localizedDescription }
+    }
+  }
+  /// The optional large first card.
   private func archiveCard(_ v: Video, featured: Bool) -> some View {
         NavigationLink {
-          if let link = v.recommendLink.flatMap(SharedLink.parse) {
-            LinkDestination(item: link)
-          } else {
-            DetailView(initial: v)
-          }
+          destination(v)
         } label: {
           VStack(alignment: .leading, spacing: featured ? 10 : 8) {
             Rectangle().fill(.quaternary).aspectRatio(16 / 9, contentMode: .fit)
@@ -568,29 +659,7 @@ private struct VideoShelf: View {
               }.piliFont(.caption).foregroundStyle(.secondary)
             }.padding(.horizontal, featured ? 4 : 2)
           }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-        }.buttonStyle(.plain).archiveCover(v) {
-          if let uid = accounts.state.owner(.role(.recommend)) {
-            ForEach(Array((v.recommendMenu ?? []).enumerated()), id: \.offset) { _, group in
-              if ["dislike", "feedback"].contains(group.type), let reasons = group.reasons,
-                !reasons.isEmpty
-              {
-                Menu(group.type == "dislike" ? "不感兴趣" : "反馈") {
-                  ForEach(reasons) { r in
-                    Button(r.name) {
-                      Task {
-                        await send(
-                          .init(
-                            video: v, group: group.type, reason: r, uid: uid,
-                            index: model.videos.firstIndex(where: { $0.id == v.id }) ?? 0),
-                          undo: false)
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }.disabled(sending)
+        }.buttonStyle(.plain).archiveCover(v) { feedbackMenus(v) }.disabled(sending)
   }
   @MainActor private func send(_ item: Feedback, undo: Bool) async {
     guard !sending, accounts.state.owner(.role(.recommend)) == item.uid else { return }

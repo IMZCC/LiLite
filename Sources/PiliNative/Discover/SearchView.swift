@@ -271,7 +271,7 @@ struct SearchView: View {
     }
   }
   private var results: some View {
-    RetainedDeck(choices: SearchDomain.allCases, selection: $domain) { section in
+    RetainedDeck(choices: SearchDomain.tabs, selection: $domain) { section in
       resultList(section).id(identity(section))
     }.id(owner + "\n" + term)
       .safeAreaBar(edge: .top, spacing: 0) { domainBar }
@@ -281,7 +281,7 @@ struct SearchView: View {
       ScrollViewReader { proxy in
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(spacing: 4) {
-            ForEach(SearchDomain.allCases, id: \.self) { d in
+            ForEach(SearchDomain.tabs, id: \.self) { d in
               let current = domain == d
               Button {
                 TouchFeedback.light()
@@ -307,7 +307,7 @@ struct SearchView: View {
         }
           .onChange(of: domain, initial: true) { _, d in withAnimation(.snappy) { proxy.scrollTo(d, anchor: .center) } }
       }
-      if [.mixed, .video, .creator, .article].contains(domain) {
+      if [.mixed, .creator, .article].contains(domain) {
         Button {
           showFilter = true
         } label: {

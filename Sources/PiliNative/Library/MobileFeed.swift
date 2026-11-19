@@ -40,8 +40,11 @@ struct MobileFeed: Decodable {
       let own = Video.Owner(
         mid: args?.up_id?.number, name: goto == "av" ? args?.up_name : (desc ?? args?.up_name))
       let v = (try? c.decode(Video.Stat.self, forKey: .stat))
+      // The mobile feed has no like count; like the original, read it from a reason such as
+      // "1.2万点赞" so the like-ratio filter still applies.
+      let reasonLikes = reason.flatMap { $0.contains("赞") ? MobileFeed.leadingCount($0) : nil }
       let stats = Video.Stat(
-        like: v?.like,
+        like: v?.like ?? reasonLikes,
         view: v?.view
           ?? (try? c.decode(String.self, forKey: .cover_left_text_1)).flatMap(MobileFeed.count),
         danmaku: v?.danmaku
@@ -61,6 +64,21 @@ struct MobileFeed: Decodable {
     }
   }
   let items: [Entry]
+  /// The original's `NumUtils.parseNum`: the first number in the text with an optional 千/万/亿
+  /// unit, or 0 when there is none.
+  static func leadingCount(_ text: String) -> Int {
+    guard let m = text.firstMatch(of: #/([\d.]+)([千万亿])?/#), let value = Double(m.1),
+      value.isFinite
+    else { return 0 }
+    let unit: Double
+    switch m.2.map(String.init) ?? "" {
+    case "千": unit = 1000
+    case "万": unit = 10000
+    case "亿": unit = 100_000_000
+    default: unit = 1
+    }
+    return Int(exactly: (value * unit).rounded(.towardZero)) ?? 0
+  }
   static func count(_ text: String) -> Int? {
     var s = text.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(
       of: ",", with: "")

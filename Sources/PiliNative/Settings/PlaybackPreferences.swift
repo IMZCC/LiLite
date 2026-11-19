@@ -12,7 +12,7 @@ struct PlayerPreferenceValues: Codable {
     "images.silentSave", "images.longMenu",
     "live.paidFullscreen", "live.medal", "dm.tap", "feed.hotEntrances", "feed.mobile",
     "feed.keepPrevious",
-    "feed.retainedTip",
+    "feed.retainedTip", "feed.featuredFirst",
     "search.defaultWord", "detail.online",
     "dm.quietPiP", "play.preinitialize", "play.pauseWhenBackground", "updates.automatic", "player.scrollVolume", "player.keyboard", "appearance.pureBlack", "detail.dark", "theater.battery",
     "theater.actionBar",
@@ -138,7 +138,7 @@ struct PlayerPreferencePanel: View {
   @AppStorage("play.reverseFirst") private var reverseFirst = true
   @AppStorage("detail.expandIntro") private var expandIntro = false
   @AppStorage("detail.expandWide") private var expandWide = false
-  @AppStorage(VideoTransport.autoKey) private var onEntry = true
+  @AppStorage(VideoTransport.autoKey) private var onEntry = false
   @AppStorage(VideoTransport.backgroundKey) private var backgroundPlay = false
   @AppStorage(VideoTransport.bufferKey) private var networkBuffer = 16.0
   @AppStorage(VideoTransport.liveBufferKey) private var liveBuffer = 0.0

@@ -156,16 +156,21 @@ import UIKit
     let soft = choices.first == "no"
     preferredHardware = !hardware || soft ? "no" : copy ? "videotoolbox-copy" : "videotoolbox"
     let buffer = MediaBufferPolicy.current(live: false)
-    let seconds = defaults.object(forKey: VideoTransport.bufferKey) as? Double ?? 16
+    let stored = defaults.object(forKey: VideoTransport.bufferKey) as? Double ?? 16
+    // The original's initBuffer: the buffered duration scales with the playback speed, and the
+    // demuxer resumes filling once a third of it has been played.
+    let seconds = (stored.isFinite ? max(0, min(3600, stored)) : 16) * Double(max(0.1, normalSpeed))
     let sync = PresentationMode.current
     let filters = AudioFilterChoice.current(volume)
     let options = [
       "hwdec": inactive && preferredHardware != "no" ? "videotoolbox-copy" : preferredHardware,
       "sws-fast": "yes", "sws-scaler": "bilinear",
-      "cache": "yes", "cache-secs": String(seconds.isFinite ? max(0, min(3600, seconds)) : 16),
+      "cache": "yes", "cache-secs": String(format: "%.3f", seconds),
+      "demuxer-hysteresis-secs": String(format: "%.3f", seconds / 1.5),
       "demuxer-max-bytes": String(max(1024 * 1024, buffer)),
       "demuxer-max-back-bytes": String(buffer), "speed": String(normalSpeed),
-      "video-sync": sync == .system ? "audio" : sync.rawValue,
+      // "系统自动" on mpv is the original's default, display-resample.
+      "video-sync": sync == .system ? PresentationMode.resample.rawValue : sync.rawValue,
       "autosync": String(PresentationMode.smoothing),
       "af": filters.isEmpty ? "" : "lavfi=[\(filters)]",
     ]

@@ -8,6 +8,7 @@ extension BiliAPI {
       "voice_balance": AudioFilterChoice.requestsProcessing ? "1" : "0"]
     fields["cur_language"] = language
     if preferMP4 { fields["platform"] = "html5" }
+    fields.merge(ArchiveStreamGrant.requestFields(guest: expectedAccount.isEmpty)) { current, _ in current }
     let result = try await read("/x/player/wbi/playurl", try await sign(fields), expectedAccount: expectedAccount,
       as: ArchiveGrantResponse<LegacyDURLBody>.self)
     guard !result.grant.protected, !forCache || result.grant.permitsCache,

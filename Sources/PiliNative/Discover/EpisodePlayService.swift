@@ -53,6 +53,7 @@ extension BiliAPI {
     if let a = e.aid { fields["avid"] = String(a) }
     if !e.bvid.isEmpty { fields["bvid"] = e.bvid }
     fields["cur_language"] = language
+    fields.merge(ArchiveStreamGrant.requestFields(guest: owner.isEmpty)) { current, _ in current }
     func webFallback(preview: Bool = false) async throws -> (data: Data, legacy: Bool, preview: Bool) {
       try Task.checkCancellation()
       guard (try await AccountJar.shared.current(.role(.video))?.id ?? "") == owner else { throw ServiceError("视频账号已切换") }

@@ -84,7 +84,8 @@ public struct ReplyGateway: Sendable {
       q.mode = mode
       if let page { q.pagination = page } else { q.rpid = anchor ?? 0 }
       let r = try await call(.main, q, PiliBilibiliMainCommunityReplyV1_MainListReply.self)
-      let pinned = offset == nil ? [r.upTop, r.adminTop, r.voteTop] + r.topReplies : []
+      // Like the original, only the uploader's pinned reply goes on top of the first page.
+      let pinned = offset == nil && r.hasUpTop ? [r.upTop] : []
       return result(
         pinned + r.replies, r.hasSubjectControl ? r.subjectControl : nil, r.mixedCards,
         r.paginationReply.nextOffset, r.cursor.isEnd,

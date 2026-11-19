@@ -22,7 +22,17 @@ import Foundation
     precondition(PictureFit.fourThree.geometry(view: viewport, source: source).size == CGSize(width: 240, height: 180))
     precondition(PictureFit.stretch.geometry(view: viewport, source: CGSize(width: 20, height: 40), firstChoice: true).gravity == "fit")
     let grant = try JSONDecoder().decode(ArchiveStreamGrant.self, from: Data(#"{"is_preview":1,"support_formats":[{"quality":80,"need_login":true},{"quality":112,"need_vip":1},{"quality":32,"need_login":false}]}"#.utf8))
+    UserDefaults.standard.set(false, forKey: ArchiveStreamGrant.guestHD)
     precondition(grant.preview && !grant.permitsCache && !grant.permits(80, guest: true) && grant.permits(32, guest: true))
+    precondition(ArchiveStreamGrant.requestFields(guest: true)["try_look"] == nil)
+    // With "免登录 1080P" on, a guest request carries try_look and keeps the returned 1080P stream.
+    UserDefaults.standard.set(true, forKey: ArchiveStreamGrant.guestHD)
+    precondition(grant.permits(80, guest: true) && !grant.permits(112, guest: true)
+      && ArchiveStreamGrant.requestFields(guest: true)["try_look"] == "1")
+    precondition(ArchiveStreamGrant.requestFields(guest: false)["try_look"] == nil)
+    let token = ArchiveStreamGrant.requestFields(guest: false)["dm_img_str"] ?? ""
+    precondition((22...86).contains(token.count) && !token.contains("%"))
+    UserDefaults.standard.removeObject(forKey: ArchiveStreamGrant.guestHD)
     precondition(ArchiveStreamGrant.automaticHD([32], guest: true, enabled: true, explicit: false) == nil)
     precondition(ArchiveStreamGrant.automaticHD([32,80], guest: true, enabled: true, explicit: false) == 80)
     precondition(ArchiveStreamGrant.automaticHD([32,80], guest: true, enabled: true, explicit: true) == nil)

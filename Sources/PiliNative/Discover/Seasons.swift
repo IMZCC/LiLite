@@ -72,7 +72,7 @@ struct EpisodePlayer: View {
   @StateObject private var model = PlayerModel()
   @EnvironmentObject private var accounts: AccountContext
   @AppStorage(InterfaceInteraction.preinitialize) private var early = false
-  @AppStorage(VideoTransport.autoKey) private var autoplay = true
+  @AppStorage(VideoTransport.autoKey) private var autoplay = false
   @State private var manualTicket: PlaybackEntryID?
   @State private var prepared: PlaybackEntryID?
   private func ticket(_ e: SeasonInfo.Episode) -> PlaybackEntryID {
@@ -82,7 +82,7 @@ struct EpisodePlayer: View {
     get { model.preferences.bullets }
     nonmutating set { model.preferences.bullets = newValue }
   }
-  @AppStorage("play.subtitleSize") private var subtitleSize = 17.0
+  @AppStorage("play.subtitleSize") private var subtitleSize = 16.0
   @AppStorage("play.episodeSkip") private var skip = EpisodeSkipMode.once.rawValue
   @State private var panelOverride: Bool?
   @AppStorage("detail.episodeReplies") private var showReplies = true

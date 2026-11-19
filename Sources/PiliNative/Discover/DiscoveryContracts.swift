@@ -8,6 +8,9 @@ enum SearchDomain: String, CaseIterable {
   case cinema = "影视"
   case live = "直播间"
   case article = "专栏"
+  /// The original's result tabs: videos live under 综合 (which becomes a video search once a
+  /// filter is set), so there is no separate 视频 tab.
+  static let tabs: [SearchDomain] = [.mixed, .bangumi, .cinema, .live, .creator, .article]
   var service: String {
     switch self {
     case .video: return "video"

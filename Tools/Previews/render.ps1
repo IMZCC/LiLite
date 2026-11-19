@@ -3,7 +3,7 @@ $nativeRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 $outputPath = Join-Path $nativeRoot 'dist\Previews\2026-11-13'
 $browserPath = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
 if (-not (Test-Path -LiteralPath $browserPath)) { throw 'Chrome executable is unavailable' }
-wsl.exe -d SwiftUI-Noble --cd /mnt/d/biliios/Native --exec python3 Tools/Previews/generate.py
+wsl.exe -d SwiftUI-Noble --cd /mnt/d/LiLite --exec python3 Tools/Previews/generate.py
 if ($LASTEXITCODE -ne 0) { throw 'Preview generation failed' }
 $previewJobs = @(
   @{ Name = 'home'; Width = 430; Height = 932 },

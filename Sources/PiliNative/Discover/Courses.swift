@@ -298,7 +298,7 @@ struct CourseDetail: View {
   }
   private func player(_ e: SeasonInfo.Episode, _ c: Course) -> some View {
     EpisodePlayer(
-      episode: e, course: true, initialSeconds: PlaybackMemory.enabled ? studyTimes[e.id] : nil,
+      episode: e, course: true, initialSeconds: studyTimes[e.id],
       sequence: (c.groups.first { $0.episodes.contains(where: { $0.id == e.id }) }?.episodes
         ?? c.lessons), seasonTitle: c.title,
       seasonID: c.season_id)

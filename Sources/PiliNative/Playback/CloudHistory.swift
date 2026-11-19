@@ -31,16 +31,34 @@ import SwiftUI
       if stamp == gen, !Task.isCancelled { allowed = paused == false }
     }
   }
+  private enum Beat { case playing, resumed, final }
+  /// While playing, like the original: one report per 5 seconds of progress since the last one.
   func record(_ seconds: Double, duration: Double, final: Bool = false) {
+    send(seconds, duration: duration, beat: final ? .final : .playing)
+  }
+  /// Playback started or resumed: the original reports once 2 seconds have passed since the last.
+  func resumed(_ seconds: Double, duration: Double) {
+    send(seconds, duration: duration, beat: .resumed)
+  }
+  /// A seek moves the reference point, so the next report comes 5 seconds after the new position.
+  func seeked(_ seconds: Double) {
+    guard seconds.isFinite, seconds >= 0, seconds < Double(Int.max) else { return }
+    last = Int(seconds)
+  }
+  private func send(_ seconds: Double, duration: Double, beat: Beat) {
     guard allowed, let account,
       UserDefaults.standard.object(forKey: "history.sync") as? Bool != false, seconds.isFinite,
       seconds > 0, seconds < Double(Int.max)
     else { return }
     let t = Int(seconds)
-    let finished = duration > 0 && seconds >= duration - 0.6
+    // The original marks a finished video with -1 when it stops within a second of the end.
+    let finished = duration > 0 && seconds >= duration - 1
     let value = finished ? -1 : t
-    guard last != value, final || finished || (last.map { abs($0 - value) >= 15 } ?? true) else {
-      return
+    guard last != value else { return }
+    switch beat {
+    case .final: break
+    case .resumed: guard finished || t - (last ?? 0) >= 2 else { return }
+    case .playing: guard finished || t - (last ?? 0) >= 5 else { return }
     }
     last = value
     var f = fields

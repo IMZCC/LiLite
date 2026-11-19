@@ -83,7 +83,7 @@ PlayerPreferencePanel/自动进入画中画	autoPiP 后台画中画 进入后台
 PlayerPreferencePanel/视频详情使用深色外观	darkVideoPage 视频播放页使用深色主题	detail.dark	false
 PlayerPreferencePanel/触感反馈	feedBackEnable 请确定手机设置中已开启震动反馈 震动反馈	ui.haptics	false
 PlayerPreferencePanel/进入后台时继续播放	continuePlayInBackground 后台播放 进入后台时继续播放	play.background	false
-PlayerPreferencePanel/进入详情页自动播放	autoPlayEnable 自动播放 进入详情页自动播放	play.onEntry	true
+PlayerPreferencePanel/进入详情页自动播放	autoPlayEnable 自动播放 进入详情页自动播放	play.onEntry	false
 PlayerPreferencePanel/锁屏与控制中心播放控件	enableBackgroundPlay 后台音频服务 避免画中画没有播放暂停功能	play.systemMedia	true
 PlayerPreferencePanel/长按时使用当前倍速的两倍	enableAutoLongPressSpeed	player.doubleSpeed	false
 PlayerPreferencePanel/音画同步	videoSync 当前： （此项即mpv的--video-sync 视频同步	play.videoSync	system
@@ -101,6 +101,7 @@ RecommendationSettings/最低播放量	minPlayForRcmd 推荐、热门、分区�
 RecommendationSettings/最低点赞率	minLikeRatioForRecommend Web推荐、热门、分区 点赞率
 RecommendationSettings/最短时长（秒）	minDurationForRcmd 推荐、相关视频 视频时长
 RecommendationSettings/标出上次刷新的位置	savedRcmdTip 保留上次推荐时，在上次刷新位置显示提示 显示上次看到位置提示	feed.retainedTip	true
+RecommendationSettings/首个推荐使用大卡片	大卡片 首卡 推荐卡片 双列 卡片样式	feed.featuredFirst	false
 ReplyFilterPanel/主评论	replySortType 评论展示	reply.mainSort	1
 ReplyFilterPanel/从屏幕边缘滑动返回	slideDismissReplyPage 侧滑关闭二级页面	reply.edgeDismiss	true
 ReplyFilterPanel/屏蔽关键词或正则表达式	banWordForReply 评论关键词过滤

@@ -155,7 +155,7 @@ struct LivePlayer: View {
   @StateObject private var chat = LiveChat()
   @StateObject private var liveTrack = LiveOverlayTimeline()
   @StateObject private var liveInspector = BulletInspector()
-  @AppStorage("dm.tap") private var inspectLive = false
+  @AppStorage("dm.tap") private var inspectLive = true
   @State private var readingOlder = false
   @State private var systemFullscreen = false
   @StateObject private var upscale = UpscaleSession()

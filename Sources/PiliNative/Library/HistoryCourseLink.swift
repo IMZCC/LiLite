@@ -18,7 +18,7 @@ struct HistoryCourseLink: View {
         {
           EpisodePlayer(
             episode: item, course: true,
-            initialSeconds: seconds ?? (PlaybackMemory.enabled ? observedSeconds : nil),
+            initialSeconds: seconds ?? observedSeconds,
             sequence: course.groups.first { $0.episodes.contains(where: { $0.id == item.id }) }?
               .episodes ?? course.lessons, seasonTitle: course.title,
             seasonID: course.season_id)

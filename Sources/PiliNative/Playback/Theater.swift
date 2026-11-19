@@ -223,7 +223,7 @@ struct TheaterSheet: View {
   @AppStorage("theater.lockButton") private var allowLock = true
   @AppStorage("theater.captureButton") private var allowCapture = true
   @ObservedObject var model: PlayerModel
-  @AppStorage("play.subtitleSize") var subtitleSize = 17.0
+  @AppStorage("play.subtitleSize") var subtitleSize = 16.0
   var keyStep: ((Bool) -> Void)? = nil
   var entry: InlinePlayerFrame.Snapshot?
   let closing: Bool

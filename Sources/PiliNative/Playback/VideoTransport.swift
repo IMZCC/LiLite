@@ -18,7 +18,8 @@ import Foundation
   }
   static let autoKey = "play.onEntry", backgroundKey = "play.background",
     bufferKey = "play.bufferSeconds", liveBufferKey = "live.bufferSeconds"
-  static var playsOnEntry: Bool { UserDefaults.standard.object(forKey: autoKey) as? Bool ?? true }
+  /// Off by default, like the original's autoPlayEnable: the detail page waits for a tap.
+  static var playsOnEntry: Bool { UserDefaults.standard.object(forKey: autoKey) as? Bool ?? false }
   private static let temporaryBackground = NSMapTable<AVPlayer, NSNumber>.weakToStrongObjects()
   static func background(_ player: AVPlayer, temporary: Bool?) {
     if let temporary {

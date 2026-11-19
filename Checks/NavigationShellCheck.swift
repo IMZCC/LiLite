@@ -8,6 +8,11 @@ import Foundation
     precondition(
       config.tabs == [.mine, .home] && config.mineTabs == [.favorite] && config.hideMode == .sync
         && config.tabletNav)
+    // Like the original there is no search column; older layouts drop it.
+    let withSearch = try JSONDecoder().decode(
+      NavigationLayout.self, from: Data(#"{"tabs":["search","home"],"launch":"search"}"#.utf8))
+    precondition(withSearch.tabs == [.home] && withSearch.launch == .home)
+    precondition(NavigationLayout().tabs == [.home, .dynamics, .mine])
     config.mineTabs = [.subscribed, .history, .later]
     config.sidebar = true
     config.iconOnly = true

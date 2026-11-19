@@ -187,6 +187,7 @@ RecommendationSettings/使用移动端推荐
 RecommendationSettings/保留上次推荐
 RecommendationSettings/分区过滤
 RecommendationSettings/卡片最大列宽
+RecommendationSettings/卡片样式
 RecommendationSettings/同时筛选相关视频
 RecommendationSettings/屏蔽分区关键词或正则表达式
 RecommendationSettings/屏蔽标题关键词或正则表达式
@@ -201,6 +202,7 @@ RecommendationSettings/本机屏蔽的 UP 主
 RecommendationSettings/标出上次刷新的位置
 RecommendationSettings/热门
 RecommendationSettings/输入 UID
+RecommendationSettings/首个推荐使用大卡片
 ReplyFilterPanel/主评论
 ReplyFilterPanel/从屏幕边缘滑动返回
 ReplyFilterPanel/屏蔽关键词或正则表达式

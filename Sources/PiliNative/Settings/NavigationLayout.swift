@@ -55,7 +55,7 @@ struct NavigationLayoutPanel: View {
           draft.tabs.remove(atOffsets: idx)
           if !draft.tabs.contains(draft.launch) { draft.launch = draft.tabs[0] }
         }
-        ForEach(MainTab.allCases.filter { !draft.tabs.contains($0) }) { t in
+        ForEach(NavigationLayout.columns.filter { !draft.tabs.contains($0) }) { t in
           addRow(t.title) { draft.tabs.append(t) }
         }
         Picker("启动时打开", selection: $draft.launch) {

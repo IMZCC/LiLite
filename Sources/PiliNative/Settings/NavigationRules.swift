@@ -47,7 +47,7 @@ enum MainTab: String, Codable, CaseIterable, Identifiable {
   var id: Self { self }
   var title: String {
     switch self {
-    case .home: "发现"
+    case .home: "首页"
     case .search: "搜索"
     case .dynamics: "动态"
     case .mine: "我的"
@@ -73,7 +73,9 @@ enum HomeChannel: String, Codable, CaseIterable, Identifiable {
 }
 struct NavigationLayout: Codable, Equatable {
   static let key = "navigation.layout"
-  var tabs = MainTab.allCases, channels = HomeChannel.allCases
+  /// The original's three columns; search is reached from the home header, never a column.
+  static let columns: [MainTab] = [.home, .dynamics, .mine]
+  var tabs = Self.columns, channels = HomeChannel.allCases
   var launch = MainTab.home
   var sidebar = false, iconOnly = false, tabletNav = true, floating = false, spaciousBar = true
   var collapseTop = true, collapseBottom = true, animateTabs = false, directBack = false
@@ -87,9 +89,12 @@ struct NavigationLayout: Codable, Equatable {
   init(from d: Decoder) throws {
     self.init()
     let c = try d.container(keyedBy: CodingKeys.self)
-    tabs = try c.decodeIfPresent([MainTab].self, forKey: .tabs) ?? tabs
+    // Older layouts may still list a search column; the original has none.
+    let stored = (try c.decodeIfPresent([MainTab].self, forKey: .tabs) ?? tabs).filter { $0 != .search }
+    tabs = stored.isEmpty ? Self.columns : stored
     channels = try c.decodeIfPresent([HomeChannel].self, forKey: .channels) ?? channels
     launch = try c.decodeIfPresent(MainTab.self, forKey: .launch) ?? launch
+    if !tabs.contains(launch) { launch = tabs.contains(.home) ? .home : tabs[0] }
     sidebar = try c.decodeIfPresent(Bool.self, forKey: .sidebar) ?? sidebar
     iconOnly = try c.decodeIfPresent(Bool.self, forKey: .iconOnly) ?? iconOnly
     tabletNav = try c.decodeIfPresent(Bool.self, forKey: .tabletNav) ?? tabletNav

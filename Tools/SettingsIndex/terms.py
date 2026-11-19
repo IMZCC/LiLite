@@ -60,7 +60,8 @@ manual={'autosync':('play.autosync','0'),'videoSync':('play.videoSync','system')
 extra={'SettingsView/自动领取大会员经验':'大会员 经验 领取 每日 签到',
        'PlaybackOptionsView/播放器内核':'mpv AVPlayer libmpv 播放器内核 画中画 隔空播放',
        'SettingsView/播放器内核':'mpv AVPlayer libmpv 播放器内核 画中画 隔空播放',
-       'DisplayPanel/强制 120Hz':'高刷 高刷新率 ProMotion 120 帧率 fps 流畅'}
+       'DisplayPanel/强制 120Hz':'高刷 高刷新率 ProMotion 120 帧率 fps 流畅',
+       'RecommendationSettings/首个推荐使用大卡片':'大卡片 首卡 推荐卡片 双列 卡片样式'}
 anchors=collections.defaultdict(list);known={}
 for p in base.rglob('*.swift'):
  txt=p.read_text()

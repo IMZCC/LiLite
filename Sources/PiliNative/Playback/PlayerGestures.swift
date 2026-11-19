@@ -125,8 +125,12 @@ private struct GestureCanvas:View{
               }
               switch axis {
               case .seek:
-                let t = target(dx, width: g.size.width)
-                scrub = t; feedback = clockText(t) + "/" + clockText(model.duration)
+                if PlayerSlide.cancelsSeek(v.location, size: g.size) {
+                  scrub = nil; feedback = "松开手指，取消进退"
+                } else {
+                  let t = target(dx, width: g.size.width)
+                  scrub = t; feedback = clockText(t) + "/" + clockText(model.duration)
+                }
               case .fullscreen:
                 scrub = nil; feedback = nil
                 if !switchedScreen, FullscreenMode.swipe(fullscreen: fullscreen, reverse: reverseSwipe,
@@ -149,7 +153,7 @@ private struct GestureCanvas:View{
                 hint(nil)
                 return
               }
-              if start != nil, axis == .seek {
+              if start != nil, axis == .seek, !PlayerSlide.cancelsSeek(v.location, size: g.size) {
                 TouchFeedback.light()
                 model.seek(target(v.translation.width, width: g.size.width))
               }

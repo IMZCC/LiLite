@@ -500,7 +500,10 @@ final class PlayerModel: ObservableObject {
         let captionSpan = self.cues.interval(at: instant)
         self.progress.update(instant, immediate: captionSpan != self.lastCaptionSpan || self.playing != playing)
         self.lastCaptionSpan = captionSpan
-        if self.playing != playing { self.playing = playing }
+        if self.playing != playing {
+          self.playing = playing
+          if playing { self.history.resumed(instant, duration: self.duration) }
+        }
         if playing, !self.clips.isEmpty {
           let mode =
             EpisodeSkipMode(
@@ -1259,6 +1262,7 @@ final class PlayerModel: ObservableObject {
       picture.finishSeek(request, for: item)
     }
     loadBullets(at: t)
+    history.seeked(t)
     wantsStart = true; bridge?.seek(to: t); legacyBridge?.seek(to: t)
     let ok = await engine.seek(to: CMTime(seconds: t, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
     guard ok, !Task.isCancelled, itemStamp == stamp, pendingSeek == request, wantsStart, engine.playbackItem === item else { return }
@@ -1271,6 +1275,7 @@ final class PlayerModel: ObservableObject {
     let picture = PictureSession.shared(engine), request = picture.beginSeek(item, to: t)
     pendingSeek = request
     loadBullets(at: t)
+    history.seeked(t)
     bridge?.seek(to: t)
     legacyBridge?.seek(to: t)
     engine.seek(to: CMTime(seconds: t, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) {
