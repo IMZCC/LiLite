@@ -95,7 +95,6 @@
 | [ArchiveKit](ArchiveKit) | 数据包格式、ZIP 兼容性与账号迁移 |
 | [ColorKit](ColorKit) | 动态配色 |
 | [Wire](Wire/README.md) | 协议生成的 Swift 消息 |
-| [Checks](Checks) | 媒体、弹幕、路由与功能对照检查 |
 | [Resources/Brand](Resources/Brand) | 图标与品牌素材 |
 
 ## 品牌

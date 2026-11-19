@@ -1,1 +1,0 @@
-module libxml2 [system] { header "reader.h" link "xml2" export * }

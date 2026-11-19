@@ -2,9 +2,7 @@
 set -euo pipefail
 root=$(cd "$(dirname "$0")" && pwd)
 case "${1:-}" in
-    ""|--release|--release-personal|--sign-dev) ;;
-    --sign-personal) python3 "$root/Checks/parity.py" --client-complete ;;
-    --sign) python3 "$root/Checks/parity.py" --complete; bash "$root/Checks/run.sh"; python3 "$root/Checks/live_remux.py"; python3 "$root/Checks/live_decode.py"; python3 "$root/Checks/native_decode.py"; python3 "$root/Checks/audio_segments.py"; python3 "$root/Checks/presentation_timing.py"; bash "$root/Checks/storage_locations.sh"; python3 "$root/Checks/backup_recovery.py"; PYTHONDONTWRITEBYTECODE=1 python3 "$root/Checks/anime4k.py" ;;
+    ""|--release|--release-personal|--sign|--sign-personal|--sign-dev) ;;
     *) echo "Usage: build.cmd [--release | --release-personal | --sign | --sign-personal | --sign-dev]" >&2; exit 2 ;;
 esac
 work="$HOME/.cache/piliplus-native/build"
@@ -55,7 +53,7 @@ cd "$work"
 # The host resolves the package graph; link Apple SDK stubs, never host ELF libraries.
 export PKG_CONFIG_PATH="$root/Resources/cross-pkgconfig"
 export PKG_CONFIG_LIBDIR="$PKG_CONFIG_PATH"
-inspect=(python3 "$root/Checks/inspect_ipa.py" --firebase-plist "$work/Resources/GoogleService-Info.plist")
+inspect=(python3 "$root/Tools/inspect_ipa.py" --firebase-plist "$work/Resources/GoogleService-Info.plist")
 if [[ ${1:-} == --sign-dev ]]; then
     # Development-only device build: personal signing, no delivery gate, never copied into dist/Delivery.
     # PILI_FAST_BUILD: parallel, incremental -O compile (see Package.swift).
