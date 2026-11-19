@@ -189,7 +189,9 @@ struct ReplyRichText: View {
         // A hidden capped run supplies the actual proposed height, including Dynamic Type.
         capped.hidden().accessibilityHidden(true).overlay(alignment: .topLeading) {
           ViewThatFits(in: .vertical) {
-            run.fixedSize(horizontal: false, vertical: true)
+            // One line past the cap is enough to tell whether it overflows: unlimited, a long
+            // post was laid out in full (every line) only to be cut back to the cap.
+            run.lineLimit(maxLines + 1).fixedSize(horizontal: false, vertical: true)
             capped.overlay(alignment: .bottomTrailing) {
               Button("展开") { expanded = true }.font(font).buttonStyle(.plain).foregroundStyle(.tint)
                 .padding(.leading, 4).background(Color(uiColor: .systemBackground))

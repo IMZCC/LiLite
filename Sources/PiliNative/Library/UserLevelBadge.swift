@@ -8,24 +8,44 @@ struct UserLevelBadge: View {
   var height: CGFloat = 11
   var hardcore = false
   private static let totalR: CGFloat = 930, extendR: CGFloat = 1250, totalB: CGFloat = 466
+  @Environment(\.displayScale) private var scale
   var body: some View {
     let width = (hardcore ? Self.extendR : Self.totalR) * height / Self.totalB
-    Canvas { ctx, size in
-      let s = size.height / Self.totalB
-      ctx.scaleBy(x: s, y: s)
-      let back = Self.color(level)
-      ctx.fill(Self.backPath(hardcore), with: .color(back))
-      ctx.fill(Self.lvPath, with: .color(.white))
-      ctx.fill(Self.digitPath(level), with: .color(.white))
-      if hardcore {
-        var bolt = ctx.resolve(Image(systemName: "bolt.fill"))
-        bolt.shading = .color(.white)
-        ctx.draw(bolt, in: CGRect(x: 900, y: 40, width: 300, height: 400))
+    // A bitmap drawn once per level and size: as a `Canvas` every badge (one per comment) was a
+    // GPU-rendered layer, and the first one drawn set SwiftUI's GPU renderer up on the main
+    // thread (~120 ms the first time the 我的 page showed).
+    Image(uiImage: Self.image(level: level, height: height, hardcore: hardcore, scale: scale))
+      .frame(width: width, height: height)
+      .accessibilityElement().accessibilityLabel((hardcore ? "硬核" : "") + "\(level)级")
+  }
+
+  @MainActor private static var images: [String: UIImage] = [:]
+  @MainActor private static func image(level: Int, height: CGFloat, hardcore: Bool, scale: CGFloat) -> UIImage {
+    let key = "\(level)|\(height)|\(hardcore)|\(scale)"
+    if let hit = images[key] { return hit }
+    let width = (hardcore ? extendR : totalR) * height / totalB
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = scale
+    format.opaque = false
+    let image = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { context in
+      let cg = context.cgContext
+      let s = height / totalB
+      cg.scaleBy(x: s, y: s)
+      cg.setFillColor(UIColor(color(level)).cgColor)
+      cg.addPath(backPath(hardcore).cgPath)
+      cg.fillPath()
+      cg.setFillColor(UIColor.white.cgColor)
+      cg.addPath(lvPath.cgPath)
+      cg.fillPath()
+      cg.addPath(digitPath(level).cgPath)
+      cg.fillPath()
+      if hardcore, let bolt = UIImage(systemName: "bolt.fill")?.withTintColor(.white, renderingMode: .alwaysOriginal) {
+        bolt.draw(in: CGRect(x: 900, y: 40, width: 300, height: 400))
       }
     }
-    .frame(width: width, height: height)
-    .foregroundStyle(.white)
-    .accessibilityElement().accessibilityLabel((hardcore ? "硬核" : "") + "\(level)级")
+    if images.count > 64 { images.removeAll() }
+    images[key] = image
+    return image
   }
 
   static func color(_ level: Int) -> Color {

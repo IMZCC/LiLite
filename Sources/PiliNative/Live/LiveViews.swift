@@ -6,7 +6,6 @@ struct LiveDirectory: View {
   let child: String?
   var title = "直播"
   var embedded = false
-  @Environment(\.activeCatalogPage) private var catalogActive
   @Environment(\.colorScheme) private var colorScheme
   @State private var room = ""
   @AppStorage("live.directoryMobile") private var mobile = false

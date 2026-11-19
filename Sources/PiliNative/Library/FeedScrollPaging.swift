@@ -9,9 +9,11 @@ import Foundation
   var active = true
   private var load: Task<Void, Never>?
 
+  /// Within a screen and a half of the end: the next page is requested while there is still
+  /// plenty to read, so it is in place before the reader gets there (no spinner, no wait).
   nonisolated static func nearEnd(visible: CGRect, contentHeight: CGFloat) -> Bool {
     guard visible.height > 0, visible.minY > 0, contentHeight > visible.height else { return false }
-    return contentHeight - visible.maxY <= min(160, visible.height / 4)
+    return contentHeight - visible.maxY <= visible.height * 1.5
   }
 
   func beginDrag() { canLoad = true }

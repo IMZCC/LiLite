@@ -215,6 +215,38 @@ actor ArtworkStore {
   }
 }
 
+/// Decodes artwork ahead of the rows that will show it, one picture at a time at low priority,
+/// so a row scrolling in draws its picture in its first frame instead of a placeholder that
+/// fades (and renders again) once the image arrives.
+@MainActor final class ArtworkPrefetch {
+  static let shared = ArtworkPrefetch()
+  private var queue: [(url: URL, pixels: Int)] = []
+  private var requested = Set<String>()
+  private var running = false
+  func prefetch(_ urls: [URL], pixels: Int) {
+    for url in urls {
+      let key = "\(pixels)|\(url.absoluteString)"
+      guard !requested.contains(key), ArtworkStore.cachedImage(url, pixels: pixels) == nil else { continue }
+      requested.insert(key)
+      queue.append((url, pixels))
+    }
+    if requested.count > 800 { requested.removeAll() }
+    // Only the newest requests matter: rows far behind the screen were scrolled past already.
+    if queue.count > 16 { queue.removeFirst(queue.count - 16) }
+    guard !running, !queue.isEmpty else { return }
+    running = true
+    Task(priority: .utility) {
+      while !queue.isEmpty {
+        let next = queue.removeFirst()
+        _ = try? await ArtworkStore.shared.image(next.url, pixels: next.pixels)
+      }
+      running = false
+    }
+  }
+  /// The URL a `SiteThumbnail` actually loads for `cover`.
+  static func display(_ cover: URL) -> URL { GalleryPicture(cover).display(quality: ImageDisplay.stored.quality) }
+}
+
 /// The size bucket and the running load of one artwork view, unobserved: as `@State` the
 /// measured size alone re-rendered every new cell once more before its image could show.
 @MainActor private final class ArtworkLoad {

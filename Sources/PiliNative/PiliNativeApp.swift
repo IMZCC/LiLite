@@ -111,6 +111,7 @@ import SwiftUI
         .tracksWindowCanvas()
         .task {
           NativeMetricSubscriber.start()
+          LaunchWarmup.start()
           await accounts.refresh()
           accountsReady = true
         }

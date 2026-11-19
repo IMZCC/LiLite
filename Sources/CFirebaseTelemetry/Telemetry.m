@@ -17,7 +17,11 @@ void LiLiteConfigureFirebase(void) {
 void LiLiteRecordTab(const char *name) {
   if (!configured) return;
   NSString *tab = [NSString stringWithUTF8String:name];
-  [FIRAnalytics logEventWithName:@"screen_view"
-                      parameters:@{@"screen_name": tab, @"screen_class": @"MainTab"}];
-  [[FIRCrashlytics crashlytics] setCustomValue:tab forKey:@"main_tab"];
+  // Off the main thread: Crashlytics writes the key and the analytics breadcrumb to its files
+  // synchronously, which cost a dropped frame on every tab switch.
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+    [FIRAnalytics logEventWithName:@"screen_view"
+                        parameters:@{@"screen_name": tab, @"screen_class": @"MainTab"}];
+    [[FIRCrashlytics crashlytics] setCustomValue:tab forKey:@"main_tab"];
+  });
 }

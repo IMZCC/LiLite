@@ -90,7 +90,15 @@ struct ProfileShelf: View {
                     }
                   }.clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
                   .overlay(alignment: .bottom) {
-                    if let v = row.progress { ProgressView(value: v).progressViewStyle(.linear) }
+                    // Plain shapes: a system ProgressView per thumbnail was a platform view each,
+                    // and the first one drawn set the GPU renderer up on the main thread.
+                    if let v = row.progress {
+                      Rectangle().fill(Color.accentColor)
+                        .frame(height: 3)
+                        .scaleEffect(x: min(1, max(0, v)), y: 1, anchor: .leading)
+                        .accessibilityElement().accessibilityLabel("观看进度")
+                        .accessibilityValue("\(Int((min(1, max(0, v)) * 100).rounded()))%")
+                    }
                   }
                   Text(row.title).font(.footnote).lineLimit(2)
                   if let text = row.caption, !text.isEmpty {

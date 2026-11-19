@@ -45,7 +45,7 @@ struct ProfileShortcut: View {
     VStack(spacing: 8) {
       Image(systemName: symbol).font(.system(size: 19, weight: .semibold))
         .foregroundStyle(.white).frame(width: 42, height: 42)
-        .background(color.gradient, in: Circle())
+        .iconGradient(color)
         .accessibilityHidden(true)
       Text(title).font(.footnote.weight(.medium)).foregroundStyle(.primary)
         .lineLimit(1).minimumScaleFactor(0.8)

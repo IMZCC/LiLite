@@ -42,7 +42,7 @@ struct MediaProfilePanel: View {
           ForEach(Array(codecs.enumerated()), id: \.element) { index, item in
             HStack(spacing: 12) {
               Text("\(index + 1)").font(.footnote.weight(.bold).monospacedDigit()).foregroundStyle(.white)
-                .frame(width: 22, height: 22).background(Color.accentColor.gradient, in: Circle())
+                .frame(width: 22, height: 22).iconGradient(.accentColor)
               Text(PlaybackOption.familyLabel(item))
             }
             .accessibilityLabel("第\(index + 1)位 " + PlaybackOption.familyLabel(item))

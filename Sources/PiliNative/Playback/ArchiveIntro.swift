@@ -74,7 +74,7 @@ struct ArchiveCollectionCard: View {
       HStack(spacing: 12) {
         Image(systemName: "rectangle.stack.fill").font(.system(size: 18, weight: .semibold))
           .foregroundStyle(.white).frame(width: 40, height: 40)
-          .background(Color.accentColor.gradient, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+          .iconGradient(.accentColor, cornerRadius: 11)
         VStack(alignment: .leading, spacing: 3) {
           Text(catalog.title ?? "视频合集").font(.subheadline.weight(.semibold)).lineLimit(1)
           Text(index.map { "第 \($0 + 1) 个 · 共 \(entries.count) 个视频" } ?? "共 \(entries.count) 个视频")
@@ -157,7 +157,7 @@ struct ArchiveRelatedRow: View {
         duration: video.duration.map { clockText(Double($0)) },
         subtitle: video.owner?.name,
         detail: MediaStats.line(views: video.stat?.view, danmaku: video.stat?.danmaku))
-    }.buttonStyle(.plain).archiveCover(video)
+    }.buttonStyle(PressPrefetchStyle { ArchiveDetailPrefetch.shared.warm(video.bvid) }).archiveCover(video)
   }
 }
 

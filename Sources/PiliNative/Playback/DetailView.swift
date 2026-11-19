@@ -572,7 +572,7 @@ struct DetailView: View {
         detailOwner = nil
         startHint = nil
         do {
-          let v = try await BiliAPI.shared.detail(source.bvid)
+          let v = try await ArchiveDetailPrefetch.shared.detail(source.bvid)
           try Task.checkCancellation()
           let parts = v.pages ?? []
           let first = parts.first?.cid ?? v.cid

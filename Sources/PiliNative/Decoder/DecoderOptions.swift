@@ -67,7 +67,7 @@ struct DecoderSettings: View {
           ForEach(Array(ordered.enumerated()), id: \.element) { index, id in
             HStack(spacing: 12) {
               Text("\(index + 1)").font(.footnote.weight(.bold).monospacedDigit()).foregroundStyle(.white)
-                .frame(width: 22, height: 22).background(Color.accentColor.gradient, in: Circle())
+                .frame(width: 22, height: 22).iconGradient(.accentColor)
               Text(label(id))
               Spacer()
               Text(id).font(.caption.monospaced()).foregroundStyle(.tertiary)

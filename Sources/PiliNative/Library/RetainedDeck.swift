@@ -72,6 +72,10 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
   @Environment(\.activeCatalogPage) private var parentActive
   @State private var visited=Set<Choice>()
   @State private var scrolled:Choice?
+  /// The page whose neighbours are mounted. It follows the selection a moment after a swipe
+  /// settles, so building the next neighbour (a whole feed) happens on a still screen rather
+  /// than in the frames that finish the swipe.
+  @State private var center:Choice?
   init(choices:[Choice], selection:Binding<Choice>, swipe:Bool=true, progress:Binding<CGFloat>?=nil,
        viewport: CGSize? = nil, onProgress:((CGFloat)->Void)?=nil,
        @ViewBuilder content:@escaping (Choice)->Content) {
@@ -93,7 +97,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
     else { page(choice).containerRelativeFrame([.horizontal, .vertical]) }
   }
   private func adjacent(_ key:Choice)->Bool {
-    guard swipe, let i=choices.firstIndex(of:selection), let j=choices.firstIndex(of:key) else{return false}
+    guard swipe, let i=choices.firstIndex(of:center ?? selection), let j=choices.firstIndex(of:key) else{return false}
     return abs(i-j)==1
   }
   var body:some View {
@@ -135,7 +139,14 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
           ForEach(choices,id:\.self){choice in page(choice).opacity(choice==selection ? 1:0)}
         }.animation(.easeInOut(duration: 0.2), value: selection)
       }
-    }.onChange(of:selection,initial:true){_,v in visited.insert(v)}
+    }.onChange(of:selection,initial:true){_,v in
+      visited.insert(v)
+      if center == nil { center = v; return }
+      Task { @MainActor in
+        try? await Task.sleep(for: .milliseconds(350))
+        if selection == v, center != v { center = v }
+      }
+    }
       .onChange(of:choices){_,ids in visited.formIntersection(ids)}
   }
 }

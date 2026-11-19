@@ -11,8 +11,10 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
   var dynamicCards = false
   var embeddedComments = false
   var active = true
-  @Environment(\.activeCatalogPage) private var channelActive
-  @Environment(\.preparedCatalogPage) private var channelPrepared
+  /// Whether this list's column / channel is on screen, kept by `PageListActivation`: read in
+  /// the body, every tab switch re-rendered every list (and its rows) in every tab.
+  @State private var activity = PageListActivity()
+  private var channelActive: Bool { activity.active }
   var scrollToTopRequest = 0
   var prefetchFirstPage = false
   var heading: AnyView? = nil
@@ -51,7 +53,7 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
             VStack {
               if let heading { heading.id(refreshHeader) }
               if let controls { controls.id("pili.page.controls") }
-              CatalogGrid(itemWidth: gridItemWidth) { ForEach(items) { item in row(item).id(item.id) } }
+              CatalogGrid(itemWidth: gridItemWidth) { ForEach(items) { item in row(item).onAppear { readAhead(item) }.id(item.id) } }
               footer
             }.padding()
           }.reportsScrollCollapse()
@@ -64,7 +66,7 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
               if let controls { controls.id("pili.page.controls") }
               ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 0) {
-                  row(item).padding(.leading, 14).padding(.trailing, 12)
+                  row(item).padding(.leading, 14).padding(.trailing, 12).onAppear { readAhead(item) }
                   // Under the comment's text column, as in the official list.
                   Divider().padding(.leading, 66)
                 }.id(item.id)
@@ -76,7 +78,7 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
           List {
             if let heading { heading.id(refreshHeader) }
             if let controls { controls.id("pili.page.controls") }
-            ForEach(items) { row($0) }
+            ForEach(items) { item in row(item).onAppear { readAhead(item) } }
             footer
           }.listStyle(.plain).environment(\.inListRows, true).reportsScrollCollapse()
         }
@@ -95,10 +97,10 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
         await load(reset: true)
         await header
       }
-      .task(id: channelPrepared && (active || prefetchFirstPage)) { if channelPrepared && (active || prefetchFirstPage) && !loaded { await load(reset: true) } }
-      .onChange(of: channelActive && active) { _, visible in
-        if !visible { manualLoad?.cancel(); manualLoad = nil }
-      }
+      .modifier(PageListActivation(
+        activity: activity, active: active, prefetchFirstPage: prefetchFirstPage, loaded: { loaded },
+        load: { await load(reset: true) },
+        hidden: { if manualLoad != nil { manualLoad?.cancel(); manualLoad = nil } }))
       .onDisappear { manualLoad?.cancel(); manualLoad = nil }
       .onChange(of: libraryTop) { _, _ in
         if let first = items.first { withAnimation { proxy.scrollTo(first.id, anchor: .top) } }
@@ -141,7 +143,8 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
             )
           } else {
             ForEach(items) { item in
-              row(item).frame(maxWidth: min(frame.size.width, max(limit, 640)), alignment: .leading).id(item.id)
+              row(item).frame(maxWidth: min(frame.size.width, max(limit, 640)), alignment: .leading)
+                .onAppear { readAhead(item) }.id(item.id)
             }
           }
           footer
@@ -198,6 +201,14 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
       }
     }.frame(height: 1).id("pili.page.next."+cursor).accessibilityHidden(true)
   }
+  /// The row six from the end of what is loaded asks for the next page as it scrolls in, so it
+  /// arrives before the reader reaches the footer (which used to be the only trigger).
+  @MainActor private func readAhead(_ item: Item) {
+    guard items.count > 6 ? item.id == items[items.count - 6].id : item.id == items.last?.id,
+      channelActive, active, autoPage, dynamicCards || autoMore, next != nil, message == nil, !busy
+    else { return }
+    startLoad(reset: false)
+  }
   @MainActor private func startLoad(reset: Bool) {
     guard reset || !busy else { return }
     manualLoad?.cancel()
@@ -240,6 +251,29 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
     } catch { if stamp == id && !Task.isCancelled { boundary.failed(refresh: reset); message = error.localizedDescription;continuation = (error as? ServiceError)?.continuation } }
   }
 }
+/// Unobserved: read where loading is decided, never in the list's body.
+@MainActor final class PageListActivity { var active = true }
+
+/// Reads the channel environment for a `PageList` so its changes only reach this modifier:
+/// loads the first page once prepared and stops a manual load when the list leaves the screen.
+private struct PageListActivation: ViewModifier {
+  let activity: PageListActivity
+  let active: Bool, prefetchFirstPage: Bool
+  let loaded: () -> Bool
+  let load: () async -> Void
+  let hidden: () -> Void
+  @Environment(\.activeCatalogPage) private var channelActive
+  @Environment(\.preparedCatalogPage) private var channelPrepared
+  func body(content: Content) -> some View {
+    content
+      .task(id: channelPrepared && (active || prefetchFirstPage)) {
+        if channelPrepared && (active || prefetchFirstPage) && !loaded() { await load() }
+      }
+      .onChange(of: channelActive, initial: true) { _, value in activity.active = value }
+      .onChange(of: channelActive && active) { _, visible in if !visible { hidden() } }
+  }
+}
+
 struct VideoLink: View {
   let video: Video
   /// Chart position, shown as a badge on the cover.

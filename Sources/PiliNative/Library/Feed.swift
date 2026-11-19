@@ -688,7 +688,8 @@ private struct VideoShelf: View, Equatable {
     LazyLink { destination(v) } label: {
       HomeVideoCard(video: v)
     }
-    .buttonStyle(.plain)
+    .buttonStyle(PressPrefetchStyle { if v.recommendLink == nil { ArchiveDetailPrefetch.shared.warm(v.bvid) } })
+    .onAppear { prefetchCovers(after: v) }
     .overlay(alignment: .bottomTrailing) { moreMenu(v) }
     .archiveCover(v) { feedbackMenus(v) }
     .disabled(sending)
@@ -796,7 +797,24 @@ private struct VideoShelf: View, Equatable {
               }.piliFont(.caption).foregroundStyle(.secondary)
             }.padding(.horizontal, featured ? 4 : 2)
           }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
-        }.buttonStyle(.plain).archiveCover(v) { feedbackMenus(v) }.disabled(sending)
+        }.buttonStyle(PressPrefetchStyle { if v.recommendLink == nil { ArchiveDetailPrefetch.shared.warm(v.bvid) } })
+        .archiveCover(v) { feedbackMenus(v) }.disabled(sending)
+  }
+  /// Decodes the covers of the next rows while this one scrolls in, at the size the cards draw.
+  private func prefetchCovers(after v: Video) {
+    let list = model.videos
+    guard let i = list.firstIndex(where: { $0.id == v.id }) else { return }
+    let ahead = list[(i + 1)..<min(list.count, i + 7)].compactMap(\.cover).map(ArtworkPrefetch.display)
+    guard !ahead.isEmpty else { return }
+    let gap = HomeCardStyle.gap
+    let window = Double(WindowCanvas.shared.size.width)
+    let desired = UserDefaults.standard.object(forKey: "grid.recommendWidth") as? Double ?? 240
+    let columns = Double(max(1, InterfacePresentation.columns(
+      width: window - 2 * gap, gap: gap, desired: desired, accessible: false)))
+    let width = (window - 2 * gap - gap * (columns - 1)) / columns
+    let pixels = ArtworkCacheRules.pixels(
+      width: width, height: width / Double(HomeCardStyle.coverAspect), scale: Double(UIScreen.main.scale))
+    ArtworkPrefetch.shared.prefetch(ahead, pixels: pixels)
   }
   @MainActor private func send(_ item: Feedback, undo: Bool) async {
     guard !sending, accounts.state.owner(.role(.recommend)) == item.uid else { return }
