@@ -4,7 +4,7 @@
 
 ## 已改动的实际界面
 
-- `Settings/NativeGlass.swift` 集中使用系统 `glassEffect` 与 `GlassEffectContainer`，所有新 API 均在 iOS 26 可用性分支内；iOS 17、18 使用兼容材质，“降低透明度”使用实色背景
+- `Settings/NativeGlass.swift` 集中使用系统 `glassEffect` 与 `GlassEffectContainer`，所有新 API 均在 iOS 26 可用性分支内；更早的系统使用兼容材质，“降低透明度”使用实色背景
 - `Settings/MainNavShell.swift` 默认使用真实系统 `Tab`、同一栏中的独立搜索页、系统标签栏和滚动最小化，交由 iOS 27 呈现原生玻璃及自适应布局。用户配置的侧栏、只显示图标、浮动、紧凑、动画及即时收起保留兼容壳；`NativeTabReselect` 转发系统原委托，同时处理新旧 UITab/controller 回调及去重，保留重选回顶/刷新
 - 搜索采用 Apple HIG 为丰富内容推荐的标准标签页模式，热搜/历史/分类作为搜索首页；原生搜索标签将 `SearchView.searchable` 显式置于顶部导航栏下，独立搜索窗口保留默认位置，不上提业务状态或自动弹键盘。默认标签顺序为发现、动态、我的、搜索，自定义顺序原样保留，参考[当前搜索指引](https://developer.apple.com/design/human-interface-guidelines/search-fields)
 - 宽屏侧栏配置隐藏搜索或我的标签时仍走保留快捷入口的兼容壳，避免仅显示动态等自定义配置丢失全局搜索、个人页和消息入口
