@@ -36,9 +36,12 @@ import SwiftUI
   }
 }
 
-struct ReplyPlaybackTarget {
+/// Equatable on what it targets (the seek closure is that player's own), so the comments under
+/// a player are not all re-rendered whenever the page passes a fresh one down.
+struct ReplyPlaybackTarget: Equatable {
   let duration: Double, seek: (Double) -> Void
   var model:PlayerModel?=nil
+  nonisolated static func == (a: Self, b: Self) -> Bool { a.duration == b.duration && a.model === b.model }
 }
 private enum ReplyPlaybackKey: EnvironmentKey { static let defaultValue: ReplyPlaybackTarget? = nil }
 extension EnvironmentValues {

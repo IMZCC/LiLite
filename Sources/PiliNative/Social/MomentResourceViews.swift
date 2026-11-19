@@ -93,7 +93,7 @@ private struct MomentReservationView: View {
           Button(needsRead ? "查看预约状态" : value.buttonLabel) { Task { await update(uid) } }.disabled(
             busy || (!needsRead && value.intent(dynamic: dynamic) == nil))
         } else if value.intent(dynamic: dynamic) != nil {
-          NavigationLink("登录后预约") { QRLoginView() }
+          NavigationLink("登录后预约") { DeferredPage { QRLoginView() } }
         } else {
           Text(value.buttonLabel).foregroundStyle(.secondary)
         }

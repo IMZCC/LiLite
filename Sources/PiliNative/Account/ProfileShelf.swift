@@ -123,16 +123,19 @@ struct ProfileShelf: View {
           NavigationLink {
             destination
           } label: {
-            HStack {
+            HStack(spacing: 4) {
               Text(field.label)
               if let total { Text(String(total)).foregroundStyle(.secondary) }
-              Image(systemName: "chevron.right")
+              Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
             }
           }
           Spacer()
-          Button { Task { await model.refresh(force: true) } } label: { Image(systemName: "arrow.clockwise") }
-            .accessibilityLabel("刷新" + field.label).disabled(loading)
+          Button { Task { await model.refresh(force: true) } } label: {
+            Image(systemName: "arrow.clockwise").font(.footnote.weight(.medium)).foregroundStyle(.secondary)
+          }
+          .accessibilityLabel("刷新" + field.label).disabled(loading)
         }
+        .font(.subheadline.weight(.semibold))
       }
     }.task(id: identity) {
       await model.refresh()
@@ -153,25 +156,25 @@ private struct ProfileShelfLink<Content: View>: View {
   var body: some View {
     switch row.target {
     case .link(let l):
-      NavigationLink {
+      LazyLink {
         LinkDestination(item: l)
       } label: {
         label()
       }
     case .folder(let id):
-      NavigationLink {
+      LazyLink {
         FavoriteFolderScreen(id: id)
       } label: {
         label()
       }
     case .season(let id):
-      NavigationLink {
+      LazyLink {
         SubscriptionCollection(item: .init(id: id, type: 21, title: row.title))
       } label: {
         label()
       }
     case .courseHistory(let id, let ep, let aid, let seconds):
-      NavigationLink {
+      LazyLink {
         HistoryCourseLink(id: id, byEpisode: ep, aid: aid, seconds: seconds)
       } label: {
         label()

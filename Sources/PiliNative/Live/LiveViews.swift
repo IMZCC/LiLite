@@ -30,7 +30,7 @@ struct LiveDirectory: View {
               Image(systemName: "number").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
               TextField("输入直播间号", text: $room).keyboardType(.numberPad)
               if let id = Int64(room), id > 0 {
-                NavigationLink { LivePlayer(id: id, title: "直播间 \(id)") } label: {
+                LazyLink { LivePlayer(id: id, title: "直播间 \(id)") } label: {
                   Text("进入").font(.subheadline.weight(.semibold))
                 }
                 .piliGlassButton(prominent: true).controlSize(.small)
@@ -40,7 +40,7 @@ struct LiveDirectory: View {
             .padding(.leading, 14).padding(.trailing, 5).frame(height: 42)
             .piliGlass(in: Capsule())
             .animation(.snappy(duration: 0.2), value: Int64(room) ?? 0 > 0)
-            NavigationLink { LiveSearchView() } label: {
+            NavigationLink { DeferredPage { LiveSearchView() } } label: {
               Image(systemName: "magnifyingglass").font(.body.weight(.medium))
                 .frame(width: 42, height: 42).contentShape(Circle())
             }
@@ -58,10 +58,10 @@ struct LiveDirectory: View {
             }
           }
           HStack(spacing: 8) {
-            NavigationLink { LiveAreaCatalog() } label: {
+            NavigationLink { DeferredPage { LiveAreaCatalog() } } label: {
               Label("分区", systemImage: "square.grid.2x2").font(.subheadline)
             }.piliGlassButton()
-            NavigationLink { LiveFollows() } label: {
+            NavigationLink { DeferredPage { LiveFollows() } } label: {
               Label("关注", systemImage: "heart").font(.subheadline)
             }.piliGlassButton()
             NavigationLink {
@@ -77,7 +77,7 @@ struct LiveDirectory: View {
         ScrollView(.horizontal) {
           HStack(spacing: 8) {
             ForEach(followed) { r in
-              NavigationLink { LivePlayer(id: r.id, title: r.title) } label: {
+              LazyLink { LivePlayer(id: r.id, title: r.title) } label: {
                 HStack(spacing: 6) {
                   Circle().fill(.red).frame(width: 6, height: 6)
                   Text(r.uname ?? r.title).lineLimit(1)
@@ -284,7 +284,7 @@ struct LivePlayer: View {
         LiveLikeButton(room: identity, owner: accounts.state.owner(.role(.heartbeat)))
           .id("\(identity.room_id):\(accounts.state.owner(.role(.heartbeat)) ?? "")")
         Menu {
-          NavigationLink("主播主页") { CreatorSpace(mid: identity.uid, name: liveCard?.author ?? "主播") }
+          NavigationLink("主播主页") { DeferredPage { CreatorSpace(mid: identity.uid, name: liveCard?.author ?? "主播") } }
           if headerUnavailable { Button("重新读取直播间资料") { headerRevision += 1 } }
           Button("贡献榜") { ranks = true }
           if enlarged { Button("直播聊天") { expandedChat = true } }

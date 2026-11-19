@@ -9,14 +9,18 @@ struct CatalogGrid<Content: View>: View {
   @AppStorage("grid.recommendWidth") private var homeWidth = 240.0
   @AppStorage("grid.cardWidth") private var defaultWidth = 240.0
   @Environment(\.dynamicTypeSize) private var textSize
-  @State private var columns = 1
+  @State private var columns: Int?
   var body: some View {
     let limit = itemWidth ?? min(500, max(150, home ? homeWidth : defaultWidth))
     let large = textSize.isAccessibilitySize
+    // Until measured, guess from the window so a new page lays its cells out once, not as one
+    // column first and then again as two.
+    let count = columns ?? InterfacePresentation.columns(
+      width: Double(WindowCanvas.shared.size.width) - 2 * gap, gap: gap, desired: limit, accessible: large)
     LazyVGrid(
       columns: Array(
         repeating: GridItem(.flexible(minimum: 0), spacing: gap, alignment: .topLeading),
-        count: columns), alignment: .leading, spacing: rowSpacing
+        count: max(1, count)), alignment: .leading, spacing: rowSpacing
     ) { content() }
     .frame(maxWidth: .infinity)
     .onGeometryChange(for: Int.self) { proxy in

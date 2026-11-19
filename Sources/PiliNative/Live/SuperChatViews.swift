@@ -172,7 +172,7 @@ struct SuperChatFeed: View {
           VStack(alignment: .leading, spacing: 5) {
             SCCard(row: s, now: now, medal: medal)
             HStack {
-              NavigationLink("查看发送者") { CreatorSpace(mid: s.uid, name: s.name) }
+              NavigationLink("查看发送者") { DeferredPage { CreatorSpace(mid: s.uid, name: s.name) } }
               Spacer()
               Menu {
                 Button("复制留言信息") {

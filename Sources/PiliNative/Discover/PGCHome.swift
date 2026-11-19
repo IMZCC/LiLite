@@ -31,7 +31,7 @@ extension BiliAPI {
 struct SeasonTile: View {
   let season: Season
   var body: some View {
-    NavigationLink {
+    LazyLink {
       SeasonView(season: season)
     } label: {
       VStack(alignment: .leading, spacing: 6) {

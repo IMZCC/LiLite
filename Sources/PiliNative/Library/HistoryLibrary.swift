@@ -143,7 +143,7 @@ struct ProfileFullHistory: View {
               Button("读取历史记录状态") { Task { await readPause() } }
             }
             Button("清空全部历史", role: .destructive) { confirmClear = true }
-            NavigationLink("观看历史设置") { HistorySettings(uid: uid) }
+            NavigationLink("观看历史设置") { DeferredPage { HistorySettings(uid: uid) } }
           } label: {
             Image(systemName: "ellipsis.circle").accessibilityLabel("观看记录选项")
           }

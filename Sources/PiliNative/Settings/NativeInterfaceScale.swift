@@ -37,7 +37,7 @@ struct NativeInterfaceScale: ViewModifier {
     InterfaceLayout(factor: factor) {
       content.environment(\.piliPixels, physical).environment(\.displayScale, physical * factor)
         // Presented pages are never under the video detail's overlaid header.
-        .environment(\.panelTopInset, 0).environment(\.panelScroll, nil)
+        .environment(\.panelTopInset, 0).environment(\.panelScroll, nil).environment(\.panelBottomInset, 0)
         .scaleEffect(factor, anchor: .center)
     }
   }

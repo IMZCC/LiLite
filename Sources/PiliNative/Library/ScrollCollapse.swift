@@ -36,6 +36,7 @@ private struct ScrollCollapseKey: EnvironmentKey {
   static let defaultValue: ScrollCollapse? = nil
 }
 private struct PanelTopInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
+private struct PanelBottomInsetKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
 private struct PanelScrollKey: EnvironmentKey {
   static let defaultValue: (@MainActor (CGFloat, CGFloat) -> Void)? = nil
 }
@@ -48,6 +49,12 @@ extension EnvironmentValues {
   var panelTopInset: CGFloat {
     get { self[PanelTopInsetKey.self] }
     set { self[PanelTopInsetKey.self] = newValue }
+  }
+  /// Home indicator (and bullet bar) height under panels drawn edge to edge: their lists scroll
+  /// beneath it and pad their last rows clear of it.
+  var panelBottomInset: CGFloat {
+    get { self[PanelBottomInsetKey.self] }
+    set { self[PanelBottomInsetKey.self] = newValue }
   }
   /// Receives the scroll offset of the visible list under such a header.
   var panelScroll: (@MainActor (CGFloat, CGFloat) -> Void)? {
@@ -67,15 +74,18 @@ private struct ReportsScrollCollapse: ViewModifier {
   @Environment(\.scrollCollapse) private var state
   @Environment(\.panelTopInset) private var inset
   @Environment(\.panelScroll) private var panel
+  @Environment(\.panelBottomInset) private var bottom
   func body(content: Content) -> some View {
-    if state == nil && panel == nil && inset == 0 {
+    if state == nil && panel == nil && inset == 0 && bottom == 0 {
       content
     } else {
       content
         // Pages pushed or presented from inside this list are not under the header.
         .environment(\.panelTopInset, 0).environment(\.panelScroll, nil)
+        .environment(\.panelBottomInset, 0)
         // Only this list starts below an overlaid header; nested horizontal scrollers do not.
         .safeAreaPadding(.top, inset)
+        .safeAreaPadding(.bottom, bottom)
         .piliOnScrollGeometryChange(for: CGFloat.self) { g in
           g.contentOffset.y + g.contentInsets.top
         } action: { old, new in

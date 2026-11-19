@@ -98,7 +98,7 @@ struct OfflineLocationPanel: View {
         if let issue { Text(issue).foregroundStyle(.red) }
       }
       Section {
-        NavigationLink { LegacyCacheImportView() } label: {
+        NavigationLink { DeferredPage { LegacyCacheImportView() } } label: {
           SettingsRowLabel(title: "恢复原版缓存清单", symbol: "arrow.triangle.2.circlepath", color: .green)
         }
       }

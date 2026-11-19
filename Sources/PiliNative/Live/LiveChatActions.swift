@@ -76,7 +76,7 @@ struct LiveChatActions: View {
           Text(line.text)
         }
         if let uid = line.uid, uid > 0 {
-          NavigationLink("查看发送者主页") { CreatorSpace(mid: uid, name: line.name) }
+          NavigationLink("查看发送者主页") { DeferredPage { CreatorSpace(mid: uid, name: line.name) } }
         }
         if let to = line.repliedUID, let name = line.repliedName {
           NavigationLink("被回复者 @" + name) { CreatorSpace(mid: to, name: name) }
@@ -103,10 +103,10 @@ struct LiveChatActions: View {
           if selection.paid?.reportable == true
             || line.reportFields(room: selection.room, reason: .other) != nil
           {
-            NavigationLink("举报这条留言") { LiveReportForm(selection: selection, owner: owner) }
+            NavigationLink("举报这条留言") { DeferredPage { LiveReportForm(selection: selection, owner: owner) } }
           }
         } else if accounts.state.active == nil {
-          NavigationLink("登录后参与互动") { QRLoginView() }
+          NavigationLink("登录后参与互动") { DeferredPage { QRLoginView() } }
         }
         if let issue { Text(issue) }
       }.disabled(busy).navigationTitle("留言操作").toolbar { Button("关闭") { dismiss() } }

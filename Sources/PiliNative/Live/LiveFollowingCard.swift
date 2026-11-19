@@ -5,7 +5,7 @@ struct LiveFollowingCard: View {
   @State private var showCover = false
   var body: some View {
     let cover = room.room_cover.flatMap(GalleryPicture.source)
-    NavigationLink {
+    LazyLink {
       LivePlayer(id:room.id,title:room.title ?? "直播间")
     } label: {
       VStack(alignment:.leading,spacing:5) {

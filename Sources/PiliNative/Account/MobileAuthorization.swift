@@ -104,7 +104,7 @@ struct MobileAuthorization: View {
         .frame(maxWidth: .infinity).padding(.vertical, 10)
       }
       Section {
-        NavigationLink { MobileClientLoginView(expectedUID: uid) } label: {
+        NavigationLink { DeferredPage { MobileClientLoginView(expectedUID: uid) } } label: {
           SettingsRowLabel(title: attached ? "重新授权" : "扫码或登录授权", symbol: "qrcode.viewfinder", color: .blue)
         }
       }

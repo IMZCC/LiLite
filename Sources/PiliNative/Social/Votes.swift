@@ -199,7 +199,7 @@ private struct FolloweeBallots: View {
             else if let issue { Text(issue); Button("重试") { retry += 1 } }
             else if people.isEmpty { Text("暂无公开投票").foregroundStyle(.secondary) }
             ForEach(people) { person in
-            NavigationLink {
+            LazyLink {
               CreatorSpace(mid: person.uid, name: person.name ?? "用户空间")
             } label: {
               HStack {

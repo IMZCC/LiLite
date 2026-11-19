@@ -13,10 +13,10 @@ import SwiftUI
   }
 }
 private struct ReplyLinkKey: EnvironmentKey {
-  static let defaultValue: (@MainActor (SharedLink) -> Void)? = nil
+  static let defaultValue: StableAction<SharedLink>? = nil
 }
 extension EnvironmentValues {
-  var replyOpenLink: (@MainActor (SharedLink) -> Void)? {
+  var replyOpenLink: StableAction<SharedLink>? {
     get { self[ReplyLinkKey.self] }
     set { self[ReplyLinkKey.self] = newValue }
   }
@@ -61,7 +61,7 @@ struct ReplyRichText: View {
   @State private var overflow = false
   @State private var images: [URL: UIImage] = [:]
   @State private var documentCache = ReplyDocumentCache()
-  private struct Destination: Identifiable {
+  fileprivate struct Destination: Identifiable {
     let id = UUID()
     let value: RichNode.Target
   }
@@ -76,19 +76,22 @@ struct ReplyRichText: View {
       // Most comment rows contain only prose. Let SwiftUI measure one text run, without a
       // selectable UIKit view, asynchronous overflow feedback or a sheet host in every row.
       plain(Text(verbatim: document.text), collapsed: collapsed)
-    } else if let openLink, document.images.isEmpty, document.styles.isEmpty,
-      document.targets.values.allSatisfy({ if case .route = $0 { true } else { false } })
-    {
-      var text: AttributedString {
-        let string = NSMutableAttributedString(string: document.text)
-        for link in document.links { string.addAttribute(.link, value: link.url, range: link.range) }
-        return AttributedString(string)
-      }
-      plain(Text(text), collapsed: collapsed).environment(\.openURL, OpenURLAction { url in
-        guard case .route(let route) = document.target(url) else { return .discarded }
-        openLink(route)
-        return .handled
-      })
+    } else if !(preview && permitsPreview) || document.images.isEmpty {
+      // Links, styles and emotes as one SwiftUI text run: a UIKit text view per comment or
+      // moment (created, filled and measured twice as each row scrolled in) dropped frames on
+      // every feed. Only tapping an emote for its preview needs the text view's attachments.
+      plain(Self.text(document, images: images, textStyle: textStyle), collapsed: collapsed)
+        .environment(\.openURL, OpenURLAction { url in
+          guard let target = document.target(url) else { return .discarded }
+          switch target {
+          case .timestamp(let seconds): playback?.seek(Double(seconds))
+          case .route(let route) where openLink != nil: openLink?.run(route)
+          default: destination = Destination(value: target)
+          }
+          return .handled
+        })
+        .task(id: document.assets) { await loadImages(document.assets) }
+        .modifier(ReplyDestinationSheet(destination: $destination, dynamicID: dynamicID))
     } else {
     VStack(alignment: .leading, spacing: 2) {
       ReplyTextBody(
@@ -99,7 +102,7 @@ struct ReplyRichText: View {
         guard let target = document.target(u) else { return }
         switch target {
         case .timestamp(let seconds): playback?.seek(Double(seconds))
-        case .route(let route) where openLink != nil: openLink?(route)
+        case .route(let route) where openLink != nil: openLink?.run(route)
         default: destination = Destination(value: target)
         }
       }
@@ -129,33 +132,53 @@ struct ReplyRichText: View {
           .buttonStyle(.plain).foregroundStyle(.tint)
           .font(Font(UIFont.preferredFont(forTextStyle: .footnote)))
       }
-    }.task(id: document.assets) {
-      let urls = document.assets
-      images = images.filter { urls.contains($0.key) }
-      for url in urls where images[url] == nil {
-        guard !Task.isCancelled else { return }
-        if let img = await ReplyEmoteImages.shared.image(url.absoluteString), !Task.isCancelled {
-          images[url] = img
-        }
-      }
-    }.piliSheet(item: $destination) { item in
-      PiliNavigationStack {
-        Group {
-          switch item.value {
-          case .timestamp: EmptyView()
-          case .route(let r): LinkDestination(item: r)
-          case .url(let u): SitePage(url: u).ignoresSafeArea()
-          case .search(let term): SearchView(keyword: term)
-          case .vote(let id): VoteView(id: id, dynamic: dynamicID)
-          case .gallery(let pics): NativeGallery(pics)
-          case .pictureResource(let id):MomentPictureResource(id:id)
-          }
-        }.toolbar {
-          ToolbarItem(placement: .cancellationAction) { Button("关闭") { destination = nil } }
-        }
+    }.task(id: document.assets) { await loadImages(document.assets) }
+    .modifier(ReplyDestinationSheet(destination: $destination, dynamicID: dynamicID))
+    }
+  }
+  private func loadImages<S: Sequence>(_ urls: S) async where S.Element == URL {
+    let wanted = Set(urls)
+    if images.keys.contains(where: { !wanted.contains($0) }) { images = images.filter { wanted.contains($0.key) } }
+    for url in urls where images[url] == nil {
+      guard !Task.isCancelled else { return }
+      if let img = await ReplyEmoteImages.shared.image(url.absoluteString), !Task.isCancelled {
+        images[url] = img
       }
     }
+  }
+  /// The document as one `Text`: styles and links as attributes, emotes as inline images sized
+  /// to the line like the text view's attachments (their names show until they load).
+  private static func text(_ document: InlineDocument, images: [URL: UIImage], textStyle: UIFont.TextStyle) -> Text {
+    let font = UIFont.preferredFont(forTextStyle: textStyle)
+    var attributed = AttributedString(document.text)
+    for style in document.styles {
+      guard let range = Range(style.range, in: attributed) else { continue }
+      if style.bold || style.italic {
+        var styled = Font(font)
+        if style.bold { styled = styled.bold() }
+        if style.italic { styled = styled.italic() }
+        attributed[range].font = styled
+      }
+      if style.strike { attributed[range].strikethroughStyle = .single }
     }
+    for link in document.links {
+      if let range = Range(link.range, in: attributed) { attributed[range].link = link.url }
+    }
+    var result = Text(verbatim: "")
+    var cursor = attributed.startIndex
+    for run in document.images.sorted(by: { $0.range.location < $1.range.location }) {
+      guard let range = Range(run.range, in: attributed), range.lowerBound >= cursor else { continue }
+      let edge = font.lineHeight * (run.image.size > 1 ? 1.65 : 1.05)
+      let piece: Text
+      if let image = images[run.image.url], let scaled = InlineEmote.scaled(image, url: run.image.url, height: edge) {
+        piece = Text(Image(uiImage: scaled)).baselineOffset(font.descender)
+      } else {
+        piece = Text(AttributedString(attributed[range]))
+      }
+      result = Text("\(result)\(Text(AttributedString(attributed[cursor..<range.lowerBound])))\(piece)")
+      cursor = range.upperBound
+    }
+    return Text("\(result)\(Text(AttributedString(attributed[cursor...])))")
   }
   @ViewBuilder private func plain(_ text: Text, collapsed: Bool) -> some View {
     let font = Font(UIFont.preferredFont(forTextStyle: textStyle))
@@ -182,6 +205,53 @@ struct ReplyRichText: View {
     }.frame(maxWidth: .infinity, alignment: .leading)
   }
 }
+/// Emotes redrawn once at the text's line height, so they can sit inside a SwiftUI `Text`.
+@MainActor enum InlineEmote {
+  private static let cache: NSCache<NSString, UIImage> = {
+    let c = NSCache<NSString, UIImage>()
+    c.countLimit = 400
+    return c
+  }()
+  static func scaled(_ image: UIImage, url: URL, height: CGFloat) -> UIImage? {
+    guard image.size.height > 0, height > 0 else { return nil }
+    let key = "\(url.absoluteString)|\(Int(height * 10))" as NSString
+    if let hit = cache.object(forKey: key) { return hit }
+    let size = CGSize(width: (height * image.size.width / image.size.height).rounded(.up), height: height.rounded(.up))
+    let format = UIGraphicsImageRendererFormat.preferred()
+    format.opaque = false
+    let scaled = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+      image.draw(in: CGRect(origin: .zero, size: size))
+    }
+    cache.setObject(scaled, forKey: key)
+    return scaled
+  }
+}
+
+/// Where a tapped link that is not a page route opens (sites, searches, votes, pictures).
+private struct ReplyDestinationSheet: ViewModifier {
+  @Binding var destination: ReplyRichText.Destination?
+  let dynamicID: String
+  func body(content: Content) -> some View {
+    content.piliSheet(item: $destination) { item in
+      PiliNavigationStack {
+        Group {
+          switch item.value {
+          case .timestamp: EmptyView()
+          case .route(let r): LinkDestination(item: r)
+          case .url(let u): SitePage(url: u).ignoresSafeArea()
+          case .search(let term): SearchView(keyword: term)
+          case .vote(let id): VoteView(id: id, dynamic: dynamicID)
+          case .gallery(let pics): NativeGallery(pics)
+          case .pictureResource(let id): MomentPictureResource(id: id)
+          }
+        }.toolbar {
+          ToolbarItem(placement: .cancellationAction) { Button("关闭") { destination = nil } }
+        }
+      }
+    }
+  }
+}
+
 private struct ReplyTextBody: UIViewRepresentable {
   let document: InlineDocument, images: [URL: UIImage], size: DynamicTypeSize,
     textStyle: UIFont.TextStyle, limit: Int, lineSpacing: CGFloat,

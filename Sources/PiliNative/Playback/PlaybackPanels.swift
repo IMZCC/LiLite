@@ -121,12 +121,14 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   @State private var replyLink: SharedLink?
   @State private var gallery: GalleryRailRequest?
   @State private var fold = PanelFold()
+  @State private var actions = PanelActions()
   /// Comment threads opened from the comments, shown as panels under the player.
   @State private var replyPanels: [ReplyPanelItem] = []
   /// False while another page is pushed over this one, so stray threads open as pages there.
   @State private var onScreen = false
   /// Mirrors the player's controls, so our back / home buttons hide and show with them.
   @State private var chromeShown = true
+  @State private var neighboursReady = false
   @Environment(\.dismiss) private var dismiss
   @AppStorage("images.sidePreview") private var galleryEnabled = false
   private var comments: Bool { canDiscuss && (selection ?? defaultComments) }
@@ -145,13 +147,20 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         case .stacked: stackedLayout(p)
         }
       }
-      .environment(\.replyOpenLink, { replyLink = $0 })
-      .environment(\.presentGalleryRail, wide && galleryEnabled ? { gallery = $0 } : nil)
-      .environment(\.replyPanelPresenter, ReplyPanelPresenter { title, content in
+      // The panels run under the home indicator (and the bullet bar) like the original's
+      // edge-to-edge page; their lists pad their last rows clear of it instead.
+      .environment(\.panelBottomInset, layout.safeAreaInsets.bottom)
+      .ignoresSafeArea(.container, edges: .bottom)
+      // The same closure instances on every render (only their targets are refreshed), so the
+      // intro, the comments and every list under them are not invalidated whenever the player
+      // publishes a change and this page re-renders.
+      .environment(\.replyOpenLink, actions.target { replyLink = $0 }.openLinkEntry)
+      .environment(\.presentGalleryRail, wide && galleryEnabled ? actions.target(gallery: { gallery = $0 }).galleryEntry : nil)
+      .environment(\.replyPanelPresenter, actions.target(push: { title, content in
         guard onScreen else { return false }
         replyPanels.append(ReplyPanelItem(title: title, content: content))
         return true
-      })
+      }).presenter)
       .overlay {
         if wide && galleryEnabled, let gallery { GalleryRailPanel(request: gallery) { self.gallery = nil } }
       }
@@ -323,7 +332,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         .environment(\.panelTopInset, header)
         // Only changes inside the fold range are published, so a fully folded player stops
         // invalidating on every scroll frame.
-        .environment(\.panelScroll, { [fold] old, new in fold.scrolled(from: old, to: new) })
+        .environment(\.panelScroll, actions.scroll(fold))
       FoldingHeader(fold: fold, active: !playback.playing) {
         VStack(spacing: 0) {
           playerSurface(p)
@@ -372,16 +381,27 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         choose(tabs[i])
       }), motion: pageMotion, fold: playback.playing ? nil : sharedFold) { i in
         ActivePlaybackPanel(active: tabs[i] == selected) {
-          switch tabs[i] {
-          case 1: replies()
-          case 2: list
-          case 3:
-            if let related {
-              ScrollView { related.padding(.horizontal, 16).padding(.vertical, 12) }.reportsScrollCollapse()
+          // The pages beside the one on screen are built once the page has been pushed: building
+          // the comments with the intro made the first frame of opening a video drop.
+          if tabs[i] == selected || neighboursReady {
+            switch tabs[i] {
+            case 1: replies()
+            case 2: list
+            case 3:
+              if let related {
+                ScrollView { related.padding(.horizontal, 16).padding(.vertical, 12) }.reportsScrollCollapse()
+              }
+            default: info()
             }
-          default: info()
+          } else {
+            Color.clear
           }
         }
+      }
+      .task(id: key) {
+        guard !neighboursReady else { return }
+        try? await Task.sleep(for: .milliseconds(450))
+        if !Task.isCancelled { neighboursReady = true }
       }
   }
   private func tabTitle(_ tab: Int) -> String {
@@ -454,6 +474,29 @@ struct IntroRelated<Content: View>: View {
   @Environment(\.relatedHoisted) private var hoisted
   @ViewBuilder let content: () -> Content
   var body: some View { if !hoisted { content() } }
+}
+
+/// Closures handed to the panels through the environment, created once per page. A closure
+/// literal in `body` is a new value on every render, and every view reading it re-renders.
+@MainActor private final class PanelActions {
+  private let token = UUID()
+  private var openLink: (SharedLink) -> Void = { _ in }
+  private var showGallery: (GalleryRailRequest) -> Void = { _ in }
+  private var push: (String, AnyView) -> Bool = { _, _ in false }
+  private weak var fold: PanelFold?
+  lazy var openLinkEntry = StableAction<SharedLink>(token) { [unowned self] in self.openLink($0) }
+  lazy var galleryEntry = StableAction<GalleryRailRequest>(token) { [unowned self] in self.showGallery($0) }
+  lazy var presenter = ReplyPanelPresenter(token: token) { [unowned self] in self.push($0, $1) }
+  private lazy var scrollEntry: @MainActor (CGFloat, CGFloat) -> Void = { [unowned self] old, new in
+    self.fold?.scrolled(from: old, to: new)
+  }
+  func target(_ link: @escaping (SharedLink) -> Void) -> Self { openLink = link; return self }
+  func target(gallery: @escaping (GalleryRailRequest) -> Void) -> Self { showGallery = gallery; return self }
+  func target(push: @escaping (String, AnyView) -> Bool) -> Self { self.push = push; return self }
+  func scroll(_ fold: PanelFold) -> @MainActor (CGFloat, CGFloat) -> Void {
+    self.fold = fold
+    return scrollEntry
+  }
 }
 
 private struct PanelPlaybackState: Equatable {

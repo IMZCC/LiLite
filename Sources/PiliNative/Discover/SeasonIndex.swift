@@ -25,7 +25,7 @@ struct SeasonCatalog: View {
         .onChange(of: kind) { _, n in visited.insert(n) }
 
     }.navigationTitle("影视索引").toolbar {
-      NavigationLink { SeasonCalendar() } label: { Image(systemName: "calendar").accessibilityLabel("更新日历") }
+      NavigationLink { DeferredPage { SeasonCalendar() } } label: { Image(systemName: "calendar").accessibilityLabel("更新日历") }
     }
   }
 }

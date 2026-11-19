@@ -66,14 +66,14 @@ struct MatchDetailView: View {
       }
       HStack(spacing: 10) {
         if let room = d.live_room, room > 0 {
-          NavigationLink { LivePlayer(id: room, title: d.season?.title ?? "比赛直播") } label: {
+          LazyLink { LivePlayer(id: room, title: d.season?.title ?? "比赛直播") } label: {
             Label(d.contest_status == 2 ? "观看直播" : "直播间", systemImage: "dot.radiowaves.left.and.right")
           }
           .piliGlassButton(prominent: true)
         }
         if d.contest_status != 2, let p = d.playback, !p.isEmpty {
           if let r = SharedLink.parse(p) {
-            NavigationLink { LinkDestination(item: r) } label: { Label("观看回放", systemImage: "play.rectangle") }
+            LazyLink { LinkDestination(item: r) } label: { Label("观看回放", systemImage: "play.rectangle") }
               .piliGlassButton()
           } else if let url = httpsURL(p) {
             Link(destination: url) { Label("观看回放", systemImage: "play.rectangle") }.piliGlassButton()

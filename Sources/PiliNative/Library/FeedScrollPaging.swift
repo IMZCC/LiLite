@@ -1,21 +1,36 @@
 import Foundation
 
-struct FeedScrollPaging {
+/// A reference, so arming it at every touch-down and clearing it when scrolling stops never
+/// invalidates the feed: as a value in `@State` each write re-evaluated every visible card.
+/// It also holds the channel's on-screen flag and its running page load for the same reason.
+@MainActor final class FeedScrollPaging {
   private var canLoad = false
+  /// Whether the channel is the one on screen (only it pages automatically).
+  var active = true
+  private var load: Task<Void, Never>?
 
-  static func nearEnd(visible: CGRect, contentHeight: CGFloat) -> Bool {
+  nonisolated static func nearEnd(visible: CGRect, contentHeight: CGFloat) -> Bool {
     guard visible.height > 0, visible.minY > 0, contentHeight > visible.height else { return false }
     return contentHeight - visible.maxY <= min(160, visible.height / 4)
   }
 
-  mutating func beginDrag() { canLoad = true }
-  mutating func endDrag() { canLoad = false }
+  func beginDrag() { canLoad = true }
+  func endDrag() { canLoad = false }
 
   // One drag (including its deceleration) can request one page. Appending its
   // results, estimating grid heights or resizing the viewport cannot arm another.
-  mutating func takePage(nearEnd: Bool) -> Bool {
+  func takePage(nearEnd: Bool) -> Bool {
     guard nearEnd, canLoad else { return false }
     canLoad = false
     return true
+  }
+
+  func startLoad(_ work: @escaping @MainActor () async -> Void) {
+    load?.cancel()
+    load = Task { await work() }
+  }
+  func cancelLoad() {
+    load?.cancel()
+    load = nil
   }
 }

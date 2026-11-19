@@ -100,7 +100,7 @@ struct WebBackup: View {
         SecureField("密码或应用专用密码", text: $password).textContentType(.password)
         if location?.folders.isEmpty != true { TextField("备份目录", text: $directory) }
         if let url = location?.base, let origin = PrivateServiceOrigin(.dav, url) {
-          NavigationLink("服务器证书") { PrivateTrustPanel(origin: origin).id(origin) }
+          NavigationLink("服务器证书") { DeferredPage { PrivateTrustPanel(origin: origin).id(origin) } }
         }
         Button("验证并保存") { Task { await run(.verify) } }
       }.textInputAutocapitalization(.never).autocorrectionDisabled()

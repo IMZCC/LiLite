@@ -117,10 +117,10 @@ struct CreatorSpaceMetrics: View {
   var body: some View {
     // Counts as number-over-label columns, like the space header.
     HStack(spacing: 0) {
-      NavigationLink { RelationsList(uid: String(mid), fans: true) } label: {
+      NavigationLink { DeferredPage { RelationsList(uid: String(mid), fans: true) } } label: {
         column("粉丝", stats?.follower ?? fallback?.fans)
       }
-      NavigationLink { RelationsList(uid: String(mid), fans: false) } label: {
+      NavigationLink { DeferredPage { RelationsList(uid: String(mid), fans: false) } } label: {
         column("关注", stats?.following ?? fallback?.following)
       }
       column("获赞", work?.likes ?? fallback?.likes)

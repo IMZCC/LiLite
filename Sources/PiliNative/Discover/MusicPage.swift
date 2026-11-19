@@ -48,16 +48,16 @@ struct MusicDetailView: View {
       ForEach(Array((m.artists_list ?? []).enumerated()),id:\.offset) { _, a in
         if let name = a.name, !name.isEmpty {
           if let mid = a.mid, mid > 0 {
-            NavigationLink { CreatorSpace(mid:mid,name:name) } label:{ artist(a,name) }
+            LazyLink { CreatorSpace(mid:mid,name:name) } label:{ artist(a,name) }
           } else { Button { UIPasteboard.general.string = name } label:{ artist(a,name) }.buttonStyle(.plain) }
         }
       }
       field("原唱",m.origin_artist ?? m.origin_artist_list); field("专辑",m.album); field("出处",m.music_source); field("发行日期",m.music_publish)
       if !m.awards.isEmpty { Text(m.awards.joined(separator:" · ")).font(.caption).foregroundStyle(.secondary) }
-      if let mv = m.mv { NavigationLink { LinkDestination(item:mv) } label:{ Label("播放 MV",systemImage:"play.rectangle") } }
+      if let mv = m.mv { LazyLink { LinkDestination(item:mv) } label:{ Label("播放 MV",systemImage:"play.rectangle") } }
       if let heat = m.hot_song_heat?.last_heat { LabeledContent("热度",value:heat.formatted()) }
       if let pv = m.listen_pv { LabeledContent("总播放量",value:pv.formatted()) }
-      NavigationLink { MusicUses(id:id,title:title) } label:{
+      NavigationLink { DeferredPage { MusicUses(id:id,title:title) } } label:{
         LabeledContent("使用这首音乐的投稿",value:m.music_relation?.formatted() ?? "")
       }
       if !m.trend.isEmpty { Text("近\(m.trend.count)日热度趋势").piliFont(.headline);SongHeatGraph(points:m.trend) }
@@ -65,7 +65,7 @@ struct MusicDetailView: View {
         HStack {
           if let url = MusicRecord.link(id:id) { ShareLink(item:url) }
           Spacer()
-          if owner.isEmpty { NavigationLink("登录后想听") { QRLoginView() } }
+          if owner.isEmpty { NavigationLink("登录后想听") { DeferredPage { QRLoginView() } } }
           else {
             Button { let account = owner; Task { await wish(m,account) } } label:{
               Label(m.wish_listen == true ? "已想听":"想听",systemImage:m.wish_listen == true ? "heart.fill":"heart")
@@ -110,7 +110,7 @@ private struct MusicUses: View {
     } row:{ c in
       if let route = c.route {
         let v = Video.preview(id:c.bvid ?? "",title:c.title ?? "",cover:c.cover ?? "",author:c.up_nick_name,duration:c.duration)
-        NavigationLink { LinkDestination(item:route) } label:{
+        LazyLink { LinkDestination(item:route) } label:{
           HStack {
             SiteThumbnail(url:v.cover){$0.resizable().scaledToFill()} placeholder:{Color.secondary.opacity(0.2)}
               .frame(width:104,height:62).clipped().cornerRadius(7)

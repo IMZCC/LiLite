@@ -85,7 +85,7 @@ struct SavedReadings: View {
             selected.isEmpty)
         }
         if shelf == .drafts && !selecting {
-          NavigationLink { NotebookLocalShelf(owner: uid) } label: {
+          NavigationLink { DeferredPage { NotebookLocalShelf(owner: uid) } } label: {
             Image(systemName: "internaldrive").accessibilityLabel("本机草稿")
           }
         }
@@ -151,7 +151,7 @@ struct SavedReadings: View {
               NativeNotebook(oid: oid, owner: uid, suppliedTitle: e.title, requested: note)
             }
           }
-          if let u = e.link { NavigationLink("打开原笔记") { SitePage(url: u) } }
+          if let u = e.link { NavigationLink("打开原笔记") { DeferredPage { SitePage(url: u) } } }
         }.padding()
       }.navigationTitle("笔记")
     }

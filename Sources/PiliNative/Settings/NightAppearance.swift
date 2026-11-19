@@ -21,14 +21,45 @@ enum NightAppearance {
     return Int(packed)
   }
 }
+/// Image settings read once near the root and handed down: every thumbnail used to subscribe
+/// to user defaults itself, twice, as it scrolled in.
+struct ImageDisplay: Equatable {
+  var quality = 10
+  var tint = NightAppearance.white
+  /// Outside the root's environment (UIKit-hosted panels), read the stored values directly.
+  static var stored: ImageDisplay {
+    let d = UserDefaults.standard
+    return ImageDisplay(
+      quality: d.object(forKey: "images.quality") as? Int ?? 10,
+      tint: d.object(forKey: "images.nightTint") as? Int ?? NightAppearance.white)
+  }
+}
+private struct ImageDisplayKey: EnvironmentKey { static let defaultValue: ImageDisplay? = nil }
+extension EnvironmentValues {
+  var imageDisplay: ImageDisplay? {
+    get { self[ImageDisplayKey.self] }
+    set { self[ImageDisplayKey.self] = newValue }
+  }
+}
+struct ImageDisplaySource: ViewModifier {
+  @AppStorage("images.quality") private var quality = 10
+  @AppStorage("images.nightTint") private var tint = NightAppearance.white
+  func body(content: Content) -> some View {
+    content.environment(\.imageDisplay, ImageDisplay(quality: quality, tint: tint))
+  }
+}
 struct NightImage: ViewModifier {
   @Environment(\.colorScheme) private var scheme
-  @AppStorage("images.nightTint") private var tint = NightAppearance.white
+  @Environment(\.imageDisplay) private var display
   var loaded: Bool
   func body(content: Content) -> some View {
-    let active = InterfacePresentation.dimImage(loaded:loaded,dark:scheme == .dark,tint:tint)
-    content.colorMultiply(active ? NightAppearance.rgb(tint) : .white).opacity(
-      active ? NightAppearance.components(tint).a : 1)
+    let tint = (display ?? .stored).tint
+    // No filter at all unless dimming: an identity colour multiply still costs each image layer.
+    if InterfacePresentation.dimImage(loaded: loaded, dark: scheme == .dark, tint: tint) {
+      content.colorMultiply(NightAppearance.rgb(tint)).opacity(NightAppearance.components(tint).a)
+    } else {
+      content
+    }
   }
 }
 struct NightCanvas: ViewModifier {

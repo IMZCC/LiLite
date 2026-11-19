@@ -15,6 +15,8 @@ struct DynamicDetail: View {
   @State private var counts: [MomentPanel: Int64] = [:]
   @State private var jump = 0
   @State private var focused = false
+  @State private var closer = MomentPageCloser()
+  @Environment(\.dismiss) private var dismiss
   private func picker(_ d: DynamicEntry) -> AnyView {
     AnyView(
       UnderlineTabBar(items: MomentPanel.allCases, selection: $selected, title: { kind in
@@ -43,6 +45,7 @@ struct DynamicDetail: View {
                 jump += 1
               }
             ) { revision += 1 }
+            .environment(\.momentPageCloser, closer.bind(dismiss))
           } panel: { header in
             let bar = picker(d)
             if selected == .replies {

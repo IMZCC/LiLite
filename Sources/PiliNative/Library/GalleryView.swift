@@ -284,7 +284,7 @@ struct GallerySettings: View {
       SettingStepper(title: "缩略图质量", value: $quality.asDouble, range: 1...100) { "\(Int($0))%" }.settingAnchor("GallerySettings/缩略图质量")
       SettingStepper(title: "大图质量", value: $preview.asDouble, range: 1...100) { "\(Int($0))%" }.settingAnchor("GallerySettings/大图质量")
       Toggle("保存时隐藏进度提示", isOn: $silent).settingAnchor("GallerySettings/保存时隐藏进度提示")
-      NavigationLink("图片保存位置") { PictureLocationSettings() }.settingAnchor("GallerySettings/图片保存位置")
+      NavigationLink("图片保存位置") { DeferredPage { PictureLocationSettings() } }.settingAnchor("GallerySettings/图片保存位置")
     }.navigationTitle("图片与实况照片")
   }
 }

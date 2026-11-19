@@ -282,24 +282,24 @@ struct SettingsView: View {
             Text("深色").tag("dark")
           } label: { Label("外观模式", systemImage: "circle.lefthalf.filled").labelStyle(SettingsIconLabelStyle(color: .indigo)) }
             .settingAnchor("SettingsView/外观模式")
-          NavigationLink { ThemePicker() } label: { Label("主题颜色", systemImage: "paintpalette.fill").labelStyle(SettingsIconLabelStyle(color: .pink)) }.settingAnchor("SettingsView/主题颜色")
-          NavigationLink { NavigationLayoutPanel() } label: { Label("导航布局", systemImage: "rectangle.bottomthird.inset.filled").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/导航布局")
-          NavigationLink { InteractionScaleOptions() } label: { Label("界面与手势", systemImage: "hand.draw.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/界面与手势")
-          NavigationLink { TypographyPanel() } label: { Label("字体与字号", systemImage: "textformat.size").labelStyle(SettingsIconLabelStyle(color: .indigo)) }.settingAnchor("SettingsView/字体与字号")
-          NavigationLink { DisplayPanel() } label: { Label("刷新率", systemImage: "gauge.with.dots.needle.67percent").labelStyle(SettingsIconLabelStyle(color: .orange)) }.settingAnchor("SettingsView/刷新率")
+          NavigationLink { DeferredPage { ThemePicker() } } label: { Label("主题颜色", systemImage: "paintpalette.fill").labelStyle(SettingsIconLabelStyle(color: .pink)) }.settingAnchor("SettingsView/主题颜色")
+          NavigationLink { DeferredPage { NavigationLayoutPanel() } } label: { Label("导航布局", systemImage: "rectangle.bottomthird.inset.filled").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/导航布局")
+          NavigationLink { DeferredPage { InteractionScaleOptions() } } label: { Label("界面与手势", systemImage: "hand.draw.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/界面与手势")
+          NavigationLink { DeferredPage { TypographyPanel() } } label: { Label("字体与字号", systemImage: "textformat.size").labelStyle(SettingsIconLabelStyle(color: .indigo)) }.settingAnchor("SettingsView/字体与字号")
+          NavigationLink { DeferredPage { DisplayPanel() } } label: { Label("刷新率", systemImage: "gauge.with.dots.needle.67percent").labelStyle(SettingsIconLabelStyle(color: .orange)) }.settingAnchor("SettingsView/刷新率")
         }
         Section("深色与阅读") { NightSettings() }
         Section("播放") {
-          NavigationLink { PlaybackEngineSettings() } label: { Label("播放器内核", systemImage: "play.circle.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/播放器内核")
-          NavigationLink { PlaybackOptionsView() } label: { Label("画面与音轨", systemImage: "play.rectangle.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/画面与音轨")
-          NavigationLink { PlayerPreferencePanel() } label: { Label("详情与播放控制", systemImage: "slider.horizontal.3").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/详情与播放控制")
+          NavigationLink { DeferredPage { PlaybackEngineSettings() } } label: { Label("播放器内核", systemImage: "play.circle.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/播放器内核")
+          NavigationLink { DeferredPage { PlaybackOptionsView() } } label: { Label("画面与音轨", systemImage: "play.rectangle.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/画面与音轨")
+          NavigationLink { DeferredPage { PlayerPreferencePanel() } } label: { Label("详情与播放控制", systemImage: "slider.horizontal.3").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/详情与播放控制")
           Picker(selection: $rate) {
             ForEach(SpeedPresets.decode(speedData), id: \.self) { Text("\($0.formatted())×").tag($0) }
           } label: { Label("默认倍速", systemImage: "gauge.with.dots.needle.50percent").labelStyle(SettingsIconLabelStyle(color: .orange)) }
             .settingAnchor("SettingsView/默认倍速")
-          NavigationLink { SpeedSettings() } label: { Label("自定义播放倍速", systemImage: "dial.medium.fill").labelStyle(SettingsIconLabelStyle(color: .orange)) }.settingAnchor("SettingsView/自定义播放倍速")
+          NavigationLink { DeferredPage { SpeedSettings() } } label: { Label("自定义播放倍速", systemImage: "dial.medium.fill").labelStyle(SettingsIconLabelStyle(color: .orange)) }.settingAnchor("SettingsView/自定义播放倍速")
           Toggle(isOn: $remember) { Label("记住播放进度", systemImage: "bookmark.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/记住播放进度")
-          NavigationLink { SponsorSettings() } label: { Label("空降助手", systemImage: "forward.end.fill").labelStyle(SettingsIconLabelStyle(color: .purple)) }.settingAnchor("SettingsView/空降助手")
+          NavigationLink { DeferredPage { SponsorSettings() } } label: { Label("空降助手", systemImage: "forward.end.fill").labelStyle(SettingsIconLabelStyle(color: .purple)) }.settingAnchor("SettingsView/空降助手")
         }
         Section("弹幕") {
           Toggle(isOn: $dm) { Label("显示弹幕", systemImage: "text.bubble.fill").labelStyle(SettingsIconLabelStyle(color: .teal)) }.settingAnchor("SettingsView/显示弹幕")
@@ -309,7 +309,7 @@ struct SettingsView: View {
             .settingAnchor("SettingsView/弹幕不透明度")
           SettingSlider(title: "滚动弹幕区域", value: $area, range: 0.1...1, step: 0.1, symbol: "rectangle.tophalf.filled", color: .teal)
             .settingAnchor("SettingsView/滚动弹幕区域")
-          NavigationLink { DanmakuStylePanel() } label: { Label("弹幕样式与过滤", systemImage: "textformat").labelStyle(SettingsIconLabelStyle(color: .teal)) }.settingAnchor("SettingsView/弹幕样式与过滤")
+          NavigationLink { DeferredPage { DanmakuStylePanel() } } label: { Label("弹幕样式与过滤", systemImage: "textformat").labelStyle(SettingsIconLabelStyle(color: .teal)) }.settingAnchor("SettingsView/弹幕样式与过滤")
           NavigationLink {
             SettingTextPage(title: "弹幕关键词屏蔽", footer: "每行一个关键词，弹幕包含任一关键词时不显示。", text: $blocked)
           } label: {
@@ -322,12 +322,12 @@ struct SettingsView: View {
           }.settingAnchor("SettingsView/弹幕关键词屏蔽")
         }
         Section("内容与提醒") {
-          NavigationLink { RecommendationSettings() } label: { Label("推荐过滤", systemImage: "line.3.horizontal.decrease.circle.fill").labelStyle(SettingsIconLabelStyle(color: .orange)) }.settingAnchor("SettingsView/推荐过滤")
-          NavigationLink { ReplyFilterPanel() } label: { Label("评论设置", systemImage: "bubble.left.fill").labelStyle(SettingsIconLabelStyle(color: .teal)) }.settingAnchor("SettingsView/评论设置")
-          NavigationLink { CommunityFilterPanel() } label: { Label("动态筛选", systemImage: "person.2.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/动态筛选")
-          NavigationLink { GallerySettings() } label: { Label("图片与实况照片", systemImage: "photo.fill").labelStyle(SettingsIconLabelStyle(color: .pink)) }.settingAnchor("SettingsView/图片与实况照片")
-          NavigationLink { SuperChatSettings() } label: { Label("直播醒目留言", systemImage: "text.bubble.fill").labelStyle(SettingsIconLabelStyle(color: .purple)) }.settingAnchor("SettingsView/直播醒目留言")
-          NavigationLink { BadgePreferences() } label: { Label("未读提醒", systemImage: "bell.badge.fill").labelStyle(SettingsIconLabelStyle(color: .red)) }.settingAnchor("SettingsView/未读提醒")
+          NavigationLink { DeferredPage { RecommendationSettings() } } label: { Label("推荐过滤", systemImage: "line.3.horizontal.decrease.circle.fill").labelStyle(SettingsIconLabelStyle(color: .orange)) }.settingAnchor("SettingsView/推荐过滤")
+          NavigationLink { DeferredPage { ReplyFilterPanel() } } label: { Label("评论设置", systemImage: "bubble.left.fill").labelStyle(SettingsIconLabelStyle(color: .teal)) }.settingAnchor("SettingsView/评论设置")
+          NavigationLink { DeferredPage { CommunityFilterPanel() } } label: { Label("动态筛选", systemImage: "person.2.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/动态筛选")
+          NavigationLink { DeferredPage { GallerySettings() } } label: { Label("图片与实况照片", systemImage: "photo.fill").labelStyle(SettingsIconLabelStyle(color: .pink)) }.settingAnchor("SettingsView/图片与实况照片")
+          NavigationLink { DeferredPage { SuperChatSettings() } } label: { Label("直播醒目留言", systemImage: "text.bubble.fill").labelStyle(SettingsIconLabelStyle(color: .purple)) }.settingAnchor("SettingsView/直播醒目留言")
+          NavigationLink { DeferredPage { BadgePreferences() } } label: { Label("未读提醒", systemImage: "bell.badge.fill").labelStyle(SettingsIconLabelStyle(color: .red)) }.settingAnchor("SettingsView/未读提醒")
           SettingToggle(title: "隐藏收到的赞", symbol: "hand.thumbsup.fill", color: .pink, isOn: $hideLikes)
             .settingAnchor("SettingsView/隐藏收到的赞")
         }
@@ -363,16 +363,16 @@ struct SettingsView: View {
             Label("自动领取大会员经验", systemImage: "crown.fill")
               .labelStyle(SettingsIconLabelStyle(color: .orange))
           }.settingAnchor("SettingsView/自动领取大会员经验")
-          NavigationLink { DeviceIdentityPanel() } label: { Label("客户端设备标识", systemImage: "iphone.gen3").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/客户端设备标识")
+          NavigationLink { DeferredPage { DeviceIdentityPanel() } } label: { Label("客户端设备标识", systemImage: "iphone.gen3").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/客户端设备标识")
         } header: {
           Text("账号与隐私")
         } footer: {
           Text("每天打开应用时为大会员账号领取一次每日经验，成功后会提示。账号切换与退出在顶部的账号卡片里。")
         }
         Section("存储与备份") {
-          NavigationLink { ArtworkCacheSettings() } label: { Label("图片缓存", systemImage: "photo.stack.fill").labelStyle(SettingsIconLabelStyle(color: .pink)) }.settingAnchor("SettingsView/图片缓存")
-          NavigationLink { WebBackup() } label: { Label("WebDAV 备份", systemImage: "icloud.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/WebDAV 备份")
-          NavigationLink { DataPackPanel() } label: { Label("本地数据包", systemImage: "externaldrive.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/本地数据包")
+          NavigationLink { DeferredPage { ArtworkCacheSettings() } } label: { Label("图片缓存", systemImage: "photo.stack.fill").labelStyle(SettingsIconLabelStyle(color: .pink)) }.settingAnchor("SettingsView/图片缓存")
+          NavigationLink { DeferredPage { WebBackup() } } label: { Label("WebDAV 备份", systemImage: "icloud.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/WebDAV 备份")
+          NavigationLink { DeferredPage { DataPackPanel() } } label: { Label("本地数据包", systemImage: "externaldrive.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/本地数据包")
           Button {
             Task {
               do {
@@ -388,13 +388,13 @@ struct SettingsView: View {
             .settingAnchor("SettingsView/从文件恢复")
         }
         Section("连接与支持") {
-          NavigationLink { ConnectionSettings() } label: { Label("网络连接", systemImage: "network").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/网络连接")
-          NavigationLink { DiagnosticView() } label: { Label("诊断日志", systemImage: "waveform.path.ecg").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/诊断日志")
-          NavigationLink { VersionPanel() } label: { Label("版本与更新", systemImage: "arrow.down.app.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/版本与更新")
+          NavigationLink { DeferredPage { ConnectionSettings() } } label: { Label("网络连接", systemImage: "network").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/网络连接")
+          NavigationLink { DeferredPage { DiagnosticView() } } label: { Label("诊断日志", systemImage: "waveform.path.ecg").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/诊断日志")
+          NavigationLink { DeferredPage { VersionPanel() } } label: { Label("版本与更新", systemImage: "arrow.down.app.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/版本与更新")
         }
         Section {
-          NavigationLink { AboutPanel() } label: { Label("关于与数据管理", systemImage: "info.circle.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/关于与数据管理")
-          NavigationLink { OpenSourceNotices() } label: { Label("开源许可", systemImage: "doc.text.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/开源许可")
+          NavigationLink { DeferredPage { AboutPanel() } } label: { Label("关于与数据管理", systemImage: "info.circle.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/关于与数据管理")
+          NavigationLink { DeferredPage { OpenSourceNotices() } } label: { Label("开源许可", systemImage: "doc.text.fill").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/开源许可")
           Link(destination: UpstreamRelease.lilite) {
             Label("项目源码", systemImage: "chevron.left.forwardslash.chevron.right").labelStyle(SettingsIconLabelStyle(color: .gray))
           }

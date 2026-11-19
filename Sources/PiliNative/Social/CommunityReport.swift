@@ -163,7 +163,7 @@ struct CommunityReport: View {
         }
         Section {
           if let web = target.web {
-            NavigationLink { SitePage(url: web) } label: {
+            NavigationLink { DeferredPage { SitePage(url: web) } } label: {
               SettingsRowLabel(title: "网页举报", symbol: "safari", color: .blue)
             }
           }

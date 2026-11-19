@@ -79,7 +79,7 @@ struct LiveComposer: View {
   }
   @ViewBuilder private var composer:some View {
     if accounts.state.active == nil {
-      NavigationLink("登录后发送弹幕") { QRLoginView() }.padding(.horizontal)
+      NavigationLink("登录后发送弹幕") { DeferredPage { QRLoginView() } }.padding(.horizontal)
     } else {
       if let reply {
         HStack {
@@ -196,7 +196,7 @@ struct LiveFollows: View {
         .id(owner).navigationTitle(count.map { "\($0) 人正在直播" } ?? "关注直播")
     } else {
       ContentUnavailableView { Label("关注的直播",systemImage:"person.2") }
-        actions:{NavigationLink("登录") { QRLoginView() }}
+        actions:{NavigationLink("登录") { DeferredPage { QRLoginView() } }}
     }
   }
 }

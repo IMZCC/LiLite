@@ -64,7 +64,7 @@ struct CreatorOpus: View {
       }
       CatalogGrid {
         ForEach(rows) { r in
-          NavigationLink {
+          LazyLink {
             DynamicDetail(id: r.id)
           } label: {
             VStack(alignment: .leading, spacing: 6) {

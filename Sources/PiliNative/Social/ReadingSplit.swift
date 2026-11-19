@@ -8,6 +8,7 @@ struct ReadingSplit<Story: View, Panel: View>: View {
   @AppStorage("reading.bodyPercent") private var percent = 60.0
   @State private var adjust = false
   @State private var gallery: GalleryRailRequest?
+  @State private var railToken = UUID()
   @AppStorage("images.sidePreview") private var galleryEnabled = false
   var body: some View {
     GeometryReader { g in
@@ -52,7 +53,7 @@ struct ReadingSplit<Story: View, Panel: View>: View {
             }
           }
       }
-      }.environment(\.presentGalleryRail, wide && galleryEnabled ? { gallery = $0 } : nil)
+      }.environment(\.presentGalleryRail, wide && galleryEnabled ? StableAction(railToken) { gallery = $0 } : nil)
        .onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
     }
   }

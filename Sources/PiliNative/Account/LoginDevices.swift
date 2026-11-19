@@ -74,7 +74,7 @@ struct LoginDevices: View {
         if let owner = accounts.state.accounts.first(where: { $0.id == uid }),
           owner.mobileToken == nil
         {
-          NavigationLink("移动端授权") { MobileAuthorization(uid: uid) }
+          NavigationLink("移动端授权") { DeferredPage { MobileAuthorization(uid: uid) } }
         }
       }
       if accounts.state.active == uid {

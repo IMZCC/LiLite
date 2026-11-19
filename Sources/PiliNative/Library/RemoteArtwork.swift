@@ -32,6 +32,9 @@ actor ArtworkStore {
   // NSCache synchronizes access; read warm images before a lazy row's first frame.
   private final class Memory: @unchecked Sendable {
     let decoded = NSCache<NSString, CachedImage>()
+    /// Mirrors `limit() > 0`, so thumbnails can check the cache on every render without
+    /// reading user defaults each time.
+    var enabled = ArtworkStore.limit() > 0
   }
   private static let memory = Memory()
   private var decoded: NSCache<NSString, CachedImage> { Self.memory.decoded }
@@ -67,7 +70,7 @@ actor ArtworkStore {
       delegateQueue: nil)
   }
   static func cachedImage(_ url: URL?, pixels: Int, maximum: Int = 16 * ArtworkStore.mib) -> UIImage? {
-    guard let url, limit() > 0, ArtworkCacheRules.publicFile(url) else { return nil }
+    guard let url, memory.enabled, ArtworkCacheRules.publicFile(url) else { return nil }
     let requested = min(2048, max(96, pixels))
     for size in [requested] + [96, 192, 384, 768, 1536, 2048].filter({ $0 > requested }) {
       let key = Key(url: url, pixels: size, maximum: maximum)
@@ -93,6 +96,7 @@ actor ArtworkStore {
     let bytes = Self.limit()
     if configured == bytes { return }
     configured = bytes
+    Self.memory.enabled = bytes > 0
     cache.diskCapacity = bytes
     cache.memoryCapacity = min(16 * Self.mib, bytes)
     decoded.totalCostLimit = min(48 * Self.mib, bytes)
@@ -211,14 +215,28 @@ actor ArtworkStore {
   }
 }
 
+/// The size bucket and the running load of one artwork view, unobserved: as `@State` the
+/// measured size alone re-rendered every new cell once more before its image could show.
+@MainActor private final class ArtworkLoad {
+  var pixels: Int?
+  var task: Task<Void, Never>?
+  var running: (url: URL, pixels: Int)?
+  /// A cached image the body draws without a state change, kept here so a cache eviction
+  /// cannot blank it on a later render.
+  private var kept: (url: URL, image: UIImage)?
+  func held(_ url: URL?) -> UIImage? { kept.flatMap { $0.url == url ? $0.image : nil } }
+  func hold(_ image: UIImage, for url: URL) { kept = (url, image) }
+  func cancel() {
+    task?.cancel()
+    task = nil
+    running = nil
+  }
+}
+
 struct RemoteArtwork<Content: View>: View {
   let url: URL?, content: (AsyncImagePhase) -> Content
   @Environment(\.displayScale) private var displayScale
-  @State private var pixels: Int?
-  private struct Request: Equatable {
-    let url: URL?
-    let pixels: Int?
-  }
+  @State private var load = ArtworkLoad()
   @State private var delivered: URL?
   @State private var deliveredPixels = 0
   @State private var phase = AsyncImagePhase.empty
@@ -237,32 +255,55 @@ struct RemoteArtwork<Content: View>: View {
     self.content = render
   }
   var body: some View {
-    let request = Request(url: url, pixels: pixels)
     let current = delivered == url ? phase : .empty
-    let cached = current.image == nil ? ArtworkStore.cachedImage(url, pixels: pixels ?? 384) : nil
+    let cached = current.image == nil
+      ? (load.held(url) ?? ArtworkStore.cachedImage(url, pixels: load.pixels ?? 384)) : nil
     content(cached.map { .success(Image(uiImage: $0)) } ?? current)
       .onGeometryChange(for: Int.self) { geometry in
         ArtworkCacheRules.pixels(width: geometry.size.width, height: geometry.size.height, scale: displayScale)
-      } action: { pixels = $0 }
-      .task(id: request) {
-      // Do not begin a provisional 384px request before geometry supplies the actual bucket.
-      guard let pixels = request.pixels, !Task.isCancelled else { return }
-      if delivered == url, phase.image != nil, deliveredPixels >= pixels { return }
-      if delivered != url { phase = .empty; deliveredPixels = 0 }
-      delivered = url
-      guard let url else { return }
-      if let warm = ArtworkStore.cachedImage(url, pixels: pixels) {
-        phase = .success(Image(uiImage: warm)); deliveredPixels = pixels
-        return
+      } action: { pixels in
+        load.pixels = pixels
+        start()
       }
+      .onChange(of: url) { _, _ in start() }
+      .onAppear { start() }
+      .onDisappear { load.cancel() }
+  }
+  /// Shows the best cached size at once and otherwise loads it; writes state only when what is
+  /// drawn changes (a warm image the body already picked needs no second render).
+  private func start() {
+    // Do not begin a provisional 384px request before geometry supplies the actual bucket.
+    guard let pixels = load.pixels else { return }
+    guard let url else { load.cancel(); return }
+    if delivered == url, phase.image != nil, deliveredPixels >= pixels { return }
+    if let warm = ArtworkStore.cachedImage(url, pixels: pixels) {
+      // What the body drew before the size was known: the held image or the cache's pick.
+      let drawn = delivered == url && phase.image != nil
+        ? nil : (load.held(url) ?? ArtworkStore.cachedImage(url, pixels: 384))
+      load.hold(warm, for: url)
+      // The body already draws this very image: holding it is enough, no second render.
+      if drawn !== warm {
+        phase = .success(Image(uiImage: warm)); delivered = url; deliveredPixels = pixels
+      }
+      return
+    }
+    if let running = load.running, running.url == url, running.pixels >= pixels { return }
+    load.task?.cancel()
+    load.running = (url, pixels)
+    load.task = Task { @MainActor in
       do {
         let result = try await ArtworkStore.shared.image(url, pixels: pixels)
+        guard !Task.isCancelled else { return }
         // Fade freshly decoded artwork in instead of letting it pop over the placeholder.
-        if !Task.isCancelled {
-          withAnimation(.easeOut(duration: 0.18)) { phase = .success(Image(uiImage: result)) }
-          deliveredPixels = pixels
+        withAnimation(.easeOut(duration: 0.18)) {
+          phase = .success(Image(uiImage: result)); delivered = url; deliveredPixels = pixels
         }
-      } catch { if !Task.isCancelled && phase.image == nil { phase = .failure(error) } }
+      } catch {
+        if !Task.isCancelled, !(delivered == url && phase.image != nil) {
+          phase = .failure(error); delivered = url
+        }
+      }
+      if load.running?.url == url { load.running = nil }
     }
   }
 }

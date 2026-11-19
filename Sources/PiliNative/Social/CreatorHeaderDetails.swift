@@ -33,15 +33,15 @@ struct CreatorHeaderDetails: View {
     }
     if let promo = value.promo { destination(promo, raw: value.promoURL) }
     if medals, let medal = value.medal {
-      NavigationLink { CreatorMedalWall(mid: mid) } label: { LabeledContent("佩戴的粉丝勋章", value: medal + (value.medalLevel.map { " · Lv.\($0)" } ?? "")) }
+      NavigationLink { DeferredPage { CreatorMedalWall(mid: mid) } } label: { LabeledContent("佩戴的粉丝勋章", value: medal + (value.medalLevel.map { " · Lv.\($0)" } ?? "")) }
     }
     if !value.charges.isEmpty {
-      NavigationLink { SupporterRanks(mid: mid, name: name, total: value.chargeCount) } label: {
+      NavigationLink { DeferredPage { SupporterRanks(mid: mid, name: name, total: value.chargeCount) } } label: {
         crowd("为 TA 充电", faces: value.charges, count: value.chargeCount)
       }
     }
     if !value.guards.isEmpty {
-      NavigationLink { CreatorGuards(mid: mid, name: name, total: value.guardCount) } label: {
+      NavigationLink { DeferredPage { CreatorGuards(mid: mid, name: name, total: value.guardCount) } } label: {
         crowd("加入大航海", faces: value.guards, count: value.guardCount)
       }
     }

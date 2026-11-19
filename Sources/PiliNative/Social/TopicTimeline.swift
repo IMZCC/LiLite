@@ -175,7 +175,7 @@ private struct TopicTimeline: View {
             Button("参与话题") { participate() }
             Button(state.personal?.is_fav == true ? "取消收藏" : "收藏话题") { toggle(.favorite) }.disabled(state.busy)
             if !main.isEmpty, let address = TopicAddress.report(topic.id, name: name, dark: colors == .dark) {
-              NavigationLink("举报话题") { SitePage(url: address) }
+              NavigationLink("举报话题") { DeferredPage { SitePage(url: address) } }
             } else { Button("举报话题") { state.actionIssue = "请先登录" } }
           } label: { Image(systemName: "ellipsis.circle").accessibilityLabel("话题选项") }
         }
@@ -191,7 +191,7 @@ private struct TopicTimeline: View {
   @ViewBuilder private var header: some View {
     VStack(alignment: .leading, spacing: 10) {
       if let host = state.header?.topic_creator, let uid = host.uid, uid > 0 {
-        NavigationLink {
+        LazyLink {
           CreatorSpace(mid: uid, name: host.name ?? "话题发起人")
         } label: {
           HStack {
@@ -251,7 +251,9 @@ private struct TopicTimeline: View {
   @ViewBuilder private func row(_ card: TopicCard) -> some View {
     switch card {
     case .dynamic(let entry):
-      DynamicCard(entry: entry) { Task { await state.load(topic.id, recommend: recommend, reset: true) } }
+      StableContent(key: entry.id) {
+        DynamicCard(entry: entry) { Task { await state.load(topic.id, recommend: recommend, reset: true) } }
+      }.equatable()
     case .fold(let key, let text):
       VStack(alignment: .leading) {
         Button { Task { await state.expand(key, id: topic.id, main: main) } } label: {

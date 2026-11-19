@@ -92,7 +92,7 @@ struct VideoExtras: View {
           HStack(spacing: 8) {
             ForEach(tags) { t in
               if let route = t.route {
-                NavigationLink { LinkDestination(item:route) } label: {
+                LazyLink { LinkDestination(item:route) } label: {
                   Text(t.label).font(.footnote).foregroundStyle(.secondary)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
@@ -124,7 +124,7 @@ private struct StaffCard: View {
       if let showOwner {
         Button { TouchFeedback.light(); showOwner() } label: { identity }.buttonStyle(.plain)
       } else {
-        NavigationLink {
+        LazyLink {
           CreatorSpace(mid: staff.mid, name: staff.name ?? "创作者")
         } label: { identity }.buttonStyle(.plain).piliTapFeedback()
       }

@@ -51,7 +51,7 @@ struct SupporterRanks: View {
       visited = [-1]; tier = nil; levels = []; tops = [:]
     }.navigationTitle(heading).toolbar {
       if mid > 0, let url = URL(string: "https://member.bilibili.com/mall/upower-pay?mid=" + String(mid) + "&oid=" + String(mid)) {
-        NavigationLink { SitePage(url: url) } label: { Label("充电", systemImage: "bolt.fill") }
+        NavigationLink { DeferredPage { SitePage(url: url) } } label: { Label("充电", systemImage: "bolt.fill") }
       }
     }
   }

@@ -88,6 +88,7 @@ import SwiftUI
         .modifier(SceneResume(active: $active, incoming: $incoming, layout: layout, ready: accountsReady))
         .modifier(SleepExitStatus())
         .modifier(NightCanvas())
+        .modifier(ImageDisplaySource())
         .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
         .modifier(NativeTheme()).modifier(UpdatePrompt())
         .onChange(of: accounts.state.active, initial: true) { previous, uid in

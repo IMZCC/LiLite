@@ -24,7 +24,7 @@ private struct CreatorSearchArchiveCard: View {
   let hit: SpaceArchiveHit
   var body: some View {
     Group {
-      if let target = hit.target { NavigationLink { LinkDestination(item: target) } label: { label } }
+      if let target = hit.target { LazyLink { LinkDestination(item: target) } label: { label } }
       else { label.foregroundStyle(.secondary) }
     }.archiveCover(hit.video)
   }

@@ -16,10 +16,9 @@ extension EnvironmentValues {
     set { self[ShellContextKey.self] = newValue }
   }
   var openPersonalPage:(@MainActor ()->Void)? {get {self[ProfileShortcutKey.self]} set{self[ProfileShortcutKey.self]=newValue}}
-  var scrollHomeChannelToTop: @MainActor () -> Void {
-    let chrome = navChrome
-    return { if chrome?.active == .home { chrome?.top(allowRefresh: false) } }
-  }
+  /// A comparable handle rather than a fresh closure, so reading it never counts as a change
+  /// (the channel bar re-rendered on every environment pass of the tab view).
+  var scrollHomeChannelToTop: HomeChannelTopAction { HomeChannelTopAction(chrome: navChrome) }
   fileprivate var owningTab: MainTab? {
     get { self[ShellTabKey.self] }
     set { self[ShellTabKey.self] = newValue }
@@ -28,6 +27,32 @@ extension EnvironmentValues {
     get { self[HomeSearchCollapseKey.self] }
     set { self[HomeSearchCollapseKey.self] = newValue }
   }
+}
+/// One binding per column, made again only when that column's incoming route changes. A new
+/// `Binding` on every render of the shell changed the environment of every column's navigation
+/// stack, which then rebuilt its whole page on each tab switch.
+@MainActor private final class IncomingLinks {
+  private var values: [MainTab: IncomingRoute] = [:]
+  private var setters: [MainTab: (IncomingRoute?) -> Void] = [:]
+  private var made: [MainTab: (id: UUID?, binding: Binding<IncomingRoute?>)] = [:]
+  func binding(_ tab: MainTab, value: IncomingRoute?, set: @escaping (IncomingRoute?) -> Void) -> Binding<IncomingRoute?> {
+    values[tab] = value
+    setters[tab] = set
+    if let hit = made[tab], hit.id == value?.id { return hit.binding }
+    let binding = Binding<IncomingRoute?>(
+      get: { [unowned self] in self.values[tab] },
+      set: { [unowned self] in self.setters[tab]?($0) })
+    made[tab] = (value?.id, binding)
+    return binding
+  }
+}
+
+struct HomeChannelTopAction: Equatable {
+  fileprivate weak var chrome: NavigationChrome?
+  @MainActor func callAsFunction() {
+    if chrome?.active == .home { chrome?.top(allowRefresh: false) }
+  }
+  static func == (a: Self, b: Self) -> Bool { a.chrome === b.chrome }
 }
 @MainActor @Observable private final class NavigationChrome {
   private(set) var visible: [MainTab: Bool] = [:]
@@ -174,6 +199,7 @@ struct MainNavShell: View {
   @Binding var active: MainTab
   @Binding var incoming: [MainTab: IncomingRoute]
   @State private var chrome = NavigationChrome()
+  @State private var links = IncomingLinks()
   /// 改用侧边栏 is read once: the two tab view styles are different views, so switching them
   /// while running would rebuild every column and drop its navigation (the settings page the
   /// switch was made on included). It applies from the next launch.
@@ -265,8 +291,10 @@ struct MainNavShell: View {
     }
   }
   private func root(_ tab: MainTab, collapseSearch: Bool) -> some View {
-    tab.screen
-      .environment(\.incomingTabLink, Binding(get: { incoming[tab] }, set: { incoming[tab] = $0 }))
+    // Each column's page only re-renders for its own state and environment: its `@AppStorage`
+    // fields never compare equal, so every switch of tab rebuilt every column's page.
+    StableContent(key: tab) { tab.screen }.equatable()
+      .environment(\.incomingTabLink, links.binding(tab, value: incoming[tab]) { incoming[tab] = $0 })
       .environment(\.activeCatalogPage, active == tab)
       .environment(\.preparedCatalogPage, active == tab)
       .environment(\.owningTab, tab)

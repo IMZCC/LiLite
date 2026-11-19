@@ -258,7 +258,7 @@ struct ArticleReader: View {
       Text(article.title).font(.title2.weight(.bold)).lineSpacing(3).textSelection(.enabled)
       Group {
         if let mid = article.authorID {
-          NavigationLink {
+          LazyLink {
             CreatorSpace(mid: mid, name: article.author)
           } label: {
             authorLine(article)
@@ -450,7 +450,7 @@ struct ArticleReader: View {
     }.navigationTitle(doc?.title ?? "阅读").navigationBarTitleDisplayMode(.inline)
       .linkedDiscussion(oid: doc?.commentID, type: doc?.commentType ?? 12, author: doc?.authorID).toolbar {
       if let url = publicURL {
-        NavigationLink { SitePage(url: url) } label: {
+        NavigationLink { DeferredPage { SitePage(url: url) } } label: {
           Image(systemName: "safari").accessibilityLabel("浏览器打开")
         }
       }
@@ -744,7 +744,7 @@ struct ArticleReader: View {
       .quaternary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     switch c.target {
     case .route(let r):
-      NavigationLink {
+      LazyLink {
         LinkDestination(item: r)
       } label: {
         label

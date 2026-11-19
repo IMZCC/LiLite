@@ -208,7 +208,7 @@ struct LiveAreaChannels: View {
       LiveDirectory(area: parent, child: selection ?? initial, title: title).id(selection ?? initial)
     }.navigationTitle(title)
     .toolbar {
-      NavigationLink { LiveSearchView() } label: { Image(systemName: "magnifyingglass").accessibilityLabel("直播搜索") }
+      NavigationLink { DeferredPage { LiveSearchView() } } label: { Image(systemName: "magnifyingglass").accessibilityLabel("直播搜索") }
     }
       .task(id: "\(parent):\(feed ?? ""):\(reload)") {
         let owner = feed

@@ -71,11 +71,11 @@ struct SongView: View {
         }
         Section {
           if let lyric = s.lyric.flatMap(httpsURL) {
-            NavigationLink { SongLyric(url: lyric, songID: s.id) } label: {
+            NavigationLink { DeferredPage { SongLyric(url: lyric, songID: s.id) } } label: {
               SettingsRowLabel(title: "歌词", symbol: "quote.bubble", color: .pink)
             }
           }
-          NavigationLink { Discussion(oid: id, type: 14) } label: {
+          NavigationLink { DeferredPage { Discussion(oid: id, type: 14) } } label: {
             SettingsRowLabel(title: "评论", symbol: "text.bubble", color: .blue)
           }
           MediaMomentButton(resource: .song(s), selection: $sharingMoment)

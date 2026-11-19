@@ -60,7 +60,7 @@ struct AboutPanel: View {
         Link(destination: UpstreamRelease.lilite.appendingPathComponent("issues")) {
           Label("问题反馈", systemImage: "exclamationmark.bubble.fill").labelStyle(SettingsIconLabelStyle(color: .orange))
         }
-        NavigationLink { OpenSourceNotices() } label: {
+        NavigationLink { DeferredPage { OpenSourceNotices() } } label: {
           Label("开源许可", systemImage: "doc.text.fill").labelStyle(SettingsIconLabelStyle(color: .gray))
         }
       }
@@ -78,7 +78,7 @@ struct AboutPanel: View {
         }
       }
       Section("诊断") {
-        NavigationLink { DiagnosticView() } label: {
+        NavigationLink { DeferredPage { DiagnosticView() } } label: {
           Label("错误日志", systemImage: "waveform.path.ecg").labelStyle(SettingsIconLabelStyle(color: .gray))
         }.contextMenu {
           Button("清空日志", role: .destructive) { confirmLogs = true }
@@ -96,13 +96,13 @@ struct AboutPanel: View {
         }
       }
       Section {
-        NavigationLink { AboutTransfer(kind: .accounts) } label: {
+        NavigationLink { DeferredPage { AboutTransfer(kind: .accounts) } } label: {
           Label("登录信息导入与导出", systemImage: "person.badge.key.fill").labelStyle(SettingsIconLabelStyle(color: .blue))
         }
-        NavigationLink { AboutTransfer(kind: .settings) } label: {
+        NavigationLink { DeferredPage { AboutTransfer(kind: .settings) } } label: {
           Label("设置导入与导出", systemImage: "gearshape.2.fill").labelStyle(SettingsIconLabelStyle(color: .gray))
         }
-        NavigationLink { DataPackPanel() } label: {
+        NavigationLink { DeferredPage { DataPackPanel() } } label: {
           Label("导入与导出所有数据", systemImage: "externaldrive.fill").labelStyle(SettingsIconLabelStyle(color: .gray))
         }
       } header: {

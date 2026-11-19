@@ -38,7 +38,7 @@ struct AccountRolesPanel: View {
         }
       }
       Section {
-        NavigationLink { AccountRoleExplanation() } label: {
+        NavigationLink { DeferredPage { AccountRoleExplanation() } } label: {
           SettingsRowLabel(title: "账号用途说明", symbol: "info.circle", color: .gray)
         }
       }

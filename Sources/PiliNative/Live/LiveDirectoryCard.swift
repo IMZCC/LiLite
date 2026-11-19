@@ -13,7 +13,7 @@ struct LiveDirectoryCard: View {
     mobile && room.feedback?.contains(where: { $0.reasons?.contains(where: \.usable) == true }) == true
   }
   var body: some View {
-    NavigationLink {
+    LazyLink {
       LivePlayer(id: room.id, title: room.title)
     } label: {
       VStack(alignment: .leading, spacing: 7) {
@@ -109,7 +109,7 @@ struct LiveFeedbackSheet: View {
             }
           }
           if owner == nil {
-            NavigationLink("登录后提交反馈") { QRLoginView() }.font(.subheadline)
+            NavigationLink("登录后提交反馈") { DeferredPage { QRLoginView() } }.font(.subheadline)
           }
           if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
         }

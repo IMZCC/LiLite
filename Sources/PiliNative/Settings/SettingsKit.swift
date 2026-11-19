@@ -104,9 +104,9 @@ struct SettingsAccountCard: View {
     let name = profile?.uname ?? uid.flatMap { id in accounts.state.accounts.first { $0.id == id }?.label }
     Group {
       if uid != nil {
-        NavigationLink { SettingsAccountActions() } label: { card(profile?.face.flatMap(httpsURL), name, uid) }
+        NavigationLink { DeferredPage { SettingsAccountActions() } } label: { card(profile?.face.flatMap(httpsURL), name, uid) }
       } else {
-        NavigationLink { QRLoginView() } label: { card(nil, nil, nil) }
+        NavigationLink { DeferredPage { QRLoginView() } } label: { card(nil, nil, nil) }
       }
     }
     .task(id: uid) { if let uid { await store.refresh(uid) } }

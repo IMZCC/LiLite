@@ -281,7 +281,7 @@ struct EpisodePlayer: View {
           CastButton(subject: .episode(id: episode.id, cid: episode.cid, title: episode.label, quality: model.quality), player: model.engine)
         }
         if episode.preview || model.isPreview {Label("试看",systemImage:"play.rectangle")}
-        if episode.allowCacheEntry && !model.isPreview {NavigationLink("缓存本集") { EpisodeCacheView(episode: episode, course: course) }}
+        if episode.allowCacheEntry && !model.isPreview {NavigationLink("缓存本集") { DeferredPage { EpisodeCacheView(episode: episode, course: course) } }}
         if let cover = episode.cover.flatMap(httpsURL) {
           GalleryLink([.init(cover)], index: 0) { Label("剧集封面", systemImage: "photo") }
         }
@@ -299,10 +299,10 @@ struct EpisodePlayer: View {
         }
         RepeatPicker(session: model.preferences)
         SessionPlaybackSettings(session: model.preferences)
-        NavigationLink("播放器内核") { PlaybackEngineSettings() }
+        NavigationLink("播放器内核") { DeferredPage { PlaybackEngineSettings() } }
         SeasonPlaybackLine(model:model)
         SpokenTrackPicker(model: model)
-        NavigationLink("播放器音量") { AudioLevelSettings() }
+        NavigationLink("播放器音量") { DeferredPage { AudioLevelSettings() } }
         SubtitlePicker(model: model)
         if let e = model.error ?? model.qualityError {
           Text(e)
@@ -327,8 +327,11 @@ struct EpisodePlayer: View {
       information(episode)
     } replies: {
       if let oid, oid > 0 {
-        Discussion(oid: oid, type: course ? 33 : 1, embeddedTitle: episode.label)
-          .environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model)).id(oid)
+        // Rebuilt only when what it shows changes (see the video page).
+        StableContent(key: [String(oid), String(course), episode.label, String(model.duration)]) {
+          Discussion(oid: oid, type: course ? 33 : 1, embeddedTitle: episode.label)
+            .environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model))
+        }.equatable().id(oid)
       }
     }.linkedDiscussion(oid:oid,type:course ? 33:1,author:nil,
       playback:ReplyPlaybackTarget(duration:model.duration,seek:model.seek,model:model),

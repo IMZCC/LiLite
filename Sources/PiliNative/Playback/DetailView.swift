@@ -445,7 +445,7 @@ struct DetailView: View {
             sideAuthor = video.owner
           } label: { identity }.buttonStyle(.plain)
         } else if let mid = video.owner?.mid {
-          NavigationLink {
+          LazyLink {
             CreatorSpace(mid: mid, name: owner)
           } label: { identity }.buttonStyle(.plain).piliTapFeedback()
         } else {
@@ -535,10 +535,15 @@ struct DetailView: View {
       }.defaultScrollAnchor(.top).reportsScrollCollapse().id(source.bvid)
     } replies: {
       if let aid = video.aid ?? ArchiveNumber.av(video.bvid) {
-        Discussion(
-          oid: aid, type: 1, owner: video.owner?.mid, intro: video.desc, embeddedTitle: "视频",
-          readingCount: { n in commentCount = n }, mentionOwnerName: video.owner?.name
-        ).environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model)).id(aid)
+        // Rebuilt only when what it shows changes: its closures made every render of this page
+        // (each player state change) re-render the whole comment list.
+        StableContent(key: [String(aid), String(video.owner?.mid ?? 0), video.desc ?? "", video.owner?.name ?? "",
+          String(model.duration)]) {
+          Discussion(
+            oid: aid, type: 1, owner: video.owner?.mid, intro: video.desc, embeddedTitle: "视频",
+            readingCount: { n in commentCount = n }, mentionOwnerName: video.owner?.name
+          ).environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model))
+        }.equatable().id(aid)
       } else {
         ContentUnavailableView("未找到评论区", systemImage: "text.bubble")
       }

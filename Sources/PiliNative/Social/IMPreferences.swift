@@ -142,7 +142,7 @@ struct IMPreferences: View {
           Form {
             Text(p.title).piliFont(.headline)
             Text(p.subtitle)
-            if let url = httpsURL(p.url) { NavigationLink("了解更多") { SitePage(url: url) } }
+            if let url = httpsURL(p.url) { NavigationLink("了解更多") { DeferredPage { SitePage(url: url) } } }
           }.navigationTitle(r.title)
         } label: {
           label(r.title, r.subtitle)

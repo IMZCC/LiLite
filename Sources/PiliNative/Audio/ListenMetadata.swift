@@ -42,7 +42,7 @@ struct ListenMetadata: View {
         Text(title).font(.title3.weight(.bold)).lineLimit(2).textSelection(.enabled)
         HStack(spacing: 8) {
           if let mid = (record?.owner.mid ?? track.ownerID), mid > 0 {
-            NavigationLink {
+            LazyLink {
               CreatorSpace(mid: mid, name: track.artist).onAppear { queue.pause() }
             } label: {
               HStack(spacing: 4) {
@@ -141,7 +141,7 @@ struct ListenMetadata: View {
           Button("三连", systemImage: "sparkles") { showTriple = true }
         }
       }
-      NavigationLink { Discussion(oid: oid, type: track.songID == nil ? 1 : 14) } label: {
+      NavigationLink { DeferredPage { Discussion(oid: oid, type: track.songID == nil ? 1 : 14) } } label: {
         column("text.bubble", stat.map { short($0.reply) }.flatMap { $0.isEmpty ? nil : $0 } ?? "评论")
       }
       if let u = reference {
@@ -168,19 +168,19 @@ struct ListenMetadata: View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 8) {
         if let lyr = song?.lyric.flatMap(httpsURL) {
-          NavigationLink { SongLyric(url: lyr, songID: track.songID) } label: { capsule("歌词", "quote.bubble") }
+          NavigationLink { DeferredPage { SongLyric(url: lyr, songID: track.songID) } } label: { capsule("歌词", "quote.bubble") }
         }
         if let related = record?.associatedItem, related.oid > 0, let part = related.subID.first,
           part > 0, let bv = ArchiveNumber.bv(related.oid)
         {
-          NavigationLink {
+          LazyLink {
             DetailView(
               initial: .preview(id: bv, title: title, cover: track.cover, author: track.artist),
               libraryPoint: .init(cid: part, seconds: 0)
             ).onAppear { queue.pause() }
           } label: { capsule("看 MV", "play.rectangle") }
         } else if let bv = song?.bvid, !bv.isEmpty {
-          NavigationLink {
+          LazyLink {
             DetailView(initial: .preview(id: bv, title: title, cover: track.cover, author: track.artist))
               .onAppear { queue.pause() }
           } label: { capsule("看 MV", "play.rectangle") }
@@ -189,7 +189,7 @@ struct ListenMetadata: View {
           capsule(track.bvid, "doc.on.doc")
         }
         if let oid = track.objectID, let url = URL(string: "https://www.bilibili.com/appeal/?avid=" + String(oid)) {
-          NavigationLink { SitePage(url: url) } label: { capsule("举报", "exclamationmark.bubble") }
+          NavigationLink { DeferredPage { SitePage(url: url) } } label: { capsule("举报", "exclamationmark.bubble") }
         }
       }
     }

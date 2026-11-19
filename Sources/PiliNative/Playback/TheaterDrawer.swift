@@ -70,15 +70,15 @@ struct TheaterTools: View {
                 } label: { row("text.bubble", "评论") }
               }
               if let aid = s.aid, s.type == 1, s.bvid != nil {
-                NavigationLink { ArchiveNotes(aid: aid, interactive: s.interactive, model: model, cid: s.cid, videoTitle: nil) }
+                NavigationLink { DeferredPage { ArchiveNotes(aid: aid, interactive: s.interactive, model: model, cid: s.cid, videoTitle: nil) } }
                   label: { row("note.text", "查看笔记") }
               }
               if chapters, let bv = s.bvid {
-                NavigationLink { ArchiveChapterPanel(model:model,bvid:bv,cid:s.cid) } label: { row("list.bullet.rectangle", "分段") }
+                NavigationLink { DeferredPage { ArchiveChapterPanel(model:model,bvid:bv,cid:s.cid) } } label: { row("list.bullet.rectangle", "分段") }
               }
             }
-            NavigationLink { SleepTimerForm(live: false) } label: { row("hourglass", "定时关闭") }
-            NavigationLink { AudioLevelSettings() } label: { row("speaker.wave.2", "播放器音量") }
+            NavigationLink { DeferredPage { SleepTimerForm(live: false) } } label: { row("hourglass", "定时关闭") }
+            NavigationLink { DeferredPage { AudioLevelSettings() } } label: { row("speaker.wave.2", "播放器音量") }
             ArchiveSourceTools(model:model)
             ArchiveTrendToggle(timeline:model.timeline)
             PlaybackTrackSwitch(player: model.engine)
@@ -102,8 +102,8 @@ struct TheaterTools: View {
               } label: { row("opticaldisc", "选择音质") }.disabled(model.switching)
             }
             if let issue = model.qualityError { Text(issue).font(.footnote).foregroundStyle(.secondary) }
-            NavigationLink { DecoderSettings() } label: { row("av.remote", "解码格式") }
-            NavigationLink { PlaybackEngineSettings() } label: { row("cpu", "播放器内核") }
+            NavigationLink { DeferredPage { DecoderSettings() } } label: { row("av.remote", "解码格式") }
+            NavigationLink { DeferredPage { PlaybackEngineSettings() } } label: { row("cpu", "播放器内核") }
             Menu {
               ForEach(SpeedPresets.decode(speeds), id: \.self) { speed in
                 Button("\(speed.formatted())×") { model.rate = Float(speed); if model.playing { model.engine.rate = Float(speed) } }
@@ -119,11 +119,11 @@ struct TheaterTools: View {
               } label: { row("list.bullet", "弹幕列表") }
             }
             Toggle(isOn: model.preferences.binding(\.bullets)) { row("text.bubble.fill", "显示弹幕") }
-            NavigationLink { DanmakuStylePanel() } label: { row("text.bubble.badge.gearshape", "弹幕设置") }
+            NavigationLink { DeferredPage { DanmakuStylePanel() } } label: { row("text.bubble.badge.gearshape", "弹幕设置") }
             SubtitlePicker(model: model)
             SpokenTrackPicker(model: model)
             if sponsor, subject?.bvid != nil {
-              NavigationLink { SponsorList(model: model, inlineEditor: true) } label: { row("forward.end", "空降标记") }
+              NavigationLink { DeferredPage { SponsorList(model: model, inlineEditor: true) } } label: { row("forward.end", "空降标记") }
             }
           }
         }

@@ -19,7 +19,7 @@ struct SponsorSourceSheet: View {
         } label: {
           SettingsRowLabel(title: "YouTube 视频", symbol: "play.rectangle.fill", color: .red)
         }
-        NavigationLink { SitePage(url: source.original) } label: {
+        NavigationLink { DeferredPage { SitePage(url: source.original) } } label: {
           SettingsRowLabel(title: "打开原视频", symbol: "safari", color: .blue)
         }
       } footer: {

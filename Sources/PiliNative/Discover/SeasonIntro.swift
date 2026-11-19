@@ -186,7 +186,7 @@ struct SeasonIntro: View {
               }
               .accessibilityAddTraits(.isSelected)
             } else {
-              NavigationLink {
+              LazyLink {
                 SeasonView(season: .init(season_id: n, title: name, cover: r.cover ?? "", index_show: nil))
               } label: {
                 Text(name).font(.subheadline).foregroundStyle(.secondary)
@@ -266,7 +266,7 @@ struct SeasonIntro: View {
       SeasonSectionHeader(title: "相关UP主", trailing: "共\(list.count)位")
       ForEach(list) { up in
         HStack(spacing: 10) {
-          NavigationLink {
+          LazyLink {
             CreatorSpace(mid: up.id, name: up.uname ?? "UP 主")
           } label: {
             HStack(spacing: 10) {
@@ -288,7 +288,7 @@ struct SeasonIntro: View {
       SeasonSectionHeader(title: "相关推荐").padding(.bottom, 2)
       ForEach(Array(related.enumerated()), id: \.element.id) { i, item in
         if i > 0 { Divider().padding(.leading, 158) }
-        NavigationLink {
+        LazyLink {
           SeasonView(
             season: .init(
               season_id: item.id, title: item.title ?? "", cover: item.cover ?? "",
@@ -833,7 +833,7 @@ private struct SeasonActionColumns: View {
   @State private var notice: String?
   private var aid: Int64? { episode.aid ?? ArchiveNumber.av(episode.bvid) }
   var body: some View {
-    NavigationLink { EpisodeCacheView(episode: episode, course: false) } label: {
+    NavigationLink { DeferredPage { EpisodeCacheView(episode: episode, course: false) } } label: {
       ArchiveActionColumn(symbol: "arrow.down.circle", title: "缓存", active: false)
     }
     .disabled(!episode.allowCacheEntry || model.isPreview)
@@ -1056,7 +1056,7 @@ struct SeasonDetailSheet: View {
           Section("标签") {
             WrappingActions(spacing: 8, rowSpacing: 8) {
               ForEach(names, id: \.self) { name in
-                NavigationLink { SearchView(keyword: name) } label: {
+                NavigationLink { DeferredPage { SearchView(keyword: name) } } label: {
                   Text(name).font(.subheadline).foregroundStyle(.primary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Color(uiColor: .tertiarySystemFill), in: Capsule())
@@ -1072,7 +1072,7 @@ struct SeasonDetailSheet: View {
             } label: { Label("点评", systemImage: "star.bubble") }
           }
           if let up = info.up_info, let uid = up.mid, uid > 0 {
-            NavigationLink { CreatorSpace(mid: uid, name: up.uname ?? "出品方") } label: {
+            LazyLink { CreatorSpace(mid: uid, name: up.uname ?? "出品方") } label: {
               Label(up.uname ?? "出品方", systemImage: "person.crop.circle")
             }
           }

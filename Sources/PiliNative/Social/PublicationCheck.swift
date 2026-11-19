@@ -140,7 +140,7 @@ struct VisibilityPanel: View {
         if case .reply = request.target,
           let url = URL(string: "https://www.bilibili.com/h5/comment/appeal")
         {
-          NavigationLink("评论申诉") { SitePage(url: url) }
+          NavigationLink("评论申诉") { DeferredPage { SitePage(url: url) } }
         }
       }.navigationTitle("公开可见性").toolbar { Button("完成") { dismiss() } }
     }

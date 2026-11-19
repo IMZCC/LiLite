@@ -16,8 +16,12 @@ struct ReplyPanelItem: Identifiable {
 
 /// Opens a panel in the video detail that hosts it; returns false when no live host is on screen
 /// (the comments then open as a page, as everywhere else).
-struct ReplyPanelPresenter {
+/// Equatable by token: a closure-only value in the environment re-rendered every reader on
+/// each pass (see `StableAction`).
+struct ReplyPanelPresenter: Equatable {
+  var token = UUID()
   let push: @MainActor (_ title: String, _ content: AnyView) -> Bool
+  nonisolated static func == (a: Self, b: Self) -> Bool { a.token == b.token }
 }
 private struct ReplyPanelPresenterKey: EnvironmentKey {
   static let defaultValue: ReplyPanelPresenter? = nil

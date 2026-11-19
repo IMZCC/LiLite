@@ -100,8 +100,10 @@ struct ArchiveRelatedList: View {
   @State private var failed = false
   @State private var loaded = false
   var body: some View {
-    // Always keep a concrete container: an empty Group would never run the load task.
-    VStack(alignment: .leading, spacing: 14) {
+    // Always keep a concrete container: an empty Group would never run the load task. Lazy, so
+    // the forty rows (cover, link and menu each) are built as they scroll in, not all at once
+    // with the page.
+    LazyVStack(alignment: .leading, spacing: 14) {
       if enabled {
         Text("相关推荐").font(.headline)
         if failed && items.isEmpty {
@@ -147,7 +149,7 @@ struct ArchiveRelatedList: View {
 struct ArchiveRelatedRow: View {
   let video: Video
   var body: some View {
-    NavigationLink {
+    LazyLink {
       DetailView(initial: video)
     } label: {
       MediaRow(

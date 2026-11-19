@@ -26,7 +26,7 @@ struct LinkDestination: View {
     case .cofollow(let mid): LinkedFollowed(mid: mid)
     case .disclosure(let mid): CreatorDisclosure(mid: mid)
     case .browser(let url):
-      Form { Section(url.host ?? "网页") { NavigationLink("打开网页") { SitePage(url: url) } } }.navigationTitle("网页链接")
+      Form { Section(url.host ?? "网页") { NavigationLink("打开网页") { DeferredPage { SitePage(url: url) } } } }.navigationTitle("网页链接")
     case .sharedPlaylist(let id, let bv): SharedMediaPlaylist(id: id, bvid: bv)
     case .contextVote(let id, let dynamic): VoteView(id: id, dynamic: String(dynamic))
     case .appPage(let page): AppLinkPage(page: page)

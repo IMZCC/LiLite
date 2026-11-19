@@ -26,7 +26,7 @@ struct FavoriteTabDestination: View {
     } else {
       ContentUnavailableView {
         Label("登录后查看收藏", systemImage: "star")
-      } actions: { NavigationLink("登录") { QRLoginView() } }
+      } actions: { NavigationLink("登录") { DeferredPage { QRLoginView() } } }
     }
   }
 }

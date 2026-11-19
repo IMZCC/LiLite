@@ -30,7 +30,7 @@ struct SettingsAccountActions: View {
             if accounts.state.active == nil { checkmark }
           }.contentShape(Rectangle())
         }.buttonStyle(.plain)
-        NavigationLink { QRLoginView() } label: {
+        NavigationLink { DeferredPage { QRLoginView() } } label: {
           Label("添加账号", systemImage: "plus").labelStyle(SettingsIconLabelStyle(color: .blue))
         }
       } header: {
@@ -39,7 +39,7 @@ struct SettingsAccountActions: View {
         Text("点按切换当前账号。")
       }
       Section {
-        NavigationLink { AccountRolesPanel() } label: {
+        NavigationLink { DeferredPage { AccountRolesPanel() } } label: {
           Label("账号用途", systemImage: "person.2.badge.gearshape.fill").labelStyle(SettingsIconLabelStyle(color: .indigo))
         }
       } footer: {

@@ -90,7 +90,7 @@ struct SeasonBatchCache: View {
         Button(selection.count == available.count && !available.isEmpty ? "取消全选" : "全选") {
           selection = selection.count == available.count ? [] : Set(available.map(\.id))
         }
-        NavigationLink("查看缓存") { DownloadsView() }
+        NavigationLink("查看缓存") { DeferredPage { DownloadsView() } }
         Spacer()
         Button {
           let owner = uid

@@ -188,10 +188,10 @@ struct PlayerPreferencePanel: View {
       Section("互动") {
         Toggle("投币时同时点赞", isOn: $coinLike).settingAnchor("PlayerPreferencePanel/投币时同时点赞")
         Toggle("快速收藏", isOn: $quickFav).settingAnchor("PlayerPreferencePanel/快速收藏")
-        if quickFav { NavigationLink("快速收藏夹") { QuickFolderChoice() }.settingAnchor("PlayerPreferencePanel/快速收藏夹") }
+        if quickFav { NavigationLink("快速收藏夹") { DeferredPage { QuickFolderChoice() } }.settingAnchor("PlayerPreferencePanel/快速收藏夹") }
       }
       Section {
-        NavigationLink("播放控件与画面缩放") { ViewportSettings() }.settingAnchor("PlayerPreferencePanel/播放控件与画面缩放")
+        NavigationLink("播放控件与画面缩放") { DeferredPage { ViewportSettings() } }.settingAnchor("PlayerPreferencePanel/播放控件与画面缩放")
         Toggle("使用横屏布局", isOn: $horizontalPref.or { WindowCanvas.shared.large }).settingAnchor("PlayerPreferencePanel/使用横屏布局")
         Toggle("横屏时在标签栏选集", isOn: Binding(get: { sideList ?? horizontal }, set: { sideList = $0 })).settingAnchor("PlayerPreferencePanel/横屏时在标签栏选集")
         Toggle(
@@ -202,7 +202,7 @@ struct PlayerPreferencePanel: View {
         Text("画面布局")
       }.settingAnchor("PlayerPreferencePanel/画面布局")
       Section {
-        NavigationLink("缓冲容量") { MediaBufferSettings() }.settingAnchor("PlayerPreferencePanel/缓冲容量")
+        NavigationLink("缓冲容量") { DeferredPage { MediaBufferSettings() } }.settingAnchor("PlayerPreferencePanel/缓冲容量")
         SettingStepper(title: "视频预缓冲", value: $networkBuffer, range: 0...3600, format: seconds)
         SettingStepper(title: "直播预缓冲", value: $liveBuffer, range: 0...3600, format: seconds)
       } header: {
@@ -225,7 +225,7 @@ struct PlayerPreferencePanel: View {
         SettingStepper(title: "横滑整屏", value: $travel, range: 1...600) { relative ? "\(Int($0))%" : "\(Int($0)) 秒" }
         Toggle("长按时使用当前倍速的两倍", isOn: $double).settingAnchor("PlayerPreferencePanel/长按时使用当前倍速的两倍")
         if !double {
-          NavigationLink { SpeedSettings() } label: {
+          NavigationLink { DeferredPage { SpeedSettings() } } label: {
             LabeledContent("长按倍速", value: hold.formatted() + "×")
           }.settingAnchor("PlayerPreferencePanel/长按倍速")
         }
@@ -252,13 +252,13 @@ struct PlayerPreferencePanel: View {
         Toggle("画中画时暂停加载视频弹幕", isOn: $quietPiP).settingAnchor("PlayerPreferencePanel/画中画时暂停加载视频弹幕")
       }
       Section("音频与字幕") {
-        NavigationLink("播放器音量与均衡") { AudioLevelSettings() }.settingAnchor("PlayerPreferencePanel/播放器音量与均衡")
+        NavigationLink("播放器音量与均衡") { DeferredPage { AudioLevelSettings() } }.settingAnchor("PlayerPreferencePanel/播放器音量与均衡")
         Picker("默认字幕", selection: $captionPreference) {
           ForEach(SubtitlePreference.allCases, id: \.rawValue) { option in
             Text(option.title).tag(option.rawValue)
           }
         }.settingAnchor("PlayerPreferencePanel/默认字幕")
-        NavigationLink("字幕样式") { CaptionStylePanel() }.settingAnchor("PlayerPreferencePanel/字幕样式")
+        NavigationLink("字幕样式") { DeferredPage { CaptionStylePanel() } }.settingAnchor("PlayerPreferencePanel/字幕样式")
       }
       Section {
         Toggle("滚轮调节音量", isOn: $scrollVolume).settingAnchor("PlayerPreferencePanel/滚轮调节音量")

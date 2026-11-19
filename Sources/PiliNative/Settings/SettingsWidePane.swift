@@ -62,11 +62,11 @@ struct SettingsWidePane<General: View>: View {
     case .general: general
     case .account:
       Form {
-        NavigationLink("切换与退出账号") { SettingsAccountActions() }
-        NavigationLink("客户端设备标识") { DeviceIdentityPanel() }
+        NavigationLink("切换与退出账号") { DeferredPage { SettingsAccountActions() } }
+        NavigationLink("客户端设备标识") { DeferredPage { DeviceIdentityPanel() } }
         if let uid = accounts.state.active {
-          NavigationLink("黑名单") { BlacklistView(uid: uid) }
-          NavigationLink("空间隐私") { SpacePrivacy(uid: uid) }
+          NavigationLink("黑名单") { DeferredPage { BlacklistView(uid: uid) } }
+          NavigationLink("空间隐私") { DeferredPage { SpacePrivacy(uid: uid) } }
         }
       }.navigationTitle(choice.rawValue)
     case .recommendations: RecommendationSettings()
@@ -77,20 +77,20 @@ struct SettingsWidePane<General: View>: View {
     case .dynamics: CommunityFilterPanel()
     case .style:
       Form {
-        NavigationLink("导航布局") { NavigationLayoutPanel() }
-        NavigationLink("字体与字号") { TypographyPanel() }
-        NavigationLink("主题颜色") { ThemePicker() }
-        NavigationLink("页面动画与回弹") { MotionSettings() }
-        NavigationLink("界面与手势") { InteractionScaleOptions() }
+        NavigationLink("导航布局") { DeferredPage { NavigationLayoutPanel() } }
+        NavigationLink("字体与字号") { DeferredPage { TypographyPanel() } }
+        NavigationLink("主题颜色") { DeferredPage { ThemePicker() } }
+        NavigationLink("页面动画与回弹") { DeferredPage { MotionSettings() } }
+        NavigationLink("界面与手势") { DeferredPage { InteractionScaleOptions() } }
         NightSettings()
       }.navigationTitle(choice.rawValue)
     case .extra:
       Form {
-        NavigationLink("未读提醒") { BadgePreferences() }
-        NavigationLink("网络连接") { ConnectionSettings() }
-        NavigationLink("图片缓存") { ArtworkCacheSettings() }
-        NavigationLink("诊断日志") { DiagnosticView() }
-        NavigationLink("版本与更新") { VersionPanel() }
+        NavigationLink("未读提醒") { DeferredPage { BadgePreferences() } }
+        NavigationLink("网络连接") { DeferredPage { ConnectionSettings() } }
+        NavigationLink("图片缓存") { DeferredPage { ArtworkCacheSettings() } }
+        NavigationLink("诊断日志") { DeferredPage { DiagnosticView() } }
+        NavigationLink("版本与更新") { DeferredPage { VersionPanel() } }
       }.navigationTitle(choice.rawValue)
     case .webdav: WebBackup()
     case .about: AboutPanel()

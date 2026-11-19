@@ -31,7 +31,7 @@ struct DownloadRow: View {
           ForEach([OfflineAttachment.comments, .captions, .segments, .art, .all]) { m in
             Button(m.rawValue) { Task { await downloads.refreshExtras(v, mode: m) } }
           }
-          NavigationLink("查看缓存片段") { OfflineMarkerList(v: v) }
+          NavigationLink("查看缓存片段") { DeferredPage { OfflineMarkerList(v: v) } }
         } label: {
           Image(systemName: "ellipsis").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
             .frame(width: 28, height: 36).contentShape(Rectangle())
@@ -236,7 +236,7 @@ struct OfflinePlayer: View {
         if !locked{
         Menu {
           Toggle("弹幕", isOn: sessionPrefs.binding(\.bullets))
-          NavigationLink("缓存片段") { OfflineMarkerList(v: video) }
+          NavigationLink("缓存片段") { DeferredPage { OfflineMarkerList(v: video) } }
           if let player{NavigationLink("播放信息"){ArchiveProgramInfo(player:player)}}
           if let player{
             Menu("播放速度"){ForEach(SpeedPresets.decode(speedList),id:\.self){speed in
@@ -570,7 +570,7 @@ struct CacheSelection: View {
         Text("缓存全部").frame(maxWidth: .infinity, minHeight: 44)
       }.disabled(owner == nil || busy)
       Divider().frame(height: 20)
-      NavigationLink { DownloadsView() } label: {
+      NavigationLink { DeferredPage { DownloadsView() } } label: {
         Text("查看缓存").frame(maxWidth: .infinity, minHeight: 44)
       }
     }

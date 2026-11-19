@@ -21,11 +21,11 @@ struct DynamicFeed: View {
           VStack(spacing: 16) {
             Image(systemName: "person.2").piliFont(.largeTitle)
             Text("登录后查看关注动态")
-            NavigationLink("扫码登录") { QRLoginView() }
+            NavigationLink("扫码登录") { DeferredPage { QRLoginView() } }
           }.navigationTitle("动态")
             .toolbar {
-              NavigationLink("话题") { TopicDirectory() }
-              NavigationLink("设置") { SettingsView() }
+              NavigationLink("话题") { DeferredPage { TopicDirectory() } }
+              NavigationLink("设置") { DeferredPage { SettingsView() } }
             }
         }
       }.piliTabRoot(.dynamics)
@@ -118,8 +118,8 @@ private struct AccountDynamicFeed: View {
     .piliRemovingToolbarTitle()
     .toolbar {
       Menu {
-        NavigationLink("动态筛选") { CommunityFilterPanel() }
-        NavigationLink("设置") { SettingsView() }
+        NavigationLink("动态筛选") { DeferredPage { CommunityFilterPanel() } }
+        NavigationLink("设置") { DeferredPage { SettingsView() } }
         if !muted.isEmpty {
           Menu("取消本次隐藏") {
             ForEach(muted.keys.sorted(), id: \.self) { mid in
@@ -132,7 +132,7 @@ private struct AccountDynamicFeed: View {
       } label: {
         Image(systemName: "line.3.horizontal.decrease.circle").accessibilityLabel("动态选项")
       }
-      NavigationLink { TopicDirectory() } label: {
+      NavigationLink { DeferredPage { TopicDirectory() } } label: {
         Image(systemName: "number").accessibilityLabel("话题")
       }
       Button {
@@ -214,7 +214,11 @@ private struct AccountDynamicFeed: View {
     } row: { (d: DynamicEntry) in
       if d.visible || expanded.contains(d.id) {
         VStack(alignment: .leading, spacing: 0) {
-          DynamicCard(entry: d, changed: { revisions[scope, default: 0] += 1 })
+          // A moment never changes under the same id within one list (a refresh replaces the
+          // list), so the card is rebuilt only when it first shows, not on every list update.
+          StableContent(key: d.id) {
+            DynamicCard(entry: d, changed: { revisions[scope, default: 0] += 1 })
+          }.equatable()
           if !d.foldIDs.isEmpty, !Set(d.foldIDs).isSubset(of: expanded) {
             Button {
               withAnimation(.snappy) { unfolded[scope, default: []].formUnion(d.foldIDs) }

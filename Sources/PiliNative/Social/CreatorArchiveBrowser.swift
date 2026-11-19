@@ -313,7 +313,7 @@ private struct CreatorDirectoryListen: View {
         VStack(spacing: 12) {
           PageFailure(message: issue) { attempt += 1 }
           if let aid = ArchiveNumber.av(video.bvid) {
-            NavigationLink("只收听当前视频") { ArchiveListenEntry(video: video, origin: .archive(aid)) }
+            NavigationLink("只收听当前视频") { DeferredPage { ArchiveListenEntry(video: video, origin: .archive(aid)) } }
           }
         }
       } else {

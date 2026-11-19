@@ -127,7 +127,7 @@ struct SponsorSettings: View {
           Button("恢复默认地址") { address = SponsorAPIRequest.defaultServer; result = nil }
             .settingAnchor("SponsorSettings/恢复默认地址")
           if let base = try? SponsorAPI(address).base, let origin = PrivateServiceOrigin(.sponsor,base) {
-            NavigationLink("服务器证书") { PrivateTrustPanel(origin:origin).id(origin) }.settingAnchor("SponsorSettings/服务器证书")
+            NavigationLink("服务器证书") { DeferredPage { PrivateTrustPanel(origin:origin).id(origin) } }.settingAnchor("SponsorSettings/服务器证书")
           }
         } header: {
           Text("服务器地址")

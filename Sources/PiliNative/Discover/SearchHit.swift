@@ -49,7 +49,7 @@ struct SearchHitRow: View {
           }.contentShape(Rectangle())
         }
         if let room = p.room, room > 0 {
-          NavigationLink { LivePlayer(id: room, title: p.creator.uname ?? "直播间") } label: {
+          LazyLink { LivePlayer(id: room, title: p.creator.uname ?? "直播间") } label: {
             Text("直播中").font(.caption.weight(.bold)).foregroundStyle(.white)
               .padding(.horizontal, 9).padding(.vertical, 4)
               .background(Color.pink, in: Capsule())
@@ -60,7 +60,7 @@ struct SearchHitRow: View {
         ScrollView(.horizontal, showsIndicators: false) {
           HStack(alignment: .top, spacing: 10) {
             ForEach(p.uploads.prefix(8)) { v in
-              NavigationLink { DetailView(initial: v) } label: {
+              LazyLink { DetailView(initial: v) } label: {
                 VStack(alignment: .leading, spacing: 5) {
                   Rectangle().fill(.quaternary).aspectRatio(16 / 10, contentMode: .fit)
                     .overlay {

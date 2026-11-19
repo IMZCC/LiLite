@@ -44,7 +44,7 @@ struct OfflineCollectionSelection: View {
             picked = [:]
           }
         }
-        NavigationLink("查看缓存") { DownloadsView() }
+        NavigationLink("查看缓存") { DeferredPage { DownloadsView() } }
         Spacer()
         Button { confirm = true } label: {
           HStack {

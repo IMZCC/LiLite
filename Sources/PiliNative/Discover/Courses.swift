@@ -93,7 +93,7 @@ struct CourseDetail: View {
           if c.partial,
             let url = URL(string: "https://www.bilibili.com/cheese/play/ss" + String(c.season_id))
           {
-            NavigationLink { SitePage(url: url) } label: {
+            NavigationLink { DeferredPage { SitePage(url: url) } } label: {
               Label("查看官方课程目录", systemImage: "safari").font(.subheadline.weight(.medium))
                 .frame(maxWidth: .infinity)
             }.piliGlassButton()
@@ -159,7 +159,7 @@ struct CourseDetail: View {
         Text(notes.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
       }
       if let t = c.up_info, let n = t.mid, n > 0 {
-        NavigationLink { CreatorSpace(mid: n, name: t.uname ?? "讲师") } label: {
+        LazyLink { CreatorSpace(mid: n, name: t.uname ?? "讲师") } label: {
           HStack(spacing: 10) {
             SiteThumbnail(url: t.avatar.flatMap(httpsURL)) { $0.resizable().scaledToFill() } placeholder: {
               Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.quaternary)
@@ -209,7 +209,7 @@ struct CourseDetail: View {
         HStack(spacing: 16) {
           ForEach(Array(team.enumerated()), id: \.offset) { _, t in
             if let n = t.mid, n > 0 {
-              NavigationLink { CreatorSpace(mid: n, name: t.nick_name ?? "讲师") } label: {
+              LazyLink { CreatorSpace(mid: n, name: t.nick_name ?? "讲师") } label: {
                 VStack(spacing: 4) {
                   SiteThumbnail(url: t.avatar.flatMap(httpsURL)) { $0.resizable().scaledToFill() } placeholder: {
                     Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.quaternary)
@@ -247,7 +247,7 @@ struct CourseDetail: View {
         } else if e.isLiveCourse || (c.drm_switch ?? 0) > 0,
           let url = URL(string: "https://www.bilibili.com/cheese/play/ep" + String(e.id))
         {
-          NavigationLink { SitePage(url: url) } label: { lessonLabel(e) }.buttonStyle(.plain)
+          NavigationLink { DeferredPage { SitePage(url: url) } } label: { lessonLabel(e) }.buttonStyle(.plain)
         } else {
           lessonLabel(e).opacity(0.55)
         }

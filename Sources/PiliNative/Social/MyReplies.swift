@@ -31,6 +31,7 @@ struct MyReplies: View {
   @State private var removal: SavedReply?
   @AppStorage("reply.save") private var recording = true
   @State private var route: Route?
+  @State private var linkToken = UUID()
   private enum Route: Hashable {
     case link(SharedLink), article(Int64), dynamic(String, album: Bool), poster(Int64)
   }
@@ -101,7 +102,7 @@ struct MyReplies: View {
         }
       }
     }
-    .environment(\.replyOpenLink, { route = .link($0) })
+    .environment(\.replyOpenLink, StableAction(linkToken) { route = .link($0) })
     .environment(\.inListRows, true)
     .navigationDestination(item: $route) { r in
       switch r {

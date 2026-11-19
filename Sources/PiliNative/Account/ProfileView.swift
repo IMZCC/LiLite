@@ -16,23 +16,23 @@ struct ProfileView: View {
       let fields = NavigationLayout.read(pageLayout).mineTabs
       List {
         profileHeader
-        // Watch history, when shown, sits first: above the 历史 / 稍后再看 / 收藏 shortcuts.
-        if fields.contains(.history) { shelf(.history) }
         Section {
           libraryShortcuts
         }.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
+        // Watch history, when shown, comes first right under the 历史 / 稍后再看 / 收藏 / 离线 shortcuts.
+        if fields.contains(.history) { shelf(.history) }
         ForEach(fields.filter { $0 != .history }) { shelf($0) }
         libraryLinks
         if let uid = accounts.state.owner(.history) {
           Section("观看记录") {
-            NavigationLink { HistorySettings(uid: uid).id(uid) } label: {
+            NavigationLink { DeferredPage { HistorySettings(uid: uid).id(uid) } } label: {
               SettingsRowLabel(title: "观看历史设置", symbol: "clock.arrow.circlepath", color: .blue)
             }
           }
         }
         accountList
         Section {
-          NavigationLink { SettingsView() } label: {
+          NavigationLink { DeferredPage { SettingsView() } } label: {
             SettingsRowLabel(title: "设置", symbol: "gearshape.fill")
           }
         }
@@ -113,29 +113,29 @@ struct ProfileView: View {
   }
   @ViewBuilder private var libraryLinks: some View {
     Section("资料库") {
-      NavigationLink { ListenView() } label: {
+      NavigationLink { DeferredPage { ListenView() } } label: {
         SettingsRowLabel(title: "听视频", symbol: "headphones", color: .pink)
       }
       if let active = accounts.state.active {
-        NavigationLink { SavedReadings(uid: active) } label: {
+        NavigationLink { DeferredPage { SavedReadings(uid: active) } } label: {
           SettingsRowLabel(title: "图文、话题和笔记", symbol: "doc.text.fill", color: .blue)
         }
-        NavigationLink { CoursesView(mid: active, favorites: true) } label: {
+        NavigationLink { DeferredPage { CoursesView(mid: active, favorites: true) } } label: {
           SettingsRowLabel(title: "收藏的课程", symbol: "graduationcap.fill", color: .indigo)
         }
       }
     }
     if let active = accounts.state.active {
       Section("订阅") {
-        NavigationLink { FollowedSeasons(uid: active) } label: {
+        NavigationLink { DeferredPage { FollowedSeasons(uid: active) } } label: {
           SettingsRowLabel(title: "追番追剧", symbol: "play.rectangle.fill", color: .pink)
         }
-        NavigationLink { Subscriptions(uid: active) } label: {
+        NavigationLink { DeferredPage { Subscriptions(uid: active) } } label: {
           SettingsRowLabel(title: "我的订阅", symbol: "rectangle.stack.fill", color: .orange)
         }
       }
       Section("社交") {
-        NavigationLink { Inbox() } label: {
+        NavigationLink { DeferredPage { Inbox() } } label: {
           HStack {
             SettingsRowLabel(title: "消息中心", symbol: "bubble.left.and.bubble.right.fill", color: .blue)
             Spacer(minLength: 8)
@@ -146,13 +146,13 @@ struct ProfileView: View {
             }
           }
         }
-        NavigationLink { MyReplies(uid: active) } label: {
+        NavigationLink { DeferredPage { MyReplies(uid: active) } } label: {
           SettingsRowLabel(title: "我的评论", symbol: "text.bubble.fill", color: .teal)
         }
-        NavigationLink { RelationsList(uid: active, fans: false) } label: {
+        NavigationLink { DeferredPage { RelationsList(uid: active, fans: false) } } label: {
           SettingsRowLabel(title: "我的关注", symbol: "person.2.fill", color: .indigo)
         }
-        NavigationLink { RelationsList(uid: active, fans: true) } label: {
+        NavigationLink { DeferredPage { RelationsList(uid: active, fans: true) } } label: {
           SettingsRowLabel(title: "我的粉丝", symbol: "heart.fill", color: .pink)
         }
         CreatorLinks(uid: active, extrasOnly: true)
@@ -161,18 +161,18 @@ struct ProfileView: View {
         NavigationLink { ProfileEditor(uid: active) { Task { await refresh() } } } label: {
           SettingsRowLabel(title: "账号资料", symbol: "person.crop.circle.fill", color: .blue)
         }
-        NavigationLink { LoginDevices(uid: active) } label: {
+        NavigationLink { DeferredPage { LoginDevices(uid: active) } } label: {
           SettingsRowLabel(title: "登录设备", symbol: "iphone.gen3", color: .indigo)
         }
-        NavigationLink { MobileAuthorization(uid: active) } label: {
+        NavigationLink { DeferredPage { MobileAuthorization(uid: active) } } label: {
           SettingsRowLabel(title: "移动端授权", symbol: "key.fill", color: .orange)
         }
-        NavigationLink { SpacePrivacy(uid: active) } label: {
+        NavigationLink { DeferredPage { SpacePrivacy(uid: active) } } label: {
           SettingsRowLabel(title: "空间隐私", symbol: "hand.raised.fill", color: .blue)
         }
         if (profile?.vipStatus ?? 0) > 0 { MemberExperienceButton(uid: active) { Task { await refresh() } } }
         ForEach(AccountLogs.Kind.allCases, id: \.self) { k in
-          NavigationLink { AccountLogs(kind: k, uid: active) } label: {
+          NavigationLink { DeferredPage { AccountLogs(kind: k, uid: active) } } label: {
             SettingsRowLabel(
               title: k.rawValue,
               symbol: k == .coin ? "bitcoinsign.circle.fill" : k == .exp ? "chart.line.uptrend.xyaxis" : "location.fill",
@@ -182,7 +182,7 @@ struct ProfileView: View {
       }
     } else {
       Section("隐私") {
-        NavigationLink { BlacklistView(uid: "") } label: {
+        NavigationLink { DeferredPage { BlacklistView(uid: "") } } label: {
           SettingsRowLabel(title: "黑名单管理", symbol: "person.crop.circle.badge.xmark", color: .gray)
         }
       }
@@ -196,7 +196,7 @@ struct ProfileView: View {
   @ViewBuilder private var accountList: some View {
     if !accounts.state.accounts.isEmpty {
       Section("切换账号") {
-        NavigationLink { AccountRolesPanel() } label: {
+        NavigationLink { DeferredPage { AccountRolesPanel() } } label: {
           SettingsRowLabel(title: "账号用途", symbol: "person.2.fill", color: .indigo)
         }
         ForEach(accounts.state.accounts) { a in
@@ -216,7 +216,7 @@ struct ProfileView: View {
           }.buttonStyle(.borderless).accessibilityAddTraits(a.id == accounts.state.active ? .isSelected : [])
           .swipeActions { Button("移除", role: .destructive) { removal = a } }
         }
-        NavigationLink { QRLoginView() } label: { SettingsRowLabel(title: "添加账号", symbol: "plus", color: .blue) }
+        NavigationLink { DeferredPage { QRLoginView() } } label: { SettingsRowLabel(title: "添加账号", symbol: "plus", color: .blue) }
         if accounts.state.active != nil {
           Button { Task { await accounts.select(nil) } } label: {
             SettingsRowLabel(title: "切换到游客模式", symbol: "person.crop.circle.dashed")

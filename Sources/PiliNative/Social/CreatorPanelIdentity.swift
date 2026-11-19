@@ -57,13 +57,13 @@ struct CreatorPanelIdentity: View {
         }
       }
       HStack {
-        NavigationLink("查看空间") { CreatorSpace(mid: mid, name: info?.name ?? fallbackName) }
+        NavigationLink("查看空间") { DeferredPage { CreatorSpace(mid: mid, name: info?.name ?? fallbackName) } }
         Spacer()
         if accounts.state.active == String(mid) {
           NavigationLink("编辑资料") { ProfileEditor(uid: String(mid)) { refresh &+= 1 } }
         } else if accounts.state.active != nil {
           CreatorQuickRelation(mid: mid, knownFollowing: info?.is_followed == true)
-        } else { NavigationLink("登录后关注") { QRLoginView() } }
+        } else { NavigationLink("登录后关注") { DeferredPage { QRLoginView() } } }
       }
       if let error {
         HStack { Text(error).piliFont(.caption); Button("重试") { refresh &+= 1 } }

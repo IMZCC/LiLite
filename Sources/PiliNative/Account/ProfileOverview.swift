@@ -105,10 +105,10 @@ struct ProfileQuickActions: View {
   var body: some View {
     Menu {
       if !NavigationLayout.read(pageLayout).tabs.contains(.home) {
-        NavigationLink("搜索") { SearchView() }
+        NavigationLink("搜索") { DeferredPage { SearchView() } }
       }
       if let uid = accounts.state.active {
-        NavigationLink("我的评论") { MyReplies(uid: uid) }
+        NavigationLink("我的评论") { DeferredPage { MyReplies(uid: uid) } }
         Button(anonymous ? "退出无痕模式" : "进入无痕模式") {
           if anonymous { set(false, permanent: true, uid: uid) } else { privacy = true }
         }
@@ -133,7 +133,7 @@ struct ProfileQuickActions: View {
         Text("深色").tag("dark")
         Text("跟随系统").tag("system")
       }
-      NavigationLink("设置") { SettingsView() }
+      NavigationLink("设置") { DeferredPage { SettingsView() } }
     } label: {
       Label("我的选项", systemImage: anonymous && accounts.state.active != nil ? "eye.slash" : "ellipsis")
         .labelStyle(.iconOnly)

@@ -106,7 +106,7 @@ struct CreatorDisclosure: View {
             }
           }.disabled(busy)
         } else {
-          NavigationLink { QRLoginView() } label: {
+          NavigationLink { DeferredPage { QRLoginView() } } label: {
             SettingsRowLabel(title: "登录后查看", symbol: "person.crop.circle", color: .gray)
           }
         }

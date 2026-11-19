@@ -219,8 +219,8 @@ struct Inbox: View {
         if owner.mobileToken == nil {
           ToolbarItem(placement: .topBarTrailing) {
             Menu {
-              NavigationLink("移动端授权") { MobileAuthorization(uid: owner.id) }
-              NavigationLink("通讯录") { IMContactBook(uid: owner.id) }
+              NavigationLink("移动端授权") { DeferredPage { MobileAuthorization(uid: owner.id) } }
+              NavigationLink("通讯录") { DeferredPage { IMContactBook(uid: owner.id) } }
             } label: {
               Image(systemName: "ellipsis").accessibilityLabel("消息操作")
             }
@@ -323,12 +323,12 @@ struct PlainRowLink<Destination: View, Label: View>: View {
   var body: some View {
     if inList {
       ZStack {
-        NavigationLink(destination: destination) { EmptyView() }.opacity(0)
+        NavigationLink { DeferredPage { DeferredPage(destination) } } label: { EmptyView() }.opacity(0)
         label()
       }
     } else {
       // Cards in grids and feeds: highlight under an iPad / Duo trackpad pointer.
-      NavigationLink(destination: destination, label: label).buttonStyle(.plain)
+      NavigationLink { DeferredPage { DeferredPage(destination) } } label: { label() }.buttonStyle(.plain)
         .contentShape(.hoverEffect, .rect(cornerRadius: 12)).hoverEffect(.highlight)
     }
   }
@@ -604,7 +604,7 @@ private struct ChatThread: View {
       VStack(alignment: .leading, spacing: 5) {
         Group {
           if let author = m.sender_uid, author > 0 {
-            NavigationLink {
+            LazyLink {
               CreatorSpace(mid: author, name: mine ? "我的空间" : name ?? "用户空间")
             } label: {
               Text(
@@ -633,13 +633,13 @@ private struct ChatThread: View {
           }
         } else if let card = IMShareCard.incoming(m.msg_type, m.payload) {
           if let route = card.route {
-            NavigationLink {
+            LazyLink {
               LinkDestination(item: route)
             } label: {
               IMCardPreview(card: card)
             }
           } else {
-            NavigationLink {
+            LazyLink {
               DynamicDetail(id: card.resource, byAlbum: true)
             } label: {
               IMCardPreview(card: card)
@@ -709,7 +709,7 @@ private struct ChatThread: View {
       if conversation.session_type == 1 {
         if let mid = conversation.receiver {
           ToolbarItem(placement: .principal) {
-            NavigationLink {
+            LazyLink {
               CreatorSpace(mid: mid, name: name ?? "用户空间")
             } label: {
               Text((name ?? "私信") + (live ? " · 直播中" : ""))

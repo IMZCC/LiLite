@@ -39,7 +39,7 @@ struct DynamicActivityList: View {
   @ViewBuilder private func person(_ p: DynamicGateway.Person) -> some View {
     let author = member(p)
     if p.id > 0 {
-      NavigationLink {
+      LazyLink {
         CreatorSpace(mid: p.id, name: author.uname ?? "")
       } label: {
         ReplyAuthorLabel(member: author)

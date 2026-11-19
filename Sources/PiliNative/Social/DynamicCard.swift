@@ -13,11 +13,11 @@ enum MomentTarget: Hashable {
   case web(URL)
 }
 private struct OpenMomentKey: EnvironmentKey {
-  static let defaultValue: ((MomentTarget) -> Void)? = nil
+  static let defaultValue: StableAction<MomentTarget>? = nil
 }
 extension EnvironmentValues {
   /// Set by the page that lists moment cards (`momentNavigation()`).
-  var openMoment: ((MomentTarget) -> Void)? {
+  var openMoment: StableAction<MomentTarget>? {
     get { self[OpenMomentKey.self] }
     set { self[OpenMomentKey.self] = newValue }
   }
@@ -26,15 +26,33 @@ extension EnvironmentValues {
 /// tappable card SwiftUI fired one of them (the author, the cover) for taps anywhere on the card.
 private struct MomentNavigation: ViewModifier {
   @State private var target: MomentTarget?
+  @State private var token = UUID()
   func body(content: Content) -> some View {
     content
-      .environment(\.openMoment) { target = $0 }
+      // Compares equal for the page's life: a closure here re-rendered every card on each pass.
+      .environment(\.openMoment, StableAction(token) { target = $0 })
       // On its own placeholder: pages that hold cards already declare destinations of their
       // own, and a second one on the same view can be ignored.
       .background {
         Color.clear.frame(width: 0, height: 0)
           .navigationDestination(item: $target) { MomentTargetView(target: $0) }
       }
+  }
+}
+/// Closes the moment's own detail page (after deleting it there). A stable handle set only by
+/// that page: cards reading `dismiss` re-rendered whenever any presentation around them changed.
+@MainActor final class MomentPageCloser {
+  private(set) var close: () -> Void = {}
+  func bind(_ dismiss: DismissAction) -> MomentPageCloser {
+    close = { dismiss() }
+    return self
+  }
+}
+private struct MomentPageCloserKey: EnvironmentKey { static let defaultValue: MomentPageCloser? = nil }
+extension EnvironmentValues {
+  var momentPageCloser: MomentPageCloser? {
+    get { self[MomentPageCloserKey.self] }
+    set { self[MomentPageCloserKey.self] = newValue }
   }
 }
 extension View {
@@ -69,7 +87,7 @@ struct MomentGo<Label: View>: View {
       } label: { label() }
       .buttonStyle(.plain)
     } else {
-      NavigationLink { MomentTargetView(target: target) } label: { label() }.buttonStyle(.plain)
+      NavigationLink { DeferredPage { MomentTargetView(target: target) } } label: { label() }.buttonStyle(.plain)
     }
   }
 }
@@ -96,7 +114,7 @@ struct DynamicCard: View {
     self.openPanel = openPanel
   }
   @EnvironmentObject private var accounts: AccountContext
-  @Environment(\.dismiss) private var dismiss
+  @Environment(\.momentPageCloser) private var pageCloser
   @Environment(\.openMoment) private var openMoment
   @AppStorage("social.dispute") private var showDispute = false
   @AppStorage("social.interaction") private var showInteraction = true
@@ -436,7 +454,7 @@ struct DynamicCard: View {
           Button("本次隐藏这位 UP 主", systemImage: "eye.slash") {
             MomentSessionHides.shared.hide(mid, name: entry.author, owner: accounts.state.active)
             hidden = true
-            if inside { dismiss() }
+            if inside { pageCloser?.close() }
           }
           if accounts.state.active != nil {
             Button("举报", systemImage: "exclamationmark.bubble", role: .destructive) { reporting = true }
@@ -488,7 +506,7 @@ struct DynamicCard: View {
       guard accounts.state.active == uid else { return }
       if remove { hidden = true }
       changed()
-      if remove && inside { dismiss() }
+      if remove && inside { pageCloser?.close() }
     } catch { issue = error.localizedDescription }
   }
 }

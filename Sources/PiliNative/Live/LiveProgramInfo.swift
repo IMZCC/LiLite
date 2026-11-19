@@ -48,7 +48,7 @@ struct LiveProgramInfo: View {
         }
       }
       Section {
-        NavigationLink { AudioLevelSettings() } label: {
+        NavigationLink { DeferredPage { AudioLevelSettings() } } label: {
           SettingsRowLabel(title: "播放器音量", symbol: "speaker.wave.2", color: .pink)
         }
       }

@@ -17,6 +17,9 @@ struct GalleryPicture: Equatable, Hashable {
     guard let u = httpsURL(s), u.user == nil, u.password == nil else { return nil }
     return u
   }
+  /// Compiled once: every thumbnail asks for its display URL on each render.
+  nonisolated(unsafe) private static let sizeSuffix = try? NSRegularExpression(
+    pattern: #"(@(?:\d+[a-z]_?)*)(\.[a-z0-9]+)?$"#, options: .caseInsensitive)
   func display(quality: Int, minimum: Int = 1) -> URL {
     guard (1..<100).contains(quality), let host = url.host?.lowercased(),
       ["hdslb.com", "biliimg.com"].contains(where: { host == $0 || host.hasSuffix("." + $0) }),
@@ -25,9 +28,7 @@ struct GalleryPicture: Equatable, Hashable {
     else { return url }
     let q = min(100, max(quality, minimum))
     let path = c.percentEncodedPath
-    let rx = try? NSRegularExpression(
-      pattern: #"(@(?:\d+[a-z]_?)*)(\.[a-z0-9]+)?$"#, options: .caseInsensitive)
-    if let match = rx?.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)),
+    if let match = Self.sizeSuffix?.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)),
       let r = Range(match.range, in: path),
       let params = Range(match.range(at: 1), in: path)
     {

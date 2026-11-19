@@ -109,7 +109,7 @@ struct IMConversationSettings: View {
     Form {
       if uid == accounts.state.active, conversation.session_type == 1, target > 0 {
         Section {
-          NavigationLink {
+          LazyLink {
             CreatorSpace(mid: target, name: person?.name ?? name ?? "用户空间")
           } label: {
             HStack(spacing: 14) {
@@ -153,7 +153,7 @@ struct IMConversationSettings: View {
                 set: { v in if v { pending = .block } else { Task { await change(.block(false)) } } })
             )
           }
-          NavigationLink { CommunityReport(target: .person(id: target), uid: uid) } label: {
+          NavigationLink { DeferredPage { CommunityReport(target: .person(id: target), uid: uid) } } label: {
             SettingsRowLabel(title: "举报用户", symbol: "exclamationmark.bubble", color: .gray)
           }
         }

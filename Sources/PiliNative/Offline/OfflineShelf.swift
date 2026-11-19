@@ -78,7 +78,7 @@ struct OfflineShelfView: View {
     .navigationTitle("离线缓存").searchable(text: $query, prompt: "搜索标题、分集或编号")
       .modifier(SelectionCancelBack(active: selecting) { checked = []; selecting = false })
       .toolbar {
-        NavigationLink { OfflineLocationPanel() } label: {
+        NavigationLink { DeferredPage { OfflineLocationPanel() } } label: {
           Image(systemName: "externaldrive").accessibilityLabel("存储位置")
         }
         Button(selecting ? "完成" : "选择") {

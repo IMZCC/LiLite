@@ -66,17 +66,17 @@ struct CreatorLinks: View {
   var extrasOnly = false
   var body: some View {
     if !extrasOnly {
-      NavigationLink { RelationsList(uid: uid, fans: false) } label: {
+      NavigationLink { DeferredPage { RelationsList(uid: uid, fans: false) } } label: {
         SettingsRowLabel(title: "我的关注", symbol: "person.2.fill", color: .indigo)
       }
-      NavigationLink { RelationsList(uid: uid, fans: true) } label: {
+      NavigationLink { DeferredPage { RelationsList(uid: uid, fans: true) } } label: {
         SettingsRowLabel(title: "我的粉丝", symbol: "heart.fill", color: .pink)
       }
     }
-    NavigationLink { FollowGroupsView() } label: {
+    NavigationLink { DeferredPage { FollowGroupsView() } } label: {
       SettingsRowLabel(title: "关注分组", symbol: "folder.fill", color: .cyan)
     }
-    NavigationLink { BlacklistView(uid: uid) } label: {
+    NavigationLink { DeferredPage { BlacklistView(uid: uid) } } label: {
       SettingsRowLabel(title: "黑名单", symbol: "hand.raised.fill", color: .gray)
     }
   }
@@ -135,8 +135,8 @@ struct RelationsList: View {
     .toolbar {
       if !fans && query.isEmpty { FollowSortMenu(order: $order) }
       if !fans, uid == accounts.state.active {
-        NavigationLink("分组") { FollowGroupsView() }
-        NavigationLink("黑名单") { BlacklistView(uid: uid) }
+        NavigationLink("分组") { DeferredPage { FollowGroupsView() } }
+        NavigationLink("黑名单") { DeferredPage { BlacklistView(uid: uid) } }
       }
     }
     .confirmationDialog(

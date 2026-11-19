@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SiteThumbnail<Content: View>: View {
   let url: URL?, content: (AsyncImagePhase) -> Content
-  @AppStorage("images.quality") private var quality = 10
+  @Environment(\.imageDisplay) private var display
   @State private var failed: URL?
   init(url: URL?, @ViewBuilder content: @escaping (AsyncImagePhase) -> Content) {
     self.url = url
@@ -19,6 +19,7 @@ struct SiteThumbnail<Content: View>: View {
     self.content = render
   }
   var body: some View {
+    let quality = (display ?? .stored).quality
     let small = url.map { GalleryPicture($0).display(quality: quality) }
     let fetch = failed == small ? url : small
     RemoteArtwork(url: fetch) { phase in

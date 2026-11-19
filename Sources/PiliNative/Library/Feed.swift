@@ -4,25 +4,39 @@ enum Shelf: String, CaseIterable {
   case recommended = "推荐"
   case popular = "热门"
 }
-@MainActor
-final class FeedModel: ObservableObject {
-  @Published var videos: [Video] = [] {
-    didSet {
-      contentRevision &+= 1
-      retainedIndex = retainedStart.flatMap { id in videos.firstIndex { $0.id == id } }
-    }
-  }
-  private var contentRevision = 0
-  @Published var error: String?
-  @Published var busy = false
-  @Published var finished = false
-  private var retainedStart: String?
+/// Observed property by property: the feed redraws when its videos change, and only the footer
+/// when a page starts or stops loading (as an ObservableObject every flag re-rendered the feed).
+@MainActor @Observable
+final class FeedModel {
+  private(set) var videos: [Video] = []
+  @ObservationIgnored private var contentRevision = 0
+  var error: String?
+  var busy = false
+  var finished = false
+  @ObservationIgnored private var retainedStart: String?
   private(set) var retainedIndex: Int?
-  @Published var autoCursor:Int?
-  private(set) var loaded = false
-  private var page = 0, token = UUID(), emptyRun = 0
+  var autoCursor:Int?
+  @ObservationIgnored private(set) var loaded = false
+  @ObservationIgnored private var page = 0
+  @ObservationIgnored private var token = UUID()
+  @ObservationIgnored private var emptyRun = 0
   private struct Request { let shelf:Shelf, reset:Bool, page:Int }
-  private var failed:Request?
+  @ObservationIgnored private var failed:Request?
+  private func setVideos(_ value: [Video]) {
+    videos = value
+    contentRevision &+= 1
+    let index = retainedStart.flatMap { id in value.firstIndex { $0.id == id } }
+    if retainedIndex != index { retainedIndex = index }
+  }
+  func remove(where match: (Video) -> Bool) {
+    let kept = videos.filter { !match($0) }
+    if kept.count != videos.count { setVideos(kept) }
+  }
+  func restore(_ video: Video, at index: Int) {
+    var list = videos
+    CardPreferenceMutation.restore(video, at: index, to: &list)
+    setVideos(list)
+  }
   func load(_ shelf: Shelf, reset: Bool) async {
     guard !Task.isCancelled else { return }
     if !reset && (busy || finished) { return }
@@ -68,7 +82,7 @@ final class FeedModel: ObservableObject {
       let result = await withTaskCancellationHandler { await filtering.value } onCancel: { filtering.cancel() }
       guard token == t, revision == contentRevision, !Task.isCancelled else { return }
       if reset { retainedStart = result.1; emptyRun = 0 }
-      videos = result.0
+      setVideos(result.0)
       page = next
       // The original keeps loading recommendations as the list scrolls even when a page is
       // filtered away; stop auto-loading only after a few empty pages in a row.
@@ -80,23 +94,18 @@ final class FeedModel: ObservableObject {
     } catch { if token == t && !Task.isCancelled { failed=request;self.error=error.localizedDescription } }
   }
 }
+/// The home page. Anything that changes often (the avatar, unread counts, the bar's environment)
+/// lives in small child views, and the channel pages sit behind an equatable `HomeDeck`: a
+/// re-render of this view used to rebuild every visible card, several times a frame while the
+/// tab bar animated.
 struct FeedView: View {
   @Environment(\.usesSystemSearchTab) private var systemSearch
-  @EnvironmentObject private var indicators: UnreadIndicators
-  @AppStorage("badge.messageMode") private var messageMode = 2
   @EnvironmentObject private var accounts: AccountContext
   @AppStorage("search.defaultWord") private var useHint = false
   @State private var hint = ""
   @State private var hintScope: String?
   @State private var hintRead: Date?
   @Environment(\.scenePhase) private var hintPhase
-  @Environment(\.openPersonalPage) private var openProfile
-  /// The avatar comes from the shared profile cache, so returning to this tab never shows the
-  /// placeholder again before the same picture.
-  @ObservedObject private var profiles = ProfileStore.shared
-  private var avatar: URL? {
-    accounts.state.active.flatMap { profiles.profiles[$0]?.face }.flatMap(httpsURL)
-  }
   @State private var search = false
   @AppStorage(RecommendationRules.key) private var rules = Data()
   @AppStorage("feed.mobile") private var mobile = true
@@ -176,7 +185,7 @@ struct FeedView: View {
       .background { Color(uiColor: .systemGroupedBackground).ignoresSafeArea() }
       .toolbar(.hidden, for: .navigationBar)
       .task(id: accounts.state.active) {
-        if let uid = accounts.state.active { await profiles.refresh(uid) }
+        if let uid = accounts.state.active { await ProfileStore.shared.refresh(uid) }
       }
       .task(id: "\(useHint):\(hintPhase == .active):\(accounts.state.owner(.role(.recommend)) ?? "")") {
         let uid = accounts.state.owner(.role(.recommend)) ?? ""
@@ -203,33 +212,14 @@ struct FeedView: View {
   /// lists start below the header and scroll on beneath it, and anything fixed sits below it.
   private func deck(_ channels: [HomeChannel], viewport: CGSize, under: CGFloat) -> some View {
     let owner = accounts.state.owner(.role(.recommend)) ?? ""
-    let shelfID = "\(mobile):\(rules.hashValue):\(owner)"
-    return RetainedDeck(choices: channels, selection: $shelf, viewport: viewport, onProgress: channelMotion.update) { channel in
-      Group {
-        switch channel {
-        case .recommended: VideoShelf(shelf: .recommended).id(shelfID)
-        case .popular:
-          // The original's 排行榜 entrance switches to the ranking channel when the home page has it.
-          VideoShelf(shelf: .popular, openRank: channels.contains(.rank) ? { shelf = .rank } : nil)
-            .id(shelfID)
-        case .rank: Rankings(embedded: true)
-        case .live: LiveDirectory(area: nil, child: nil, embedded: true)
-        case .bangumi: PGCHome(cinema: false)
-        case .cinema: PGCHome(cinema: true)
-        }
-      }
-      .safeAreaInset(edge: .top, spacing: 0) { Color.clear.frame(height: under).allowsHitTesting(false) }
-      // The header is the glass here. iOS 26's own top edge effect sits above the whole page at
-      // the status bar and would hide the header and the feed under an opaque strip.
-      .piliScrollEdgeEffectHidden(true, for: .top)
-    }.id("\(accounts.state.active ?? ""):\(owner)")
+    return HomeDeck(
+      channels: channels, selected: shelf, shelf: $shelf, motion: channelMotion, viewport: viewport,
+      under: under, shelfID: "\(mobile):\(rules.hashValue):\(owner)")
+      .equatable()
+      .id("\(accounts.state.active ?? ""):\(owner)")
       .onChange(of: channels) { _, new in
         if !new.contains(shelf) { shelf = NavigationRules.firstChannel(new) }
       }
-  }
-  private var unreadMessages: Text? {
-    UnreadTotals.label(indicators.count(for: accounts.state.active, messages: true), mode: messageMode)
-      .map { Text(verbatim: $0) }
   }
   /// The official app's header: the avatar, search, then the message bell (signed in only).
   /// Settings, rankings, live, the season index and "open link" live where the original puts
@@ -242,52 +232,11 @@ struct FeedView: View {
     }
     .padding(.horizontal, 16)
   }
-  @ViewBuilder private var avatarItem: some View {
-    if let openProfile { profileButton(openProfile) }
-  }
+  private var avatarItem: some View { HomeAvatarItem() }
   @ViewBuilder private var searchItem: some View {
     if !systemSearch || useHint { searchEntry } else { Spacer(minLength: 0) }
   }
-  @ViewBuilder private var bellItem: some View {
-    if accounts.state.active != nil {
-      NavigationLink {
-        Inbox()
-      } label: {
-        Image(systemName: "bell").font(.system(size: 17, weight: .medium))
-          .frame(width: 44, height: 44).contentShape(Circle())
-          .overlay(alignment: .topTrailing) {
-            if let unreadMessages {
-              unreadMessages.font(.system(size: 10, weight: .bold)).monospacedDigit()
-                .foregroundStyle(.white).padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
-                .background(.red, in: Capsule()).offset(x: -2, y: 2)
-            }
-          }
-      }
-      .buttonStyle(.plain).foregroundStyle(.primary)
-      .piliGlass(in: Circle(), interactive: true)
-      .accessibilityLabel("消息中心")
-    }
-  }
-  private func profileButton(_ open: @escaping @MainActor () -> Void) -> some View {
-    let incognito = accounts.state.active != nil && accounts.state.owner(.role(.heartbeat)) == nil
-    return Button(action: open) {
-      SiteThumbnail(url: avatar) { $0.resizable().scaledToFill() } placeholder: {
-        Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary)
-      }
-      .frame(width: 36, height: 36).clipShape(Circle())
-      // Set in a glass ring the size of the bell beside the search, as Coolapk does.
-      .frame(width: 44, height: 44)
-      .contentShape(Circle())
-      .piliGlass(in: Circle(), interactive: true)
-      .overlay(alignment: .bottomTrailing) {
-        if incognito {
-          Image(systemName: "eye.slash.fill").font(.system(size: 9, weight: .semibold))
-            .padding(3).background(.regularMaterial, in: Circle()).offset(x: 1, y: 1)
-        }
-      }
-    }.buttonStyle(.plain)
-      .accessibilityLabel(accounts.state.active == nil ? "登录或查看我的" : "我的")
-  }
+  private var bellItem: some View { HomeBellItem() }
   private var searchEntry: some View {
     Button {
       search = true
@@ -302,6 +251,104 @@ struct FeedView: View {
       .contentShape(Capsule())
       .piliGlass(in: Capsule(), interactive: true)
     }.buttonStyle(.plain).accessibilityLabel("搜索")
+  }
+}
+
+/// The channel pages. Equatable on what they show, so the page above re-rendering (its header,
+/// the tab bar's environment) does not rebuild the feeds and their cards.
+private struct HomeDeck: View, Equatable {
+  let channels: [HomeChannel]
+  /// The selection when this value was made: the binding alone would compare equal to itself.
+  let selected: HomeChannel
+  @Binding var shelf: HomeChannel
+  let motion: PagerIndicatorMotion
+  let viewport: CGSize, under: CGFloat
+  let shelfID: String
+  nonisolated static func == (a: Self, b: Self) -> Bool {
+    a.channels == b.channels && a.selected == b.selected && a.motion === b.motion
+      && a.viewport == b.viewport && a.under == b.under && a.shelfID == b.shelfID
+  }
+  var body: some View {
+    RetainedDeck(choices: channels, selection: $shelf, viewport: viewport, onProgress: motion.update) { channel in
+      Group {
+        switch channel {
+        case .recommended: VideoShelf(shelf: .recommended).equatable().id(shelfID)
+        case .popular:
+          // The original's 排行榜 entrance switches to the ranking channel when the home page has it.
+          VideoShelf(shelf: .popular, openRank: channels.contains(.rank) ? { shelf = .rank } : nil)
+            .equatable().id(shelfID)
+        case .rank: Rankings(embedded: true)
+        case .live: LiveDirectory(area: nil, child: nil, embedded: true)
+        case .bangumi: PGCHome(cinema: false)
+        case .cinema: PGCHome(cinema: true)
+        }
+      }
+      .safeAreaInset(edge: .top, spacing: 0) { Color.clear.frame(height: under).allowsHitTesting(false) }
+      // The header is the glass here. iOS 26's own top edge effect sits above the whole page at
+      // the status bar and would hide the header and the feed under an opaque strip.
+      .piliScrollEdgeEffectHidden(true, for: .top)
+    }
+  }
+}
+
+/// The header's avatar: follows the shared profile cache by itself, so a profile refresh only
+/// redraws this button.
+private struct HomeAvatarItem: View {
+  @EnvironmentObject private var accounts: AccountContext
+  @Environment(\.openPersonalPage) private var openProfile
+  /// The avatar comes from the shared profile cache, so returning to this tab never shows the
+  /// placeholder again before the same picture.
+  @ObservedObject private var profiles = ProfileStore.shared
+  var body: some View {
+    if let openProfile {
+      let avatar = accounts.state.active.flatMap { profiles.profiles[$0]?.face }.flatMap(httpsURL)
+      let incognito = accounts.state.active != nil && accounts.state.owner(.role(.heartbeat)) == nil
+      Button(action: openProfile) {
+        SiteThumbnail(url: avatar) { $0.resizable().scaledToFill() } placeholder: {
+          Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary)
+        }
+        .frame(width: 36, height: 36).clipShape(Circle())
+        // Set in a glass ring the size of the bell beside the search, as Coolapk does.
+        .frame(width: 44, height: 44)
+        .contentShape(Circle())
+        .piliGlass(in: Circle(), interactive: true)
+        .overlay(alignment: .bottomTrailing) {
+          if incognito {
+            Image(systemName: "eye.slash.fill").font(.system(size: 9, weight: .semibold))
+              .padding(3).background(.regularMaterial, in: Circle()).offset(x: 1, y: 1)
+          }
+        }
+      }.buttonStyle(.plain)
+        .accessibilityLabel(accounts.state.active == nil ? "登录或查看我的" : "我的")
+    }
+  }
+}
+
+/// The message bell with its unread count, redrawn alone when the count changes.
+private struct HomeBellItem: View {
+  @EnvironmentObject private var accounts: AccountContext
+  @EnvironmentObject private var indicators: UnreadIndicators
+  @AppStorage("badge.messageMode") private var messageMode = 2
+  var body: some View {
+    if accounts.state.active != nil {
+      let unread = UnreadTotals.label(indicators.count(for: accounts.state.active, messages: true), mode: messageMode)
+      NavigationLink {
+        Inbox()
+      } label: {
+        Image(systemName: "bell").font(.system(size: 17, weight: .medium))
+          .frame(width: 44, height: 44).contentShape(Circle())
+          .overlay(alignment: .topTrailing) {
+            if let unread {
+              Text(verbatim: unread).font(.system(size: 10, weight: .bold)).monospacedDigit()
+                .foregroundStyle(.white).padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
+                .background(.red, in: Capsule()).offset(x: -2, y: 2)
+            }
+          }
+      }
+      .buttonStyle(.plain).foregroundStyle(.primary)
+      .piliGlass(in: Circle(), interactive: true)
+      .accessibilityLabel("消息中心")
+    }
   }
 }
 
@@ -459,22 +506,68 @@ extension EnvironmentValues {
   }
 }
 
-private struct VideoShelf: View {
-  @Environment(\.homeFeedBottomClearance) private var bottomClearance
+/// The feed's loading / retry / load-more footer: the only part that follows `busy`.
+private struct ShelfFooter: View {
+  let model: FeedModel
+  let start: (_ retry: Bool) -> Void
+  var body: some View {
+    if let error = model.error {
+      VStack(spacing: 12) {
+        Text(error).piliFont(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        Button("重试") { start(true) }.piliGlassButton()
+      }.frame(maxWidth: .infinity).padding(.vertical, 24)
+    } else if model.busy {
+      ProgressView().frame(maxWidth: .infinity).padding(.vertical, model.videos.isEmpty ? 120 : 16)
+    } else if !model.finished {
+      Button("加载更多") { start(false) }.piliGlassButton().frame(maxWidth: .infinity)
+    } else if model.videos.isEmpty {
+      ContentUnavailableView("暂无视频", systemImage: "play.rectangle")
+    }
+  }
+}
+
+/// Loads the channel when it is prepared and tracks whether it is on screen, reading the
+/// channel environment here so its changes (every tab switch) do not re-render the feed.
+private struct ShelfActivation: ViewModifier {
+  let model: FeedModel, paging: FeedScrollPaging, shelf: Shelf
+  @Environment(\.activeCatalogPage) private var active
+  @Environment(\.preparedCatalogPage) private var prepared
+  func body(content: Content) -> some View {
+    content
+      .task(id: prepared) { if prepared && !model.loaded { await model.load(shelf, reset: true) } }
+      .onChange(of: active, initial: true) { _, visible in
+        paging.active = visible
+        if !visible { paging.endDrag(); paging.cancelLoad() }
+      }
+  }
+}
+
+/// Room below the last row for the tab bar, applied here so its changes (the bar minimising)
+/// only move the padding.
+private struct HomeFeedBottomPadding: ViewModifier {
+  let extra: CGFloat
+  @Environment(\.homeFeedBottomClearance) private var clearance
+  func body(content: Content) -> some View { content.padding(.bottom, extra + clearance) }
+}
+
+private struct VideoShelf: View, Equatable {
+  /// The 排行榜 closure is rebuilt by every parent render; only whether it exists matters here.
+  nonisolated static func == (a: Self, b: Self) -> Bool {
+    a.shelf == b.shelf && (a.openRank == nil) == (b.openRank == nil)
+  }
   @Environment(\.horizontalSizeClass) private var sizeClass
   struct Feedback {
     let video: Video, group: String, reason: Video.FeedReason, uid: String, index: Int
   }
   @EnvironmentObject private var accounts: AccountContext
-  @Environment(\.activeCatalogPage) private var channelActive
-  @Environment(\.preparedCatalogPage) private var channelPrepared
   @State private var feedback: Feedback?
   @State private var sending = false
   @State private var notice: String?
   let shelf: Shelf
   var openRank: (() -> Void)? = nil
-  @StateObject private var model = FeedModel()
-  @State private var manualLoad: Task<Void, Never>?
+  @State private var model = FeedModel()
+  /// Unobserved: whether this channel is the one on screen, the running page load and the drag
+  /// that may request one. Tab switches and loads used to re-render the whole feed through them.
   @State private var paging = FeedScrollPaging()
   @AppStorage("feed.retainedTip") private var tip = true
   @AppStorage("feed.hotEntrances") private var hotEntrances = false
@@ -501,7 +594,7 @@ private struct VideoShelf: View {
             if let featured { archiveCard(featured, featured: true).padding(.bottom, 8) }
           }.frame(maxWidth: .infinity, alignment: .leading).id("discover.feed.top")
         } footer: {
-          if split == nil { pagingFooter }
+          if split == nil { ShelfFooter(model: model) { startLoad(retry: $0) } }
         }
         if let split {
           Section {
@@ -509,10 +602,10 @@ private struct VideoShelf: View {
           } header: {
             refreshPrevious(proxy)
           } footer: {
-            pagingFooter
+            ShelfFooter(model: model) { startLoad(retry: $0) }
           }
         }
-      }.padding(.horizontal, HomeCardStyle.gap).padding(.top, 4).padding(.bottom, 16 + bottomClearance)
+      }.padding(.horizontal, HomeCardStyle.gap).padding(.top, 4).modifier(HomeFeedBottomPadding(extra: 16))
     }
     .environment(\.homeFeedBottomClearance, 0)
     .piliOnScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
@@ -527,17 +620,14 @@ private struct VideoShelf: View {
       default: paging.endDrag()
       }
     }
-    .environment(\.discoveryCardRemoval,{ change in
-      model.videos.removeAll{v in v.bvid==change.archive || (change.creator != nil && v.owner?.mid==change.creator)}
+    .environment(\.discoveryCardRemoval,{ [model] change in
+      model.remove { v in v.bvid==change.archive || (change.creator != nil && v.owner?.mid==change.creator) }
     }).piliRefreshable {
       paging.endDrag()
       await model.load(shelf, reset: true)
     }
-    .task(id:channelPrepared) { if channelPrepared && !model.loaded { await model.load(shelf, reset: true) } }
-    .onChange(of: channelActive) { _, visible in
-      if !visible { paging.endDrag(); manualLoad?.cancel(); manualLoad = nil }
-    }
-    .onDisappear { paging.endDrag(); manualLoad?.cancel(); manualLoad = nil }
+    .modifier(ShelfActivation(model: model, paging: paging, shelf: shelf))
+    .onDisappear { paging.endDrag(); paging.cancelLoad() }
   }
 
   private func nearEnd(_ geometry: PiliScrollGeometry) -> Bool {
@@ -545,7 +635,7 @@ private struct VideoShelf: View {
   }
 
   private func autoPage(nearEnd: Bool) {
-    guard channelActive, !model.busy, model.error == nil, model.autoCursor != nil,
+    guard paging.active, !model.busy, model.error == nil, model.autoCursor != nil,
       paging.takePage(nearEnd: nearEnd) else { return }
     startLoad()
   }
@@ -585,31 +675,17 @@ private struct VideoShelf: View {
     }
   }
 
-  @ViewBuilder private var pagingFooter: some View {
-    if let error = model.error {
-      VStack(spacing: 12) {
-        Text(error).piliFont(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-        Button("重试") { startLoad(retry: true) }.piliGlassButton()
-      }.frame(maxWidth: .infinity).padding(.vertical, 24)
-    } else if model.busy {
-      ProgressView().frame(maxWidth: .infinity).padding(.vertical, model.videos.isEmpty ? 120 : 16)
-    } else if !model.finished {
-      Button("加载更多") { startLoad() }.piliGlassButton().frame(maxWidth: .infinity)
-    } else if model.videos.isEmpty {
-      ContentUnavailableView("暂无视频", systemImage: "play.rectangle")
-    }
-  }
   @MainActor private func startLoad(reset: Bool = false, retry: Bool = false) {
     guard reset || !model.busy else { return }
-    manualLoad?.cancel()
-    manualLoad = Task {
+    let model = model, shelf = shelf
+    paging.startLoad {
       if retry { await model.retry(shelf) }
       else { await model.load(shelf, reset: reset) }
     }
   }
   /// The official client's double-column card on the grouped background.
   private func gridCard(_ v: Video) -> some View {
-    NavigationLink { destination(v) } label: {
+    LazyLink { destination(v) } label: {
       HomeVideoCard(video: v)
     }
     .buttonStyle(.plain)
@@ -684,7 +760,7 @@ private struct VideoShelf: View {
   }
   /// The optional large first card.
   private func archiveCard(_ v: Video, featured: Bool) -> some View {
-        NavigationLink {
+        LazyLink {
           destination(v)
         } label: {
           VStack(alignment: .leading, spacing: featured ? 10 : 8) {
@@ -732,10 +808,10 @@ private struct VideoShelf: View {
         item.video, group: item.group, reason: item.reason.id, undo: undo, uid: item.uid)
       guard accounts.state.owner(.role(.recommend)) == item.uid else { return }
       if undo {
-        CardPreferenceMutation.restore(item.video,at:item.index,to:&model.videos)
+        model.restore(item.video, at: item.index)
         feedback = nil
       } else {
-        model.videos.removeAll { $0.id == item.video.id }
+        model.remove { $0.id == item.video.id }
         feedback = item
       }
     } catch { notice = error.localizedDescription }

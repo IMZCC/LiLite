@@ -39,7 +39,7 @@ struct ArchivePlaybackOptions: View {
             } label: { label("note.text", "查看笔记") }
           }
           if let video = actions.video, let cid = actions.cid, !model.isPreview {
-            NavigationLink { CacheSelection(video: video, cid: cid) } label: {
+            NavigationLink { DeferredPage { CacheSelection(video: video, cid: cid) } } label: {
               label("arrow.down.circle", "离线缓存")
             }
           }
@@ -51,11 +51,11 @@ struct ArchivePlaybackOptions: View {
               }
             }
           }
-          NavigationLink { SleepTimerForm(live: false) } label: {
+          NavigationLink { DeferredPage { SleepTimerForm(live: false) } } label: {
             label("hourglass", "定时关闭", subtitle: sleepSubtitle)
           }
           if let reload = actions.reload { row("arrow.clockwise", "重载视频") { close(reload) } }
-          NavigationLink { AudioLevelSettings() } label: { label("speaker.wave.2", "播放器音量") }
+          NavigationLink { DeferredPage { AudioLevelSettings() } } label: { label("speaker.wave.2", "播放器音量") }
           HStack {
             label("icloud", "视频线路", subtitle: "无法播放请切换")
             Spacer(minLength: 8)
@@ -89,7 +89,7 @@ struct ArchivePlaybackOptions: View {
               }
             } label: { label("opticaldisc", "选择音质") }.disabled(model.switching)
           }
-          NavigationLink { PlaybackEngineSettings() } label: { label("cpu", "播放器内核") }
+          NavigationLink { DeferredPage { PlaybackEngineSettings() } } label: { label("cpu", "播放器内核") }
           Menu {
             RepeatPicker(session: model.preferences)
           } label: { label("repeat", "播放顺序") }

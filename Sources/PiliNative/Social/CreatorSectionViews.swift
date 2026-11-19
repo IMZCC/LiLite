@@ -81,7 +81,7 @@ struct CreatorHomePanel: View {
     }
   }
   private func liveCard(_ room: Int64) -> some View {
-    NavigationLink {
+    LazyLink {
       LivePlayer(id: room, title: data.roomTitle ?? "直播间")
     } label: {
       HStack(spacing: 12) {
@@ -367,7 +367,7 @@ struct CreatorIdentityView: View {
         if let header { CreatorHeaderDetails(value: header, mid: mid, name: person.name, medals: medals) }
         CreatorSpaceMetrics(mid: mid, fallback: person)
         if ownsMedal { CreatorMedalName(mid: mid).id(mid) }
-        if medals { NavigationLink("粉丝勋章墙") { CreatorMedalWall(mid: mid) } }
+        if medals { NavigationLink("粉丝勋章墙") { DeferredPage { CreatorMedalWall(mid: mid) } } }
       }
     }.navigationTitle("空间资料")
   }
@@ -392,7 +392,7 @@ struct CreatorReservations: View {
           }
           Text("\(item.count) 人预约").foregroundStyle(.secondary)
           if let id = item.dynamic, !id.isEmpty, id != "0" {
-            NavigationLink("预约动态") { DynamicDetail(id: id) }.piliTapFeedback()
+            NavigationLink("预约动态") { DeferredPage { DynamicDetail(id: id) } }.piliTapFeedback()
           }
           if let prize = item.prize {
             if let route = item.prizeURL.flatMap(SharedLink.parse) {
@@ -410,7 +410,7 @@ struct CreatorReservations: View {
             Button(item.followed ? "取消预约" : "预约") { Task { await update(item, uid) } }
               .disabled(pending.contains(item.id))
           } else {
-            NavigationLink("登录后预约") { QRLoginView() }
+            NavigationLink("登录后预约") { DeferredPage { QRLoginView() } }
           }
         }
       }

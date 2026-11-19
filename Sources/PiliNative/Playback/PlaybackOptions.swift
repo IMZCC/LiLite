@@ -102,18 +102,18 @@ struct PlaybackOptionsView: View {
   var body: some View {
     Form {
       Section {
-        NavigationLink { PlaybackEngineSettings() } label: {
+        NavigationLink { DeferredPage { PlaybackEngineSettings() } } label: {
           SettingsRowLabel(title: "播放器内核", symbol: "film.stack", color: .purple)
         }.settingAnchor("PlaybackOptionsView/播放器内核")
-        NavigationLink { DecoderSettings() } label: {
+        NavigationLink { DeferredPage { DecoderSettings() } } label: {
           SettingsRowLabel(title: "视频解码", symbol: "cpu", color: .gray)
         }.settingAnchor("PlaybackOptionsView/视频解码")
       }
       Section("默认画质与音质") {
-        NavigationLink { MediaProfilePanel(cellular: false) } label: {
+        NavigationLink { DeferredPage { MediaProfilePanel(cellular: false) } } label: {
           SettingsRowLabel(title: "Wi-Fi 与有线网络", symbol: "wifi", color: .blue)
         }.settingAnchor("PlaybackOptionsView/Wi-Fi 与有线网络")
-        NavigationLink { MediaProfilePanel(cellular: true) } label: {
+        NavigationLink { DeferredPage { MediaProfilePanel(cellular: true) } } label: {
           SettingsRowLabel(title: "蜂窝网络", symbol: "antenna.radiowaves.left.and.right", color: .green)
         }.settingAnchor("PlaybackOptionsView/蜂窝网络")
         SettingToggle(title: "游客播放优先使用可用的 1080P", symbol: "person.crop.circle.badge.questionmark", color: .orange, isOn: $guestHD)

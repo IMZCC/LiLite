@@ -311,7 +311,9 @@ struct Discussion: View {
   @State private var pictures = [ReplyComposePhoto]()
   @StateObject private var sessions = ReplyComposeSession()
   @Environment(\.replyOpenLink) private var playerOpenLink
+  @State private var linkToken = UUID()
   @Environment(\.panelTopInset) private var panelInset
+  @Environment(\.panelBottomInset) private var panelBottom
   @Environment(\.replyPlayback) private var playback
   @Environment(\.replyPanelPresenter) private var panelPresenter
   @Environment(\.pendingReplyThread) private var pendingThread
@@ -564,7 +566,7 @@ struct Discussion: View {
           if y - composerScroll.anchor > 24 { setComposerHidden(true); composerScroll.anchor = y } else { composerScroll.anchor = min(composerScroll.anchor, y) }
         }
       }
-    }.environment(\.replyOpenLink, playerOpenLink ?? { route = .link($0) })
+    }.environment(\.replyOpenLink, playerOpenLink ?? StableAction(linkToken) { route = .link($0) })
     .environment(\.replyPlayback, activePlayer == nil ? nil : playback).modifier(
       ReplyEdgeDismiss(standalone: embeddedTitle == nil)
     ).navigationTitle(
@@ -604,7 +606,7 @@ struct Discussion: View {
       share = false
     }
     .navigationDestination(item: $route) { target in
-      routeDestination(target).environment(\.replyPanelPresenter, nil)
+      routeDestination(target).environment(\.replyPanelPresenter, nil).environment(\.panelBottomInset, 0)
     }
     .overlay(alignment: .bottomTrailing) {
       // Embedded under a player there is no navigation bar of our own: offer a floating composer.
@@ -612,16 +614,16 @@ struct Discussion: View {
         Button {
           if let active = accounts.state.active { begin(nil, owner: active) }
         } label: {
-          Image(systemName: "square.and.pencil").font(.system(size: 14.25, weight: .semibold))
+          Image(systemName: "square.and.pencil").font(.system(size: 20, weight: .semibold))
             .foregroundStyle(.white)
-            .frame(width: 37.5, height: 37.5)
+            .frame(width: 46, height: 46)
             .piliGlass(in: Circle(), interactive: true, tint: .accentColor)
-            .frame(width: 50, height: 50).contentShape(Rectangle())
+            .frame(width: 56, height: 56).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(inputDisabled).accessibilityLabel("发表评论")
-        .padding(.trailing, 18).padding(.bottom, 18)
-        .offset(y: composerHidden && composerAutoHide ? 120 : 0)
+        .padding(.trailing, 14).padding(.bottom, 12 + panelBottom)
+        .offset(y: composerHidden && composerAutoHide ? 120 + panelBottom : 0)
         .opacity(composerHidden && composerAutoHide ? 0 : 1)
         .allowsHitTesting(!(composerHidden && composerAutoHide))
         .transition(.scale.combined(with: .opacity))

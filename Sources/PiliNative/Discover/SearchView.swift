@@ -260,7 +260,7 @@ struct SearchView: View {
       }
     }
     Button("打开链接或视频编号", systemImage: "link") { focused = false; openLink = true }
-    NavigationLink("设置") { SettingsView() }
+    NavigationLink("设置") { DeferredPage { SettingsView() } }
   }
   /// Typed words: open a UID or a link directly, otherwise the server's completions.
   private var suggestionList: some View {
@@ -623,7 +623,7 @@ private struct SearchSuggestionsSection: View {
           Label(hot ? "刷新" : "换一换", systemImage: "arrow.clockwise").font(.footnote)
         }.buttonStyle(.plain).foregroundStyle(.secondary)
         if hot {
-          NavigationLink { TrendingSearchPage(select: select) } label: {
+          NavigationLink { DeferredPage { TrendingSearchPage(select: select) } } label: {
             HStack(spacing: 2) {
               Text("完整榜单")
               Image(systemName: "chevron.right").font(.caption2.weight(.bold))

@@ -27,7 +27,7 @@ struct NavigationLayoutPanel: View {
   var body: some View {
     List {
       Section {
-        NavigationLink { MotionSettings() } label: {
+        NavigationLink { DeferredPage { MotionSettings() } } label: {
           Label("页面动画与回弹", systemImage: "wand.and.stars").labelStyle(SettingsIconLabelStyle(color: .purple))
         }.settingAnchor("NavigationLayoutPanel/页面动画与回弹")
         Toggle(isOn: Binding(get: { !draft.directBack }, set: { draft.directBack = !$0 })) {
@@ -97,7 +97,7 @@ struct NavigationLayoutPanel: View {
       } header: {
         Text("我的页预览")
       } footer: {
-        Text("显示在“我的”页里的内容分组。观看记录固定显示在最上方。")
+        Text("显示在“我的”页里的内容分组。观看记录固定显示在快捷入口下方的第一组。")
       }.settingAnchor("NavigationLayoutPanel/我的页预览")
       Section {
         Button("恢复默认布局", role: .destructive) {

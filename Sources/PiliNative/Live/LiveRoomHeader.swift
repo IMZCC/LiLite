@@ -14,7 +14,7 @@ struct LiveAnchorLine: View {
   let room: LiveRoomIdentity, info: LiveRoomHeader?, watched: String?
   var body: some View {
     HStack {
-      NavigationLink {
+      LazyLink {
         CreatorSpace(mid: room.uid, name: info?.anchor_info?.base_info?.uname ?? "主播")
       } label: {
         HStack {

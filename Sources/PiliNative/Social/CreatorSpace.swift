@@ -40,7 +40,9 @@ struct CreatorSpace: View {
   @State private var paged: String?
   @State private var visited = Set<String>()
   @State private var scrollers = SpaceScrollers()
-  @State private var swiping = false
+  /// Not observed: set at every touch on the pager, it must not re-render the page.
+  private final class SwipeFlag { var on = false }
+  @State private var swipe = SwipeFlag()
   // Section rows, kept while switching tabs.
   @State private var dynamics = InlinePager<DynamicEntry>()
   @State private var uploads = InlinePager<Video>()
@@ -196,18 +198,18 @@ struct CreatorSpace: View {
       motion.update(min(max(0, value), CGFloat(max(0, list.count - 1))))
     }
     .piliOnScrollPhaseChange { old, phase, _ in
-      if phase == .interacting { swiping = true }
+      if phase == .interacting { swipe.on = true }
       // Line the neighbours up with this page before they slide into view.
       if old == .idle && phase != .idle { alignPages() }
       if phase == .idle {
         // Only a swipe changes the section. The pager may report another page while it is laid
         // out or moved in code; put it back on the selected one.
-        if swiping, let value = paged, value != selected?.param {
+        if swipe.on, let value = paged, value != selected?.param {
           settle(on: value)
-        } else if !swiping, let current = selected?.param, paged != current {
+        } else if !swipe.on, let current = selected?.param, paged != current {
           paged = current
         }
-        swiping = false
+        swipe.on = false
       }
     }
     .onChange(of: current, initial: true) { _, value in
@@ -409,7 +411,7 @@ struct CreatorSpace: View {
         followButton(uid, followsViewer: p?.followsViewer == true)
         Button { route = .chat } label: { square("envelope") }.accessibilityLabel("发消息")
       } else {
-        NavigationLink { QRLoginView() } label: { pill("登录后关注", tint: true) }
+        NavigationLink { DeferredPage { QRLoginView() } } label: { pill("登录后关注", tint: true) }
       }
     }
     .buttonStyle(.plain)
@@ -531,7 +533,7 @@ struct CreatorSpace: View {
         }
       }
     case .dynamic:
-      ForEach(dynamics.items) { d in DynamicCard(entry: d) { dynamics.reload() } }
+      ForEach(dynamics.items) { d in StableContent(key: d.id) { DynamicCard(entry: d) { dynamics.reload() } }.equatable() }
       InlinePagerFooter(pager: dynamics, empty: "暂无动态")
     case .contribute:
       contributions(data.contributions(tab))
@@ -782,11 +784,11 @@ struct CreatorSpace: View {
     case .account:
       Form {
         if (header?.vipStatus ?? 0) > 0 { MemberExperienceButton(uid: String(mid)) { revision += 1 } }
-        NavigationLink("登录设备") { LoginDevices(uid: String(mid)) }
+        NavigationLink("登录设备") { DeferredPage { LoginDevices(uid: String(mid)) } }
         ForEach(AccountLogs.Kind.allCases, id: \.self) { kind in
           NavigationLink(kind.rawValue) { AccountLogs(kind: kind, uid: String(mid)) }
         }
-        NavigationLink("空间隐私") { SpacePrivacy(uid: String(mid)) }
+        NavigationLink("空间隐私") { DeferredPage { SpacePrivacy(uid: String(mid)) } }
       }.navigationTitle("我的账号")
     case .edit: ProfileEditor(uid: String(mid)) { revision += 1 }
     case .reservations: CreatorReservations(items: $reservations)
@@ -894,7 +896,7 @@ private struct SpaceArchiveRow: View {
   @EnvironmentObject private var accounts: AccountContext
   var body: some View {
     HStack(alignment: .bottom, spacing: 0) {
-      NavigationLink { DetailView(initial: video) } label: {
+      LazyLink { DetailView(initial: video) } label: {
         HStack(alignment: .top, spacing: 10) {
           Color.clear.frame(width: 150, height: 84)
             .overlay {
@@ -1136,7 +1138,7 @@ struct SpaceHomeSection: View {
     .font(.subheadline).foregroundStyle(.secondary).contentShape(Rectangle())
   }
   private func liveCard(_ room: Int64) -> some View {
-    NavigationLink {
+    LazyLink {
       LivePlayer(id: room, title: data.roomTitle ?? "直播间")
     } label: {
       HStack(spacing: 12) {

@@ -192,10 +192,10 @@ struct IMSessions: View {
         Menu {
           ForEach(Array(menu.enumerated()), id: \.offset) { _, item in action(item) }
           if !menu.contains(where: { $0.type == .contacts }) {
-            NavigationLink("通讯录") { IMContactBook(uid: uid) }
+            NavigationLink("通讯录") { DeferredPage { IMContactBook(uid: uid) } }
           }
           if !menu.contains(where: { $0.type == .msgSetting }) {
-            NavigationLink("消息设置") { IMPreferences(uid: uid) }
+            NavigationLink("消息设置") { DeferredPage { IMPreferences(uid: uid) } }
           }
         } label: {
           Image(systemName: "ellipsis.circle").accessibilityLabel("会话操作")
@@ -267,8 +267,8 @@ struct IMSessions: View {
     case .readAll: Button(item.title.isEmpty ? "全部标为已读" : item.title) { pending = .read }
     case .clearList:
       Button(item.title.isEmpty ? "清空会话" : item.title, role: .destructive) { pending = .delete }
-    case .msgSetting: NavigationLink("消息设置") { IMPreferences(uid: uid) }
-    case .contacts: NavigationLink("通讯录") { IMContactBook(uid: uid) }
+    case .msgSetting: NavigationLink("消息设置") { DeferredPage { IMPreferences(uid: uid) } }
+    case .contacts: NavigationLink("通讯录") { DeferredPage { IMContactBook(uid: uid) } }
     case .upHelper:
       if let url = URL(string: item.url),
         let mid = url.pathComponents.compactMap(Int64.init).first(where: { $0 > 0 })

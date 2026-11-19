@@ -88,7 +88,7 @@ struct DanmakuStylePanel: View {
         } label: {
           LabeledContent("屏蔽发送者", value: count(s.senders))
         }.settingAnchor("DanmakuStylePanel/屏蔽发送者 · 每行一个标识")
-        NavigationLink("账号屏蔽规则") { AccountBulletRulePanel() }.settingAnchor("DanmakuStylePanel/账号屏蔽规则")
+        NavigationLink("账号屏蔽规则") { DeferredPage { AccountBulletRulePanel() } }.settingAnchor("DanmakuStylePanel/账号屏蔽规则")
       }
       if let issue {
         Text(issue).font(.footnote).foregroundStyle(.red)

@@ -26,7 +26,7 @@ struct VideoActions: View {
   var body: some View {
     // Three columns that join the engagement row: cache, watch later and share (with the
     // rarely used tools folded into the share menu, as the system share sheet does).
-    NavigationLink { CacheSelection(video: video, cid: cid) } label: {
+    NavigationLink { DeferredPage { CacheSelection(video: video, cid: cid) } } label: {
       ArchiveActionColumn(symbol: "arrow.down.circle", title: "缓存", active: false)
     }.accessibilityLabel("缓存视频")
     Button {
@@ -68,7 +68,7 @@ struct VideoActions: View {
           writeBullet = true
         } label: { Label("发弹幕", systemImage: "text.bubble") }.disabled(accounts.state.active == nil)
         if let cover = video.cover {
-          NavigationLink { NativeGallery([.init(cover)]) } label: { Label("查看封面", systemImage: "photo") }
+          NavigationLink { DeferredPage { NativeGallery([.init(cover)]) } } label: { Label("查看封面", systemImage: "photo") }
           Button {
             act("封面已保存") { _ = try await GalleryAssets().savePictures([.init(cover)]) }
           } label: { Label("保存封面", systemImage: "square.and.arrow.down") }
@@ -80,7 +80,7 @@ struct VideoActions: View {
         if accounts.state.active != nil, let aid = video.aid,
           let appeal = URL(string: "https://www.bilibili.com/appeal/?avid=" + String(aid))
         {
-          NavigationLink { SitePage(url: appeal) } label: { Label("举报视频", systemImage: "exclamationmark.bubble") }
+          NavigationLink { DeferredPage { SitePage(url: appeal) } } label: { Label("举报视频", systemImage: "exclamationmark.bubble") }
         }
       }
     } label: {

@@ -5,10 +5,10 @@ struct GalleryRailRequest: Identifiable {
   let photos: [GalleryPicture], index: Int
 }
 private struct GalleryRailKey: EnvironmentKey {
-  static let defaultValue: ((GalleryRailRequest) -> Void)? = nil
+  static let defaultValue: StableAction<GalleryRailRequest>? = nil
 }
 extension EnvironmentValues {
-  var presentGalleryRail: ((GalleryRailRequest) -> Void)? {
+  var presentGalleryRail: StableAction<GalleryRailRequest>? {
     get { self[GalleryRailKey.self] }
     set { self[GalleryRailKey.self] = newValue }
   }

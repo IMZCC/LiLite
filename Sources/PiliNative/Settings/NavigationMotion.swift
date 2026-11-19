@@ -28,6 +28,8 @@ struct PiliNavigationStack<Content: View>: View {
         }.frame(width: 0, height: 0))
     }.toolbar(tabBarHidden || incoming?.wrappedValue != nil ? .hidden : .visible, for: .tabBar)
       .piliTabBarBackground()
+      // One set of card-menu sheets and dialogs for every page of this stack.
+      .modifier(ArchiveCoverPresenter())
   }
 }
 
