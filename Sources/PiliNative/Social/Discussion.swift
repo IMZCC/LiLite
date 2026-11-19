@@ -420,6 +420,8 @@ struct Discussion: View {
   @State private var share = false
   @State private var writing = false
   @State private var composerHidden = false
+  /// 评论设置 › 滚动时隐藏发评论按钮; off keeps the floating composer on screen.
+  @AppStorage(ReplyComposerButton.autoHideKey) private var composerAutoHide = true
   @State private var anchorGlow = true
   private final class ComposerScroll { var anchor: CGFloat = 0 }
   @State private var composerScroll = ComposerScroll()
@@ -555,7 +557,7 @@ struct Discussion: View {
       // back on any scroll up (fab_mixin: UserScrollNotification, 100ms easeInOut).
       .piliOnScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
         guard embeddedTitle != nil else { return }
-        if y <= 8 { setComposerHidden(false); composerScroll.anchor = y; return }
+        if y <= 8 || !composerAutoHide { setComposerHidden(false); composerScroll.anchor = y; return }
         if composerHidden {
           if composerScroll.anchor - y > 24 { setComposerHidden(false); composerScroll.anchor = y } else { composerScroll.anchor = max(composerScroll.anchor, y) }
         } else {
@@ -619,9 +621,9 @@ struct Discussion: View {
         .buttonStyle(.plain)
         .disabled(inputDisabled).accessibilityLabel("发表评论")
         .padding(.trailing, 18).padding(.bottom, 18)
-        .offset(y: composerHidden ? 120 : 0)
-        .opacity(composerHidden ? 0 : 1)
-        .allowsHitTesting(!composerHidden)
+        .offset(y: composerHidden && composerAutoHide ? 120 : 0)
+        .opacity(composerHidden && composerAutoHide ? 0 : 1)
+        .allowsHitTesting(!(composerHidden && composerAutoHide))
         .transition(.scale.combined(with: .opacity))
       }
     }

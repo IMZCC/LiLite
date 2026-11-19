@@ -215,6 +215,7 @@ ReplyFilterPanel/折叠行数
 ReplyFilterPanel/显示头像挂件和装扮卡
 ReplyFilterPanel/显示番剧评论
 ReplyFilterPanel/楼中楼
+ReplyFilterPanel/滚动时隐藏发评论按钮
 ReplyFilterPanel/点按预览正文表情
 ReplyFilterPanel/视频详情默认显示评论
 ReplyFilterPanel/评论关键词搜索

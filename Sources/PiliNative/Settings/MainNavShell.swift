@@ -171,6 +171,10 @@ struct MainNavShell: View {
   @Binding var active: MainTab
   @Binding var incoming: [MainTab: IncomingRoute]
   @State private var chrome = NavigationChrome()
+  /// 改用侧边栏 is read once: the two tab view styles are different views, so switching them
+  /// while running would rebuild every column and drop its navigation (the settings page the
+  /// switch was made on included). It applies from the next launch.
+  @State private var sidebar = NavigationLayout.current().sidebar
   @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
   @Environment(\.accessibilityReduceMotion) private var reduce
   enum Shortcut: Int, Identifiable {
@@ -238,7 +242,9 @@ struct MainNavShell: View {
           }
         }
       }
-      .modifier(AdaptiveTabStyle(sidebar: layout.sidebar, landscape: WindowCanvas.shared.landscape))
+      // Only read the orientation when it matters, so turning the device (e.g. into fullscreen
+      // video) never re-evaluates the whole shell.
+      .modifier(AdaptiveTabStyle(sidebar: sidebar, landscape: sidebar && WindowCanvas.shared.landscape))
     } else {
       TabView(selection: $active) {
         ForEach(contentTabs) { tab in

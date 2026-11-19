@@ -13,18 +13,15 @@ struct ProfileView: View {
   @State private var destination: ProfileDestination?
   var body: some View {
     PiliNavigationStack {
+      let fields = NavigationLayout.read(pageLayout).mineTabs
       List {
         profileHeader
+        // Watch history, when shown, sits first: above the 历史 / 稍后再看 / 收藏 shortcuts.
+        if fields.contains(.history) { shelf(.history) }
         Section {
           libraryShortcuts
         }.listRowInsets(EdgeInsets()).listRowBackground(Color.clear).listRowSeparator(.hidden)
-        ForEach(NavigationLayout.read(pageLayout).mineTabs) { field in
-          if let uid = field == .history ? accounts.state.owner(.history) : accounts.state.active {
-            ProfileShelf(field: field, uid: uid)
-              .foregroundStyle(.primary)
-              .id("\(field.rawValue):\(uid)")
-          }
-        }
+        ForEach(fields.filter { $0 != .history }) { shelf($0) }
         libraryLinks
         if let uid = accounts.state.owner(.history) {
           Section("观看记录") {
@@ -71,6 +68,13 @@ struct ProfileView: View {
         guard let uid = accounts.state.active else { return }
         await store.refresh(uid)
       }
+    }
+  }
+  @ViewBuilder private func shelf(_ field: MineSection) -> some View {
+    if let uid = field == .history ? accounts.state.owner(.history) : accounts.state.active {
+      ProfileShelf(field: field, uid: uid)
+        .foregroundStyle(.primary)
+        .id("\(field.rawValue):\(uid)")
     }
   }
   private var profileHeader: some View {

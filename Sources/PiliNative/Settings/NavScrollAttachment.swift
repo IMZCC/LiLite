@@ -55,6 +55,10 @@ struct NavScrollAttachment: UIViewRepresentable {
     var release: ((CGFloat) -> Void)?
     private let probe = TapProbe()
     private weak var host: UIView?, scroll: UIScrollView?
+    /// The tab's root page. Its content scroll view drives the tab bar's minimize-on-scroll, and
+    /// the system's own pick is the outermost scroller, which on a page with a horizontal pager
+    /// (the home channels) never scrolls vertically.
+    private weak var owner: UIViewController?
     private var previous: CGFloat = 0
     override init(frame: CGRect) {
       super.init(frame: frame)
@@ -82,10 +86,11 @@ struct NavScrollAttachment: UIViewRepresentable {
       var view: UIView?
       while let r = responder {
         if let vc = r as? UIViewController {
-          if let root = vc.navigationController?.viewControllers.first?.viewIfLoaded,
+          if let first = vc.navigationController?.viewControllers.first, let root = first.viewIfLoaded,
             isDescendant(of: root)
           {
             view = root
+            owner = first
             break
           }
           if view == nil, let v = vc.viewIfLoaded, v.bounds.width > 64, v.bounds.height > 64 {
@@ -114,6 +119,12 @@ struct NavScrollAttachment: UIViewRepresentable {
           scroll = sv
           previous = 0
           sv.panGestureRecognizer.addTarget(self, action: #selector(moved(_:)))
+          // Only a page-wide list, not a side column (the 动态 UP 主 rail).
+          if let owner, let host, sv.bounds.width >= host.bounds.width * 0.5,
+            owner.contentScrollView(for: .bottom) !== sv
+          {
+            owner.setContentScrollView(sv, for: .bottom)
+          }
           return
         }
         if item === host { break }

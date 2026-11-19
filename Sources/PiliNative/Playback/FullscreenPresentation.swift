@@ -46,7 +46,12 @@ struct FullscreenSwipe: ViewModifier {
 }
 @MainActor enum TheaterOrientation {
   struct Entry { let token: UUID, mask: UIInterfaceOrientationMask }
-  static var byScene: [ObjectIdentifier: Entry] = [:]
+  static let ownerChanged = Notification.Name("PiliTheaterOrientationOwnerChanged")
+  /// Posts `ownerChanged`, so a portrait lock that stepped aside for fullscreen takes the scene
+  /// back as soon as fullscreen lets go of it.
+  static var byScene: [ObjectIdentifier: Entry] = [:] {
+    didSet { NotificationCenter.default.post(name: ownerChanged, object: nil) }
+  }
   /// Fullscreen direction when the user has not chosen one: like the original, large screens
   /// (iPad, unfolded iPhone Duo) keep the current direction and smaller ones follow the video.
   static var defaultMode: Int {
@@ -199,6 +204,15 @@ struct PortraitLock: UIViewControllerRepresentable {
     override func loadView() {
       view = UIView()
       view.isUserInteractionEnabled = false
+      // The fullscreen cover has a clear background, so the page under it never disappears and
+      // this probe gets no viewDidAppear when it closes. Without this the page stayed unlocked
+      // after the first fullscreen, so a later turn could rotate the whole page (and every
+      // column under it) with the device instead of only opening fullscreen.
+      NotificationCenter.default.addObserver(
+        self, selector: #selector(ownerChanged), name: TheaterOrientation.ownerChanged, object: nil)
+    }
+    @objc private func ownerChanged() {
+      DispatchQueue.main.async { [weak self] in self?.apply() }
     }
     override func viewDidAppear(_ animated: Bool) {
       super.viewDidAppear(animated)

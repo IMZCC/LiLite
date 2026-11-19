@@ -105,6 +105,7 @@ RecommendationSettings/标出上次刷新的位置	savedRcmdTip 保留上次推�
 RecommendationSettings/首个推荐使用大卡片	大卡片 首卡 推荐卡片 双列 卡片样式	feed.featuredFirst	false
 ReplyFilterPanel/主评论	replySortType 评论展示	reply.mainSort	1
 ReplyFilterPanel/从屏幕边缘滑动返回	slideDismissReplyPage 侧滑关闭二级页面	reply.edgeDismiss	true
+ReplyFilterPanel/滚动时隐藏发评论按钮	发帖 发表评论 悬浮按钮 自动隐藏	reply.composerAutoHide	true
 ReplyFilterPanel/屏蔽关键词或正则表达式	banWordForReply 评论关键词过滤
 ReplyFilterPanel/屏蔽只包含 @ 的评论	blockAtOnlyReply 屏蔽只包含@的评论
 ReplyFilterPanel/屏蔽复制视频简介的评论	filterIntro 屏蔽复制简介评论

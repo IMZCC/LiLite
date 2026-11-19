@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// The floating 发表评论 button under the player's comments.
+enum ReplyComposerButton {
+  /// Slide it away while reading down (the original's fab behaviour); off keeps it on screen.
+  static let autoHideKey = "reply.composerAutoHide"
+}
+
 struct ReplyFilterPanel: View {
   @AppStorage("appearance.decorate") private var decorate = true
   @AppStorage("emote.preview") private var preview = false
@@ -9,6 +15,7 @@ struct ReplyFilterPanel: View {
   @AppStorage("reply.detailSort") private var detailSort = 0
   @AppStorage("detail.episodeReplies") private var episodeReplies = true
   @AppStorage("reply.edgeDismiss") private var slideDismiss = true
+  @AppStorage(ReplyComposerButton.autoHideKey) private var composerAutoHide = true
   @State private var rules = ReplyFilterRules.current()
   @State private var number = ReplyFilterRules.current().threshold.map(String.init) ?? ""
   @State private var issue: String?
@@ -76,6 +83,8 @@ struct ReplyFilterPanel: View {
           .settingAnchor("ReplyFilterPanel/显示番剧评论")
         SettingToggle(title: "从屏幕边缘滑动返回", symbol: "hand.draw", color: .teal, isOn: $slideDismiss)
           .settingAnchor("ReplyFilterPanel/从屏幕边缘滑动返回")
+        SettingToggle(title: "滚动时隐藏发评论按钮", symbol: "square.and.pencil", color: .blue, isOn: $composerAutoHide)
+          .settingAnchor("ReplyFilterPanel/滚动时隐藏发评论按钮")
         SettingStepper(title: "折叠行数", value: $rules.lines.asDouble, range: 0...30,
           format: { $0 == 0 ? "不折叠" : "\(Int($0)) 行" })
           .settingAnchor("ReplyFilterPanel/折叠行数")

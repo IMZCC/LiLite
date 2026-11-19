@@ -80,7 +80,7 @@ struct NavigationLayout: Codable, Equatable {
   var sidebar = false, iconOnly = false, tabletNav = true, floating = false, spaciousBar = true
   var collapseTop = true, collapseBottom = true, animateTabs = false, directBack = false
   var hideMode = NavigationHideMode.sync
-  var mineTabs: [MineSection] = [.favorite]
+  var mineTabs: [MineSection] = [.history, .favorite]
   init() {}
   private enum CodingKeys: String, CodingKey {
     case tabs, channels, launch, sidebar, iconOnly, tabletNav, floating, spaciousBar, collapseTop,

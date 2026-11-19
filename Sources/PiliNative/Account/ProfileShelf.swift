@@ -92,11 +92,17 @@ struct ProfileShelf: View {
                   .overlay(alignment: .bottom) {
                     if let v = row.progress { ProgressView(value: v).progressViewStyle(.linear) }
                   }
-                  Text(row.title).font(.subheadline).lineLimit(2)
+                  Text(row.title).font(.footnote).lineLimit(2)
                   if let text = row.caption, !text.isEmpty {
                     Text(text).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                   }
-                }.frame(width: 155, alignment: .leading).contentShape(Rectangle())
+                }
+                // Three cards fill the row on a phone; wider rows fit more of the same size.
+                .containerRelativeFrame(.horizontal, alignment: .leading) { length, _ in
+                  let count = max(3, ((length + 12) / 150).rounded(.down))
+                  return max(0, (length - 12 * (count - 1)) / count)
+                }
+                .contentShape(Rectangle())
               }.buttonStyle(.plain)
             }
             if cursor != nil && issue == nil {

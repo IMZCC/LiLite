@@ -39,7 +39,7 @@ struct NavigationLayoutPanel: View {
       } header: {
         Text("导航外观")
       } footer: {
-        Text("iPad 等大屏横屏时用侧边栏切换主栏目，竖屏和 iPhone 仍使用标签栏。关闭时大屏使用顶部标签栏。")
+        Text("iPad 等大屏横屏时用侧边栏切换主栏目，竖屏和 iPhone 仍使用标签栏。关闭时大屏使用顶部标签栏。重新打开应用后生效。")
       }.settingAnchor("NavigationLayoutPanel/导航外观")
       Section {
         Toggle("首页搜索栏", isOn: $draft.collapseTop).settingAnchor("NavigationLayoutPanel/首页搜索栏")
@@ -97,7 +97,7 @@ struct NavigationLayoutPanel: View {
       } header: {
         Text("我的页预览")
       } footer: {
-        Text("显示在“我的”页里的内容分组。")
+        Text("显示在“我的”页里的内容分组。观看记录固定显示在最上方。")
       }.settingAnchor("NavigationLayoutPanel/我的页预览")
       Section {
         Button("恢复默认布局", role: .destructive) {

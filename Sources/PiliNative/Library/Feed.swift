@@ -119,13 +119,14 @@ struct FeedView: View {
         VStack(spacing: 0) {
           VStack(spacing: 0) {
             if oneRow {
-              HStack(spacing: 0) {
-                HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion)
+              HStack(spacing: 10) {
+                avatarItem
+                HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion, inset: 6, centered: false)
                   .frame(maxWidth: .infinity, alignment: .leading)
                   .mask { Rectangle().padding(.vertical, -12) }
-                headerRow.padding(.leading, -6)
-                  .frame(width: min(400, max(300, safe.size.width * 0.36)))
-              }.padding(.top, 2).padding(.bottom, 8)
+                HStack(spacing: 10) { searchItem; bellItem }
+                  .frame(width: min(360, max(260, safe.size.width * 0.32)))
+              }.padding(.horizontal, 16).padding(.top, 2).padding(.bottom, 8)
             } else {
               headerRow.padding(.top, 2).padding(.bottom, 8)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { searchHeight = $0 }
@@ -215,33 +216,42 @@ struct FeedView: View {
     UnreadTotals.label(indicators.count(for: accounts.state.active, messages: true), mode: messageMode)
       .map { Text(verbatim: $0) }
   }
+  /// The official app's header: the avatar, search, then the message bell (signed in only).
+  /// Settings, rankings, live, the season index and "open link" live where the original puts
+  /// them (我的 page, home channels, the PGC "索引" header, the search page).
   private var headerRow: some View {
     HStack(spacing: 10) {
-      if !systemSearch || useHint { searchEntry } else { Spacer(minLength: 0) }
-      // The original header: search, the message bell (signed in only), then the avatar.
-      // Settings, rankings, live, the season index and "open link" live where the original
-      // puts them (我的 page, home channels, the PGC "索引" header, the search page).
-      if accounts.state.active != nil {
-        NavigationLink {
-          Inbox()
-        } label: {
-          Image(systemName: "bell").font(.system(size: 17, weight: .medium))
-            .frame(width: 44, height: 44).contentShape(Circle())
-            .overlay(alignment: .topTrailing) {
-              if let unreadMessages {
-                unreadMessages.font(.system(size: 10, weight: .bold)).monospacedDigit()
-                  .foregroundStyle(.white).padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
-                  .background(.red, in: Capsule()).offset(x: -2, y: 2)
-              }
-            }
-        }
-        .buttonStyle(.plain).foregroundStyle(.primary)
-        .piliGlass(in: Circle(), interactive: true)
-        .accessibilityLabel("消息中心")
-      }
-      if let openProfile { profileButton(openProfile) }
+      avatarItem
+      searchItem
+      bellItem
     }
     .padding(.horizontal, 16)
+  }
+  @ViewBuilder private var avatarItem: some View {
+    if let openProfile { profileButton(openProfile) }
+  }
+  @ViewBuilder private var searchItem: some View {
+    if !systemSearch || useHint { searchEntry } else { Spacer(minLength: 0) }
+  }
+  @ViewBuilder private var bellItem: some View {
+    if accounts.state.active != nil {
+      NavigationLink {
+        Inbox()
+      } label: {
+        Image(systemName: "bell").font(.system(size: 17, weight: .medium))
+          .frame(width: 44, height: 44).contentShape(Circle())
+          .overlay(alignment: .topTrailing) {
+            if let unreadMessages {
+              unreadMessages.font(.system(size: 10, weight: .bold)).monospacedDigit()
+                .foregroundStyle(.white).padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
+                .background(.red, in: Capsule()).offset(x: -2, y: 2)
+            }
+          }
+      }
+      .buttonStyle(.plain).foregroundStyle(.primary)
+      .piliGlass(in: Circle(), interactive: true)
+      .accessibilityLabel("消息中心")
+    }
   }
   private func profileButton(_ open: @escaping @MainActor () -> Void) -> some View {
     let incognito = accounts.state.active != nil && accounts.state.owner(.role(.heartbeat)) == nil
@@ -280,8 +290,13 @@ private struct HomeChannelBar: View {
   let channels: [HomeChannel]
   @Binding var shelf: HomeChannel
   let motion: PagerIndicatorMotion
+  var inset: CGFloat = 16
+  /// Centred when the chips are narrower than the bar, as in the official app; they scroll as
+  /// before once they overflow it.
+  var centered = true
   @Environment(\.scrollHomeChannelToTop) private var channelToTop
   @State private var chipWidths: [HomeChannel: CGFloat] = [:]
+  @State private var barWidth: CGFloat = 0
   private let spacing: CGFloat = 4
 
   var body: some View {
@@ -312,8 +327,11 @@ private struct HomeChannelBar: View {
             .accessibilityAddTraits(current ? .isSelected : []).id(c)
           }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, inset)
+        .frame(minWidth: centered ? barWidth : 0)
       }.scrollClipDisabled()
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { barWidth = $0 }
         .onChange(of: shelf, initial: true) { _, c in
           withAnimation(.snappy) { proxy.scrollTo(c, anchor: .center) }
         }

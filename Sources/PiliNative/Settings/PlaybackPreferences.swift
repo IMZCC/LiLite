@@ -25,7 +25,7 @@ struct PlayerPreferenceValues: Codable {
     "social.expandLive",
     "play.onEntry", "play.background", "play.continuePart", "library.playAll", "detail.quickFav",
     "ui.haptics", "reply.save",
-    "reply.edgeDismiss",
+    "reply.edgeDismiss", "reply.composerAutoHide",
     "detail.episodeReplies",
     "search.hot", "search.picks", "search.suggest", "live.showChat",
     "player.quickDouble", "player.slideLevels", "player.doubleSpeed", "player.relativeSeek",
