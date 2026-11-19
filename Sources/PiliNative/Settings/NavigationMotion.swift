@@ -27,6 +27,7 @@ struct PiliNavigationStack<Content: View>: View {
           if tabBarHidden != hidden { tabBarHidden = hidden }
         }.frame(width: 0, height: 0))
     }.toolbar(tabBarHidden || incoming?.wrappedValue != nil ? .hidden : .visible, for: .tabBar)
+      .piliTabBarBackground()
   }
 }
 

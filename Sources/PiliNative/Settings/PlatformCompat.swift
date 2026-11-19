@@ -27,6 +27,13 @@ extension View {
       toolbar { ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) } }
     }
   }
+  /// iOS 17 and 18: keep the tab bar's material behind its items on every page. The classic bar
+  /// turns transparent whenever it believes the content is scrolled to its edge, and on pages
+  /// whose real list UIKit cannot find (the home channels sit in a horizontal pager) it came
+  /// back transparent over the feed after leaving a video (#3). The iOS 26 glass bar is unchanged.
+  @ViewBuilder func piliTabBarBackground() -> some View {
+    if #available(iOS 26, *) { self } else { toolbarBackground(.visible, for: .tabBar) }
+  }
   /// The tab bar's minimize-on-scroll behaviour (iOS 26).
   @ViewBuilder func piliTabBarMinimize(onScrollDown: Bool) -> some View {
     if #available(iOS 26, *) {

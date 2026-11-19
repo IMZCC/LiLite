@@ -53,7 +53,7 @@
 | [Sideloadly](https://sideloadly.io) | 电脑端签名安装，支持免费或付费开发者账号 |
 | [TrollStore](https://github.com/opa334/TrollStore) | 支持的系统版本可永久安装 |
 
-- 需要 iOS 17 或更高版本。iOS 26 及以上使用 Liquid Glass，iOS 17–25 使用系统磨砂材质。
+- 需要 iOS 17 或更高版本。iOS 26、27 使用 Liquid Glass，iOS 17、18 使用系统磨砂材质。
 - 未签名包不含组播权限，DLNA 投屏改用 Bonjour 和指定 IP 发现设备。
 - 不提供 App Store 或 TestFlight 版本；也可以按下方说明自行构建。
 - 在「设置 → 版本与更新」打开「提醒新版本」，有新的 Release 时会收到提示。
