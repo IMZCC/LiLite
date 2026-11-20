@@ -188,10 +188,10 @@ actor BiliAPI {
     }
     return d
   }
-  func recommendations(_ page: Int, mobile: Bool? = nil) async throws -> Page<Video> {
+  func recommendations(_ page: Int, mobile: Bool? = nil, screen: (short: Int, long: Int) = (1080, 2400)) async throws -> Page<Video> {
     if mobile ?? (UserDefaults.standard.object(forKey: "feed.mobile") as? Bool ?? true) {
       let r = try await read(
-        "/x/v2/feed/index", MobileFeed.fields(page: page), host: "app.bilibili.com",
+        "/x/v2/feed/index", MobileFeed.fields(page: page, screen: screen), host: "app.bilibili.com",
         as: MobileFeed.self)
       // The original's recommendation feed never ends; an empty page just asks again.
       return Page(items: r.items.compactMap(\.video), next: String(page + 1))

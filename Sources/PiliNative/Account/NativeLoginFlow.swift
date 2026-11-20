@@ -136,7 +136,9 @@ enum NativeLoginMethod: String, CaseIterable, Identifiable {
   }
   func solved(_ solution: MobileCaptchaSolution, challengeID: UUID) {
     guard active, let challenge = captcha, challenge.id == challengeID, challenge.token == solution.token,
-      solution.challenge.hasPrefix(String(challenge.challenge.prefix(32))), let retry = pending else { return }
+      // A v4 result carries no challenge; the page already matched its captcha id to `gt`.
+      solution.challenge.map({ $0.hasPrefix(String(challenge.challenge.prefix(32))) }) ?? true,
+      let retry = pending else { return }
     pending = nil; captcha = nil
     switch retry {
     case .password(let user, let password): self.password(user, password, solution: solution)

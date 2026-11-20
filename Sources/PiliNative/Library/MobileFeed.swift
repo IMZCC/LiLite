@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 struct MobileFeed: Decodable {
   struct Entry: Decodable {
@@ -95,17 +96,47 @@ struct MobileFeed: Decodable {
     guard let value = Double(s), value.isFinite, value >= 0 else { return nil }
     return Int(exactly: (value * factor).rounded())
   }
-  static func fields(page: Int) -> [String: String] {
+  /// The official Android client's (粉版 9.19.0) home feed request, as captured in PiliPlus PR
+  /// #3646. The old `mobi_app=android_i` / 8.43.0 set asked for the international client's feed,
+  /// which is why recommendations did not match the official app. Signing keeps the HD key: this
+  /// endpoint does not check it, and the account's access key was issued to it.
+  /// `login_event` (2 signed in, 1 guest) is set by `MobileREST.request`, which knows whether the
+  /// recommendation account sends an access key.
+  static func fields(page: Int, screen: (short: Int, long: Int)) -> [String: String] {
     let idx = max(0, page - 1)
     return [
-      "build": "8430300", "c_locale": "zh_CN", "channel": "master", "column": "2",
-      "device": "phone", "device_name": "android", "device_type": "0", "disable_rcmd": "0",
-      "flush": "8", "fnval": "976", "fnver": "0", "force_host": "2", "fourk": "1",
-      "guidance": "1", "https_url_req": "1", "idx": String(idx), "mobi_app": "android_i",
-      "network": "wifi", "platform": "android", "player_net": "1",
+      "build": "9190400", "c_locale": "zh-Hans_CN", "channel": "bili", "column": "2",
+      "device_name": deviceName, "device_type": "0", "disable_rcmd": "0",
+      "flush": "0", "fnval": "272", "fnver": "0", "force_host": "0", "fourk": "0",
+      "guidance": "0", "https_url_req": "0", "idx": String(idx), "mobi_app": "android",
+      "network": "mobile", "platform": "android", "player_net": "2",
       "pull": idx == 0 ? "true" : "false", "qn": "32", "recsys_mode": "0",
-      "s_locale": "zh_CN", "splash_id": "", "voice_balance": "0",
-      "statistics": #"{"appId":1,"platform":3,"version":"8.43.0","abtest":""}"#,
+      "s_locale": "zh-Hans_CN", "voice_balance": "1",
+      "statistics": #"{"appId":1,"platform":3,"version":"9.19.0","abtest":""}"#,
+      "auto_refresh_state": "1", "autoplay_card": "11", "autoplay_timestamp": "0", "client_attr": "0",
+      "cny_info": #"{"cny_active":0,"ab_test_vars":{},"cny_interest_attach":""}"#, "column_timestamp": "0",
+      "inline_danmu": "2", "inline_sound": "1", "inline_sound_cold_state": "2", "interest_id": "0",
+      "login_event": "1", "open_event": "cold",
+      "player_extra_content": #"{"short_edge":"\#(screen.short)","long_edge":"\#(screen.long)","cur_language":""}"#,
+      "qn_policy": "1", "raw_window_size_type": "1", "soft_fnval": "0", "splash_creative_id": "0",
+      "video_mode": "1", "volume_balance": "1", "window_size_type": "1",
     ]
   }
+  /// The official client sends the hardware model; here that is `utsname.machine` (iPhone16,2).
+  static let deviceName: String = {
+    var info = utsname()
+    uname(&info)
+    let model = withUnsafeBytes(of: &info.machine) { raw in
+      String(decoding: raw.prefix(while: { $0 != 0 }), as: UTF8.self)
+    }
+    return model.isEmpty ? "android" : model
+  }()
+  /// The screen's short and long edge in pixels, as the official client reports its display.
+  @MainActor static func screenEdges() -> (short: Int, long: Int) {
+    let size = UIScreen.main.nativeBounds.size
+    let edges = (Int(min(size.width, size.height)), Int(max(size.width, size.height)))
+    return edges.0 > 0 ? edges : (1080, 2400)
+  }
+  static let userAgent =
+    "Mozilla/5.0 BiliDroid/9.19.0 (bbcallen@gmail.com) os/android model/android mobi_app/android build/9190400 channel/bili innerVer/9190410 osVer/15 network/1"
 }

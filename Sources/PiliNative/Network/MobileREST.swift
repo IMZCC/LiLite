@@ -21,6 +21,7 @@ enum MobileREST {
     // Explicit fields cannot replace the account selected for this API's role.
     fields.removeValue(forKey: "access_key")
     if let token = session.token, !token.isEmpty { fields["access_key"] = token }
+    if path == "/x/v2/feed/index" { fields["login_event"] = fields["access_key"] == nil ? "1" : "2" }
     var url = URLComponents()
     url.scheme = "https"; url.host = "app.bilibili.com"; url.path = path
     url.percentEncodedQuery = MobileClientSigning.formEncoded(MobileClientSigning.signed(fields, timestamp: timestamp))
@@ -45,10 +46,14 @@ enum MobileREST {
       result.setValue("https://www.bilibili.com/", forHTTPHeaderField: "Referer")
     }
     if url.path == "/x/v2/feed/index" {
+      // The official client's identity for its home feed (see MobileFeed.fields); the fingerprints
+      // are computed natively there and stay placeholders, as in the original.
       let fingerprint = String(repeating: "1", count: 64)
       result.setValue(fingerprint, forHTTPHeaderField: "fp_local")
       result.setValue(fingerprint, forHTTPHeaderField: "fp_remote")
-      result.setValue("11111111", forHTTPHeaderField: "session_id")
+      result.setValue(String(format: "%08x", UInt32.random(in: .min ... .max)), forHTTPHeaderField: "session_id")
+      result.setValue("android64", forHTTPHeaderField: "app-key")
+      result.setValue(MobileFeed.userAgent, forHTTPHeaderField: "User-Agent")
     }
     return result
   }

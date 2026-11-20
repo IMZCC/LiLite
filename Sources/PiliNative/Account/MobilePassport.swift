@@ -1,19 +1,40 @@
 import Foundation
 
+/// A Geetest registration from the passport service. Requests that carry the `buvid` header are
+/// now given Geetest v4 (`recaptcha_type`/`ct` "geetest4"): `gt` is then a v4 captcha id, which
+/// the v3 script reports as `error_34`, and the challenge is unused.
 struct MobileCaptcha: Identifiable, Equatable {
   let id = UUID()
-  let gt: String, challenge: String, token: String
-  init(gt: String, challenge: String, token: String) throws {
-    guard !gt.isEmpty, !challenge.isEmpty, !token.isEmpty,
+  let gt: String, challenge: String, token: String, v4: Bool
+  init(gt: String, challenge: String, token: String, v4: Bool = false) throws {
+    guard !gt.isEmpty, v4 || !challenge.isEmpty, !token.isEmpty,
       [gt, challenge, token].allSatisfy({ $0.utf8.count <= 4096 })
     else { throw ServiceError("验证码信息不完整，请重试") }
-    self.gt = gt; self.challenge = challenge; self.token = token
+    self.gt = gt; self.challenge = challenge; self.token = token; self.v4 = v4
   }
+  static func isV4(_ type: String?) -> Bool { type == "geetest4" }
 }
+/// What the official web captcha controller submits: v3's challenge, validate and seccode, or
+/// v4's lot number, output, pass token and time, each with the registration's recaptcha token.
 struct MobileCaptchaSolution {
-  let challenge: String, validate: String, seccode: String, token: String
+  enum Result {
+    case v3(challenge: String, validate: String, seccode: String)
+    case v4(lotNumber: String, output: String, passToken: String, time: String)
+  }
+  let result: Result, token: String
+  /// The v3 challenge Geetest echoes back, which must belong to the registration shown.
+  var challenge: String? {
+    if case .v3(let challenge, _, _) = result { return challenge }
+    return nil
+  }
   var fields: [String: String] {
-    ["gee_challenge": challenge, "gee_validate": validate, "gee_seccode": seccode, "recaptcha_token": token]
+    switch result {
+    case .v3(let challenge, let validate, let seccode):
+      return ["gee_challenge": challenge, "gee_validate": validate, "gee_seccode": seccode, "recaptcha_token": token]
+    case .v4(let lotNumber, let output, let passToken, let time):
+      return ["gee_lot_number": lotNumber, "gee_captcha_output": output, "gee_pass_token": passToken,
+        "gee_gen_time": time, "recaptcha_token": token]
+    }
   }
 }
 struct MobileLoginSession {
@@ -173,23 +194,36 @@ actor MobilePassport {
     }
     return (key, salt)
   }
-  private func captcha(_ data: [String: Any]) async throws -> MobileCaptcha {
+  /// The registration is in the query of `recaptcha_url`, which points at the official H5 verify
+  /// page (`www.bilibili.com/h5/project-msg-auth/verify?ct=…&gee_gt=…`); only the query is read and
+  /// the page is never opened. A passport-only host check rejected that page, so login captchas
+  /// fell back to a separate pre-registration whose token was not the one the request issued.
+  static func captchaRegistration(_ data: [String: Any]) -> MobileCaptcha? {
     for field in ["recaptcha_url", "url"] {
-      if let raw = data[field] as? String, let url = URL(string: raw), url.scheme == "https", url.host == "passport.bilibili.com",
-        url.user == nil, url.password == nil, url.port == nil, let c = URLComponents(url: url, resolvingAgainstBaseURL: false)
-      {
-        let groups = Dictionary(grouping: c.queryItems ?? [], by: \.name)
-        if groups.values.allSatisfy({ $0.count == 1 }), let gt = groups["gee_gt"]?.first?.value,
-          let challenge = groups["gee_challenge"]?.first?.value, let token = groups["recaptcha_token"]?.first?.value,
-          let result = try? MobileCaptcha(gt: gt, challenge: challenge, token: token) { return result }
-      }
+      guard let raw = data[field] as? String, let url = URL(string: raw), url.scheme == "https",
+        ["www.bilibili.com", "passport.bilibili.com"].contains(url.host ?? ""),
+        url.user == nil, url.password == nil, url.port == nil,
+        let c = URLComponents(url: url, resolvingAgainstBaseURL: false)
+      else { continue }
+      let groups = Dictionary(grouping: c.queryItems ?? [], by: \.name)
+      guard groups.values.allSatisfy({ $0.count == 1 }), let gt = groups["gee_gt"]?.first?.value,
+        let token = groups["recaptcha_token"]?.first?.value
+      else { continue }
+      let type = groups["ct"]?.first?.value ?? groups["recaptcha_type"]?.first?.value ?? data["recaptcha_type"] as? String
+      if let result = try? MobileCaptcha(gt: gt, challenge: groups["gee_challenge"]?.first?.value ?? "", token: token,
+        v4: MobileCaptcha.isV4(type)) { return result }
     }
+    return nil
+  }
+  private func captcha(_ data: [String: Any]) async throws -> MobileCaptcha {
+    if let result = Self.captchaRegistration(data) { return result }
     return try await preCaptcha()
   }
   func preCaptcha() async throws -> MobileCaptcha {
     let result = try await packet("/x/safecenter/captcha/pre", signed: false)
     try result.requireSuccess()
-    return try MobileCaptcha(gt: result.data["gee_gt"] as? String ?? "", challenge: result.data["gee_challenge"] as? String ?? "", token: result.data["recaptcha_token"] as? String ?? "")
+    return try MobileCaptcha(gt: result.data["gee_gt"] as? String ?? "", challenge: result.data["gee_challenge"] as? String ?? "",
+      token: result.data["recaptcha_token"] as? String ?? "", v4: MobileCaptcha.isV4(result.data["recaptcha_type"] as? String))
   }
   private func outcome(_ result: Packet) async throws -> MobileLoginOutcome {
     if result.code == -105 { return .captcha(try await captcha(result.data)) }

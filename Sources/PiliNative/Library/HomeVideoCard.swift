@@ -83,10 +83,14 @@ struct HomeVideoCard: View {
         if let name { Text(name).foregroundStyle(.secondary) }
       }.foregroundStyle(HomeCardStyle.accent).lineLimit(1)
     } else if let reason = video.recommendationReason, !reason.isEmpty {
-      Text(reason).lineLimit(1).foregroundStyle(HomeCardStyle.accent)
-        .padding(.horizontal, 5).padding(.vertical, 2)
-        .background(
-          HomeCardStyle.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+      // Like the original card: the reason badge, then the uploader in what room is left.
+      HStack(spacing: 4) {
+        Text(reason).lineLimit(1).foregroundStyle(HomeCardStyle.accent).fixedSize()
+          .padding(.horizontal, 5).padding(.vertical, 2)
+          .background(
+            HomeCardStyle.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+        if let name { Text(name).lineLimit(1).foregroundStyle(.secondary) }
+      }
     } else if let name {
       HStack(spacing: 4) {
         Text("UP").font(.system(size: 8, weight: .bold))

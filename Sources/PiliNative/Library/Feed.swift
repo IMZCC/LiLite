@@ -62,7 +62,8 @@ final class FeedModel {
       let batch =
         try await
         (shelf == .recommended
-        ? BiliAPI.shared.recommendations(next, mobile: mobile) : BiliAPI.shared.popular(next))
+        ? BiliAPI.shared.recommendations(next, mobile: mobile, screen: MobileFeed.screenEdges())
+        : BiliAPI.shared.popular(next))
       guard token == t, !Task.isCancelled else { return }
       let previous = videos
       let revision = contentRevision
@@ -212,9 +213,11 @@ struct FeedView: View {
   /// lists start below the header and scroll on beneath it, and anything fixed sits below it.
   private func deck(_ channels: [HomeChannel], viewport: CGSize, under: CGFloat) -> some View {
     let owner = accounts.state.owner(.role(.recommend)) ?? ""
+    // The app feed is personal only with the account's access key: reload once it is authorised.
+    let token = accounts.state.accounts.first { $0.id == owner }?.mobileToken?.isEmpty == false
     return HomeDeck(
       channels: channels, selected: shelf, shelf: $shelf, motion: channelMotion, viewport: viewport,
-      under: under, shelfID: "\(mobile):\(rules.hashValue):\(owner)")
+      under: under, shelfID: "\(mobile):\(rules.hashValue):\(owner):\(token)")
       .equatable()
       .id("\(accounts.state.active ?? ""):\(owner)")
       .onChange(of: channels) { _, new in
@@ -506,6 +509,37 @@ extension EnvironmentValues {
   }
 }
 
+/// The app feed (`x/v2/feed/index`) is only personal with the recommendation account's access
+/// key. A signed-in account without one (web, cookie or imported sign-in) gets the guest feed,
+/// unlike the official app, so say so once and offer 移动端授权.
+private struct MobileFeedAuthorizationTip: View {
+  @EnvironmentObject private var accounts: AccountContext
+  @AppStorage("feed.mobile") private var mobile = true
+  @AppStorage("feed.authorizationTip") private var show = true
+  var body: some View {
+    if show, mobile, let uid = accounts.state.owner(.role(.recommend)),
+      accounts.state.accounts.first(where: { $0.id == uid })?.mobileToken?.isEmpty != false
+    {
+      HStack(spacing: 10) {
+        Image(systemName: "iphone.badge.exclamationmark").foregroundStyle(.orange)
+        NavigationLink { DeferredPage { MobileAuthorization(uid: uid) } } label: {
+          VStack(alignment: .leading, spacing: 2) {
+            Text("推荐账号未完成移动端授权").piliFont(.subheadline, weight: .semibold)
+            Text("App 推荐暂为游客内容，授权后与官方客户端一致").piliFont(.caption).foregroundStyle(.secondary)
+          }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+        Button { show = false } label: {
+          Image(systemName: "xmark").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            .frame(width: 28, height: 28).contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel("不再提示")
+      }
+      .padding(.horizontal, 12).padding(.vertical, 10)
+      .background(Color(uiColor: .secondarySystemGroupedBackground),
+        in: RoundedRectangle(cornerRadius: HomeCardStyle.radius, style: .continuous))
+    }
+  }
+}
+
 /// The feed's loading / retry / load-more footer: the only part that follows `busy`.
 private struct ShelfFooter: View {
   let model: FeedModel
@@ -641,6 +675,7 @@ private struct VideoShelf: View, Equatable {
   }
 
   @ViewBuilder private var shelfHeader: some View {
+    if shelf == .recommended { MobileFeedAuthorizationTip() }
     if shelf == .popular && hotEntrances {
       HStack {
         ForEach(Rankings.Mode.allCases, id: \.self) { mode in
