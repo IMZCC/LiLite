@@ -985,10 +985,13 @@ struct Discussion: View {
           if isOwner { replyTag("UP", tint: .pink) }
           Spacer(minLength: 4)
         }
-        // The decoration card floats in the corner without growing the row, as in the original.
-        .padding(.trailing, r.member?.card != nil ? 84 : 0)
+        // The decoration card as the official client lays it over the author row: its 288 × 48
+        // strip from the row's top-right (the avatar's top), the name clear of the art on its
+        // right, and the head tall enough that the comment starts below the art.
+        .padding(.trailing, r.member?.card != nil ? ReplyCardBadge.art + 6 : 0)
+        .frame(minHeight: r.member?.card != nil ? 38 : 0, alignment: .top)
         .overlay(alignment: .topTrailing) {
-          ReplyCardBadge(card: r.member?.card).offset(y: -4).allowsHitTesting(false)
+          ReplyCardBadge(card: r.member?.card, overlay: true).offset(y: -2).allowsHitTesting(false)
         }
         VStack(alignment: .leading, spacing: 6) {
           if let label = r.optionLabel {
@@ -1252,12 +1255,24 @@ struct Discussion: View {
   }
   private func likeLabel(_ r: Reply, active: Bool) -> some View {
     HStack(spacing: 4) {
-      Image(systemName: active ? "hand.thumbsup.fill" : "hand.thumbsup").font(.system(size: 16))
+      // The official comment like: the line thumb, filled and pink once liked, with a pop.
+      BiliIconShape(icon: active ? .likeFill : .like).frame(width: 17, height: 17)
+        .keyframeAnimator(initialValue: CGFloat(1), trigger: active) { view, scale in
+          view.scaleEffect(scale)
+        } keyframes: { _ in
+          KeyframeTrack {
+            CubicKeyframe(active ? 1.3 : 0.88, duration: 0.12)
+            SpringKeyframe(1, duration: 0.4, spring: .bouncy(duration: 0.4, extraBounce: 0.2))
+          }
+        }
       if let n = r.like, n > 0 {
         Text(Int64(n).formatted(.number.notation(.compactName))).monospacedDigit()
+          .contentTransition(.numericText())
       }
     }
     .foregroundStyle(active ? Color.accentColor : Color.secondary)
+    .animation(.snappy(duration: 0.25), value: active)
+    .animation(.snappy(duration: 0.25), value: r.like)
     .accessibilityElement(children: .combine).accessibilityLabel("点赞 \(r.like ?? 0)")
   }
   @MainActor private func change(_ r: Reply, _ kind: String, _ flag: String, as uid: String) async {

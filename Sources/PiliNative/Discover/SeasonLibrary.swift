@@ -84,66 +84,64 @@ struct FollowedSeasons: View {
         loaded.formUnion((r.list ?? []).map(\.id))
         return Page(items: r.list ?? [], next: p * 15 < (r.total ?? 0) ? "\(p+1)" : nil)
       } row: { s in
-        if selecting && mine {
-          Button {
-            if !selected.insert(s.id).inserted { selected.remove(s.id) }
-          } label: {
-            HStack(spacing: 10) {
-              Image(systemName: selected.contains(s.id) ? "checkmark.circle.fill" : "circle")
-                .font(.title3)
-                .foregroundStyle(selected.contains(s.id) ? Color.accentColor : Color.secondary)
-                .contentTransition(.symbolEffect(.replace))
-              poster(s)
+        Group {
+          if selecting && mine {
+            Button {
+              if !selected.insert(s.id).inserted { selected.remove(s.id) }
+            } label: {
+              HStack(spacing: 12) {
+                Image(systemName: selected.contains(s.id) ? "checkmark.circle.fill" : "circle")
+                  .font(.system(size: 20))
+                  .foregroundStyle(selected.contains(s.id) ? Color.accentColor : Color.secondary)
+                  .contentTransition(.symbolEffect(.replace))
+                FollowedSeasonRow(season: s, cinema: type == 2) { EmptyView() }
+              }
+            }.buttonStyle(.plain)
+          } else {
+            PlainRowLink {
+              SeasonView(season: s)
+            } label: {
+              FollowedSeasonRow(season: s, cinema: type == 2) {
+                if mine {
+                  Menu { moveActions(s) } label: {
+                    Image(systemName: "ellipsis").rotationEffect(.degrees(90))
+                      .font(.system(size: 15, weight: .semibold)).foregroundStyle(FollowedSeasonRow<EmptyView>.grey)
+                      .frame(width: 30, height: 30).contentShape(Rectangle())
+                  }
+                  .menuStyle(.button).buttonStyle(.plain)
+                  .accessibilityLabel("更多")
+                }
+              }
             }
-          }.buttonStyle(.plain)
-        } else {
-          PlainRowLink {
-            SeasonView(season: s)
-          } label: {
-            poster(s)
+            .contextMenu {
+              if mine {
+                Button("选择") {
+                  selected = [s.id]
+                  selecting = true
+                }
+                moveActions(s)
+              }
+            }.swipeActions { if mine { Button("取消追番追剧", role: .destructive) { remove = s } } }
           }
-          .contextMenu {
-            if mine {
-              Button("选择") {
-                selected = [s.id]
-                selecting = true
-              }
-              ForEach(destinations, id: \.self) { dest in
-                Button("移到" + statusText(dest)) { Task { await move([s.id], to: dest) } }
-              }
-              Button("取消追番追剧", role: .destructive) { remove = s }
-            }
-          }.swipeActions { if mine { Button("取消追番追剧", role: .destructive) { remove = s } } }
         }
+        // Rows from 16pt in, each drawing its own divider.
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 10))
+        .listRowSeparator(.hidden)
       }.id("\(uid):\(accounts.state.active ?? ""):\(type):\(status):\(revision)")
     }
-    .piliSafeAreaBar(edge: .top, spacing: 0) {
-      VStack(spacing: 2) {
-        if !fixedType {
-          ChipBar(items: [1, 2], selection: $type, title: { $0 == 1 ? "追番" : "追剧" })
-        }
-        ChipBar(items: [0, 1, 2, 3], selection: $status, title: { ["全部", "想看", "在看", "看过"][$0] })
-      }.padding(.vertical, 6)
-    }
+    .piliSafeAreaBar(edge: .top, spacing: 0) { header }
     .navigationTitle(fixedType ? (type == 1 ? "追番" : "追剧") : "追番追剧").disabled(busy)
       .onChange(of: type) { _, _ in reset() }.onChange(of: status) { _, _ in reset() }
       .onChange(of: accounts.state.active) { _, _ in reset() }
       .toolbar {
-        if mine {
-          if selecting {
-            Menu("已选 \(selected.count)") {
-              Button("全选已加载作品") { selected = loaded }
-              Button("取消全选") { selected = [] }
-              ForEach(destinations, id: \.self) { dest in
-                Button("移到" + statusText(dest)) { Task { await move(selected, to: dest) } }
-                  .disabled(
-                    selected.isEmpty)
-              }
+        if mine && selecting {
+          Menu("已选 \(selected.count)") {
+            Button("全选已加载作品") { selected = loaded }
+            Button("取消全选") { selected = [] }
+            ForEach(destinations, id: \.self) { dest in
+              Button("移到" + statusText(dest)) { Task { await move(selected, to: dest) } }
+                .disabled(selected.isEmpty)
             }
-          }
-          Button(selecting ? "完成" : "选择") {
-            selecting.toggle()
-            selected = []
           }
         }
       }
@@ -159,12 +157,82 @@ struct FollowedSeasons: View {
         Text(issue ?? "")
       }
   }
+  @Namespace private var tabs
+  /// Two levels, as in the official page: 追番 / 追剧 as the page's tabs, then the 想看 · 在看 ·
+  /// 看过 filters as small chips with 管理 at their end, over a hairline.
+  private var header: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      if !fixedType {
+        HStack(spacing: 26) {
+          ForEach([1, 2], id: \.self) { kind in
+            let current = type == kind
+            Button {
+              guard !current else { return }
+              TouchFeedback.light()
+              withAnimation(.snappy(duration: 0.28)) { type = kind }
+            } label: {
+              VStack(spacing: 5) {
+                // The semibold title's width reserved, so the weight change never shifts the tabs.
+                Text(kind == 1 ? "追番" : "追剧").font(.system(size: 17, weight: .semibold)).hidden()
+                  .overlay {
+                    Text(kind == 1 ? "追番" : "追剧")
+                      .font(.system(size: 17, weight: current ? .semibold : .regular))
+                      .foregroundStyle(current ? Color.primary : Color.secondary)
+                  }
+                ZStack {
+                  if current {
+                    Capsule().fill(Color.accentColor).frame(width: 18, height: 3)
+                      .matchedGeometryEffect(id: "underline", in: tabs)
+                  }
+                }.frame(height: 3)
+              }.contentShape(Rectangle())
+            }.buttonStyle(.plain)
+          }
+        }
+      }
+      HStack(spacing: 8) {
+        ForEach([1, 2, 3], id: \.self) { value in
+          let current = status == value
+          Button {
+            guard !current else { return }
+            TouchFeedback.light()
+            withAnimation(.snappy(duration: 0.25)) { status = value }
+          } label: {
+            Text(statusText(value))
+              .font(.system(size: 13, weight: current ? .semibold : .regular))
+              .foregroundStyle(current ? Color.accentColor : Color.secondary)
+              .padding(.horizontal, 12).padding(.vertical, 5)
+              .background(current ? Color.accentColor.opacity(0.12) : Color(uiColor: .tertiarySystemFill), in: Capsule())
+          }.buttonStyle(.plain)
+        }
+        Spacer(minLength: 0)
+        if mine {
+          Button {
+            TouchFeedback.light()
+            withAnimation(.snappy(duration: 0.25)) {
+              selecting.toggle()
+              selected = []
+            }
+          } label: {
+            Label(selecting ? "完成" : "管理", systemImage: selecting ? "checkmark" : "list.bullet")
+              .font(.system(size: 13, weight: .medium))
+              .foregroundStyle(selecting ? Color.accentColor : Color.secondary)
+              .padding(.vertical, 5).contentShape(Rectangle())
+          }.buttonStyle(.plain)
+        }
+      }
+    }
+    .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 10)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .overlay(alignment: .bottom) { Rectangle().fill(Color(uiColor: .separator)).frame(height: 0.5) }
+  }
   private var destinations: [Int] { [1, 2, 3].filter { $0 != status } }
-  private func poster(_ s: Season) -> some View {
-    PosterRow(
-      cover: httpsURL(s.cover), title: s.title, badge: s.badge,
-      lines: [s.order, s.is_finish == 0 ? s.renewal_time : nil, s.index_show].compactMap { $0 },
-      accent: s.progress)
+  /// The official row's "⋮" sheet: move to another list, or stop following.
+  @ViewBuilder private func moveActions(_ s: Season) -> some View {
+    ForEach(destinations, id: \.self) { dest in
+      Button("移到" + statusText(dest)) { Task { await move([s.id], to: dest) } }
+    }
+    Button("取消追番追剧", role: .destructive) { remove = s }
   }
   private func statusText(_ n: Int) -> String { ["", "想看", "在看", "看过"][n] }
   private func reset() {
@@ -187,6 +255,105 @@ struct FollowedSeasons: View {
         expectedAccount: uid)
       reset()
     } catch { issue = error.localizedDescription }
+  }
+}
+/// One followed show as the official 追番 / 追剧 list draws it (`bangumi_item_common_collection`):
+/// a 78 × 104 poster 10pt down with its badge; beside it from 8pt down the title (14pt, two
+/// lines), for 追剧 the styles and areas, the latest episode (pink while it is unwatched) and the
+/// watch progress; the "⋮" in the bottom-right corner. Sized up for the iPhone (84 × 112 poster,
+/// 16 / 13pt text) with the progress row on the poster's bottom line.
+struct FollowedSeasonRow<Accessory: View>: View {
+  let season: Season
+  let cinema: Bool
+  @ViewBuilder var accessory: () -> Accessory
+  static var grey: Color { dynamic(0x9499A0, 0x757A81) }
+  private static var ink: Color { dynamic(0x18191C, 0xE7E9EB) }
+  private static var pink: Color { dynamic(0xFB7299, 0xD44E7D) }
+  private static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
+    func color(_ n: UInt32) -> UIColor {
+      UIColor(red: CGFloat(n >> 16 & 255) / 255, green: CGFloat(n >> 8 & 255) / 255, blue: CGFloat(n & 255) / 255, alpha: 1)
+    }
+    let l = color(light), d = color(dark)
+    return Color(uiColor: UIColor { $0.userInterfaceStyle == .dark ? d : l })
+  }
+  /// The poster, 3:4; the text column spans its height.
+  private static var posterSize: CGSize { CGSize(width: 84, height: 112) }
+  var body: some View {
+    HStack(alignment: .top, spacing: 12) {
+      poster
+      // Title and episode state from the top, the watch progress and "⋮" on the poster's
+      // bottom line, so the column is as tall as the poster instead of a block at its top.
+      VStack(alignment: .leading, spacing: 0) {
+        Text(season.title).font(.system(size: 16, weight: .medium)).foregroundStyle(Self.ink)
+          .lineLimit(2).multilineTextAlignment(.leading).padding(.top, 1)
+        if cinema, let meta { line(meta, Self.grey).padding(.top, 5) }
+        if let update { line(update, unwatched ? Self.pink : Self.grey).padding(.top, 5) }
+        Spacer(minLength: 6)
+        HStack(spacing: 4) {
+          line(season.progress.flatMap { $0.isEmpty ? nil : $0 } ?? "尚未观看", Self.grey)
+          Spacer(minLength: 0)
+          accessory()
+        }
+        .frame(minHeight: 30)
+        .padding(.bottom, -6)
+      }
+      .frame(maxWidth: .infinity, minHeight: Self.posterSize.height, alignment: .topLeading)
+    }
+    .padding(.vertical, 12)
+    // The row's own hairline (Ga2), as the official item draws it, instead of the list's
+    // separator: SwiftUI hides that one beside a row it still counts as selected after a pop.
+    .overlay(alignment: .bottom) { Rectangle().fill(Self.dynamic(0xE3E5E7, 0x2F3134)).frame(height: 0.5) }
+    .contentShape(Rectangle())
+  }
+  private var poster: some View {
+    Rectangle().fill(.quaternary).frame(width: Self.posterSize.width, height: Self.posterSize.height)
+      .overlay { SiteThumbnail(url: httpsURL(season.cover)) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
+      .overlay(alignment: .topTrailing) {
+        if let badge = season.badge, !badge.isEmpty {
+          Text(badge).font(.system(size: 10, weight: .medium)).foregroundStyle(.white)
+            .padding(.horizontal, 4).padding(.vertical, 0.5)
+            .background(badgeColor, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
+            .padding(.top, 4).padding(.trailing, 4)
+        }
+      }
+      .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+  }
+  private var badgeColor: Color {
+    guard let raw = season.badge_info?.value?.bg_color else { return Self.pink }
+    let hex = raw.hasPrefix("#") ? String(raw.dropFirst()) : raw
+    guard hex.count == 6, let n = UInt32(hex, radix: 16) else { return Self.pink }
+    return Color(red: Double(n >> 16) / 255, green: Double(n >> 8 & 255) / 255, blue: Double(n & 255) / 255)
+  }
+  private func line(_ text: String, _ color: Color) -> some View {
+    Text(text).font(.system(size: 13)).foregroundStyle(color).lineLimit(1)
+  }
+  /// 追剧: the styles, then up to three areas, as the official row shows them.
+  private var meta: String? {
+    let styles = (season.styles?.value ?? []).filter { !$0.isEmpty }.joined(separator: "/")
+    let areas = (season.areas?.value ?? []).compactMap(\.name).filter { !$0.isEmpty }.prefix(3).joined(separator: "、")
+    let text = [styles, areas].filter { !$0.isEmpty }.joined(separator: " | ")
+    return text.isEmpty ? nil : text
+  }
+  private var update: String? {
+    [season.new_ep?.index_show, season.index_show].compactMap { $0 }.first { !$0.isEmpty }
+  }
+  /// The latest episode is past the one watched (or an airing show not yet started).
+  private var unwatched: Bool {
+    // Episode numbers only ("第12话", "全12集"): a film's release date or a watched time is not one.
+    func number(_ text: String?, after marks: [String]) -> Int? {
+      guard let text else { return nil }
+      for mark in marks {
+        guard let found = text.range(of: mark) else { continue }
+        let digits = text[found.upperBound...].prefix { $0.isNumber }
+        if let n = Int(digits) { return n }
+      }
+      return nil
+    }
+    guard let latest = number(season.new_ep?.index_show ?? season.index_show, after: ["第", "全"]) else { return false }
+    guard let watched = number(season.progress, after: ["第"]) else {
+      return season.is_finish == 0 && season.progress?.isEmpty != false
+    }
+    return latest > watched
   }
 }
 struct SeasonFollow: View {

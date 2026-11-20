@@ -91,7 +91,7 @@ struct EpisodePlayer: View {
   @StateObject private var model = PlayerModel()
   @EnvironmentObject private var accounts: AccountContext
   @AppStorage(InterfaceInteraction.preinitialize) private var early = false
-  @AppStorage(VideoTransport.autoKey) private var autoplay = false
+  @AppStorage(VideoTransport.autoKey) private var autoplay = true
   @State private var manualTicket: PlaybackEntryID?
   @State private var prepared: PlaybackEntryID?
   private func ticket(_ e: SeasonInfo.Episode) -> PlaybackEntryID {
@@ -105,6 +105,10 @@ struct EpisodePlayer: View {
   @AppStorage("play.episodeSkip") private var skip = EpisodeSkipMode.once.rawValue
   @State private var panelOverride: Bool?
   @AppStorage("detail.episodeReplies") private var showReplies = true
+  /// The comment count beside 评论, as the video page shows it, once the list has read it.
+  @State private var commentCount: Int64?
+  @State private var composeBullet = false
+  @State private var bulletDraft = ""
   @State private var theater = false
   @State private var theaterCovering = false
   @State private var reload = 0
@@ -315,10 +319,35 @@ struct EpisodePlayer: View {
       }.padding(.horizontal, 16).padding(.vertical, 6).frame(maxWidth: .infinity)
     }.defaultScrollAnchor(.top).reportsScrollCollapse()
   }
+  /// The tab bar's "点我发弹幕" pill with the bullet switch at its end, as on the video page and in
+  /// the official client.
+  private func bulletAccessory(_ episode: SeasonInfo.Episode) -> some View {
+    HStack(spacing: 0) {
+      Button {
+        guard accounts.state.active != nil, episode.cid > 0 else { return }
+        withAnimation(.snappy(duration: 0.25)) { composeBullet = true }
+      } label: {
+        Text("点我发弹幕").font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
+          .padding(.leading, 14).padding(.trailing, 10).frame(height: 30)
+          .contentShape(Rectangle())
+      }.buttonStyle(.plain).disabled(accounts.state.active == nil || episode.cid <= 0)
+      Button {
+        TouchFeedback.light()
+        dm.toggle()
+      } label: {
+        DanmakuSwitchGlyph(on: dm)
+          .frame(width: 40, height: 26)
+          .background(Color(uiColor: .systemBackground), in: Capsule())
+          .padding(2).contentShape(Rectangle())
+      }.buttonStyle(.plain).accessibilityLabel(dm ? "关闭弹幕" : "开启弹幕")
+    }
+    .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+  }
   private func episodePanels(_ episode: SeasonInfo.Episode, oid: Int64?) -> some View {
     PlaybackPanels(
       model: model, key: String(episode.id), canDiscuss: showReplies && (oid ?? 0) > 0,
-      selection: $panelOverride, full: { theater = true }, startDeferred: prepared == ticket(episode) ? nil : { manualTicket = ticket(episode); reload += 1 }, playlist: JoinedPlaybackPanels.merge(libraryPanel, episodePlaylist(episode), fullscreen: false)
+      selection: $panelOverride, full: { theater = true }, startDeferred: prepared == ticket(episode) ? nil : { manualTicket = ticket(episode); reload += 1 }, playlist: JoinedPlaybackPanels.merge(libraryPanel, episodePlaylist(episode), fullscreen: false),
+      accessory: AnyView(bulletAccessory(episode)), commentCount: commentCount
     ) {
       if prepared == ticket(episode) { screen(episode) }
       else {
@@ -332,13 +361,25 @@ struct EpisodePlayer: View {
       if let oid, oid > 0 {
         // Rebuilt only when what it shows changes (see the video page).
         StableContent(key: [String(oid), String(course), episode.label, String(model.duration)]) {
-          Discussion(oid: oid, type: course ? 33 : 1, embeddedTitle: episode.label)
+          Discussion(oid: oid, type: course ? 33 : 1, embeddedTitle: episode.label,
+            readingCount: { n in commentCount = n })
             .environment(\.replyPlayback, ReplyPlaybackTarget(duration: model.duration, seek: model.seek, model: model))
         }.equatable().id(oid)
       }
     }.linkedDiscussion(oid:oid,type:course ? 33:1,author:nil,
       playback:ReplyPlaybackTarget(duration:model.duration,seek:model.seek,model:model),
       selectComments:{if showReplies {panelOverride=true}})
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if composeBullet, let uid = accounts.state.active, episode.cid > 0 {
+        BulletQuickBar(
+          cid: episode.cid, bvid: episode.bvid, uid: uid, time: { model.seconds },
+          posted: { model.didPost($0, cid: episode.cid) },
+          close: { withAnimation(.snappy(duration: 0.25)) { composeBullet = false } },
+          draft: $bulletDraft)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+      }
+    }
+    .onChange(of: episode.id) { _, _ in commentCount = nil; composeBullet = false; bulletDraft = "" }
   }
   @MainActor private func playEpisode(_ episode: SeasonInfo.Episode) async {
     let key = ticket(episode)

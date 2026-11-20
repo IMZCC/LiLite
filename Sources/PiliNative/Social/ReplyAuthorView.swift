@@ -20,7 +20,11 @@ extension ReplyAuthor {
         ? nil
         : .init(
           image: cardImage, number: either(garb.cardNumber, old.garbCardNumber),
-          prefix: garb.fanNumPrefix, color: either(garb.cardFanColor, old.garbCardFanColor)))
+          prefix: garb.fanNumPrefix, color: either(garb.cardFanColor, old.garbCardFanColor),
+          gradient: garb.hasFanNumColorFormat
+            ? .init(start: garb.fanNumColorFormat.startPoint, end: garb.fanNumColorFormat.endPoint,
+              colors: garb.fanNumColorFormat.colors, stops: garb.fanNumColorFormat.gradients)
+            : nil))
     if row.hasMember { level = Int(old.level); senior = old.isSeniorMember == 1 }
     if old.fansMedalLevel > 0 && !old.fansMedalName.isEmpty {
       medal = .init(name: old.fansMedalName, level: old.fansMedalLevel,
@@ -124,31 +128,114 @@ struct ReplyAuthorLabel: View {
 
 struct ReplyCardBadge: View {
   let card: ReplyAuthor.Card?
+  /// The official comment layout (its `DecorationOverlay`): the card in a box at the top-right of
+  /// the author row, laid over it, instead of a small badge in a row of its own.
+  var overlay = false
+  /// Inline badge: 38pt tall at its natural width, up to this wide.
+  static let height: CGFloat = 38, width: CGFloat = 130
+  /// The official box: the card is a 6:1 strip with its art on the right, drawn across 288 × 48.
+  static let strip = CGSize(width: 288, height: 48)
+  /// The art's part of the strip, on its right (the official tap target): the name keeps clear.
+  static let art: CGFloat = 111
+  /// Narrower author rows show no card, as in the official client.
+  static let minimumRow: CGFloat = 244
   @AppStorage("appearance.decorate") private var decorate = true
-  private func color(_ raw: String) -> Color {
+  /// #RRGGBB or #AARRGGBB.
+  private static func color(_ raw: String) -> Color? {
     let hex = raw.hasPrefix("#") ? String(raw.dropFirst()) : raw
-    guard hex.count == 6, let n = UInt32(hex, radix: 16) else { return .primary }
+    guard hex.count == 6 || hex.count == 8, let n = UInt32(hex, radix: 16) else { return nil }
+    let alpha = hex.count == 8 ? Double(n >> 24) / 255 : 1
     return Color(
-      red: Double(n >> 16) / 255, green: Double(n >> 8 & 255) / 255, blue: Double(n & 255) / 255)
+      red: Double(n >> 16 & 255) / 255, green: Double(n >> 8 & 255) / 255, blue: Double(n & 255) / 255,
+      opacity: alpha)
   }
+  private func color(_ raw: String) -> Color { Self.color(raw) ?? .primary }
   var body: some View {
+    if overlay {
+      if decorate, let card, let url = httpsURL(card.image) {
+        ViewThatFits(in: .horizontal) {
+          Color.clear.frame(width: Self.minimumRow, height: 0)
+            .overlay(alignment: .topTrailing) { stripView(card, url) }
+          Color.clear.frame(width: 0, height: 0)
+        }
+      }
+    } else {
+      inline
+    }
+  }
+  /// As the official client draws it: the strip filling the box, and the prefix over the number
+  /// in the digital face at 7pt on 7pt lines, left-aligned, centred on the right 20pt in.
+  private func stripView(_ card: ReplyAuthor.Card, _ url: URL) -> some View {
+    RemoteArtwork(url: url) { phase in
+      if let image = phase.image { image.resizable().scaledToFit() }
+    }
+    .frame(width: Self.strip.width, height: Self.strip.height, alignment: .trailing)
+    .overlay(alignment: .trailing) {
+      if !card.number.isEmpty {
+        VStack(alignment: .leading, spacing: 0) {
+          numberLine(card.prefix)
+          numberLine(card.number)
+        }
+        .foregroundStyle(numberFill(card))
+        .padding(.trailing, 20)
+      }
+    }
+    .accessibilityHidden(card.number.isEmpty)
+    .accessibilityLabel([card.prefix, card.number].filter { !$0.isEmpty }.joined(separator: " "))
+  }
+  private func numberLine(_ text: String) -> some View {
+    Text(text).font(FanNumberFont.font(size: 7)).fixedSize().frame(height: 7)
+  }
+  /// The card's colour (the official grey-blue when it names none), or its gradient: colours at
+  /// their percent stops along the start → end line.
+  private func numberFill(_ card: ReplyAuthor.Card) -> AnyShapeStyle {
+    let solid = Self.color(card.color) ?? Color(red: 0xBF / 255, green: 0xC8 / 255, blue: 0xD2 / 255)
+    guard let g = card.gradient, g.colors.count >= 2, g.colors.count == g.stops.count else {
+      return AnyShapeStyle(solid)
+    }
+    let stops = zip(g.colors, g.stops).compactMap { hex, at in
+      Self.color(hex).map { Gradient.Stop(color: $0, location: CGFloat(at) / 100) }
+    }
+    guard stops.count >= 2 else { return AnyShapeStyle(solid) }
+    func point(_ raw: String) -> CGPoint? {
+      let parts = raw.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+      return parts.count == 2 ? CGPoint(x: parts[0], y: parts[1]) : nil
+    }
+    var start = UnitPoint.leading, end = UnitPoint.trailing
+    if let s = point(g.start), let e = point(g.end) {
+      if [s.x, s.y, e.x, e.y].allSatisfy({ (0...1).contains($0) }) {
+        start = UnitPoint(x: s.x, y: s.y)
+        end = UnitPoint(x: e.x, y: e.y)
+      } else {
+        // Pixel offsets in the official text box: keep their direction across the number.
+        let dx = e.x - s.x, dy = e.y - s.y, span = max(abs(dx), abs(dy), 1)
+        start = UnitPoint(x: 0.5 - dx / span / 2, y: 0.5 - dy / span / 2)
+        end = UnitPoint(x: 0.5 + dx / span / 2, y: 0.5 + dy / span / 2)
+      }
+    }
+    return AnyShapeStyle(LinearGradient(stops: stops, startPoint: start, endPoint: end))
+  }
+  @ViewBuilder private var inline: some View {
     if decorate, let card, let url = httpsURL(card.image) {
       // As in the original: the card at 38pt tall in the row's top-right corner at its natural
       // width, the fan number at its right edge where the card art leaves room for it.
       RemoteArtwork(url: url) { phase in
         if let image = phase.image {
-          image.resizable().scaledToFit().frame(height: 38)
+          image.resizable().scaledToFit().frame(height: Self.height)
             .overlay(alignment: .trailing) {
               if !card.number.isEmpty {
+                // The original's fan number: prefix over number in its narrow digital face,
+                // centred in the card's height at its right edge.
                 Text(card.prefix.isEmpty ? card.number : card.prefix + "\n" + card.number)
-                  .font(.system(size: 8, weight: .medium, design: .monospaced))
-                  .multilineTextAlignment(.center).lineSpacing(-1)
+                  .font(FanNumberFont.font(size: 8))
+                  .multilineTextAlignment(.center).lineSpacing(0)
                   .foregroundStyle(color(card.color))
+                  .fixedSize()
               }
             }
         }
       }
-      .frame(maxWidth: 120, maxHeight: 38, alignment: .trailing).accessibilityHidden(card.number.isEmpty).accessibilityLabel(
+      .frame(maxWidth: Self.width, maxHeight: Self.height, alignment: .trailing).accessibilityHidden(card.number.isEmpty).accessibilityLabel(
         [card.prefix, card.number].filter { !$0.isEmpty }.joined(separator: " "))
     }
   }

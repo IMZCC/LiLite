@@ -83,6 +83,11 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
           }.listStyle(.plain).environment(\.inListRows, true).reportsScrollCollapse()
         }
       }.environment(\.homeFeedBottomClearance, 0)
+      // The first page fades in over its spinner, and a failure or the way back from one cross-
+      // fades, instead of cutting. Later pages are appended without animation (no extra work
+      // while scrolling).
+      .animation(.easeOut(duration: 0.22), value: loaded)
+      .animation(.easeOut(duration: 0.2), value: message == nil)
       .coordinateSpace(name: space)
       .background { GeometryReader { frame in
         Color.clear.onChange(of: frame.size, initial: true) { _, size in viewport = size }

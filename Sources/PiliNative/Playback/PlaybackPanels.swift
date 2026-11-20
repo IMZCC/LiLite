@@ -214,6 +214,9 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     .onPreferenceChange(PlayerControlsVisibleKey.self) { [chrome] shown in
       if chrome.shown != shown { chrome.shown = shown }
     }
+    // A comment thread open under the player takes the sideways swipe: it closes the thread, not
+    // the video page.
+    .background { NavigationPopBlock(active: !replyPanels.isEmpty).frame(width: 0, height: 0) }
     .onAppear { onScreen = true }
     .onDisappear { onScreen = false }
     .onChange(of: key) { _, _ in

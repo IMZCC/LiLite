@@ -11,6 +11,9 @@ struct ProfileView: View {
   private var status: String? { accounts.state.active.flatMap { store.issues[$0] } }
   @State private var removal: Identity?
   @State private var destination: ProfileDestination?
+  /// The page on screen: `destination` handed on inside an animation, so it slides in (set from
+  /// a plain state change, SwiftUI pushed it with no transition at all).
+  @State private var shown: ProfileDestination?
   var body: some View {
     PiliNavigationStack {
       let fields = NavigationLayout.read(pageLayout).mineTabs
@@ -42,7 +45,12 @@ struct ProfileView: View {
       .navigationTitle("我的").navigationBarTitleDisplayMode(.inline).toolbar {
         ToolbarItem(placement: .topBarTrailing) { ProfileQuickActions() }
       }
-      .navigationDestination(item: $destination) { target in
+      .onChange(of: destination) { _, target in
+        guard shown != target else { return }
+        withAnimation { shown = target }
+      }
+      .onChange(of: shown) { _, target in if destination != target { destination = target } }
+      .navigationDestination(item: $shown) { target in
         switch target {
         case .space(let uid, let name):
           if let mid = Int64(uid) { CreatorSpace(mid: mid, name: name) }

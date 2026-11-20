@@ -834,11 +834,19 @@ private struct SeasonActionColumns: View {
   private var aid: Int64? { episode.aid ?? ArchiveNumber.av(episode.bvid) }
   var body: some View {
     NavigationLink { DeferredPage { EpisodeCacheView(episode: episode, course: false) } } label: {
-      ArchiveActionColumn(symbol: "arrow.down.circle", title: "缓存", active: false)
+      ArchiveActionColumn(symbol: "arrow.down.circle", title: "缓存", active: false, icon: .downloadFill)
     }
+    .buttonStyle(ActionPressStyle())
     .disabled(!episode.allowCacheEntry || model.isPreview)
     .accessibilityLabel("缓存本集")
-    Menu {
+    // The column outside the menu, which is an invisible layer over it: iOS 26 folds a menu
+    // label's glass into one larger glass around the whole column.
+    ArchiveActionColumn(
+      symbol: "arrowshape.turn.up.right",
+      title: shares.flatMap { $0 > 0 ? $0.formatted(.number.notation(.compactName)) : nil } ?? "分享",
+      active: false, icon: .shareFill)
+    .accessibilityHidden(true)
+    .overlay { Menu {
       Button(
         later == true ? "移出稍后再看" : "稍后再看", systemImage: later == true ? "clock.fill" : "clock"
       ) { Task { await toggleLater() } }
@@ -871,12 +879,10 @@ private struct SeasonActionColumns: View {
         }
       }
     } label: {
-      ArchiveActionColumn(
-        symbol: "arrowshape.turn.up.right",
-        title: shares.flatMap { $0 > 0 ? $0.formatted(.number.notation(.compactName)) : nil } ?? "分享",
-        active: false)
+      Color.clear.contentShape(Rectangle())
     }
-    .accessibilityLabel("分享")
+    .menuStyle(.button).buttonStyle(.plain)
+    .accessibilityLabel("分享") }
     .alert("提示", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
       Button("好") {}
     } message: { Text(notice ?? "") }

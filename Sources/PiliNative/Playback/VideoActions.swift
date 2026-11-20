@@ -26,7 +26,13 @@ struct VideoActions: View {
   var body: some View {
     // The column that ends the engagement row, as in the original's five (赞 · 不喜欢 · 投币 ·
     // 收藏 · 分享): share, with cache, watch later and the rarely used tools in its menu.
-    Menu {
+    // The column is drawn outside the menu, which is an invisible layer over it: iOS 26 folds a
+    // menu label's glass into one larger glass around the whole column (glyph and count).
+    ArchiveActionColumn(symbol: "arrowshape.turn.up.right",
+      title: (video.stat?.share ?? 0) > 0 ? (video.stat?.share ?? 0).formatted(.number.notation(.compactName)) : "分享",
+      active: false, icon: .shareFill)
+    .accessibilityHidden(true)
+    .overlay { Menu {
       Section {
         NavigationLink { DeferredPage { CacheSelection(video: video, cid: cid) } } label: {
           Label("离线缓存", systemImage: "arrow.down.circle")
@@ -86,10 +92,10 @@ struct VideoActions: View {
         }
       }
     } label: {
-      ArchiveActionColumn(symbol: "arrowshape.turn.up.right",
-        title: (video.stat?.share ?? 0) > 0 ? (video.stat?.share ?? 0).formatted(.number.notation(.compactName)) : "分享",
-        active: false)
-    }.accessibilityLabel("分享与更多")
+      Color.clear.contentShape(Rectangle())
+    }
+    .menuStyle(.button).buttonStyle(.plain)
+    .accessibilityLabel("分享与更多") }
     .mediaMomentSheet($sharingMoment)
     .piliSheet(isPresented: $writeBullet) {
       if let uid = accounts.state.active {

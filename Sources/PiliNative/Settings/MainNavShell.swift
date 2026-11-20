@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import UIKit
 
 private struct ShellContextKey: EnvironmentKey { static let defaultValue: NavigationChrome? = nil }
 private struct ProfileShortcutKey:EnvironmentKey {static let defaultValue:(@MainActor ()->Void)?=nil}
@@ -210,6 +211,25 @@ struct MainNavShell: View {
     case search, profile
     var id: Self { self }
   }
+  /// A tab change made from inside a page (the home avatar opening 我的) dissolves instead of
+  /// cutting: a snapshot of the window is laid over the switch and faded out.
+  @MainActor enum TabCrossfade {
+    static func run(_ change: () -> Void) {
+      let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+      let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+      guard let window = scene?.windows.first(where: \.isKeyWindow),
+        let cover = window.snapshotView(afterScreenUpdates: false)
+      else { change(); return }
+      cover.frame = window.bounds
+      cover.isUserInteractionEnabled = false
+      window.addSubview(cover)
+      change()
+      UIView.animate(withDuration: 0.3, delay: 0.03, options: [.curveEaseOut, .allowUserInteraction]) {
+        cover.alpha = 0
+        cover.transform = CGAffineTransform(scaleX: 0.985, y: 0.985)
+      } completion: { _ in cover.removeFromSuperview() }
+    }
+  }
   @State private var shortcut: Shortcut?
   /// Content tabs in the user's order; search always uses the system search tab role.
   private var contentTabs: [MainTab] { layout.tabs.filter { $0 != .search } }
@@ -220,7 +240,7 @@ struct MainNavShell: View {
     .environment(\.navChrome, chrome)
     .environment(\.usesSystemSearchTab, layout.tabs.contains(.search))
     .environment(\.openPersonalPage, {
-      if layout.tabs.contains(.mine) { select(.mine) } else { shortcut = .profile }
+      if layout.tabs.contains(.mine) { TabCrossfade.run { select(.mine) } } else { shortcut = .profile }
     })
     .onChange(of: incoming[active]?.id) { _, id in if id != nil { shortcut = nil } }
     .onChange(of: active, initial: true) { _, value in

@@ -79,6 +79,7 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
     func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
       guard let pan = gesture as? UIPanGestureRecognizer, let host = pan.view,
         let nav, let owner, nav.topViewController === owner, nav.viewControllers.count > 1,
+        !NavigationPopBlock.blocks(owner),
         nav.transitionCoordinator == nil, driver == nil, nav.presentedViewController == nil,
         owner.presentedViewController == nil else { return false }
       let velocity = pan.velocity(in: host)
@@ -115,19 +116,78 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
   }
 }
 
+/// While something inside the page that closes with a sideways swipe is open (a comment thread
+/// panel in the video page), the page's back swipes stand aside: the swipe closes that, not the
+/// page, as in the official client.
+struct NavigationPopBlock: UIViewControllerRepresentable {
+  let active: Bool
+  @MainActor private static let owners = NSHashTable<UIViewController>.weakObjects()
+  @MainActor static func blocks(_ owner: UIViewController) -> Bool { owners.contains(owner) }
+  func makeUIViewController(context: Context) -> Probe { Probe() }
+  func updateUIViewController(_ probe: Probe, context: Context) {
+    probe.active = active
+    probe.apply()
+  }
+  static func dismantleUIViewController(_ probe: Probe, coordinator: ()) { probe.release() }
+
+  final class Probe: UIViewController {
+    var active = false
+    private var visible = false
+    private weak var nav: UINavigationController?
+    private weak var owner: UIViewController?
+    private var native: Bool?, content: Bool?
+    override func loadView() {
+      view = UIView()
+      view.isUserInteractionEnabled = false
+    }
+    override func viewDidAppear(_ animated: Bool) {
+      super.viewDidAppear(animated)
+      visible = true
+      apply()
+    }
+    override func viewWillDisappear(_ animated: Bool) {
+      super.viewWillDisappear(animated)
+      visible = false
+      release()
+    }
+    func apply() {
+      guard active else { release(); return }
+      guard visible, owner == nil, let nav = navigationController, let owner = nav.topViewController,
+        let host = owner.viewIfLoaded, view.isDescendant(of: host) else { return }
+      self.nav = nav
+      self.owner = owner
+      NavigationPopBlock.owners.add(owner)
+      if let g = nav.interactivePopGestureRecognizer { native = g.isEnabled; g.isEnabled = false }
+      if let g = nav.piliContentPopGesture { content = g.isEnabled; g.isEnabled = false }
+    }
+    func release() {
+      if let owner { NavigationPopBlock.owners.remove(owner) }
+      if let native { nav?.interactivePopGestureRecognizer?.isEnabled = native }
+      if let content { nav?.piliContentPopGesture?.isEnabled = content }
+      native = nil
+      content = nil
+      owner = nil
+      nav = nil
+    }
+  }
+}
+
 /// Supply the animator and its interaction only for this pop. SwiftUI continues receiving the
 /// navigation delegate callbacks that keep its stack in sync when the user finishes or cancels.
 @MainActor final class LeadingPopTransition: NSObject, UINavigationControllerDelegate {
   let interaction = UIPercentDrivenInteractiveTransition()
   private weak var original: UINavigationControllerDelegate?
-  private var animator: MotionAnimator?
+  private var animator: UIViewControllerAnimatedTransitioning?
 
   func begin(in nav: UINavigationController, rtl: Bool, completion: @escaping () -> Void) {
     original = nav.delegate
-    animator = MotionAnimator(mode: rtl ? .fromLeft : .fromRight, opening: false)
+    // A page opened from a card shrinks back into it under the finger (一镜到底); others slide.
+    animator = nav.topViewController.flatMap { CardZoom.popAnimator(from: $0) }
+      ?? MotionAnimator(mode: rtl ? .fromLeft : .fromRight, opening: false)
     interaction.completionCurve = .easeOut
     nav.delegate = self
     let popped = nav.popViewController(animated: true)
+    if popped != nil, let back = nav.topViewController { ListRowSelection.clear(in: back, along: nav.transitionCoordinator) }
     let finish = { [self] in
       if nav.delegate === self { nav.delegate = original }
       completion()

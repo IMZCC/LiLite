@@ -85,7 +85,7 @@ PlayerPreferencePanel/自动进入画中画	autoPiP 后台画中画 进入后台
 PlayerPreferencePanel/视频详情使用深色外观	darkVideoPage 视频播放页使用深色主题	detail.dark	false
 PlayerPreferencePanel/触感反馈	feedBackEnable 请确定手机设置中已开启震动反馈 震动反馈	ui.haptics	false
 PlayerPreferencePanel/进入后台时继续播放	continuePlayInBackground 后台播放 进入后台时继续播放	play.background	false
-PlayerPreferencePanel/进入详情页自动播放	autoPlayEnable 自动播放 进入详情页自动播放	play.onEntry	false
+PlayerPreferencePanel/进入详情页自动播放	autoPlayEnable 自动播放 进入详情页自动播放	play.onEntry	true
 PlayerPreferencePanel/锁屏与控制中心播放控件	enableBackgroundPlay 后台音频服务 避免画中画没有播放暂停功能	play.systemMedia	true
 PlayerPreferencePanel/长按时使用当前倍速的两倍	enableAutoLongPressSpeed	player.doubleSpeed	false
 PlayerPreferencePanel/音画同步	videoSync 当前： （此项即mpv的--video-sync 视频同步	play.videoSync	system

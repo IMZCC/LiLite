@@ -46,32 +46,39 @@ struct NavigationTabBarProbe: UIViewControllerRepresentable {
       } ?? nav.topViewController
       let hide = target !== root
       let leavingRoot = hide && transition.viewController(forKey: .from) === root
-      if leavingRoot { keepGhost(of: bar, in: tabs) }
-      if !hide, let ghost = takeGhost(in: tabs) {
-        // Back to the root (a swipe or a tap): the bar the root page left with comes back with
-        // it — a picture of it, over where it sat, fading and sliding in as the page does and
-        // following the finger. The real bar's hidden state (SwiftUI's toolbar, which resizes
-        // both pages) changes only once the transition has finished, under the picture.
-        let lead: CGFloat = tabs.view.effectiveUserInterfaceLayoutDirection == .rightToLeft ? 1 : -1
-        ghost.alpha = 0
-        ghost.transform = CGAffineTransform(translationX: lead * tabs.view.bounds.width * 0.3, y: 0)
-        tabs.view.addSubview(ghost)
-        transition.animate(alongsideTransition: { _ in
-          ghost.alpha = 1
-          ghost.transform = .identity
-        }) { [weak self, weak nav] context in
-          guard let self, let nav, self.generation == ticket else { ghost.removeFromSuperview(); return }
+      // The bar belongs to the root page, as in the official client: while a page opens over the
+      // root or closes back onto it, the bar is a picture on the root page, so the other page
+      // covers and uncovers it like the rest of the root page (sliding in over it, or growing out
+      // of a card and shrinking back into it). The real bar's hidden state (SwiftUI's toolbar,
+      // which resizes both pages) changes only before or after the transition, under the picture.
+      if leavingRoot, keepGhost(of: bar, in: tabs), let picture = pinGhost(on: root, nav: nav, tabs: tabs) {
+        bar.alpha = 0
+        transition.animate(alongsideTransition: nil) { [weak self, weak nav] _ in
+          picture.removeFromSuperview()
+          guard let self, let nav, self.generation == ticket else { return }
+          let hidden = nav.topViewController !== nav.viewControllers.first
+          if !hidden { bar.alpha = 1 }
+          self.publish(hidden, ticket: ticket)
+        }
+        return
+      }
+      if !hide, let picture = pinGhost(on: root, nav: nav, tabs: tabs) {
+        // Lift the picture once the real bar is drawn in its place.
+        let lift = { DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { picture.removeFromSuperview() } }
+        transition.animate(alongsideTransition: nil) { [weak self, weak nav] context in
+          guard let self, let nav, self.generation == ticket else { lift(); return }
           let hidden = nav.topViewController !== nav.viewControllers.first
           guard !hidden, !context.isCancelled else {
-            ghost.removeFromSuperview()
+            // Swipe called off: the picture waits for the next way back.
+            picture.removeFromSuperview()
             self.publish(true, ticket: ticket)
             return
           }
+          self.ghost = nil
           bar.alpha = 1
           if #available(iOS 18, *) { tabs.setTabBarHidden(false, animated: false) }
           self.changed(false)
-          // Lift the picture once the real bar is drawn in its place.
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { ghost.removeFromSuperview() }
+          lift()
         }
         return
       }
@@ -111,17 +118,25 @@ struct NavigationTabBarProbe: UIViewControllerRepresentable {
     /// A picture of the bar as the root page left it, where it sat in the tab controller, and the
     /// controller's size then (a turned device invalidates it).
     private var ghost: (view: UIView, frame: CGRect, size: CGSize)?
-    private func keepGhost(of bar: UITabBar, in tabs: UITabBarController) {
-      guard bar.window != nil, !bar.isHidden, bar.alpha > 0.5, bar.bounds.width > 0,
-        let picture = bar.snapshotView(afterScreenUpdates: false) else { ghost = nil; return }
+    private func keepGhost(of bar: UITabBar, in tabs: UITabBarController) -> Bool {
+      ghost?.view.removeFromSuperview()
+      ghost = nil
+      guard bar.window != nil, !bar.isHidden, bar.alpha > 0.5, bar.bounds.width > 0 else { return false }
+      let frame = bar.convert(bar.bounds, to: tabs.view)
+      // The screen there, not the bar alone: the bar's glass is drawn from what lies behind it,
+      // which a picture of the bar on its own leaves out (it came out see-through).
+      guard let picture = tabs.view.resizableSnapshotView(from: frame, afterScreenUpdates: false, withCapInsets: .zero)
+      else { return false }
       picture.isUserInteractionEnabled = false
-      ghost = (picture, bar.convert(bar.bounds, to: tabs.view), tabs.view.bounds.size)
+      ghost = (picture, frame, tabs.view.bounds.size)
+      return true
     }
-    private func takeGhost(in tabs: UITabBarController) -> UIView? {
-      defer { ghost = nil }
-      guard let ghost, ghost.size == tabs.view.bounds.size else { return nil }
-      ghost.view.transform = .identity
-      ghost.view.frame = ghost.frame
+    /// Puts the picture on the root page, where the bar sits once the page is in place.
+    private func pinGhost(on root: UIViewController, nav: UINavigationController, tabs: UITabBarController) -> UIView? {
+      guard let ghost, ghost.size == tabs.view.bounds.size, let page = root.viewIfLoaded else { return nil }
+      let origin = tabs.view.convert(CGPoint.zero, from: nav.view)
+      ghost.view.frame = ghost.frame.offsetBy(dx: -origin.x, dy: -origin.y)
+      page.addSubview(ghost.view)
       return ghost.view
     }
     private func settle() {

@@ -54,7 +54,7 @@ struct DetailView: View {
   @State private var visited: [String] = []
   @State private var lastOpened: Int64?
   @AppStorage(InterfaceInteraction.preinitialize) private var early = false
-  @AppStorage(VideoTransport.autoKey) private var autoplay = false
+  @AppStorage(VideoTransport.autoKey) private var autoplay = true
   @State private var manualTicket: PlaybackEntryID?
   @State private var prepared: PlaybackEntryID?
   private func ticket(_ video: Video, _ cid: Int64) -> PlaybackEntryID {
@@ -342,11 +342,17 @@ struct DetailView: View {
     let refreshPart = $retryPlayback
     let hasDescription = !(video.desc ?? "").isEmpty || !(video.desc_v2 ?? []).isEmpty
     return LazyVStack(alignment: .leading, spacing: 18) {
+      // One plain stack for the head of the intro: inside the lazy stack, expanding the intro
+      // jumped (lazy rows don't animate their insertion or a row growing); as one row it opens
+      // smoothly and the rows below glide down with it.
+      VStack(alignment: .leading, spacing: 18) {
       creatorRow(video)
       VStack(alignment: .leading, spacing: 10) {
         ArchiveMetadata(video:video,labels:sponsorEnabled ? Array(Set(model.sponsor.compactMap{
           $0.valid && $0.segment==[0,0] && model.sponsorRules.mode($0) != 4 ? $0.detail?.title:nil
-        })).sorted():[], expanded: introExpanded, toggle: { introExpanded.toggle() })
+        })).sorted():[], expanded: introExpanded, toggle: {
+          withAnimation(.snappy(duration: 0.32)) { introExpanded.toggle() }
+        })
         OnlineViewers(timeline:model.timeline,fallback:cid.map{.init(bvid:video.bvid,aid:video.aid,cid:$0)})
           .font(.footnote).foregroundStyle(.secondary)
         if showArgue, let text = video.argue_info?.argue_msg, !text.isEmpty {
@@ -367,6 +373,7 @@ struct DetailView: View {
             video: d, cid: c, model: model, seconds: { model.seconds },
             onBullet: { model.didPost($0, cid: c) }, openComments: { panelOverride = true }))
         } })
+      }
       // The original has no tool row under the intro: these live in the player's 更多 sheet.
       Color.clear.frame(height: 0)
         .piliSheet(isPresented: $playbackOptions) { ArchivePlaybackOptions(model: model, actions: moreActions) }

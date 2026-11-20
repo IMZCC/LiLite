@@ -659,6 +659,8 @@ private struct VideoShelf: View, Equatable {
           }
         }
       }.padding(.horizontal, HomeCardStyle.gap).padding(.top, 4).modifier(HomeFeedBottomPadding(extra: 16))
+      // The first page fades in over the spinner (later pages just append).
+      .animation(.easeOut(duration: 0.25), value: videos.isEmpty)
     }
     .environment(\.homeFeedBottomClearance, 0)
     .piliOnScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in

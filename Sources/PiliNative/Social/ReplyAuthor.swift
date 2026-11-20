@@ -4,6 +4,10 @@ struct ReplyAuthor: Decodable {
   struct Badge: Decodable { let type: Int?, desc: String? }
   struct Card {
     let image: String, number: String, prefix: String, color: String
+    /// The number's gradient fill (`fan_num_color_format`), when the card has one.
+    var gradient: NumberGradient? = nil
+    /// Start and end as "x,y"; colours as hex; stops in percent.
+    struct NumberGradient { let start: String, end: String, colors: [String], stops: [Int64] }
   }
   let uname: String?, avatar: String?, official_verify: Badge?
   let pendant: String?, vipStatus: Int, vipType: Int

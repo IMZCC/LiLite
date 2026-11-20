@@ -46,6 +46,8 @@ struct CreatorSpace: View {
   // Section rows, kept while switching tabs.
   @State private var dynamics = InlinePager<DynamicEntry>()
   @State private var uploads = InlinePager<Video>()
+  /// 投稿 › 图文 lists the posts in place, as the official space does.
+  @State private var opus = InlinePager<CreatorOpus.Opus>()
   @State private var bangumi = InlinePager<CreatorSpaceRecord.Media>()
   @State private var folders = SpaceFolders()
   @State private var category: String?
@@ -69,20 +71,25 @@ struct CreatorSpace: View {
     let preferred = space?.preferred(defaultSection, in: list)
     return list.first { $0.param == preferred }
   }
-  private var barSolid: Bool { collapsed || space == nil }
+  /// Clear while the space loads too: a solid bar there turned clear as the header arrived, a
+  /// white strip flashing at the top.
+  private var barSolid: Bool { collapsed && space != nil }
+  private var barButtons: Bool { space != nil || loadingError != nil }
   /// A section page runs from under the navigation bar to the bottom of the screen.
   private var pageHeight: CGFloat { max(100, pageSize.height) }
 
   var body: some View {
     Group {
       if let space {
-        page(space)
+        page(space).transition(.opacity)
       } else if let loadingError {
         PageFailure(message: loadingError) { revision += 1 }.frame(maxWidth: .infinity, maxHeight: .infinity)
+          .transition(.opacity)
       } else {
-        PageLoading().frame(maxWidth: .infinity, maxHeight: .infinity)
+        PageLoading().frame(maxWidth: .infinity, maxHeight: .infinity).transition(.opacity)
       }
     }
+    .animation(.easeOut(duration: 0.22), value: space == nil)
     .background(Color(uiColor: .systemBackground))
     .navigationTitle(header?.name ?? name)
     .navigationBarTitleDisplayMode(.inline)
@@ -93,14 +100,15 @@ struct CreatorSpace: View {
         Text(header?.name ?? name).font(.headline).lineLimit(1)
           .opacity(barSolid ? 1 : 0).animation(.easeOut(duration: 0.15), value: barSolid)
       }
-      ToolbarItemGroup(placement: .topBarTrailing) {
-        if !reservations.isEmpty {
-          Button { route = .reservations } label: { Image(systemName: "calendar.badge.clock") }
-            .accessibilityLabel("预约")
+      // Only once the space is in (or has failed): the bar's glass re-draws for the banner that
+      // arrives behind it, and buttons put up over the blank loading page went blank for a moment
+      // then came back. 预约 (known only then too) is in 更多, so they never shuffle either.
+      if barButtons {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+          Button { route = .search } label: { Image(systemName: "magnifyingglass") }
+            .accessibilityLabel("搜索空间")
+          moreMenu
         }
-        Button { route = .search } label: { Image(systemName: "magnifyingglass") }
-          .accessibilityLabel("搜索空间")
-        moreMenu
       }
     }
     .navigationDestination(item: $route) { destination($0) }
@@ -634,7 +642,14 @@ struct CreatorSpace: View {
       case "article":
         SpaceLinkRow(title: "查看全部专栏", symbol: "doc.richtext") { CreatorWorks(mid: mid, kind: .articles) }
       case "opus":
-        SpaceLinkRow(title: "查看全部图文", symbol: "photo.on.rectangle") { CreatorOpus(mid: mid) }
+        LazyVGrid(
+          columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 2),
+          alignment: .leading, spacing: 14
+        ) {
+          ForEach(opus.items) { SpaceOpusCard(row: $0) }
+        }
+        .padding(.horizontal, 12).padding(.top, 8)
+        InlinePagerFooter(pager: opus, empty: "暂无图文")
       case "audio":
         SpaceLinkRow(title: "查看全部音频", symbol: "music.note") { CreatorWorks(mid: mid, kind: .albums) }
       case "comic":
@@ -664,6 +679,19 @@ struct CreatorSpace: View {
       }
     case .contribute:
       let current = currentCategory(space.contributions(tab))
+      if current?.param == "opus" {
+        let owner = accounts.state.active
+        opus.start(key: "\(mid):\(uid)") { [mid] cursor in
+          let flow = try await BiliAPI.shared.socialService(for: owner).space(mid, filter: "all", cursor: cursor)
+          return Page(items: flow.rows.map {
+            CreatorOpus.Opus(
+              opus_id: $0.id, content: $0.text,
+              cover: $0.cover.isEmpty ? nil : .init(url: $0.cover, width: nil, height: nil),
+              stat: $0.like.isEmpty ? nil : .init(like: $0.like))
+          }, next: flow.next)
+        }
+        return
+      }
       guard let source = archiveSource(current) else { return }
       let s = scope(source, title: current.map(Self.categoryTitle) ?? "投稿")
       if s.source.uploads && !s.filtered {
@@ -728,6 +756,9 @@ struct CreatorSpace: View {
     Menu {
       Section {
         Button("空间内容", systemImage: "square.grid.2x2") { route = .library }
+        if !reservations.isEmpty {
+          Button("预约", systemImage: "calendar.badge.clock") { route = .reservations }
+        }
         if let r = space?.room, space?.onAir == true {
           Button("直播间", systemImage: "dot.radiowaves.left.and.right") { route = .live(r) }
         }
@@ -1045,6 +1076,31 @@ private struct ScrollerProbe: UIViewRepresentable {
   }
 }
 
+/// One 图文 post in the space's 投稿 › 图文: cover, up to three lines of text, likes.
+private struct SpaceOpusCard: View {
+  let row: CreatorOpus.Opus
+  var body: some View {
+    LazyLink {
+      DynamicDetail(id: row.id)
+    } label: {
+      VStack(alignment: .leading, spacing: 6) {
+        if let u = row.cover?.url.flatMap(httpsURL) {
+          Rectangle().fill(.quaternary).aspectRatio(4 / 3, contentMode: .fit)
+            .overlay { SiteThumbnail(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        Text(row.content ?? "图文").font(.subheadline).lineLimit(3)
+          .multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
+        if let n = row.stat?.like, !n.isEmpty {
+          Label(n, systemImage: "hand.thumbsup").font(.caption).foregroundStyle(.secondary)
+        }
+      }
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+  }
+}
+
 /// A section the space links out to instead of listing inline.
 private struct SpaceLinkRow<Destination: View>: View {
   let title: String, symbol: String
@@ -1098,7 +1154,8 @@ struct SpaceHomeSection: View {
     }
     .padding(.bottom, 20)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Color(uiColor: .secondarySystemBackground))
+    // White like the 动态, 投稿 and 收藏 pages beside it.
+    .background(Color(uiColor: .systemBackground))
     .buttonStyle(.plain)
   }
   private func grid<C: View>(_ columns: Int, @ViewBuilder _ content: () -> C) -> some View {
@@ -1161,7 +1218,7 @@ struct SpaceHomeSection: View {
         Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
       }
       .padding(12)
-      .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+      .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
       .contentShape(Rectangle())
     }
   }
@@ -1210,6 +1267,7 @@ private struct SpaceVideoCard: View {
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       .shadow(color: .black.opacity(0.06), radius: 3, y: 1)
       .contentShape(Rectangle())
+      .modifier(CardZoomSource())
     }
     .buttonStyle(.plain)
   }

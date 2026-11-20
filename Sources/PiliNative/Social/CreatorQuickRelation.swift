@@ -27,6 +27,8 @@ private struct QuickRelationButton: View {
       else if followed || relation?.attribute == 128 { relationButton.piliGlassButton() }
       else { relationButton.piliGlassButton(prominent: true) }
     }.controlSize(.regular).disabled(busy)
+      // 关注 ⇄ 已关注 cross-fades between the pink and the plain button instead of cutting.
+      .animation(.snappy(duration: 0.25), value: followed)
       .task {
         if keyboard==nil && !knownFollowing { await reload(reportErrors:false) }
       }

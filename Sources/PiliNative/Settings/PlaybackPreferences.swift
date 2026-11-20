@@ -139,7 +139,7 @@ struct PlayerPreferencePanel: View {
   @AppStorage("play.reverseFirst") private var reverseFirst = true
   @AppStorage("detail.expandIntro") private var expandIntro = false
   @AppStorage("detail.expandWide") private var expandWide = false
-  @AppStorage(VideoTransport.autoKey) private var onEntry = false
+  @AppStorage(VideoTransport.autoKey) private var onEntry = true
   @AppStorage(VideoTransport.backgroundKey) private var backgroundPlay = false
   @AppStorage(VideoTransport.bufferKey) private var networkBuffer = 16.0
   @AppStorage(VideoTransport.liveBufferKey) private var liveBuffer = 0.0

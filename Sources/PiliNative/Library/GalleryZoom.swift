@@ -4,6 +4,8 @@ import SwiftUI
 struct GalleryZoom: UIViewRepresentable {
   let file: URL
   var paging: GalleryPagingEdges? = nil, active = true
+  /// A single tap (not the first of a double tap): the full-screen viewer closes on it.
+  var tapped: (() -> Void)? = nil
   /// 0 = let the system pick the frame rate.
   private let fps = 0
   final class ImageScroll: UIScrollView {
@@ -16,6 +18,8 @@ struct GalleryZoom: UIViewRepresentable {
   }
   final class Coordinator: NSObject, UIScrollViewDelegate {
     weak var scroll: ImageScroll?
+    var tapped: (() -> Void)?
+    @objc func singleTap(_ tap: UITapGestureRecognizer) { tapped?() }
     var url: URL?, source: CGImageSource?, link: CADisplayLink?, frame = 0, next = 0.0,
       lastSize = CGSize.zero
     private var pixel = CGSize.zero
@@ -145,9 +149,13 @@ struct GalleryZoom: UIViewRepresentable {
     let g = UITapGestureRecognizer(target: c, action: #selector(Coordinator.doubleTap(_:)))
     g.numberOfTapsRequired = 2
     s.addGestureRecognizer(g)
+    let single = UITapGestureRecognizer(target: c, action: #selector(Coordinator.singleTap(_:)))
+    single.require(toFail: g)
+    s.addGestureRecognizer(single)
     return s
   }
   func updateUIView(_ view: ImageScroll, context: Context) {
+    context.coordinator.tapped = tapped
     if active { paging?.scroll = view } else if paging?.scroll === view { paging?.scroll = nil }
     context.coordinator.load(file)
     context.coordinator.rate(fps)

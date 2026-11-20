@@ -93,6 +93,8 @@ struct GalleryLink<Label: View>: View {
   @AppStorage("images.longMenu") private var menu = false
   @StateObject private var owner = GalleryOwner()
   @State private var sheet = false
+  @State private var viewer = false
+  @Namespace private var zoom
   init(_ photos: [GalleryPicture], index: Int, @ViewBuilder label: () -> Label) {
     self.photos = photos
     self.index = index
@@ -107,10 +109,17 @@ struct GalleryLink<Label: View>: View {
           label
         }
       } else {
-        NavigationLink {
-          NativeGallery(photos, index: index)
+        Button {
+          TouchFeedback.light()
+          viewer = true
         } label: {
-          label
+          label.contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .galleryZoomSource(index, in: zoom)
+        .fullScreenCover(isPresented: $viewer) {
+          GalleryViewer(photos, index: index) { viewer = false }
+            .galleryZoomTransition(index, in: zoom)
         }
       }
     }
@@ -154,6 +163,83 @@ struct GalleryThumb: View {
     }
   }
 }
+/// The official client's picture viewer: black, full screen, opened by zooming out of the tapped
+/// thumbnail (iOS 18+) and closed by a tap or a pull down that shrinks it back; "2/5" at the top,
+/// save and more at the bottom.
+struct GalleryViewer: View {
+  let photos: [GalleryPicture]
+  let close: () -> Void
+  @State private var page: Int
+  @State private var chrome = true
+  @StateObject private var owner = GalleryOwner()
+  @StateObject private var edges = GalleryPagingEdges()
+  init(_ photos: [GalleryPicture], index: Int, close: @escaping () -> Void) {
+    self.photos = photos
+    self.close = close
+    _page = State(initialValue: min(max(0, index), max(0, photos.count - 1)))
+  }
+  var body: some View {
+    ZStack {
+      Color.black.ignoresSafeArea()
+      if !photos.isEmpty {
+        ThresholdPager(count: photos.count, page: $page, allows: edges.allows) { i in
+          GalleryPage(photo: photos[i], assets: owner.assets, active: i == page, edges: edges, tapped: close)
+        }
+        .ignoresSafeArea()
+      }
+    }
+    .overlay(alignment: .top) {
+      HStack {
+        Button(action: close) {
+          Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
+            .frame(width: 40, height: 40).contentShape(Circle())
+            .piliGlass(in: Circle(), interactive: true)
+        }.accessibilityLabel("关闭")
+        Spacer()
+        if photos.count > 1 {
+          Text("\(page + 1)/\(photos.count)").font(.system(size: 15, weight: .medium)).monospacedDigit()
+            .contentTransition(.numericText()).animation(.snappy(duration: 0.2), value: page)
+        }
+        Spacer()
+        Color.clear.frame(width: 40, height: 40)
+      }
+      .padding(.horizontal, 16).padding(.top, 6)
+    }
+    .overlay(alignment: .bottomTrailing) {
+      if photos.indices.contains(page) {
+        let p = photos[page]
+        HStack(spacing: 12) {
+          Menu {
+            GalleryActions(photos: photos, index: page, owner: owner)
+            Button("复制原图地址") { UIPasteboard.general.url = p.url }
+            Link("在浏览器打开", destination: p.url)
+          } label: {
+            Image(systemName: "ellipsis").font(.system(size: 17, weight: .semibold))
+              .frame(width: 44, height: 44).contentShape(Circle())
+              .piliGlass(in: Circle(), interactive: true)
+          }.accessibilityLabel("图片操作").disabled(owner.busy)
+        }
+        .padding(.trailing, 16).padding(.bottom, 12)
+      }
+    }
+    .foregroundStyle(.white)
+    .environment(\.colorScheme, .dark)
+    .statusBarHidden()
+    .modifier(GalleryFeedback(owner: owner))
+  }
+}
+
+extension View {
+  /// The thumbnail a viewer zooms out of and back into (iOS 18+).
+  @ViewBuilder func galleryZoomSource(_ id: Int, in space: Namespace.ID) -> some View {
+    if #available(iOS 18, *) { matchedTransitionSource(id: id, in: space) } else { self }
+  }
+  /// The viewer side of that zoom; before iOS 18 the cover slides up as usual.
+  @ViewBuilder func galleryZoomTransition(_ id: Int, in space: Namespace.ID) -> some View {
+    if #available(iOS 18, *) { navigationTransition(.zoom(sourceID: id, in: space)) } else { self }
+  }
+}
+
 struct NativeGallery: View {
   let photos: [GalleryPicture]
   @State private var page: Int
@@ -191,6 +277,7 @@ struct NativeGallery: View {
 private struct GalleryPage: View {
   let photo: GalleryPicture, assets: GalleryAssets, active: Bool
   let edges: GalleryPagingEdges
+  var tapped: (() -> Void)? = nil
   @AppStorage("images.live") private var live = true
   @AppStorage("images.previewQuality") private var quality = 100
   @AppStorage("images.quality") private var minimum = 10
@@ -204,15 +291,28 @@ private struct GalleryPage: View {
     let photo: GalleryPicture, active: Bool, live: Bool, still: Bool, quality: Int, minimum: Int,
       retry: Int
   }
+  /// The largest copy of the list's thumbnail already in memory.
+  private func thumbnail() -> UIImage? {
+    let url = photo.display(quality: minimum)
+    for pixels in [2048, 1536, 768, 384, 192, 96] {
+      if let image = ArtworkStore.cachedImage(url, pixels: pixels) { return image }
+    }
+    return nil
+  }
   var body: some View {
     ZStack(alignment: .topLeading) {
       Group {
         if let movie, active {
           VideoPlayer(player: movie)
         } else if let file {
-          GalleryZoom(file: file, paging: edges, active: active)
+          GalleryZoom(file: file, paging: edges, active: active, tapped: tapped)
         } else if issue == nil && active {
-          ProgressView()
+          // The picture as the list already shows it, while the full one loads (as the original
+          // does), rather than a blank page.
+          ZStack {
+            if let thumb = thumbnail() { Image(uiImage: thumb).resizable().scaledToFit() }
+            ProgressView().tint(tapped == nil ? nil : .white)
+          }
         }
       }.frame(maxWidth: .infinity, maxHeight: .infinity)
       if live && photo.motion != nil {

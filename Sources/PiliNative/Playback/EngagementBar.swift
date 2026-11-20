@@ -51,43 +51,76 @@ extension EnvironmentValues {
 }
 struct ArchiveActionColumn: View {
   let symbol: String, title: String, active: Bool
-  /// Pass as `symbol` for the original's coin (CoinMark), which SF Symbols has no match for.
+  /// The official client's glyph; `symbol` (an SF Symbol) is only drawn where there is none.
+  var icon: BiliIcon? = nil
+  /// Bumped by the caller when the reader acts on this column (not when its state merely loads),
+  /// so the icon pops then and only then.
+  var pulse = 0
+  /// Pass as `symbol` for the original's coin.
   static let coin = "pili.coin"
   @Environment(\.engagementFills) private var fills
   @Environment(\.engagementCompact) private var compact
+  private var glyphIcon: BiliIcon? { icon ?? (symbol == Self.coin ? .coinFill : nil) }
   var body: some View {
     if compact {
-      Group {
-        if symbol == Self.coin {
-          CoinMark(color: active ? Color.accentColor : Color.white).frame(width: 20, height: 20)
-        } else {
-          Image(systemName: symbol).font(.system(size: 19, weight: .medium))
-            .foregroundStyle(active ? Color.accentColor : Color.white)
-            .contentTransition(.symbolEffect(.replace))
-        }
-      }
-      .frame(width: 42, height: 40).contentShape(Rectangle())
-      .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+      glyph(size: 20, tint: active ? Color.accentColor : Color.white)
+        .modifier(ActionPop(pulse: pulse, lit: active))
+        .frame(width: 42, height: 40).contentShape(Rectangle())
+        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+        .animation(.easeOut(duration: 0.2), value: active)
     } else {
       column
     }
   }
-  /// The official action row: solid grey icons over small grey counts, tinted when done.
+  @ViewBuilder private func glyph(size: CGFloat, tint: Color) -> some View {
+    if let glyphIcon {
+      BiliIconShape(icon: glyphIcon).fill(tint).frame(width: size, height: size)
+    } else {
+      Image(systemName: symbol).symbolVariant(.fill).font(.system(size: size - 1, weight: .regular))
+        .foregroundStyle(tint)
+    }
+  }
+  /// The official action row's solid grey glyphs (pink when done) over small grey counts, each
+  /// on its own glass disc.
   private var column: some View {
-    VStack(spacing: 6) {
-      Group {
-        if symbol == Self.coin {
-          CoinMark(color: active ? Color.accentColor : Color.primary.opacity(0.62)).frame(width: 24, height: 24)
-        } else {
-          Image(systemName: symbol).symbolVariant(.fill).font(.system(size: 23, weight: .regular))
-            .foregroundStyle(active ? Color.accentColor : Color.primary.opacity(0.62))
-        }
-      }
-        .frame(height: 28)
+    VStack(spacing: 5) {
+      glyph(size: 22, tint: active ? Color.accentColor : Color.primary.opacity(0.62))
+        .modifier(ActionPop(pulse: pulse, lit: active))
+        .frame(width: 44, height: 44)
+        .piliGlass(in: Circle(), interactive: true)
       Text(title).font(.caption).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
         .foregroundStyle(active ? Color.accentColor : Color.secondary)
+        .contentTransition(.numericText())
     }
-    .frame(minWidth: 56, maxWidth: fills ? .infinity : 64, minHeight: 56).contentShape(Rectangle())
+    .animation(.easeOut(duration: 0.2), value: active)
+    .animation(.snappy(duration: 0.25), value: title)
+    .frame(minWidth: 56, maxWidth: fills ? .infinity : 64, minHeight: 64).contentShape(Rectangle())
+  }
+}
+
+/// The pop of an action that was just taken: lighting up swells the glyph and springs it back;
+/// turning off gives a small dip.
+private struct ActionPop: ViewModifier {
+  let pulse: Int, lit: Bool
+  @Environment(\.accessibilityReduceMotion) private var reduce
+  func body(content: Content) -> some View {
+    content.keyframeAnimator(initialValue: CGFloat(1), trigger: pulse) { view, scale in
+      view.scaleEffect(scale)
+    } keyframes: { _ in
+      KeyframeTrack {
+        CubicKeyframe(reduce ? 1 : (lit ? 1.28 : 0.86), duration: 0.12)
+        SpringKeyframe(1, duration: 0.42, spring: .bouncy(duration: 0.42, extraBounce: 0.2))
+      }
+    }
+  }
+}
+
+/// Buttons on the action row sink a little while pressed and spring back.
+struct ActionPressStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .scaleEffect(configuration.isPressed ? 0.9 : 1)
+      .animation(.spring(response: 0.26, dampingFraction: 0.62), value: configuration.isPressed)
   }
 }
 private struct ScopedEngagement: View {
@@ -114,13 +147,16 @@ private struct ScopedEngagement: View {
   @State private var alert: String?
   @State private var animation = 0
   @State private var coinAnimation = 0
+  @State private var likePulse = 0
+  @State private var dislikePulse = 0
+  @State private var starPulse = 0
   @State private var refresh = 0
   @State private var revision = 0
   private var uid: String? { accounts.state.active }
   var body: some View {
     Group{if keyboard != nil {Color.clear.frame(width:1,height:1).accessibilityHidden(true)}else{HStack(spacing: 0) {
-      ArchiveActionColumn(symbol: state.liked ? "hand.thumbsup.fill" : "hand.thumbsup",
-        title: caption("点赞", counts?.like), active: state.liked)
+      ArchiveActionColumn(symbol: "hand.thumbsup",
+        title: caption("点赞", counts?.like), active: state.liked, icon: .likeFill, pulse: likePulse &+ animation)
         .accessibilityLabel("赞")
         .overlay{TripleTouch(owner:item.key+":"+(uid ?? "")){effect in
           switch effect{case .like:Task{await like()}
@@ -130,11 +166,10 @@ private struct ScopedEngagement: View {
         }.accessibilityHidden(true)}
         .accessibilityAddTraits(.isButton).accessibilityAction { Task { await like() } }
         .accessibilityAction(named: "一键三连") { askForTriple() }
-        .symbolEffect(.bounce, value: reduce ? 0 : animation)
       if item.episode == nil {
         Button{Task{await dislike()}}label:{
-          ArchiveActionColumn(symbol: state.disliked ? "hand.thumbsdown.fill":"hand.thumbsdown",
-            title: "不喜欢", active: state.disliked)
+          ArchiveActionColumn(symbol: "hand.thumbsdown",
+            title: "不喜欢", active: state.disliked, icon: .dislikeFill, pulse: dislikePulse)
         }.accessibilityLabel(state.disliked ? "取消点踩":"点踩")
       }
       Button {
@@ -147,21 +182,20 @@ private struct ScopedEngagement: View {
         }
       } label: {
         ArchiveActionColumn(symbol: ArchiveActionColumn.coin,
-          title: caption("投币", counts?.coin), active: state.contributed)
+          title: caption("投币", counts?.coin), active: state.contributed, icon: .coinFill, pulse: coinAnimation)
       }.accessibilityLabel("投币")
-      .symbolEffect(.bounce, value: reduce ? 0 : coinAnimation)
       if let rid = item.rid, let uid {
         Button {
           if quick { Task { await quickFavorite(rid, uid) } } else { pick = true }
         } label: {
-          ArchiveActionColumn(symbol: state.starred ? "star.fill" : "star",
-            title: caption("收藏", counts?.favorite), active: state.starred)
+          ArchiveActionColumn(symbol: "star",
+            title: caption("收藏", counts?.favorite), active: state.starred, icon: .starFill,
+            pulse: starPulse &+ animation)
         }.accessibilityLabel("收藏")
         .contextMenu { Button("选择收藏夹") { pick = true } }
-        .symbolEffect(.bounce, value: reduce ? 0 : animation)
       }
       if let extras { extras }
-    }.environment(\.engagementFills, counts != nil)}}.buttonStyle(.plain).disabled(busy)
+    }.environment(\.engagementFills, counts != nil)}}.buttonStyle(ActionPressStyle()).disabled(busy)
       .id(item.key)
       .onAppear{active=true}.onDisappear{active=false;revision+=1}
       .task(id: "\(uid ?? ""):\(item.key):\(refresh)") { if keyboard==nil {await load()} }
@@ -286,6 +320,7 @@ private struct ScopedEngagement: View {
       try await BiliAPI.shared.submit(request.path,request.fields,expectedAccount:uid)
       if self.uid == uid {
         state.liked = next;if next{state.disliked=false};didCommit(uid)
+        likePulse &+= 1
         TouchFeedback.light()
       }
     }
@@ -298,7 +333,7 @@ private struct ScopedEngagement: View {
     let next = !state.disliked
     await perform{owner in
       try await BiliAPI.shared.archiveDislike(aid,undo:!next,owner:owner)
-      if self.uid==owner{state.disliked=next;if next{state.liked=false};didCommit(owner);TouchFeedback.light()}
+      if self.uid==owner{state.disliked=next;if next{state.liked=false};didCommit(owner);dislikePulse &+= 1;TouchFeedback.light()}
     }
   }
   @MainActor private func coin(_ n: Int,withLike:Bool) async {
@@ -359,6 +394,7 @@ private struct ScopedEngagement: View {
         expectedAccount: uid)
       if self.uid == uid {
         state.starred = true
+        starPulse &+= 1
         didCommit(uid);alert = "已收藏到" + folder.title
       }
     }
@@ -372,7 +408,7 @@ private struct ScopedEngagement: View {
     guard active,self.uid == uid else{return}
     try await BiliAPI.shared.submit(
       "/x/v3/fav/resource/unfav-all", ["rid":String(rid),"type":String(item.type)],expectedAccount:uid)
-    if self.uid==uid{state.starred=false;didCommit(uid);alert="已取消收藏"}
+    if self.uid==uid{state.starred=false;starPulse &+= 1;didCommit(uid);alert="已取消收藏"}
   }
 }
 struct QuickFolderChoice: View {

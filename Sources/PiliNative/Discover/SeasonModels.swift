@@ -16,6 +16,16 @@ struct Season: Decodable, Identifiable {
   }
   struct Update: Decodable { let index_show: String? }
   var id: Int64 { season_id }
+  /// The followed list's extras: the 追剧 row's styles and areas, and the badge's colour. Read
+  /// leniently, so an odd shape there never fails the list.
+  var styles: Lenient<[String]>? = nil, areas: Lenient<[Area]>? = nil, badge_info: Lenient<BadgeInfo>? = nil
+  struct Area: Decodable { let name: String? }
+  struct BadgeInfo: Decodable { let bg_color: String?, bg_color_night: String? }
+}
+/// A field decoded if it has the expected shape, and nil otherwise.
+struct Lenient<Value: Decodable>: Decodable {
+  let value: Value?
+  init(from decoder: Decoder) throws { value = try? Value(from: decoder) }
 }
 struct SeasonInfo: Decodable {
   var type: Int?
