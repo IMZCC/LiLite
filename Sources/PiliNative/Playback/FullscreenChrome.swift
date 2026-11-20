@@ -29,10 +29,23 @@ extension EnvironmentValues {
 }
 
 enum PlayerChromeMotion {
-  /// Controls fade in and out quickly, without sliding.
-  static let fade = Animation.easeOut(duration: 0.18)
+  /// Controls fade in and out quickly, without sliding (the reference player takes about a
+  /// tenth of a second either way).
+  static let fade = Animation.easeOut(duration: 0.12)
   /// The bar rises and a panel slides up under it.
   static let panel = Animation.spring(response: 0.36, dampingFraction: 0.86)
+  /// The original client's portrait controls (its control container animator): 200 ms in and
+  /// 150 ms out on a (0.68, 0.8, 0.42, 0.99) curve, every bar fading while it slides `slide`
+  /// points toward its own edge. The page's back / home use the same motion, so nothing on the
+  /// picture moves out of step.
+  static func inline(_ showing: Bool) -> Animation {
+    .timingCurve(0.68, 0.8, 0.42, 0.99, duration: showing ? 0.2 : 0.15)
+  }
+  static let slide: CGFloat = 12
+  /// The fading slide of a bar at the top (`edge` .top) or bottom of the picture.
+  static func bar(_ edge: VerticalEdge) -> AnyTransition {
+    .opacity.combined(with: .offset(y: edge == .top ? -slide : slide))
+  }
 }
 
 // MARK: - Stream description
@@ -108,37 +121,85 @@ struct PlayerStreamInfo: Equatable {
   var audioDetail: String? { audioID.map(PlaybackOption.audioName) }
 }
 
-/// The glass chip under the title after a stream starts: quality and range, codec and rate, then
-/// the audio track.
+/// The glass chip at the top after a stream starts: quality and range, codec and rate, then the
+/// audio track. It plays the reference player's entrance by itself, whether or not the controls
+/// are up: the glyph draws on in a glass circle, the capsule grows to the right uncovering the
+/// text, holds, then folds back into the circle and the glyph draws off. Give it a new identity
+/// to replay it (a new stream).
 struct PlayerFormatChip: View {
   let info: PlayerStreamInfo
+  /// 0 gone, 1 the glyph in its circle, 2 open.
+  @State private var stage = 0
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   var body: some View {
-    HStack(spacing: 12) {
-      Image(systemName: "dot.radiowaves.forward")
-        .font(.system(size: 15, weight: .bold))
-        .frame(width: 30, height: 30)
-        .background(.white.opacity(0.92), in: Circle()).foregroundStyle(.black)
+    HStack(spacing: 9) {
+      ChipGlyph(shown: stage > 0)
+        .frame(width: 24, height: 24)
+      if stage == 2 {
+        details
+          .fixedSize()
+          .transition(.asymmetric(
+            insertion: .opacity.animation(.easeOut(duration: 0.22).delay(0.1)),
+            removal: .opacity.animation(.easeOut(duration: 0.12))))
+      }
+    }
+    .foregroundStyle(.white).lineLimit(1)
+    .padding(.leading, 10).padding(.trailing, stage == 2 ? 18 : 10).padding(.vertical, 8)
+    .background {
+      Color.clear
+        .piliGlass(in: Capsule(), fallback: AnyShapeStyle(Color.black.opacity(0.45)))
+        .opacity(stage == 0 ? 0 : 1)
+    }
+    // The capsule's edge uncovers the text as it grows and covers it as it folds.
+    .clipShape(Capsule())
+    .environment(\.colorScheme, .dark)
+    .accessibilityElement(children: .combine)
+    .task {
+      let open = Animation.spring(response: 0.5, dampingFraction: 0.86)
+      withAnimation(.easeOut(duration: 0.2)) { stage = 1 }
+      if !(await pause(0.28)) { return }
+      withAnimation(reduceMotion ? .easeOut(duration: 0.2) : open) { stage = 2 }
+      if !(await pause(4.6)) { return }
+      withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.45, dampingFraction: 0.92)) { stage = 1 }
+      if !(await pause(0.7)) { return }
+      withAnimation(.easeIn(duration: 0.22)) { stage = 0 }
+    }
+  }
+  private func pause(_ seconds: Double) async -> Bool {
+    do { try await Task.sleep(for: .seconds(seconds)) } catch { return false }
+    return true
+  }
+  private var details: some View {
+    HStack(spacing: 14) {
       VStack(alignment: .leading, spacing: 1) {
         Text(info.headline).font(.system(size: 15, weight: .semibold))
         if let detail = [info.codecName, info.rateText].compactMap({ $0 }).joined(separator: " · ").nonEmpty {
-          Text(detail).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7))
+          Text(detail).font(.system(size: 11.5)).foregroundStyle(.white.opacity(0.65))
         }
       }
       if let audio = info.audioName {
-        Rectangle().fill(.white.opacity(0.25)).frame(width: 1, height: 28)
         VStack(alignment: .leading, spacing: 1) {
-          Text(audio).font(.system(size: 15, weight: .semibold))
+          Text(audio).font(.system(size: 14, weight: .semibold))
           if let detail = info.audioDetail {
-            Text(detail).font(.system(size: 12)).foregroundStyle(.white.opacity(0.7))
+            Text(detail).font(.system(size: 11.5)).foregroundStyle(.white.opacity(0.65))
           }
         }
       }
     }
-    .foregroundStyle(.white).lineLimit(1)
-    .padding(.leading, 8).padding(.trailing, 18).padding(.vertical, 6)
-    .piliGlass(in: Capsule(), fallback: AnyShapeStyle(Color.black.opacity(0.45)))
-    .environment(\.colorScheme, .dark)
-    .accessibilityElement(children: .combine)
+  }
+}
+
+/// The chip's glyph: drawn on and off stroke by stroke on iOS 26 (SF Symbols' draw effect),
+/// popped in and out elsewhere.
+private struct ChipGlyph: View {
+  let shown: Bool
+  var body: some View {
+    let glyph = Image(systemName: "dot.radiowaves.forward").font(.system(size: 17, weight: .bold))
+    if #available(iOS 26.0, *) {
+      glyph.symbolEffect(.drawOn, isActive: !shown)
+    } else {
+      glyph.opacity(shown ? 1 : 0).scaleEffect(shown ? 1 : 0.4)
+    }
   }
 }
 private extension String {
@@ -412,18 +473,42 @@ struct FullscreenSeekBar: View {
 
 // MARK: - Gesture feedback
 
-/// Smoked glass capsule at the top centre for seek, level and speed feedback.
+/// The reference player's feedback capsule at the top centre (seek, level, speed): clear Liquid
+/// Glass — the picture shows through, bent at the rim, barely dimmed — not the frosted regular
+/// glass, which over a bright frame turned into a flat grey pill. Before iOS 26, a dark blur.
 struct PlayerHUDCapsule<Content: View>: View {
-  var tint: Color? = nil
   @ViewBuilder let content: () -> Content
+  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
   var body: some View {
     content()
       .foregroundStyle(.white)
+      .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
       .padding(.horizontal, 22).padding(.vertical, 9)
-      .piliGlass(in: Capsule(), tint: tint, fallback: AnyShapeStyle(Color.black.opacity(0.5)))
+      .modifier(PlayerClearGlass(shape: Capsule(), reduceTransparency: reduceTransparency))
       .environment(\.colorScheme, .dark)
       .allowsHitTesting(false)
-      .transition(.opacity.combined(with: .scale(scale: 0.92)))
+      .transition(.scale(scale: 0.9).combined(with: .opacity))
+  }
+}
+/// Clear Liquid Glass over the picture, lightly dimmed for white text; a dark blur with a hairline
+/// rim before iOS 26.
+struct PlayerClearGlass<S: InsettableShape>: ViewModifier {
+  let shape: S
+  var reduceTransparency = false
+  @ViewBuilder func body(content: Content) -> some View {
+    if reduceTransparency {
+      content.background(Color.black.opacity(0.75), in: shape)
+    } else if #available(iOS 26, *) {
+      content
+        .background(Color.black.opacity(0.14), in: shape)
+        .glassEffect(.clear, in: shape)
+    } else {
+      content.background {
+        shape.fill(.ultraThinMaterial)
+          .overlay(shape.fill(Color.black.opacity(0.22)))
+          .overlay(shape.strokeBorder(.white.opacity(0.22), lineWidth: 0.6))
+      }
+    }
   }
 }
 
@@ -455,11 +540,22 @@ struct PlayerSeekHUD: View {
 struct PlayerLevelHUD: View {
   let symbol: String
   let percent: Int
+  /// The reference player draws outline glyphs here: a plain sun, and a speaker whose waves
+  /// fill in with the level.
+  @ViewBuilder private var glyph: some View {
+    if symbol.hasPrefix("sun") {
+      Image(systemName: "sun.max")
+    } else if percent <= 0 {
+      Image(systemName: "speaker.slash")
+    } else {
+      Image(systemName: "speaker.wave.3", variableValue: Double(percent) / 100)
+    }
+  }
   var body: some View {
     PlayerHUDCapsule {
       VStack(spacing: 6) {
-        HStack(spacing: 6) {
-          Image(systemName: symbol).font(.system(size: 14, weight: .semibold))
+        HStack(spacing: 7) {
+          glyph.font(.system(size: 14, weight: .medium))
           Text("\(percent)").font(.system(size: 15, weight: .semibold).monospacedDigit())
             .contentTransition(.numericText())
         }
@@ -522,7 +618,7 @@ struct PlayerPausedBubble: View {
         .background {
           if formed {
             Color.clear
-              .piliGlass(in: Circle(), fallback: AnyShapeStyle(Color.black.opacity(0.35)))
+              .modifier(PlayerClearGlass(shape: Circle()))
               .transition(.scale(scale: 0.6).combined(with: .opacity))
           }
         }

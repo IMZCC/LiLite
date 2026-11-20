@@ -10,6 +10,9 @@ struct PlayerChromeSlots {
   var subtitle: String? = nil
   var headerLeading: AnyView? = nil
   var headerTrailing: AnyView? = nil
+  /// Header tools before `headerTrailing` that only a wide player shows; the original's portrait
+  /// player keeps them in 更多.
+  var headerWide: AnyView? = nil
   var bottomTrailing: AnyView? = nil
   /// After play/time on the left: previous / next part, as in the original.
   var bottomLeading: AnyView? = nil
@@ -268,6 +271,20 @@ struct PlayerPiPButton: View {
   }
 }
 
+/// 更多 at the header's end: the original's upright three dots.
+struct PlayerMoreButton: View {
+  let action: () -> Void
+  var body: some View {
+    Button {
+      TouchFeedback.light()
+      action()
+    } label: {
+      PlayerGlyph(symbol: "ellipsis", size: 18).rotationEffect(.degrees(90))
+    }
+    .accessibilityLabel("更多设置")
+  }
+}
+
 /// "返回主页": closes every page back to the home tab.
 struct PlayerHomeButton: View {
   var body: some View {
@@ -287,7 +304,11 @@ struct PlayerCastButton: View {
   let subject: CastSubject
   @State private var sheet = false
   var body: some View {
-    Button { sheet = true } label: { PlayerGlyph(symbol: "airplayvideo") }
+    Button { sheet = true } label: {
+      CastTVGlyph().foregroundStyle(.white)
+        .frame(width: 40, height: 40).contentShape(Rectangle())
+        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+    }
       .disabled(!subject.valid).accessibilityLabel("投屏")
       .piliSheet(isPresented: $sheet) {
         PiliNavigationStack { CastView(subject: subject, player: player) }

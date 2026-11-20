@@ -201,8 +201,9 @@ struct EpisodePlayer: View {
       .defaultScrollAnchor(.top).reportsScrollCollapse()
     }
   }
-  /// The inline player's own buttons, as on the video page: cast, bullet settings, picture in
-  /// picture and 更多 at the top; subtitles, speed, quality and 选集 at the bottom.
+  /// The inline player's own buttons, as on the video page: cast and 更多 at the top (bullet
+  /// settings and picture in picture too when wide); subtitles, speed, quality and 选集 at the
+  /// bottom of a wide player, in 更多 on a phone.
   private func inlineSlots(_ episode: SeasonInfo.Episode) -> PlayerChromeSlots {
     PlayerChromeSlots(
       headerTrailing: AnyView(
@@ -211,11 +212,13 @@ struct EpisodePlayer: View {
             PlayerCastButton(player: model.engine, subject: .episode(
               id: episode.id, cid: episode.cid, title: episode.label, quality: model.quality))
           }
+          PlayerMoreButton { playbackOptions = true }
+        }),
+      headerWide: AnyView(
+        HStack(spacing: 0) {
           Button { bulletSettings = true } label: { PlayerGlyph(symbol: "text.bubble.badge.gearshape") }
             .accessibilityLabel("弹幕设置")
           PlayerPiPButton(player: model.engine)
-          Button { playbackOptions = true } label: { PlayerGlyph(symbol: "ellipsis") }
-            .accessibilityLabel("更多设置")
         }),
       bottomTrailing: AnyView(
         HStack(spacing: 0) {

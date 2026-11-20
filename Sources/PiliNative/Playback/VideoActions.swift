@@ -24,25 +24,27 @@ struct VideoActions: View {
   var showsEngagement = true
   @State private var at = 0.0
   var body: some View {
-    // Three columns that join the engagement row: cache, watch later and share (with the
-    // rarely used tools folded into the share menu, as the system share sheet does).
-    NavigationLink { DeferredPage { CacheSelection(video: video, cid: cid) } } label: {
-      ArchiveActionColumn(symbol: "arrow.down.circle", title: "缓存", active: false)
-    }.accessibilityLabel("缓存视频")
-    Button {
-      guard let owner=accounts.state.active else{notice="请先登录";return}
-      let removing=laterMarked
-      let item=EngagementItem(bvid:video.bvid,aid:video.aid,episode:nil,copyright:video.copyright)
-      TouchFeedback.light()
-      act(removing ? "已移出稍后再看":"已加入稍后再看"){
-        let request=try PlaybackSocialRequest.later(item,removing:removing)
-        try await BiliAPI.shared.submit(request.path,request.fields,expectedAccount:owner)
-        if owner==accounts.state.active,let aid=video.aid ?? ArchiveNumber.av(video.bvid){PlayerKeyMemory.shared.mark(aid,owner:owner,value:!removing)}
-      }
-    } label: {
-      ArchiveActionColumn(symbol: laterMarked ? "clock.fill" : "clock", title: "稍后", active: laterMarked)
-    }.accessibilityLabel(laterMarked ? "移出稍后再看":"添加到稍后再看")
+    // The column that ends the engagement row, as in the original's five (赞 · 不喜欢 · 投币 ·
+    // 收藏 · 分享): share, with cache, watch later and the rarely used tools in its menu.
     Menu {
+      Section {
+        NavigationLink { DeferredPage { CacheSelection(video: video, cid: cid) } } label: {
+          Label("离线缓存", systemImage: "arrow.down.circle")
+        }
+        Button {
+          guard let owner=accounts.state.active else{notice="请先登录";return}
+          let removing=laterMarked
+          let item=EngagementItem(bvid:video.bvid,aid:video.aid,episode:nil,copyright:video.copyright)
+          TouchFeedback.light()
+          act(removing ? "已移出稍后再看":"已加入稍后再看"){
+            let request=try PlaybackSocialRequest.later(item,removing:removing)
+            try await BiliAPI.shared.submit(request.path,request.fields,expectedAccount:owner)
+            if owner==accounts.state.active,let aid=video.aid ?? ArchiveNumber.av(video.bvid){PlayerKeyMemory.shared.mark(aid,owner:owner,value:!removing)}
+          }
+        } label: {
+          Label(laterMarked ? "移出稍后再看" : "稍后再看", systemImage: laterMarked ? "clock.fill" : "clock")
+        }
+      }
       let page=video.pages?.first(where:{$0.cid==cid})?.page
       if let url=ArchiveSharePoint.archive(video.bvid,page:page){
         Section {

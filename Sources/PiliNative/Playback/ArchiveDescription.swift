@@ -45,7 +45,7 @@ struct ArchiveDescription: View {
     }
   }
   private var content: some View {
-      Text(Self.description(video)).piliFont(.subheadline).lineSpacing(3).foregroundStyle(.secondary)
+      Text(Self.cachedDescription(video)).piliFont(.subheadline).lineSpacing(3).foregroundStyle(.secondary)
         .textSelection(.enabled)
         .environment(
           \.openURL,
@@ -76,6 +76,17 @@ struct ArchiveDescription: View {
     pattern:
       #"(?<![A-Za-z0-9:])(?:BV[A-Za-z0-9]{10}|av[0-9]+|(?:[0-9]{1,3}:)?[0-9]{1,3}:[0-5][0-9])(?![A-Za-z0-9:])"#
   )
+  /// The linked text, built once per description: link detection over a long description takes
+  /// tens of milliseconds, and the expanded intro re-renders with every change of the player.
+  private static var built: [String: AttributedString] = [:]
+  static func cachedDescription(_ v: Video) -> AttributedString {
+    let key = v.bvid + "|" + String((v.desc ?? "").hashValue) + "|" + String(v.desc_v2?.count ?? 0)
+    if let hit = built[key] { return hit }
+    let made = description(v)
+    if built.count > 40 { built.removeAll() }
+    built[key] = made
+    return made
+  }
   static func description(_ v: Video) -> AttributedString {
     let result = NSMutableAttributedString(string: "")
     func append(_ text: String, mention: Int64? = nil) {

@@ -26,9 +26,16 @@ struct ArchivePlaybackOptions: View {
   @AppStorage("sponsor.enabled") private var sponsorEnabled = false
   @State private var notice: String?
   @State private var capturing = false
+  @AppStorage(SpeedPresets.key) private var speedData = Data()
+  @State private var speed = 1.0
   var body: some View {
     PiliNavigationStack {
       List {
+        // The original sheet opens on its speed row; the phone's portrait player has no speed
+        // button of its own.
+        Section {
+          speedRow.listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+        }
         Section {
           if let aid = actions.video?.aid ?? actions.video.flatMap({ ArchiveNumber.av($0.bvid) }) {
             row("clock", "添加至「稍后再看」") { watchLater(aid) }
@@ -125,13 +132,44 @@ struct ArchivePlaybackOptions: View {
     }
     .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
   }
-  /// 听视频 / 加入待播 / 截图 / AirPlay, as the original's chip row under the first group.
+  private var speedRow: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      label("gauge.with.dots.needle.67percent", "播放速度").padding(.horizontal, 20)
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          ForEach(SpeedPresets.decode(speedData), id: \.self) { s in
+            let on = abs(speed - s) < 0.001
+            Button {
+              speed = s
+              model.rate = Float(s)
+              TouchFeedback.light()
+            } label: {
+              Text(s.formatted() + "×").font(.footnote.weight(on ? .semibold : .regular)).monospacedDigit()
+                .foregroundStyle(on ? Color.accentColor : Color.primary)
+                .padding(.horizontal, 14).frame(height: 32)
+                .background(on ? Color.accentColor.opacity(0.14) : Color(uiColor: .secondarySystemBackground), in: Capsule())
+                .contentShape(Capsule())
+            }
+            .accessibilityLabel(s.formatted() + "倍速").accessibilityAddTraits(on ? .isSelected : [])
+          }
+        }
+        .padding(.horizontal, 16)
+      }
+    }
+    .onAppear { speed = Double(model.rate) }
+  }
+  /// 听视频 / 加入待播 / 小窗 / 截图 / AirPlay, as the original's chip row under the first group.
   private var chips: some View {
     ScrollView(.horizontal, showsIndicators: false) {
       HStack(spacing: 10) {
         if let listen = actions.listen {
           Button { close(listen) } label: { ArchiveToolChip(title: "听视频", symbol: "headphones") }
         }
+        Button {
+          let engine = model.engine
+          close { NotificationCenter.default.post(name: .piliStartPictureInPicture, object: engine) }
+        } label: { ArchiveToolChip(title: "小窗", symbol: "pip.enter") }
+          .disabled(!model.ready)
         if let enqueue = actions.enqueue {
           Button { enqueue(); notice = "已加入待播" } label: {
             ArchiveToolChip(title: "加入待播", symbol: "text.line.first.and.arrowtriangle.forward")

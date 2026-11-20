@@ -289,9 +289,10 @@ struct DetailView: View {
         model:model,item:.init(bvid:video.bvid,aid:video.aid ?? ArchiveNumber.av(video.bvid),episode:nil,copyright:video.copyright),cid:cid,creator:detail?.bvid==video.bvid && (video.staff ?? []).isEmpty ? video.owner?.mid:nil,bvid:video.bvid)
     )
   }
-  /// Portrait player tools in the original client's places: header right = listen, cast,
-  /// danmaku settings, picture in picture, more; bottom = previous/next after the time, then
-  /// episodes, subtitles, speed, and quality when wide.
+  /// Portrait player tools in the original client's places: header right = listen, cast and
+  /// 更多 (danmaku settings and picture in picture join them when the player is wide); the
+  /// phone's portrait row has only play, progress, time and fullscreen, a wide player adds
+  /// previous/next, episodes, subtitles, speed and quality.
   private func inlineChrome(_ video: Video) -> PlayerChromeSlots {
     let steps =
       queueStep != nil || (video.pages?.count ?? 0) > 1 || !(video.ugc_season?.sections ?? []).isEmpty
@@ -309,11 +310,13 @@ struct DetailView: View {
           }
           PlayerCastButton(player: model.engine, subject: .archive(bvid: video.bvid, aid: video.aid,
             cid: cid, title: video.title, quality: model.quality))
+          PlayerMoreButton { playbackOptions = true }
+        }),
+      headerWide: AnyView(
+        HStack(spacing: 0) {
           Button { bulletSettings = true } label: { PlayerGlyph(symbol: "text.bubble.badge.gearshape") }
             .accessibilityLabel("弹幕设置")
           PlayerPiPButton(player: model.engine)
-          Button { playbackOptions = true } label: { PlayerGlyph(symbol: "ellipsis") }
-            .accessibilityLabel("更多设置")
         }),
       bottomTrailing: AnyView(
         HStack(spacing: 0) {
@@ -434,9 +437,10 @@ struct DetailView: View {
   }
   @ViewBuilder private func creatorRow(_ video: Video) -> some View {
     if let owner = video.owner?.name {
+      // The original: the avatar, then the name (pink for 大会员) over "3.3万粉丝  540视频".
       let identity = HStack(spacing: 10) {
         ProfileAvatar(url: video.owner?.avatar, size: 36)
-        Text(owner).font(.subheadline).foregroundStyle(.primary).lineLimit(1)
+        CreatorCardLine(mid: video.owner?.mid, name: owner)
       }
       HStack(spacing: 12) {
         if useMemberPanel, video.owner?.mid != nil {
@@ -478,29 +482,30 @@ struct DetailView: View {
     a.reload = { retryPlayback += 1 }
     return a
   }
-  /// Tab bar accessory: send a bullet and toggle bullets, as in the original client.
+  /// Tab bar accessory, as in the original client: one grey pill — "点我发弹幕", then the
+  /// bullet switch in a light cap at its end.
   private var bulletAccessory: some View {
-    HStack(spacing: 4) {
+    HStack(spacing: 0) {
       Button {
         guard accounts.state.active != nil, cid != nil else { return }
         bulletAt = model.seconds
         withAnimation(.snappy(duration: 0.25)) { composeBullet = true }
       } label: {
-        Text("发弹幕").font(.footnote).foregroundStyle(.secondary)
-          .padding(.horizontal, 12).padding(.vertical, 6)
-          .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+        Text("点我发弹幕").font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
+          .padding(.leading, 14).padding(.trailing, 10).frame(height: 30)
+          .contentShape(Rectangle())
       }.buttonStyle(.plain).disabled(accounts.state.active == nil || cid == nil)
       Button {
         TouchFeedback.light()
         showBullets.toggle()
       } label: {
-        Image(systemName: showBullets ? "text.bubble.fill" : "text.bubble")
-          .font(.system(size: 17, weight: .medium))
-          .foregroundStyle(showBullets ? Color.accentColor : Color.secondary)
-          .frame(width: 36, height: 36).contentShape(Rectangle())
-          .contentTransition(.symbolEffect(.replace))
+        DanmakuSwitchGlyph(on: showBullets)
+          .frame(width: 40, height: 26)
+          .background(Color(uiColor: .systemBackground), in: Capsule())
+          .padding(2).contentShape(Rectangle())
       }.buttonStyle(.plain).accessibilityLabel(showBullets ? "关闭弹幕" : "开启弹幕")
     }
+    .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
   }
   var body: some View {
     let source = following ?? initial
@@ -550,6 +555,9 @@ struct DetailView: View {
     }.onGeometryChange(for: Bool.self) {
       $0.size.width > $0.size.height && $0.size.width >= 540
     } action: {
+      // Behind fullscreen the page turns with the phone but stays laid out as it was
+      // (PlaybackPanels); it comes back to the same size.
+      guard !theater && !theaterCovering else { return }
       wideViewport = $0
       if !$0 { sideAuthor = nil }
     }.navigationTitle("").navigationBarTitleDisplayMode(.inline)

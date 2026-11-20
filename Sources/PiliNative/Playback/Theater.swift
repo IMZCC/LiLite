@@ -216,7 +216,6 @@ struct TheaterSheet: View {
   /// Shown in the header, like the original client's fullscreen title.
   var title: String? = nil
   @State private var showTimeline = false
-  @State private var chromeVisible = true
   @State private var locked = false
   @AppStorage("theater.orientation") private var orientationPref: Int?
   /// Read once on entry: folding or unfolding a Duo mid-fullscreen must not rotate it back.
@@ -269,7 +268,7 @@ struct TheaterSheet: View {
     .onDisappear { UIDevice.current.endGeneratingDeviceOrientationNotifications() }
   }
   private func showInfo() {
-    withAnimation(.easeOut(duration: 0.25)) { infoShown = true }
+    infoShown = true
     infoPulse &+= 1
   }
   private func toggleLock() {
@@ -287,7 +286,8 @@ struct TheaterSheet: View {
     var s = PlayerChromeSlots(title: title)
     s.close = { close() }
     s.tools = AnyView(tools)
-    s.info = infoShown ? model.streamInfo.map { AnyView(PlayerFormatChip(info: $0)) } : nil
+    // A new identity per stream replays the chip's entrance.
+    s.info = infoShown ? model.streamInfo.map { AnyView(PlayerFormatChip(info: $0).id(infoPulse)) } : nil
     s.next = keyStep.map { step in { TouchFeedback.light(); step(true) } }
     if !model.availableQualities.isEmpty {
       s.panels.append(PlayerPanelSlot(
@@ -386,7 +386,6 @@ struct TheaterSheet: View {
         seek: model.seek, expand: { close() }, upscale: model.upscale
       ).environment(\.styledSubtitles,model.captions)
       .environment(\.playerChrome, slots)
-      .onPreferenceChange(PlayerControlsVisibleKey.self) { chromeVisible = $0 }
       .modifier(PlaybackEdgeInsets(fullscreen: true))
       if !locked{VStack{Spacer();HStack{EpisodeClipPrompt(model:model);Spacer()}.padding(.leading,10)}.padding(.bottom,66)}
       if !locked,let continueBadge{VStack{Spacer();HStack{continueBadge;Spacer()}.padding(.leading,10)}.padding(.bottom,66)}
@@ -419,8 +418,9 @@ struct TheaterSheet: View {
     .onChange(of: model.streamInfo) { _, info in if info != nil { showInfo() } }
     .task(id: infoPulse) {
       guard infoShown else { return }
-      do { try await Task.sleep(for: .seconds(5)) } catch { return }
-      withAnimation(.easeOut(duration: 0.25)) { infoShown = false }
+      // The chip folds itself away after about 6 s; this only takes it out of the tree after.
+      do { try await Task.sleep(for: .seconds(6.6)) } catch { return }
+      infoShown = false
     }
     .piliSheet(isPresented: $bulletSettings) {
       PiliNavigationStack {

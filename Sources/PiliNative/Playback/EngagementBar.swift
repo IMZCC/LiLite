@@ -51,15 +51,23 @@ extension EnvironmentValues {
 }
 struct ArchiveActionColumn: View {
   let symbol: String, title: String, active: Bool
+  /// Pass as `symbol` for the original's coin (CoinMark), which SF Symbols has no match for.
+  static let coin = "pili.coin"
   @Environment(\.engagementFills) private var fills
   @Environment(\.engagementCompact) private var compact
   var body: some View {
     if compact {
-      Image(systemName: symbol).font(.system(size: 19, weight: .medium))
-        .foregroundStyle(active ? Color.accentColor : Color.white)
-        .frame(width: 42, height: 40).contentShape(Rectangle())
-        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-        .contentTransition(.symbolEffect(.replace))
+      Group {
+        if symbol == Self.coin {
+          CoinMark(color: active ? Color.accentColor : Color.white).frame(width: 20, height: 20)
+        } else {
+          Image(systemName: symbol).font(.system(size: 19, weight: .medium))
+            .foregroundStyle(active ? Color.accentColor : Color.white)
+            .contentTransition(.symbolEffect(.replace))
+        }
+      }
+      .frame(width: 42, height: 40).contentShape(Rectangle())
+      .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
     } else {
       column
     }
@@ -67,8 +75,14 @@ struct ArchiveActionColumn: View {
   /// The official action row: solid grey icons over small grey counts, tinted when done.
   private var column: some View {
     VStack(spacing: 6) {
-      Image(systemName: symbol).symbolVariant(.fill).font(.system(size: 23, weight: .regular))
-        .foregroundStyle(active ? Color.accentColor : Color.primary.opacity(0.62))
+      Group {
+        if symbol == Self.coin {
+          CoinMark(color: active ? Color.accentColor : Color.primary.opacity(0.62)).frame(width: 24, height: 24)
+        } else {
+          Image(systemName: symbol).symbolVariant(.fill).font(.system(size: 23, weight: .regular))
+            .foregroundStyle(active ? Color.accentColor : Color.primary.opacity(0.62))
+        }
+      }
         .frame(height: 28)
       Text(title).font(.caption).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
         .foregroundStyle(active ? Color.accentColor : Color.secondary)
@@ -106,7 +120,7 @@ private struct ScopedEngagement: View {
   var body: some View {
     Group{if keyboard != nil {Color.clear.frame(width:1,height:1).accessibilityHidden(true)}else{HStack(spacing: 0) {
       ArchiveActionColumn(symbol: state.liked ? "hand.thumbsup.fill" : "hand.thumbsup",
-        title: caption("赞", counts?.like), active: state.liked)
+        title: caption("点赞", counts?.like), active: state.liked)
         .accessibilityLabel("赞")
         .overlay{TripleTouch(owner:item.key+":"+(uid ?? "")){effect in
           switch effect{case .like:Task{await like()}
@@ -132,7 +146,7 @@ private struct ScopedEngagement: View {
           coins = true
         }
       } label: {
-        ArchiveActionColumn(symbol: state.contributed ? "circle.circle.fill" : "circle.circle",
+        ArchiveActionColumn(symbol: ArchiveActionColumn.coin,
           title: caption("投币", counts?.coin), active: state.contributed)
       }.accessibilityLabel("投币")
       .symbolEffect(.bounce, value: reduce ? 0 : coinAnimation)

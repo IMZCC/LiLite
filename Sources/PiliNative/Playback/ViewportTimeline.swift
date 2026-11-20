@@ -117,6 +117,9 @@ struct ViewportSeekBar: View {
   var external: Double?
   var marks: AnyView? = nil
   var timeline:TimelineState?=nil
+  /// The time being dragged to (nil when let go), for a time readout beside the bar; with it the
+  /// bar leaves out its own bubble.
+  var scrubbed: ((Double?) -> Void)? = nil
   @AppStorage("player.seekPreview") private var previews=true
   @State private var drag: Double?
   private var time: Double { drag ?? external ?? readout.seconds }
@@ -131,7 +134,7 @@ struct ViewportSeekBar: View {
       let height: CGFloat = compact && drag == nil ? 2.5 : 3.5
       let center = compact ? g.size.height - height / 2 : g.size.height / 2
       ZStack {
-        Capsule().fill(.white.opacity(0.2)).frame(height: height).position(x: w / 2, y: center)
+        Capsule().fill(.white.opacity(0.32)).frame(height: height).position(x: w / 2, y: center)
         ForEach(buffers.indices, id: \.self) { i in
           let span = buffers[i]
           let lo = min(1, max(0, span.lowerBound / total))
@@ -152,7 +155,7 @@ struct ViewportSeekBar: View {
           ShotPreview(state:timeline,seconds:drag).frame(width:min(128,w),height:72)
             .position(x:min(max(min(64,w/2),fraction*w),max(w/2,w-64)),y:center-56)
         }
-        if let drag {
+        if let drag, scrubbed == nil {
           Text(clockText(drag)).font(.caption.monospacedDigit()).foregroundStyle(.white).padding(3)
             .background(.black.opacity(0.8), in: Capsule())
             .position(x: min(max(20, w - 24), max(24, fraction * w)), y: center - 17)
@@ -174,9 +177,11 @@ struct ViewportSeekBar: View {
             guard clock.duration > 0 else { return }
             if drag == nil { TouchFeedback.light(); editing(true) }
             drag = min(1, max(0, v.location.x / w)) * clock.duration
+            scrubbed?(drag)
           }.onEnded { v in
             if clock.duration > 0 { seek(min(1, max(0, v.location.x / w)) * clock.duration) }
             drag = nil
+            scrubbed?(nil)
             editing(false)
           })
     }.frame(height: compact ? 20 : 30)
@@ -191,9 +196,31 @@ struct ViewportSeekBar: View {
       }.onDisappear {
         if drag != nil {
           drag = nil
+          scrubbed?(nil)
           editing(false)
         }
       }
+  }
+}
+
+/// The original portrait player's time after its bar: "00:01/00:45", minutes always two digits.
+struct CompactClock: View {
+  @ObservedObject var readout: ViewportReadout
+  /// A time being dragged to, shown instead of the playing time.
+  let time: Double?
+  let duration: Double
+  var body: some View {
+    Text(Self.text(time ?? readout.seconds) + "/" + Self.text(duration))
+      .font(.system(size: 12, weight: .medium).monospacedDigit())
+      .foregroundStyle(.white).lineLimit(1).fixedSize()
+      .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+      .accessibilityHidden(true)
+  }
+  static func text(_ seconds: Double) -> String {
+    let s = seconds.isFinite ? max(0, Int(seconds)) : 0
+    return s >= 3600
+      ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60)
+      : String(format: "%02d:%02d", s / 60, s % 60)
   }
 }
 

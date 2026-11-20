@@ -27,18 +27,21 @@ struct ArchiveMetadata:View{
           .fixedSize(horizontal: false, vertical: true).layoutPriority(1)
           .frame(maxWidth: .infinity, alignment: .leading)
           .contextMenu{copyActions}
-        Menu { copyActions } label: {
-          Image(systemName: "ellipsis").font(.body.weight(.medium)).foregroundStyle(.secondary)
-            .frame(width: 36, height: 36).contentShape(Rectangle())
-        }.tint(.secondary).accessibilityLabel("视频信息")
-      }
-      HStack(spacing: 6) {
-        summaryLine.lineLimit(1).minimumScaleFactor(0.85)
         if toggle != nil {
-          Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+          // The original's title ends in the expand chevron; copying stays on a long press.
+          Image(systemName: "chevron.down").font(.system(size: 15, weight: .regular))
+            .foregroundStyle(.secondary)
             .rotationEffect(.degrees(expanded ? 180 : 0))
+            .frame(width: 28, height: 22).accessibilityHidden(true)
+        } else {
+          Menu { copyActions } label: {
+            Image(systemName: "ellipsis").font(.body.weight(.medium)).foregroundStyle(.secondary)
+              .frame(width: 36, height: 36).contentShape(Rectangle())
+          }.tint(.secondary).accessibilityLabel("视频信息")
         }
-      }.font(.footnote).foregroundStyle(.secondary)
+      }
+      summaryLine.lineLimit(1).minimumScaleFactor(0.85)
+        .font(.footnote).foregroundStyle(.secondary)
     }
     .contentShape(Rectangle())
     .onTapGesture { if let toggle { TouchFeedback.light(); withAnimation(.snappy(duration: 0.3)) { toggle() } } }.onReceive(NotificationCenter.default.publisher(for:PlayerKeyMemory.changed)){n in
@@ -59,7 +62,8 @@ struct ArchiveMetadata:View{
     var spoken:[String]=[]
     if let n=stat?.view{spoken.append(short(n)+"次播放")}
     if let n=stat?.danmaku{spoken.append(short(n)+"条弹幕")}
-    let date=video.pubdate.flatMap{$0>0 ? Date(timeIntervalSince1970:Double($0)).formatted(.dateTime.year().month().day()) : nil}
+    // Date and time of publishing, as the original's line ("2026年11月20日 11:18").
+    let date=video.pubdate.flatMap{$0>0 ? Date(timeIntervalSince1970:Double($0)).formatted(.dateTime.year().month().day().hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)) : nil}
     if let date{spoken.append(date)}
     return HStack(spacing:12){
       if let n=stat?.view{counter("play.rectangle",short(n))}

@@ -66,8 +66,9 @@ struct PlaybackTabBar<Accessory: View>: View {
             Text(item.title)
               .font(.subheadline.weight(.semibold)).hidden()
               .overlay {
+                // The original tints the current tab like its underline.
                 Text(item.title).font(.subheadline.weight(current ? .semibold : .regular))
-                  .foregroundStyle(current ? Color.primary : Color.secondary)
+                  .foregroundStyle(current ? Color.accentColor : Color.secondary)
               }
               .padding(.vertical, 12)
               .contentShape(Rectangle())
@@ -131,18 +132,25 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   @State private var replyPanels: [ReplyPanelItem] = []
   /// False while another page is pushed over this one, so stray threads open as pages there.
   @State private var onScreen = false
-  /// Mirrors the player's controls, so our back / home buttons hide and show with them.
-  @State private var chromeShown = true
+  /// Mirrors the player's controls, so our back / home buttons hide and show with them. A class
+  /// read only by `PlayerPageHeaderButtons`: the controls toggle every few seconds and must not
+  /// re-render this whole page each time.
+  @State private var chrome = PlayerChromeVisibility()
+  /// The page's size and insets, kept while fullscreen covers it; `measured` follows the last
+  /// laid-out ones without re-rendering the page.
+  @State private var frozen: PageFrame?
+  @State private var measured = MeasuredPageFrame()
   @State private var neighboursReady = false
   @Environment(\.dismiss) private var dismiss
   @AppStorage("images.sidePreview") private var galleryEnabled = false
   private var comments: Bool { canDiscuss && (selection ?? defaultComments) }
   var body: some View {
-    let topInset = edgeToEdge ? 0 : WindowMetrics.statusBar
+    let topInset = frozen?.top ?? (edgeToEdge ? 0 : WindowMetrics.statusBar)
     GeometryReader { layout in
+      let size = frozen?.size ?? layout.size
       let p = plan(
-        width: layout.size.width, height: layout.size.height, topInset: topInset,
-        fold: DeviceFold.division(in: layout))
+        width: size.width, height: size.height, topInset: topInset,
+        fold: frozen == nil ? DeviceFold.division(in: layout) : nil)
       let wide = p.wide
       Group {
         switch p.mode {
@@ -154,8 +162,10 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       }
       // The panels run under the home indicator (and the bullet bar) like the original's
       // edge-to-edge page; their lists pad their last rows clear of it instead.
-      .environment(\.panelBottomInset, layout.safeAreaInsets.bottom)
+      .environment(\.panelBottomInset, frozen?.bottom ?? layout.safeAreaInsets.bottom)
       .ignoresSafeArea(.container, edges: .bottom)
+      // Fullscreen covers this page; it keeps the size it had (see `frozen`).
+      .frame(width: size.width, height: size.height, alignment: .topLeading)
       // The same closure instances on every render (only their targets are refreshed), so the
       // intro, the comments and every list under them are not invalidated whenever the player
       // publishes a change and this page re-renders.
@@ -170,6 +180,19 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         if wide && galleryEnabled, let gallery { GalleryRailPanel(request: gallery) { self.gallery = nil } }
       }
       .onChange(of: p.playerHeight, initial: true) { _, h in fold.limit = max(1, h - PanelFold.bar) }.onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
+    }
+    .onGeometryChange(for: PageFrame.self) { g in
+      PageFrame(size: g.size, top: 0, bottom: g.safeAreaInsets.bottom)
+    } action: { measured.value = $0 }
+    // While fullscreen covers the page, the turn to landscape and back would switch it to the
+    // side-by-side layout and back again, rebuilding the intro, comments and related videos
+    // twice behind the cover (a ~170 ms stall each way). It stays laid out as it was instead.
+    .onChange(of: inlinePlayerCovered) { _, covered in
+      if covered, frozen == nil, let m = measured.value {
+        frozen = PageFrame(size: m.size, top: edgeToEdge ? 0 : WindowMetrics.statusBar, bottom: m.bottom)
+      } else if !covered, frozen != nil {
+        frozen = nil
+      }
     }
     .padding(.top, topInset)
     .background(alignment: .top) {
@@ -188,8 +211,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .map { PanelPlaybackState(playing: $0.0, hasPlayed: $0.1, pictureSize: $0.2) }.removeDuplicates()) {
         if playback != $0 { playback = $0 }
       }
-    .onPreferenceChange(PlayerControlsVisibleKey.self) { shown in
-      withAnimation(.smooth(duration: 0.28)) { chromeShown = shown }
+    .onPreferenceChange(PlayerControlsVisibleKey.self) { [chrome] shown in
+      if chrome.shown != shown { chrome.shown = shown }
     }
     .onAppear { onScreen = true }
     .onDisappear { onScreen = false }
@@ -204,22 +227,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   }
   /// The original header's left side: back, then home. Drawn here (not in the player) so it is
   /// there before the video is ready too.
-  private var headerButtons: some View {
-    HStack(spacing: 0) {
-      Button {
-        TouchFeedback.light()
-        dismiss()
-      } label: {
-        PlayerGlyph(symbol: "arrow.left", size: 17)
-      }
-      .accessibilityLabel("返回")
-      PlayerHomeButton()
-    }
-    .buttonStyle(PlayerPressStyle())
-    .padding(.leading, 4).padding(.top, 4)
-    .opacity(chromeShown ? 1 : 0)
-    .allowsHitTesting(chromeShown)
-  }
+  private var headerButtons: some View { PlayerPageHeaderButtons(chrome: chrome) }
   /// Sizes and tabs for one window size.
   private struct Plan {
     var wide = false, mode = PlayerPageLayout.stacked
@@ -457,6 +465,48 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   }
 }
 
+private struct PageFrame: Equatable {
+  var size: CGSize
+  var top: CGFloat
+  var bottom: CGFloat
+}
+@MainActor private final class MeasuredPageFrame {
+  var value: PageFrame?
+}
+
+/// Whether the player's controls are up, for the page's back / home buttons.
+@Observable final class PlayerChromeVisibility {
+  var shown = true
+}
+
+/// Back and home over the player's corner, fading with the player's controls. Its own view, so
+/// only it re-renders when they toggle.
+private struct PlayerPageHeaderButtons: View {
+  let chrome: PlayerChromeVisibility
+  @Environment(\.dismiss) private var dismiss
+  var body: some View {
+    let shown = chrome.shown
+    HStack(spacing: 0) {
+      Button {
+        TouchFeedback.light()
+        dismiss()
+      } label: {
+        // The original's thin back chevron.
+        PlayerGlyph(symbol: "chevron.left", size: 20)
+      }
+      .accessibilityLabel("返回")
+      PlayerHomeButton()
+    }
+    .buttonStyle(PlayerPressStyle())
+    .padding(.leading, 4).padding(.top, 4)
+    // In step with the player's own top bar (PlayerChromeMotion.inline / bar(.top)).
+    .opacity(shown ? 1 : 0)
+    .offset(y: shown ? 0 : -PlayerChromeMotion.slide)
+    .allowsHitTesting(shown)
+    .animation(PlayerChromeMotion.inline(shown), value: shown)
+  }
+}
+
 /// The player page draws the original's header (back, home, tools) inside the picture; on the
 /// iPhone Duo's inner display the system would otherwise turn the hidden navigation bar into a
 /// vertical bar beside the player.
@@ -582,7 +632,7 @@ struct FoldBar: View {
     .overlay(alignment: .leading) {
       if let back {
         Button(action: back) {
-          Image(systemName: "arrow.left").font(.system(size: 17, weight: .medium))
+          Image(systemName: "chevron.left").font(.system(size: 19, weight: .medium))
             .foregroundStyle(.primary).frame(width: 44, height: 44).contentShape(.rect)
         }
         .buttonStyle(.plain).accessibilityLabel("返回").padding(.leading, 4)
