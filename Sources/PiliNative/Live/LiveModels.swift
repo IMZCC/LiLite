@@ -65,7 +65,15 @@ struct LiveSource: Decodable {
       "platform":"web","ptype":"8","panorama":"1","dolby":"5","web_location":"444.8"]
     if audioOnly { q["only_audio"] = "1" };return q
   }
-  let playurl_info: PlayInfo?
+  let variants: [LiveVariant]
+  private enum CodingKeys: String, CodingKey { case live_status, live_time, playurl_info }
+  init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    live_status = try values.decode(Int.self, forKey: .live_status)
+    live_time = try values.decodeIfPresent(Int64.self, forKey: .live_time)
+    let info = try values.decodeIfPresent(PlayInfo.self, forKey: .playurl_info)
+    variants = Self.variants(in: info?.playurl?.stream ?? [])
+  }
   struct PlayInfo: Decodable { let playurl: Play? }
   struct Play: Decodable { let stream: [Stream] }
   struct Stream: Decodable {

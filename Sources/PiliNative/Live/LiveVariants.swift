@@ -29,9 +29,9 @@ struct LiveVariant: Identifiable {
   var sources: [URL] { endpoints.map(\.url) }
 }
 extension LiveSource {
-  var variants: [LiveVariant] {
+  static func variants(in streams: [Stream]) -> [LiveVariant] {
     var rows = [LiveVariant]()
-    for s in playurl_info?.playurl?.stream ?? [] {
+    for s in streams {
       for f in s.format {
         guard
           s.protocol_name == "http_hls"

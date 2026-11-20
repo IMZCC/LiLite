@@ -131,7 +131,8 @@ import SwiftUI
       var reason: String?
       for variant in ordered {
         if preferredAudio != nil && variant.id.remux { continue }
-        let routes: [NativeVideoRoute] = onlyAudio && !variant.id.remux ? [.direct] : LiveDecoderSelection.routes(variant.id)
+        let routes: [NativeVideoRoute] = onlyAudio && !variant.id.remux ? [.direct] : await LiveDecoderSelection.routes(variant.id)
+        guard epoch == stamp, !Task.isCancelled else { return }
         guard !routes.isEmpty else { continue }
         let origin = LiveCDNOrigin(UserDefaults.standard.string(forKey: "live.cdn"))
         for candidate in variant.routes(first: variant.id == first ? firstLine : 0, custom: origin)

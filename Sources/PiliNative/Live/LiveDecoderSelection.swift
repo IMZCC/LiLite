@@ -18,12 +18,13 @@ enum LiveDecoderSelection {
       d.string(forKey: DecoderPreference.listKey) ?? "auto",
     ]
   }
-  static func routes(_ format: LiveFormat) -> [NativeVideoRoute] {
+  nonisolated static func routes(_ format: LiveFormat) async -> [NativeVideoRoute] {
     let c = family(format)
     let hardware = c.map { VTIsHardwareDecodeSupported($0.0) } ?? false
+    let preferences = settings
     let choices = DecoderPreference.routes(
       native: hardware || c == nil, hardware: hardware, converts: c != nil,
-      enabled: settings[0] == "true", settings: settings[1])
+      enabled: preferences[0] == "true", settings: preferences[1])
     if format.remux || (format.proto == "http_hls" && c != nil) { return choices }
     return choices.filter { $0 == .direct }
   }

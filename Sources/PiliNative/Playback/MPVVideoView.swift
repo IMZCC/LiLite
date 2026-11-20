@@ -38,7 +38,7 @@ final class MPVRenderer: @unchecked Sendable {
   }
   private func initialize() -> Bool {
     if context != nil { return true }
-    guard let handle = core.handle else { return false }
+    guard let handle = core.renderHandle() else { return false }
     let result: Int32
     if suspended {
       result = pili_mpv_create_software_renderer(handle, &context)

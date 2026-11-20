@@ -42,7 +42,7 @@ enum SearchHistoryStore {
       let d = UserDefaults.standard, original = d.data(forKey: key)
       do {
         let data = try await Task.detached(priority: .userInitiated) { try edit(change, original: original) }.value
-        if original == d.data(forKey: key) {
+        if data != original, original == d.data(forKey: key) {
           if let data { d.set(data, forKey: key) } else { d.removeObject(forKey: key) }
         }
       } catch { failure(error) }

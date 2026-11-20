@@ -85,16 +85,14 @@ extension InlineDocument {
       let token = topic.hasPrefix("#") ? topic : "#" + topic + "#"
       add(token, RichNode(text: token, target: .search(topic.trimmingCharacters(in: CharacterSet(charactersIn: "#")))), 4)
     }
-    let all = NSRange(location: 0, length: raw.length)
-    if let detector = Self.replyWebDetector {
-      for match in detector.matches(in: reply.message, range: all) {
-        guard let u = match.url, let safe = GalleryPicture.source(u.absoluteString) else { continue }
-        let value = raw.substring(with: match.range)
-        let target = SharedLink.parse(value).map(RichNode.Target.route) ?? .url(safe)
-        candidates.append((match.range, 5, RichNode(text: value, target: target)))
-      }
+    for match in reply.webLinks {
+      guard let u = match.url, let safe = GalleryPicture.source(u.absoluteString) else { continue }
+      let value = raw.substring(with: match.range)
+      let target = SharedLink.parse(value).map(RichNode.Target.route) ?? .url(safe)
+      candidates.append((match.range, 5, RichNode(text: value, target: target)))
     }
-    if let duration, duration.isFinite, duration > 0 {
+    if let duration, duration.isFinite, duration > 0, reply.message.contains(":") || reply.message.contains("：") {
+      let all = NSRange(location: 0, length: raw.length)
       for match in Self.replyTimePattern.matches(in: reply.message, range: all) {
         let value = raw.substring(with: match.range)
         let parts = value.replacingOccurrences(of: "：", with: ":").split(separator: ":").compactMap { Int($0) }
@@ -103,6 +101,7 @@ extension InlineDocument {
         if Double(seconds) <= duration { candidates.append((match.range, 6, RichNode(text: value, target: .timestamp(seconds)))) }
       }
     }
+    guard !candidates.isEmpty else { self = source; return }
     candidates.sort {
       if $0.0.location != $1.0.location { return $0.0.location < $1.0.location }
       if $0.1 != $1.1 { return $0.1 < $1.1 }
@@ -118,4 +117,8 @@ extension InlineDocument {
   }
   private static let replyTimePattern = try! NSRegularExpression(pattern: #"(?<![0-9:：])(?:[0-9]{1,3}[:：])?[0-9]{1,3}[:：][0-9]{2}(?![0-9:：])"#)
   private static let replyWebDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+  static func detectWebLinks(in text: String) -> [NSTextCheckingResult] {
+    guard !text.isEmpty, let detector = replyWebDetector else { return [] }
+    return detector.matches(in: text, range: NSRange(text.startIndex..., in: text))
+  }
 }

@@ -9,6 +9,7 @@ enum Shelf: String, CaseIterable {
 @MainActor @Observable
 final class FeedModel {
   private(set) var videos: [Video] = []
+  @ObservationIgnored private var positions: [String: Int] = [:]
   @ObservationIgnored private var contentRevision = 0
   var error: String?
   var busy = false
@@ -23,10 +24,16 @@ final class FeedModel {
   private struct Request { let shelf:Shelf, reset:Bool, page:Int }
   @ObservationIgnored private var failed:Request?
   private func setVideos(_ value: [Video]) {
+    positions.removeAll(keepingCapacity: true)
+    for (index, video) in value.enumerated() { positions[video.id] = index }
     videos = value
     contentRevision &+= 1
-    let index = retainedStart.flatMap { id in value.firstIndex { $0.id == id } }
+    let index = retainedStart.flatMap { positions[$0] }
     if retainedIndex != index { retainedIndex = index }
+  }
+  func covers(after video: Video) -> ArraySlice<Video> {
+    guard let index = positions[video.id] else { return [] }
+    return videos[(index + 1)..<min(videos.count, index + 7)]
   }
   func remove(where match: (Video) -> Bool) {
     let kept = videos.filter { !match($0) }
@@ -862,9 +869,7 @@ private struct VideoShelf: View, Equatable {
   }
   /// Decodes the covers of the next rows while this one scrolls in, at the size the cards draw.
   private func prefetchCovers(after v: Video) {
-    let list = model.videos
-    guard let i = list.firstIndex(where: { $0.id == v.id }) else { return }
-    let ahead = list[(i + 1)..<min(list.count, i + 7)].compactMap(\.cover).map(ArtworkPrefetch.display)
+    let ahead = model.covers(after: v)
     guard !ahead.isEmpty else { return }
     let gap = HomeCardStyle.gap
     let window = Double(WindowCanvas.shared.size.width)
@@ -874,7 +879,7 @@ private struct VideoShelf: View, Equatable {
     let width = (window - 2 * gap - gap * (columns - 1)) / columns
     let pixels = ArtworkCacheRules.pixels(
       width: width, height: width / Double(HomeCardStyle.coverAspect), scale: Double(UIScreen.main.scale))
-    ArtworkPrefetch.shared.prefetch(ahead, pixels: pixels)
+    ArtworkPrefetch.shared.prefetch(ahead, pixels: pixels, quality: ImageDisplay.stored.quality)
   }
   @MainActor private func send(_ item: Feedback, undo: Bool) async {
     guard !sending, accounts.state.owner(.role(.recommend)) == item.uid else { return }

@@ -41,6 +41,7 @@ struct Reply: Identifiable, Decodable {
       var img_height: Double? = nil
     }
     let message: String
+    let webLinks: [NSTextCheckingResult]
     let pictures: [Picture]?
     struct Jump: Decodable {
       let title: String?, extra: Extra?
@@ -83,6 +84,7 @@ struct Reply: Identifiable, Decodable {
       topics = Set(p.topics.keys)
       vote = p.hasVote ? Ballot(id: ServiceID(p.vote.id), title: p.vote.title) : nil
       message = p.message
+      webLinks = InlineDocument.detectWebLinks(in: p.message)
       pictures = p.pictures.map {
         Picture(img_src: $0.imgSrc, live_url: nil, img_width: $0.imgWidth, img_height: $0.imgHeight)
       }
@@ -111,6 +113,7 @@ struct Reply: Identifiable, Decodable {
       topics = Set(((try? c.decode([String: TopicInfo].self, forKey: .topics)) ?? [:]).keys)
       vote = try? c.decode(Ballot.self, forKey: .vote)
       message = try c.decode(String.self, forKey: .message)
+      webLinks = InlineDocument.detectWebLinks(in: message)
       pictures = try? c.decode([Picture].self, forKey: .pictures)
       emote = try? c.decode([String: SiteEmote].self, forKey: .emote)
       at_name_to_mid = (try? c.decode([String: ServiceID].self, forKey: .at_name_to_mid))?
