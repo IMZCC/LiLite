@@ -270,8 +270,26 @@ struct PlayerRoutePicker: View {
   }
 }
 private struct RoutePickerTarget: UIViewRepresentable {
+  @MainActor private static let idle = NSCache<NSString, AVRoutePickerView>()
+  final class Coordinator: NSObject, AVRoutePickerViewDelegate {
+    private let lock = NSLock()
+    private var showingRoutes = false
+    var presenting: Bool { lock.withLock { showingRoutes } }
+    func routePickerViewWillBeginPresentingRoutes(_ routePickerView: AVRoutePickerView) {
+      lock.withLock { showingRoutes = true }
+    }
+    func routePickerViewDidEndPresentingRoutes(_ routePickerView: AVRoutePickerView) {
+      lock.withLock { showingRoutes = false }
+    }
+  }
+  func makeCoordinator() -> Coordinator { Coordinator() }
   func makeUIView(context: Context) -> AVRoutePickerView {
-    let v = AVRoutePickerView()
+    // The full-screen bars are removed at the end of their fade. Reuse only a detached
+    // picker, so two players or overlapping transitions keep independent system controls.
+    let previous = Self.idle.object(forKey: "picker")
+    Self.idle.removeObject(forKey: "picker")
+    let v = previous.flatMap { $0.superview == nil && $0.window == nil ? $0 : nil } ?? AVRoutePickerView()
+    v.delegate = context.coordinator
     v.tintColor = .clear
     v.activeTintColor = .clear
     v.prioritizesVideoDevices = true
@@ -279,6 +297,11 @@ private struct RoutePickerTarget: UIViewRepresentable {
     return v
   }
   func updateUIView(_ v: AVRoutePickerView, context: Context) {}
+  static func dismantleUIView(_ v: AVRoutePickerView, coordinator: Coordinator) {
+    guard !coordinator.presenting else { return }
+    v.delegate = nil
+    idle.setObject(v, forKey: "picker")
+  }
 }
 
 // MARK: - Status line
