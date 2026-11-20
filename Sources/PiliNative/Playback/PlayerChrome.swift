@@ -47,11 +47,43 @@ extension EnvironmentValues {
 /// Whether the player's own controls are on screen; hosts use it to fade their extras in step.
 struct PlayerControlsVisibleKey: PreferenceKey {
   static let defaultValue = true
-  static func reduce(value: inout Bool, nextValue: () -> Bool) { value = nextValue() }
+  /// Views that do not set the key still contribute the default; taking the last value let the
+  /// page's own overlays (back / home, the fold bar) report "shown" over the player's "hidden".
+  static func reduce(value: inout Bool, nextValue: () -> Bool) { value = value && nextValue() }
 }
 
 /// White SF Symbol control in the original client's 40 pt cell; a soft shadow keeps it legible
 /// on bright frames.
+/// Optical centring for the player's icons. SF Symbols centre on their bounds, so shapes with a
+/// tail, a stand or a pen sticking out (a speech bubble, AirPlay, a house, square.and.pencil)
+/// sit visibly above or below their neighbours on one row. Offsets (pt, + is down) bring each
+/// symbol's ink centre onto the row's line; measured on device against the plain symbols
+/// (xmark, arrow.left, ellipsis) of the same rows.
+enum GlyphOptics {
+  /// `PlayerToolGlyph`: symbols fitted into its 23 pt box.
+  static func tool(_ symbol: String) -> CGFloat {
+    switch symbol {
+    case "square.and.pencil": -1.5
+    case "pip.enter", "pip.exit": -0.9
+    case "camera": -0.6
+    case "airplayvideo": 0.3
+    case "captions.bubble", "captions.bubble.fill": 1.1
+    default: 0
+    }
+  }
+  /// `PlayerGlyph`: symbols drawn at their font size.
+  static func inline(_ symbol: String) -> CGFloat {
+    switch symbol {
+    case "house": -1.2
+    case "headphones": -0.6
+    case "pip.enter", "pip.exit": -0.4
+    case "airplayvideo": 0.5
+    case "captions.bubble", "captions.bubble.fill", "text.bubble.badge.gearshape": 1.0
+    default: 0
+    }
+  }
+}
+
 struct PlayerGlyph: View {
   let symbol: String
   var size: CGFloat = 19
@@ -60,6 +92,7 @@ struct PlayerGlyph: View {
     Image(systemName: symbol)
       .font(.system(size: size, weight: .medium))
       .foregroundStyle(.white.opacity(dimmed ? 0.55 : 1))
+      .offset(y: GlyphOptics.inline(symbol))
       .frame(width: 40, height: 40)
       .contentShape(Rectangle())
       .shadow(color: .black.opacity(0.35), radius: 2, y: 1)

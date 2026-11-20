@@ -28,7 +28,7 @@ struct PlayerPreferenceValues: Codable {
     "reply.edgeDismiss", "reply.composerAutoHide",
     "detail.episodeReplies",
     "search.hot", "search.picks", "search.suggest", "live.showChat",
-    "player.quickDouble", "player.slideLevels", "player.doubleSpeed", "player.relativeSeek",
+    "player.quickDouble", "player.slideLevels", "player.doubleSpeed", "player.relativeSeek", "player.seekCurve",
     "detail.summary", "detail.chapters", "detail.related", "detail.replies", "detail.coinLike",
     "theater.autoEnter", "theater.autoExit", "theater.swipe", "theater.reverseSwipe",
     "theater.lockButton", "theater.captureButton", "play.autoPiP", "caption.drag",
@@ -112,7 +112,8 @@ struct PlayerPreferencePanel: View {
   @AppStorage("layout.playlist") private var sideList: Bool?
   @AppStorage("layout.member") private var sideMember: Bool?
   @AppStorage("layout.verticalMedia") private var tall = false
-  @AppStorage("player.quickDouble") private var quick = true
+  @AppStorage("player.quickDouble") private var quick = false
+  @AppStorage(PlayerSlide.seekCurveKey) private var seekCurve = true
   @AppStorage("player.slideLevels") private var slide = true
   @AppStorage("player.doubleSpeed") private var double = false
   @AppStorage("player.relativeSeek") private var relative = false
@@ -221,8 +222,11 @@ struct PlayerPreferencePanel: View {
             .settingAnchor("PlayerPreferencePanel/快进快退")
         }
         Toggle("上下滑动调节亮度和音量", isOn: $slide).settingAnchor("PlayerPreferencePanel/上下滑动调节亮度和音量")
-        Toggle("按视频时长比例滑动", isOn: $relative).settingAnchor("PlayerPreferencePanel/按视频时长比例滑动")
-        SettingStepper(title: "横滑整屏", value: $travel, range: 1...600) { relative ? "\(Int($0))%" : "\(Int($0)) 秒" }
+        Toggle("横滑进度随视频时长调整", isOn: $seekCurve).settingAnchor("PlayerPreferencePanel/横滑进度随视频时长调整")
+        if !seekCurve {
+          Toggle("按视频时长比例滑动", isOn: $relative).settingAnchor("PlayerPreferencePanel/按视频时长比例滑动")
+          SettingStepper(title: "横滑整屏", value: $travel, range: 1...600) { relative ? "\(Int($0))%" : "\(Int($0)) 秒" }
+        }
         Toggle("长按时使用当前倍速的两倍", isOn: $double).settingAnchor("PlayerPreferencePanel/长按时使用当前倍速的两倍")
         if !double {
           NavigationLink { DeferredPage { SpeedSettings() } } label: {

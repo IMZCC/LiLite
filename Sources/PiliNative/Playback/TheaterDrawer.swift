@@ -16,7 +16,10 @@ struct TheaterWorkspace<Picture: View, Panel: View>: View {
         picture()
           .frame(width: wide && open ? size.width - panelWidth : size.width,
                  height: !wide && open ? size.height - panelHeight : size.height)
-          .clipped()
+          // Closed, the picture runs under the safe area to the screen's edges (the reference
+          // player fills the screen top to bottom); open, it is cut beside the panel. One shape
+          // either way, so the player view is never rebuilt.
+          .clipShape(OverflowClip(overflow: open ? 0 : 2000))
         if open {
           panel()
             .frame(width: wide ? panelWidth : size.width, height: wide ? size.height : panelHeight)
@@ -25,6 +28,16 @@ struct TheaterWorkspace<Picture: View, Panel: View>: View {
       }
     }
   }
+}
+
+/// A clip rectangle grown by `overflow` on every side.
+private struct OverflowClip: Shape {
+  var overflow: CGFloat
+  var animatableData: CGFloat {
+    get { overflow }
+    set { overflow = newValue }
+  }
+  func path(in rect: CGRect) -> Path { Path(rect.insetBy(dx: -overflow, dy: -overflow)) }
 }
 
 struct TheaterSubject {

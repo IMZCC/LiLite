@@ -159,6 +159,7 @@ struct PlayerToolGlyph: View {
       .font(.system(size: 20, weight: .medium))
       .frame(width: Self.box, height: Self.box)
       .foregroundStyle(.white.opacity(dimmed ? 0.5 : 1))
+      .offset(y: GlyphOptics.tool(symbol))
       .frame(width: 44, height: 44)
       .contentShape(Rectangle())
       .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
@@ -489,13 +490,50 @@ struct PlayerDial: View {
   }
 }
 
-/// Long-press speed: "3.00x" in a rosy capsule.
+/// Long-press speed in the reference player's style: the same smoked glass capsule as the seek
+/// and level feedback, reading "快进 3×" (its speeds are written as in its speed menu: 1.75×, 2×).
 struct PlayerRateHUD: View {
   let rate: Float
   var body: some View {
-    PlayerHUDCapsule(tint: Color.pink.opacity(0.35)) {
-      Text(Double(rate).formatted(.number.precision(.fractionLength(2))) + "x")
-        .font(.system(size: 15, weight: .semibold).monospacedDigit())
+    PlayerHUDCapsule {
+      HStack(spacing: 6) {
+        Image(systemName: "forward.fill").font(.system(size: 13, weight: .semibold))
+        Text("快进 " + Double(rate).formatted(.number.precision(.fractionLength(0...2))) + "×")
+          .font(.system(size: 15, weight: .medium).monospacedDigit())
+      }
+    }
+  }
+}
+
+/// Paused with the controls hidden: the play mark comes first, then a clear glass bubble forms
+/// around it, as in the reference player. Tapping it plays.
+struct PlayerPausedBubble: View {
+  let play: () -> Void
+  @State private var formed = false
+  var body: some View {
+    Button(action: play) {
+      Image(systemName: "play.fill")
+        .font(.system(size: 34, weight: .semibold))
+        .foregroundStyle(.white)
+        // The triangle's ink sits left of its bounds' centre.
+        .offset(x: 3)
+        .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+        .frame(width: 80, height: 80)
+        .background {
+          if formed {
+            Color.clear
+              .piliGlass(in: Circle(), fallback: AnyShapeStyle(Color.black.opacity(0.35)))
+              .transition(.scale(scale: 0.6).combined(with: .opacity))
+          }
+        }
+        .contentShape(Circle())
+    }
+    .buttonStyle(PlayerPressStyle())
+    .environment(\.colorScheme, .dark)
+    .accessibilityLabel("播放")
+    .task {
+      try? await Task.sleep(for: .milliseconds(180))
+      withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { formed = true }
     }
   }
 }

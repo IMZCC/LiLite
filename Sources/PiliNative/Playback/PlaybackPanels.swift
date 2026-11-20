@@ -12,6 +12,11 @@ import Combine
   }
   static var statusBar: CGFloat { window?.safeAreaInsets.top ?? 0 }
   static var homeIndicator: CGFloat { window?.safeAreaInsets.bottom ?? 0 }
+  /// The key window's safe area (left / right as leading / trailing).
+  static var safeInsets: EdgeInsets {
+    let s = window?.safeAreaInsets ?? .zero
+    return EdgeInsets(top: s.top, leading: s.left, bottom: s.bottom, trailing: s.right)
+  }
   /// Brightness of the screen the window is on (not `UIScreen.main`: on iPhone Duo the inner
   /// and outer displays are different screens).
   static var brightness: CGFloat {

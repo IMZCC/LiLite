@@ -320,8 +320,8 @@ struct TheaterSheet: View {
     }
   }
   @ViewBuilder private func toolRow(full: Bool) -> some View {
-    // 44 pt cells 52 pt apart, as in the reference header.
-    HStack(spacing: full ? 8 : 2) {
+    // 44 pt cells 50 pt apart, as in the reference header.
+    HStack(spacing: full ? 6 : 2) {
       if full { PlayerRoutePicker().accessibilityLabel("隔空播放") }
       Button {
         TouchFeedback.light()

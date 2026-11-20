@@ -42,6 +42,9 @@ enum FullscreenMode: Int, CaseIterable {
 
 enum PlayerSlide {
   enum Axis { case seek, brightness, volume, fullscreen }
+  /// On (the default): a horizontal swipe moves by `seekSpan`, as the official client. Off: the
+  /// fixed "横滑整屏" seconds or percentage.
+  static let seekCurveKey = "player.seekCurve"
   static func axis(dx: Double, dy: Double, x: Double, width: Double, levels: Bool, screen: Bool) -> Axis? {
     guard width > 0 else { return nil }
     if abs(dx) > 3 * abs(dy) { return .seek }
@@ -50,13 +53,46 @@ enum PlayerSlide {
     if x >= width * 2 / 3 { return levels ? .volume : nil }
     return screen ? .fullscreen : nil
   }
-  /// The original cancels a horizontal seek while the finger is in a top corner (the top eighth,
-  /// within an eighth of either side) and shows "松开手指，取消进退".
+  /// As the official client: a horizontal seek is cancelled while the finger is in the top 30 %
+  /// of the picture and within 10 % of either side ("松开手指，取消进退").
   static func cancelsSeek(_ p: CGPoint, size: CGSize) -> Bool {
     guard size.width > 0, size.height > 0 else { return false }
-    return p.y <= size.height * 0.125 && (p.x >= size.width * 0.875 || p.x <= size.width * 0.125)
+    return p.y < size.height * 0.3 && (p.x > size.width * 0.9 || p.x < size.width * 0.1)
   }
-  static func level(_ initial: Double, dy: Double, height: Double, brightness: Bool) -> Double {
-    min(1, max(0, initial - dy / (max(1, height) * (brightness ? 3 : 0.5))))
+  /// Seconds a swipe across the whole picture moves, by the video's length (the official
+  /// client's curve): the whole video up to a minute, then rising to 100 s at 23 minutes, 120 s
+  /// at 45 minutes and towards about 400 s for very long videos.
+  static func seekSpan(duration: Double) -> Double {
+    guard duration.isFinite, duration > 0 else { return 0 }
+    let s = duration
+    let span: Double
+    if s < 60 { span = s }
+    else if s < 1380 { span = 100 - pow((s - 1380) / 209, 2) }
+    else if s < 2700 { span = 100 + pow((s - 1380) / 295, 2) }
+    else { span = atan((s - 2700) / 1000) * 177 + 120 }
+    return min(s, max(1, span.rounded(.down)))
+  }
+  /// Brightness / volume while sliding, as the official client's tracker: the level moves by the
+  /// finger's travel over the picture's height times a factor (brightness 0.5, volume 1.5), and
+  /// turning back starts from the level reached, so there is no dead travel after hitting 0 or 1.
+  struct LevelTracker {
+    let factor: Double
+    private var base: Double, anchor = 0.0, last = 0.0, rising: Bool?
+    init(start: Double, brightness: Bool) {
+      factor = brightness ? 0.5 : 1.5
+      base = min(1, max(0, start))
+    }
+    /// `progress` is the upward travel so far as a fraction of the picture's height.
+    mutating func level(_ progress: Double) -> Double {
+      let up = progress > last ? true : progress < last ? false : rising
+      if let up, up != rising {
+        let reached = min(1, max(0, base + (last - anchor) * factor))
+        anchor = last
+        base = reached
+        rising = up
+      }
+      last = progress
+      return min(1, max(0, base + (progress - anchor) * factor))
+    }
   }
 }

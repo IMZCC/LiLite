@@ -51,9 +51,10 @@ private struct GestureCanvas:View{
   @State private var level: (symbol: String, percent: Int)?
   @State private var scrub: Double?
   @AppStorage("player.seekPreview") private var preview = true
-  @State private var originBrightness = 0.5
-  @State private var originVolume: Float = 1
-  @AppStorage("player.quickDouble") private var quick = true
+  @State private var levelTracker: PlayerSlide.LevelTracker?
+  /// Off by default: the official client's double tap pauses or resumes anywhere on the picture.
+  @AppStorage("player.quickDouble") private var quick = false
+  @AppStorage(PlayerSlide.seekCurveKey) private var seekCurve = true
   @AppStorage("player.slideLevels") private var slide = true
   @AppStorage("player.doubleSpeed") private var doubleSpeed = false
   @AppStorage("player.relativeSeek") private var relative = false
@@ -72,16 +73,16 @@ private struct GestureCanvas:View{
         Color.clear.contentShape(Rectangle())
           .onTapGesture(count: 2, coordinateSpace: .local) { loc in
             guard model.ready else { return }
-            if !quick {
-              model.toggle()
-              return
-            }
-            if PlayerTouchZone.doubleTap(loc.x,width:g.size.width) == .back {
+            if quick, PlayerTouchZone.doubleTap(loc.x,width:g.size.width) == .back {
               accumulate(-step)
-            } else if PlayerTouchZone.doubleTap(loc.x,width:g.size.width) == .forward {
+            } else if quick, PlayerTouchZone.doubleTap(loc.x,width:g.size.width) == .forward {
               accumulate(step)
             } else {
+              // As the official client: pausing by double tap in fullscreen also brings up the
+              // controls, so play and the progress are right there.
+              let pausing = model.playing
               model.toggle()
+              if pausing && fullscreen { viewportTouch?.reveal?() }
             }
           }
           .onTapGesture(count:1,coordinateSpace:.local){p in
@@ -90,7 +91,8 @@ private struct GestureCanvas:View{
             }
           }
           .onLongPressGesture(
-            minimumDuration:inspectBullets ? 0.30:0.50, maximumDistance: 15,
+            // The official client's long-press timeout.
+            minimumDuration: 0.40, maximumDistance: 15,
             perform: {
               if model.ready && model.playing {
                 TouchFeedback.light()
@@ -124,8 +126,12 @@ private struct GestureCanvas:View{
               guard let axis else { return }
               if start == nil {
                 switchedScreen = false
-                start = model.seconds; originVolume = model.player.presentationVolume
-                originBrightness = WindowMetrics.brightness; clear?.cancel()
+                start = model.seconds; clear?.cancel()
+                switch axis {
+                case .brightness: levelTracker = .init(start: WindowMetrics.brightness, brightness: true)
+                case .volume: levelTracker = .init(start: Double(model.player.presentationVolume), brightness: false)
+                default: levelTracker = nil
+                }
               }
               switch axis {
               case .seek:
@@ -141,11 +147,11 @@ private struct GestureCanvas:View{
                   switchedScreen = true; TouchFeedback.light(); enterTheater?()
                 }
               case .brightness:
-                let n = PlayerSlide.level(originBrightness, dy: dy, height: g.size.height, brightness: true)
+                guard let n = levelTracker?.level(-dy / max(1, g.size.height)) else { break }
                 WindowMetrics.brightness = n
                 level = (PlayerLevelPill.brightnessSymbol(n), Int((n * 100).rounded()))
               case .volume:
-                let n = PlayerSlide.level(Double(originVolume), dy: dy, height: g.size.height, brightness: false)
+                guard let n = levelTracker?.level(-dy / max(1, g.size.height)) else { break }
                 model.player.presentationVolume = Float(n)
                 level = (PlayerLevelPill.volumeSymbol(n), Int((n * 100).rounded()))
               }
@@ -160,7 +166,7 @@ private struct GestureCanvas:View{
                 TouchFeedback.light()
                 model.seek(target(v.translation.width, width: g.size.width))
               }
-              start = nil; axis = nil
+              start = nil; axis = nil; levelTracker = nil
               scrub = nil
               level = nil
               hint(nil)
@@ -239,12 +245,9 @@ private struct GestureCanvas:View{
     boostedItem = nil
   }
   private func target(_ dx: Double, width: Double) -> Double {
-    min(
-      model.duration,
-      max(
-        0,
-        (start ?? model.seconds) + dx / max(1, width)
-          * (relative ? model.duration * range / 100 : range)))
+    let span = seekCurve ? PlayerSlide.seekSpan(duration: model.duration)
+      : relative ? model.duration * range / 100 : range
+    return min(model.duration, max(0, (start ?? model.seconds) + dx / max(1, width) * span))
   }
   private func hint(_ text: String?) {
     clear?.cancel()

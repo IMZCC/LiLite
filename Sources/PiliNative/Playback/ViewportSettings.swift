@@ -55,8 +55,10 @@ struct PlaybackEdgeInsets: ViewModifier {
   var fullscreen = false
   @AppStorage("player.edgeToEdge") private var edges = false
   func body(content: Content) -> some View {
+    // Fullscreen, the picture always fills the screen (the reference player's look); its
+    // controls keep to the window's safe area themselves (Theater reads `WindowMetrics`).
     content.ignoresSafeArea(
-      .container, edges: edges ? (fullscreen ? .all : [.top, .horizontal]) : []
+      .container, edges: fullscreen ? .all : edges ? [.top, .horizontal] : []
     )
     .statusBarHidden(edges)
   }

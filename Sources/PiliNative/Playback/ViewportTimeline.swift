@@ -45,6 +45,8 @@ import SwiftUI
     if ready != player.playbackReady { ready = player.playbackReady }
     let active = player.timeControlStatus != .paused
     if playing != active { playing = active }
+    // Buffering mid-video still counts; a load that never got ready (an error) does not.
+    holdScreen(active && player.playbackReady && !player.isExternalPlaybackActive)
     let size = player.playbackSize
     if pictureSize != size { pictureSize = size }
     let d = player.playbackDuration
@@ -75,6 +77,19 @@ import SwiftUI
     readout.seconds = 0
     duration = 0
     playing = false
+    holdScreen(false)
+  }
+  /// This viewport's claim on keeping the display awake (ScreenAwake).
+  private let awakeToken = UUID()
+  private var holdsScreen = false
+  private func holdScreen(_ awake: Bool) {
+    guard holdsScreen != awake else { return }
+    holdsScreen = awake
+    ScreenAwake.shared.hold(awakeToken, awake)
+  }
+  deinit {
+    let token = awakeToken
+    Task { @MainActor in ScreenAwake.shared.hold(token, false) }
   }
 }
 
@@ -82,6 +97,8 @@ import SwiftUI
   @Published var horizontalSeek: Double?
   var pinching = false, ignorePanBefore = 0.0
   var lastBulletTap = -Double.infinity
+  /// Brings the viewport's controls up (and restarts their timer); set by the viewport.
+  var reveal: (() -> Void)?
   var acceptsPan: Bool { !pinching && ProcessInfo.processInfo.systemUptime >= ignorePanBefore }
 }
 private enum ViewportTouchKey: EnvironmentKey { static let defaultValue: ViewportTouch? = nil }

@@ -24,6 +24,8 @@ struct Theater: View {
   @AppStorage("player.bottomProgress") private var progress = 0
   @AppStorage("player.longControls") private var longer = false
   @AppStorage("player.shrink") private var shrinks = true
+  /// "延伸到边缘": the controls go to the screen's edges too.
+  @AppStorage("player.edgeToEdge") private var edgeToEdge = false
   @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
   @Environment(\.dynamicTypeSize) private var textSize
   @State private var visible = true
@@ -47,7 +49,8 @@ struct Theater: View {
   @State private var holdUntil = 0.0
   @AppStorage("player.seekPreview") private var previews = true
   @AccessibilityFocusState private var controlsFocused: Bool
-  var body: some View {
+  /// The picture and its layers; `body` adds the behaviour (split for the type checker).
+  private var stage: some View {
     GeometryReader { geo in
       let size = geo.size
       let chosen = PictureFit(rawValue: gravity) ?? .fit
@@ -55,6 +58,11 @@ struct Theater: View {
         firstChoice: clock.item == nil || clock.picture.changedItem != clock.item)
       let systemGravity = chosen == .stretch ? canvas.gravity : gravity
       let frame = system ? size : canvas.size
+      // Fullscreen, the picture fills the screen top to bottom as in the reference player; the
+      // controls and captions keep to the safe area by these insets.
+      let insets = fullscreen && !edgeToEdge ? WindowMetrics.safeInsets : EdgeInsets()
+      let safe = CGSize(width: max(1, size.width - insets.leading - insets.trailing),
+        height: max(1, size.height - insets.top - insets.bottom))
       ZStack {
         Color.black
         ZStack {
@@ -99,7 +107,7 @@ struct Theater: View {
               VStack {
                 Spacer()
                 caption.environment(\.captionMinimumBottom, visible && showsControls ? (size.width < 600 || textSize.isAccessibilitySize ? 118 : 70) : 0)
-              }
+              }.padding(.bottom, insets.bottom)
             }
           }
         }.frame(width: size.width, height: size.height).clipped().contentShape(Rectangle())
@@ -153,15 +161,17 @@ struct Theater: View {
           } else if fullscreen && slots.close != nil {
             // Pages that fill the new chrome's slots (the theater); the offline file player
             // keeps its own navigation bar and the classic bars.
-            fullscreenControls(size: size)
+            fullscreenControls(size: size, safe: safe, insets: insets,
+              picture: shownWidth(chosen, frame: frame, source: clock.pictureSize))
           } else {
-            appControls(width: size.width)
+            appControls(width: safe.width).padding(insets)
           }
         }
         if scrollVolume && !detached {
+          // Marks the area only; its recognizer is on the window (see PointerVolume).
           PointerVolume(player: player) { level in
             routeVolume=false;volumeHint = level; volumeSequence &+= 1
-          }
+          }.allowsHitTesting(false).accessibilityHidden(true)
         }
         if let volumeHint {
           if fullscreen {
@@ -176,7 +186,8 @@ struct Theater: View {
           }
         }
       }.frame(width: size.width, height: size.height)
-    }.preference(key: PlayerControlsVisibleKey.self, value: visible && showsControls && !system)
+    }
+    .preference(key: PlayerControlsVisibleKey.self, value: visible && showsControls && !system)
     .onReceive(AVAudioSession.sharedInstance().publisher(for:\.outputVolume).removeDuplicates().dropFirst()){level in
       guard !detached,level.isFinite else{return}
       routeVolume=true;volumeHint=Int((min(1,max(0,level))*100).rounded());volumeSequence &+= 1
@@ -186,6 +197,10 @@ struct Theater: View {
       volumeHint = nil
     }.onAppear {
       clock.attach(player)
+      touch.reveal = {
+        visible = true
+        pulse &+= 1
+      }
       wake()
     }
     .background { if let native = player.nativePlayer { VideoSceneMarker(player: native) } }
@@ -193,6 +208,9 @@ struct Theater: View {
     .alert("画中画", isPresented: Binding(get: { pipError != nil }, set: { if !$0 { pipError = nil } })) {
       Button("好") {}
     } message: { Text(pipError ?? "") }
+  }
+  var body: some View {
+    stage
     .onReceive(NotificationCenter.default.publisher(for: .piliStartPictureInPicture)) { n in
       if (n.object as AnyObject?) === player { resetZoom() }
     }
@@ -225,7 +243,10 @@ struct Theater: View {
       clock.close()
       touch.pinching = false
       touch.horizontalSeek = nil
+      touch.reveal = nil
     }
+    // The official client's auto-hide: 3 s after the controls come up, and only while playing —
+    // paused, they stay until tapped away. Resuming restarts the timer (clock.playing above).
     .task(id: pulse) {
       guard visible, !system, showsControls, !editing, panel == nil else { return }
       do { try await Task.sleep(for: .seconds(longer ? 30 : 3)) } catch { return }
@@ -233,10 +254,21 @@ struct Theater: View {
         pulse &+= 1
         return
       }
-      if !Task.isCancelled, !touch.pinching, touch.horizontalSeek == nil, !editing,
-        !controlsFocused, !voiceOver, panel == nil
-      {
-        visible = false
+      guard !Task.isCancelled, clock.playing, panel == nil, !editing else { return }
+      let touching: Bool = touch.pinching || touch.horizontalSeek != nil
+      let reading: Bool = controlsFocused || voiceOver
+      if !touching && !reading { visible = false }
+    }
+    // A seek by sliding over the picture puts the controls away when it ends, as the official
+    // client does.
+    .onChange(of: touch.horizontalSeek == nil) { _, ended in
+      if ended, visible, !voiceOver, panel == nil { visible = false }
+    }
+    // Back from fullscreen: the inline controls come up for their 3 s, as on entering it.
+    .onChange(of: detached) { _, covered in
+      if !covered {
+        visible = true
+        wake()
       }
     }
     .onChange(of: visible) { _, shown in
@@ -263,8 +295,28 @@ struct Theater: View {
   /// The fullscreen layout (FullscreenChrome.swift has the parts): status line and header on a
   /// light top shade; progress, then play / next and the word buttons on a bottom shade that
   /// deepens and blurs when a panel takes the buttons' place.
-  @ViewBuilder private func fullscreenControls(size: CGSize) -> some View {
+  /// As the reference player: the chrome lines up with the picture's sides when the picture is
+  /// narrower than the screen (a 16:9 video on a tall phone), instead of the screen's edges.
+  /// Pictures much narrower than the screen (portrait video in landscape) keep the full width.
+  static func pictureInset(size: CGSize, picture: CGFloat) -> CGFloat {
+    guard size.width > 0, picture.isFinite, picture >= size.width * 0.7 else { return 0 }
+    return max(0, (size.width - picture) / 2)
+  }
+  /// The width the picture is drawn at. Fitting is done by the video layer inside a full-size
+  /// frame, so the frame alone does not say where the picture's sides are.
+  private func shownWidth(_ fit: PictureFit, frame: CGSize, source: CGSize) -> CGFloat {
+    guard fit == .fit, source.width > 0, source.height > 0, frame.height > 0 else {
+      return frame.width * zoom.scale
+    }
+    return min(frame.width, frame.height * source.width / source.height) * zoom.scale
+  }
+  /// `size` is the whole screen (the shades cover it); `safe` and `insets` are the safe area the
+  /// controls keep to.
+  @ViewBuilder private func fullscreenControls(size: CGSize, safe: CGSize, insets: EdgeInsets, picture: CGFloat) -> some View {
     let open = slots.panels.first { $0.id == panel }
+    let side = (safe.width < safe.height ? 16 : 0) + Self.pictureInset(size: safe, picture: picture)
+    let edges = EdgeInsets(top: insets.top, leading: insets.leading + side, bottom: insets.bottom,
+      trailing: insets.trailing + side)
     ZStack {
       if visible {
         fullscreenShade(open: open != nil, height: size.height).transition(.opacity)
@@ -296,7 +348,7 @@ struct Theater: View {
           }
         }
         // Landscape gets its margins from the safe area; a portrait screen has none at the sides.
-        .padding(.horizontal, size.width < size.height ? 16 : 0)
+        .padding(edges)
         .transition(.opacity)
         if previews, let scrub, let timeline {
           VStack {
@@ -306,7 +358,7 @@ struct Theater: View {
               ShotPreview(state: timeline, seconds: scrub, limit: CGSize(width: 228, height: 128), corner: 12, framed: true)
                 .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
             }
-            .padding(.trailing, size.width < size.height ? 16 : 24).padding(.bottom, 124)
+            .padding(.trailing, insets.trailing + (size.width < size.height ? 16 : 24)).padding(.bottom, insets.bottom + 124)
           }
           .allowsHitTesting(false).transition(.opacity)
         }
@@ -323,8 +375,13 @@ struct Theater: View {
             Spacer(minLength: 0)
           }
         }
-        .padding(.horizontal, size.width < size.height ? 16 : 0)
+        .padding(edges)
         .transition(.opacity)
+      }
+      // Paused with the controls put away: the reference player's play mark in a glass bubble.
+      if !visible, panel == nil, clock.ready, !clock.playing {
+        PlayerPausedBubble { playPause(); wake() }
+          .transition(.opacity.combined(with: .scale(scale: 1.15)))
       }
     }
     .foregroundStyle(.white).buttonStyle(PlayerPressStyle())
@@ -364,7 +421,8 @@ struct Theater: View {
       if let title = slots.title {
         Text(title).font(.system(size: 17, weight: .medium)).lineLimit(1)
           .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
-          .padding(.leading, 2).layoutPriority(-1)
+          // 12 pt from the close glyph to the title, as in the reference header.
+          .padding(.leading, -3).layoutPriority(-1)
       }
       Spacer(minLength: 16)
       if let tools = slots.tools { tools.simultaneousGesture(TapGesture().onEnded { holdChrome() }) }
@@ -388,7 +446,7 @@ struct Theater: View {
             .font(.system(size: 21, weight: .medium))
             .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
             .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
-        }.accessibilityLabel("下一集").padding(.leading, 26)
+        }.accessibilityLabel("下一集").padding(.leading, 22)
       }
       if live {
         Text("直播").font(.system(size: 15, weight: .semibold)).padding(.leading, 12)
@@ -594,7 +652,10 @@ struct Theater: View {
   }
   private func wake() { pulse &+= 1 }
   private func edit(_ value: Bool) {
+    let ended = editing && !value
     editing = value
+    // As the official client: letting go of the progress bar puts the controls away.
+    if ended && !voiceOver && panel == nil { visible = false }
     wake()
   }
   private func jump(_ seconds: Double) {

@@ -56,7 +56,7 @@ PlayerPreferencePanel/全屏显示电量	showBatteryLevel 全屏显示电池电�
 PlayerPreferencePanel/全屏显示锁定按钮	showFsLockBtn 全屏显示锁定按钮	theater.lockButton	true
 PlayerPreferencePanel/分 P 或合集倒序后从首集播放	reverseFromFirst 分P/合集：倒序播放从首集开始播放 开启则自动切换为倒序首集，否则保持当前集	play.reverseFirst	true
 PlayerPreferencePanel/切到后台时暂停视频	pauseOnMinimize 最小化时暂停/还原时播放	play.pauseWhenBackground	false
-PlayerPreferencePanel/双击左右两侧快退或快进	enableQuickDouble 双击快退/快进 左侧双击快退/右侧双击快进，关闭则双击均为暂停/播放	player.quickDouble	true
+PlayerPreferencePanel/双击左右两侧快退或快进	enableQuickDouble 双击快退/快进 左侧双击快退/右侧双击快进，关闭则双击均为暂停/播放	player.quickDouble	false
 PlayerPreferencePanel/反转全屏手势方向	fullScreenGestureReverse 全屏手势反向 默认播放器中部向上滑动进入全屏，向下退出 n开启后向下全屏，向上退出	theater.reverseSwipe	false
 PlayerPreferencePanel/启用播放快捷键	keyboardControl 启用键盘控制	player.keyboard	true
 PlayerPreferencePanel/开始播放时进入全屏	enableAutoEnter 自动全屏 视频开始播放时进入全屏	theater.autoEnter	false
@@ -77,6 +77,7 @@ PlayerPreferencePanel/显示视频章节	showViewPoints 显示视频分段信息
 PlayerPreferencePanel/显示评论入口	showVideoReply 显示视频评论	detail.replies	true
 PlayerPreferencePanel/显示高能进度条	showDmChart 显示高能进度条 高能进度条反应了在时域上，单位时间内弹幕发送量的变化趋势	player.trend	false
 PlayerPreferencePanel/横屏时展开简介	exapndIntroPanelH	detail.expandWide	false
+PlayerPreferencePanel/横滑进度随视频时长调整	滑动快进/快退 横滑整屏 按时长自动	player.seekCurve	true
 PlayerPreferencePanel/滚轮调节音量	enableScrollVolume 滚轮调节音量	player.scrollVolume	true
 PlayerPreferencePanel/画中画时暂停加载视频弹幕	pipNoDanmaku 当弹幕开关开启时，小窗屏蔽弹幕以获得较好的体验 画中画不加载弹幕	dm.quietPiP	false
 PlayerPreferencePanel/续播上次观看的分 P	continuePlayingPart 显示继续播放分P提示	play.continuePart	true

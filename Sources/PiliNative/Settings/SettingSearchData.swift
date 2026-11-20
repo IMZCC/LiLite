@@ -163,6 +163,7 @@ PlayerPreferencePanel/显示高能进度条
 PlayerPreferencePanel/横屏时在侧栏打开 UP 主空间
 PlayerPreferencePanel/横屏时在标签栏选集
 PlayerPreferencePanel/横屏时展开简介
+PlayerPreferencePanel/横滑进度随视频时长调整
 PlayerPreferencePanel/滚轮调节音量
 PlayerPreferencePanel/画中画时暂停加载视频弹幕
 PlayerPreferencePanel/画面布局
