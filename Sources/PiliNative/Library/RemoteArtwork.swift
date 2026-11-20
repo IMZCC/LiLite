@@ -32,9 +32,6 @@ actor ArtworkStore {
   // NSCache synchronizes access; read warm images before a lazy row's first frame.
   private final class Memory: @unchecked Sendable {
     let decoded = NSCache<NSString, CachedImage>()
-    /// Mirrors `limit() > 0`, so thumbnails can check the cache on every render without
-    /// reading user defaults each time.
-    var enabled = ArtworkStore.limit() > 0
   }
   private static let memory = Memory()
   private var decoded: NSCache<NSString, CachedImage> { Self.memory.decoded }
@@ -70,9 +67,12 @@ actor ArtworkStore {
       delegateQueue: nil)
   }
   static func cachedImage(_ url: URL?, pixels: Int, maximum: Int = 16 * ArtworkStore.mib) -> UIImage? {
-    guard let url, memory.enabled, ArtworkCacheRules.publicFile(url) else { return nil }
+    // Only admitted public responses are inserted; disabling the cache empties it.
+    guard let url else { return nil }
     let requested = min(2048, max(96, pixels))
-    for size in [requested] + [96, 192, 384, 768, 1536, 2048].filter({ $0 > requested }) {
+    let exact = Key(url: url, pixels: requested, maximum: maximum)
+    if let hit = memory.decoded.object(forKey: exact.cacheKey) { return hit.image }
+    for size in [96, 192, 384, 768, 1536, 2048] where size > requested {
       let key = Key(url: url, pixels: size, maximum: maximum)
       if let hit = memory.decoded.object(forKey: key.cacheKey) { return hit.image }
     }
@@ -96,7 +96,6 @@ actor ArtworkStore {
     let bytes = Self.limit()
     if configured == bytes { return }
     configured = bytes
-    Self.memory.enabled = bytes > 0
     cache.diskCapacity = bytes
     cache.memoryCapacity = min(16 * Self.mib, bytes)
     decoded.totalCostLimit = min(48 * Self.mib, bytes)
@@ -223,10 +222,12 @@ actor ArtworkStore {
   private var queue: [(url: URL, pixels: Int)] = []
   private var requested = Set<String>()
   private var running = false
-  func prefetch(_ urls: [URL], pixels: Int) {
-    for url in urls {
-      let key = "\(pixels)|\(url.absoluteString)"
-      guard !requested.contains(key), ArtworkStore.cachedImage(url, pixels: pixels) == nil else { continue }
+  func prefetch(_ videos: ArraySlice<Video>, pixels: Int, quality: Int) {
+    for video in videos {
+      let key = "\(pixels)|\(quality)|\(video.pic)"
+      guard !requested.contains(key), let cover = video.cover else { continue }
+      let url = GalleryPicture(cover).display(quality: quality)
+      guard ArtworkStore.cachedImage(url, pixels: pixels) == nil else { continue }
       requested.insert(key)
       queue.append((url, pixels))
     }
@@ -243,8 +244,6 @@ actor ArtworkStore {
       running = false
     }
   }
-  /// The URL a `SiteThumbnail` actually loads for `cover`.
-  static func display(_ cover: URL) -> URL { GalleryPicture(cover).display(quality: ImageDisplay.stored.quality) }
 }
 
 /// The size bucket and the running load of one artwork view, unobserved: as `@State` the
