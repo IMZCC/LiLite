@@ -62,8 +62,12 @@ struct CreatorSpace: View {
   private var header: CreatorSpaceRecord.Person? { space?.person }
   private var tabs: [CreatorSpaceRecord.Tab] { space?.sections(shop: showShop) ?? [] }
   private var selected: CreatorSpaceRecord.Tab? {
-    tabs.first { $0.param == selectedTab }
-      ?? tabs.first { $0.param == space?.preferred(defaultSection, in: tabs) }
+    selection(in: tabs)
+  }
+  private func selection(in list: [CreatorSpaceRecord.Tab]) -> CreatorSpaceRecord.Tab? {
+    if let selectedTab, let match = list.first(where: { $0.param == selectedTab }) { return match }
+    let preferred = space?.preferred(defaultSection, in: list)
+    return list.first { $0.param == preferred }
   }
   private var barSolid: Bool { collapsed || space == nil }
   /// A section page runs from under the navigation bar to the bottom of the screen.
@@ -166,14 +170,15 @@ struct CreatorSpace: View {
   }
   private func pager(_ space: CreatorSpaceRecord) -> some View {
     let list = tabs
-    let current = selected?.param
+    let current = selection(in: list)?.param
+    let selectedIndex = list.firstIndex { $0.param == current } ?? 0
     return ScrollView(.horizontal) {
       HStack(spacing: 0) {
         if list.isEmpty {
-          sectionPage(nil, space, index: 0).frame(width: pageSize.width, height: pageHeight)
+          sectionPage(nil, space, index: 0, tabs: list, active: true, near: true).frame(width: pageSize.width, height: pageHeight)
         }
         ForEach(Array(list.enumerated()), id: \.element.param) { index, tab in
-          sectionPage(tab, space, index: index)
+          sectionPage(tab, space, index: index, tabs: list, active: tab.param == current, near: abs(index - selectedIndex) <= 1)
             .frame(width: pageSize.width, height: pageHeight)
             .id(tab.param)
         }
@@ -228,12 +233,11 @@ struct CreatorSpace: View {
     .background { LeadingEdgeNavigation(fullWidth: current == list.first?.param).frame(width: 0, height: 0) }
   }
 
-  @ViewBuilder private func sectionPage(_ tab: CreatorSpaceRecord.Tab?, _ space: CreatorSpaceRecord, index: Int)
+  @ViewBuilder private func sectionPage(_ tab: CreatorSpaceRecord.Tab?, _ space: CreatorSpaceRecord, index: Int,
+    tabs: [CreatorSpaceRecord.Tab], active: Bool, near: Bool)
     -> some View
   {
     let key = tab?.param ?? ""
-    let active = tab == nil || key == selected?.param
-    let near = abs(index - (tabs.firstIndex { $0.param == selected?.param } ?? 0)) <= 1
     if active || near || visited.contains(key) {
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -245,7 +249,7 @@ struct CreatorSpace: View {
               sectionBody(tab, space)
             } header: {
               if tabs.count > 1 {
-                tabBar(tab).modifier(HeldInPlace(index: index, motion: motion, width: pageSize.width))
+                tabBar(tab, tabs: tabs).modifier(HeldInPlace(index: index, motion: motion, width: pageSize.width))
               }
             }
           } else {
@@ -267,10 +271,8 @@ struct CreatorSpace: View {
       .scrollClipDisabled()
       .clipShape(RaisedClip(raise: topInset))
       .piliScrollEdgeEffectHidden(!collapsed, for: .top)
-      .piliOnScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, y in
-        guard key == (selected?.param ?? "") else { return }
-        let fold = y > 110
-        if fold != collapsed { collapsed = fold }
+      .piliOnScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 110 } action: { _, fold in
+        if active, fold != collapsed { collapsed = fold }
       }
       .piliRefreshable { await refresh(key) }
       .allowsHitTesting(active)
@@ -296,7 +298,7 @@ struct CreatorSpace: View {
     if let y = scrollers.offset(value) { collapsed = y > 110 }
   }
 
-  private func tabBar(_ tab: CreatorSpaceRecord.Tab) -> some View {
+  private func tabBar(_ tab: CreatorSpaceRecord.Tab, tabs: [CreatorSpaceRecord.Tab]) -> some View {
     UnderlineTabBar(
       items: tabs.map(\.param),
       selection: Binding(get: { tab.param }, set: { selectedTab = $0 }),
@@ -646,7 +648,9 @@ struct CreatorSpace: View {
   /// Starts (or keeps) the rows of the section on screen and of its neighbours, so a swipe lands
   /// on a page that has already loaded.
   private func prepareSections() {
-    guard let space, let index = tabs.firstIndex(where: { $0.param == selected?.param }) else { return }
+    let tabs = self.tabs
+    let current = selection(in: tabs)?.param
+    guard let space, let index = tabs.firstIndex(where: { $0.param == current }) else { return }
     for i in [index, index + 1, index - 1] where tabs.indices.contains(i) {
       prepare(tabs[i], space)
     }
