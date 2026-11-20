@@ -20,7 +20,8 @@ struct MPVSnapshot {
 /// All client commands and event reads run here. Rendering has its own GL queue.
 /// The mailbox holds one snapshot, so a busy main thread never accumulates progress callbacks.
 final class MPVCore: @unchecked Sendable {
-  let handle: OpaquePointer?
+  private var handle: OpaquePointer?
+  private let initialization = DispatchGroup()
   private let queue = DispatchQueue(label: "pili.mpv.client", qos: .userInitiated)
   private let mailboxLock = NSLock()
   private var mailbox: MPVSnapshot?
@@ -37,6 +38,15 @@ final class MPVCore: @unchecked Sendable {
   private var seekTarget: Double?
 
   init() {
+    queue.async(group: initialization) { [self] in initialize() }
+  }
+  /// Only the renderer needs the handle outside the client queue. Its first draw can
+  /// wait here without blocking navigation or delaying commands already queued by load().
+  func renderHandle() -> OpaquePointer? {
+    initialization.wait()
+    return handle
+  }
+  private func initialize() {
     handle = mpv_create()
     guard let handle else { startupError = "无法创建播放器"; return }
     let options = [
