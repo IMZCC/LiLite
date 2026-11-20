@@ -6,6 +6,9 @@ import UIKit
 struct BulletScene {
   let id = UUID()
   let plan: BulletLayoutPlan, style: DanmakuStyle, point: CGFloat, scale: CGFloat
+  /// Everything but the bullets themselves that shaped the plan (size, area, filters). Scenes that
+  /// share it differ only by bullets added or recalled, so the surface keeps what is on screen.
+  var rules = 0
 }
 
 /// Core Animation moves glyphs on the item's actual timebase, including waits, seeks and rate changes.
@@ -33,7 +36,9 @@ struct BulletLayerSurface: UIViewRepresentable {
     private weak var boundItem: AnyObject?
     private var jump: NSObjectProtocol?, picks: AnyCancellable?
     private var worker: Task<Void, Never>?, ticket = UUID(), lastSize = CGSize.zero, fps = 0
-    private var shifts = [Row: Shift]()
+    private var shifts = [Row: Shift](), lastNow = -Double.infinity
+    /// Layers a new plan placed differently, left to finish their flight.
+    private var orphans = [(layer: CALayer, until: Double)]()
     override init(frame: CGRect) {
       super.init(frame: frame)
       isOpaque = false; backgroundColor = .clear; clipsToBounds = true; isUserInteractionEnabled = false
@@ -50,7 +55,16 @@ struct BulletLayerSurface: UIViewRepresentable {
         }
       }
       let changed = scene?.id != next?.id || fps != frequency
-      if changed { clearRows(); scene = next; fps = frequency }
+      if changed {
+        if let old = scene, let next, fps == frequency, old.rules == next.rules, old.style == next.style,
+          old.point == next.point, old.scale == next.scale
+        {
+          carry(from: old, to: next)
+        } else {
+          clearRows()
+        }
+        scene = next; fps = frequency
+      }
       if inspector !== picker {
         inspector = picker
         picks = picker?.$pick.dropFirst().sink { [weak self] _ in
@@ -83,7 +97,7 @@ struct BulletLayerSurface: UIViewRepresentable {
         MainActor.assumeIsolated { self?.refresh() }
       }
       jump = NotificationCenter.default.addObserver(forName: player.engineKind == .mpv ? .piliEngineTimeJumped : .AVPlayerItemTimeJumped, object: item, queue: .main) {
-        [weak self] _ in MainActor.assumeIsolated { self?.refresh() }
+        [weak self] _ in MainActor.assumeIsolated { self?.lastNow = -.infinity; self?.refresh() }
       }
       refresh()
     }
@@ -91,6 +105,93 @@ struct BulletLayerSurface: UIViewRepresentable {
       ticket = UUID(); worker?.cancel(); worker = nil
       nodes.values.forEach { $0.layer.removeFromSuperlayer() }
       nodes.removeAll(); wanted.removeAll(); failed.removeAll(); shifts.removeAll()
+      dropOrphans(before: .infinity)
+    }
+    private func dropOrphans(before time: Double) {
+      guard !orphans.isEmpty else { return }
+      CATransaction.begin(); CATransaction.setDisableActions(true)
+      orphans.removeAll { orphan in
+        guard orphan.until <= time else { return false }
+        orphan.layer.removeFromSuperlayer(); return true
+      }
+      CATransaction.commit()
+    }
+    /// A new plan for the same picture (the next 6-minute segment, a posted or recalled comment)
+    /// keeps the layers of bullets it places the same way, instead of blanking every bullet on
+    /// screen and drawing them again.
+    private func carry(from old: BulletScene, to next: BulletScene) {
+      ticket = UUID(); worker?.cancel(); worker = nil
+      var moved = [Row: Node]()
+      let now = player?.currentTime().seconds ?? 0
+      CATransaction.begin(); CATransaction.setDisableActions(true)
+      for (key, node) in nodes {
+        guard let target = Self.match(key, from: old.plan, in: next.plan) else {
+          // Placed elsewhere now: a bullet in flight finishes on its old lane rather than vanish
+          // (its new placement is not admitted mid-flight); one yet to start takes the new one.
+          let start: Double, end: Double
+          switch key {
+          case .regular(let i): start = old.plan.rows[i].bullet.time; end = start + old.plan.rows[i].duration
+          case .special(let i):
+            start = old.plan.special[i].time; end = start + (old.plan.special[i].special?.duration ?? 0)
+          }
+          if now.isFinite, start < now - 0.35, end > now { orphans.append((node.layer, end)) }
+          else { node.layer.removeFromSuperlayer() }
+          continue
+        }
+        switch target {
+        case .regular(let i): node.layer.zPosition = CGFloat(i + 1)
+        case .special(let i): node.layer.zPosition = CGFloat(i) - CGFloat(next.plan.special.count)
+        }
+        moved[target] = node
+      }
+      CATransaction.commit()
+      nodes = moved
+      wanted = Set(wanted.compactMap { Self.match($0, from: old.plan, in: next.plan) })
+      failed.removeAll(); shifts.removeAll()
+    }
+    private static func match(_ key: Row, from old: BulletLayoutPlan, in next: BulletLayoutPlan) -> Row? {
+      switch key {
+      case .regular(let i):
+        guard old.rows.indices.contains(i) else { return nil }
+        let p = old.rows[i]
+        guard let j = locate(p.bullet, in: next.rows, { $0.bullet }) else { return nil }
+        let q = next.rows[j]
+        guard q.mode == p.mode, q.lane == p.lane, q.width == p.width, q.duration == p.duration,
+          q.repeats == p.repeats, q.mine == p.mine
+        else { return nil }
+        return .regular(j)
+      case .special(let i):
+        guard old.special.indices.contains(i) else { return nil }
+        return locate(old.special[i], in: next.special, { $0 }).map(Row.special)
+      }
+    }
+    private static func locate<T>(_ target: Bullet, in entries: [T], _ bullet: (T) -> Bullet) -> Int? {
+      var lo = 0, hi = entries.count
+      while lo < hi {
+        let m = lo + (hi - lo) / 2
+        if bullet(entries[m]).time < target.time { lo = m + 1 } else { hi = m }
+      }
+      while lo < entries.count, bullet(entries[lo]).time == target.time {
+        if bullet(entries[lo]) == target { return lo }
+        lo += 1
+      }
+      return nil
+    }
+    /// Past the cap, rows already on screen keep their place and new ones wait (or are skipped once
+    /// they would only pop in mid-flight). Picking the newest rows on every tick instead dropped
+    /// older bullets mid-screen and brought them back as shorter ones ended: dense episodes flickered.
+    private func admit(_ candidates: [Row], cap: Int, now: Double, fresh: Bool, start: (Row) -> Double) -> [Row] {
+      guard candidates.count > cap else { return candidates }
+      if fresh {
+        let active = candidates.filter { start($0) <= now }
+        let shown = Array(active.suffix(cap))
+        return shown + candidates.filter { start($0) > now }.prefix(cap - shown.count)
+      }
+      var kept = candidates.filter { wanted.contains($0) }
+      for row in candidates where kept.count < cap && !wanted.contains(row) && start(row) >= now - 0.35 {
+        kept.append(row)
+      }
+      return kept
     }
     private func detachItem() {
       if let timer { player?.removeTimeObserver(timer) }; timer = nil
@@ -115,9 +216,16 @@ struct BulletLayerSurface: UIViewRepresentable {
       let now = player?.currentTime().seconds ?? 0
       guard now.isFinite else { return }
       let plan = scene.plan
-      let rows = plan.regular(at: now, ahead: 1)
-      let fx = plan.effects(at: now, ahead: 1)
-      var order = rows.map(Row.regular) + fx.map(Row.special)
+      // A jump (seek, scrub, a skipped intro) or an empty screen fills from the newest rows.
+      let jumped = now < lastNow - 0.05 || now > lastNow + 2
+      lastNow = now
+      dropOrphans(before: jumped ? .infinity : now)
+      let fresh = jumped || (wanted.isEmpty && orphans.isEmpty)
+      let rows = admit(plan.regular(at: now, ahead: 1, limit: 512).map(Row.regular), cap: 96, now: now,
+        fresh: fresh) { if case .regular(let i) = $0 { plan.rows[i].bullet.time } else { 0 } }
+      let fx = admit(plan.effects(at: now, ahead: 1, limit: 128).map(Row.special), cap: 24, now: now,
+        fresh: fresh) { if case .special(let i) = $0 { plan.special[i].time } else { 0 } }
+      var order = rows + fx
       var nextShifts = [Row: Shift]()
       if let inspector {
         for entry in inspector.pauseClock.entries where entry.position(at: now) < entry.until {

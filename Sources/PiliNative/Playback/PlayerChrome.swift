@@ -38,6 +38,8 @@ struct PlayerChromeSlots {
   var menus: AnyView? = nil
   /// The lock, offered for a few seconds where play was once the controls hide.
   var lock: (() -> Void)? = nil
+  /// The controls are locked: only the closed lock (in the same place) and a hint on tap.
+  var locked = false
 }
 private struct PlayerChromeKey: EnvironmentKey { static let defaultValue = PlayerChromeSlots() }
 extension EnvironmentValues {

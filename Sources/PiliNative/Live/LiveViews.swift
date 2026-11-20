@@ -202,6 +202,10 @@ struct LivePlayer: View {
   @AppStorage("theater.captureButton") private var allowCapture = true
   private func expand() { guard !locked else{return};enlarged.toggle();chat.presentation(enlarged) }
   @State private var audioOnly = false
+  @State private var sleepTimer = false
+  /// The stream's picture size, to lay a portrait stream out over the whole page.
+  @State private var streamSize = CGSize.zero
+  @Environment(\.colorScheme) private var colorScheme
   @State private var expandedChat = false
   @State private var showFacts = false
   @State private var liveStarted: Int64?
@@ -248,6 +252,15 @@ struct LivePlayer: View {
             startedRoom=room
             if autoEnter && !systemFullscreen && !enlarged {expand()}
           }
+          .task(id: ObjectIdentifier(player)) {
+            // The picture's size is known once the first frames decode; a portrait stream
+            // switches the page to its overlay layout.
+            while !Task.isCancelled {
+              let size = player.currentItem?.presentationSize ?? .zero
+              if size != streamSize { streamSize = size }
+              do { try await Task.sleep(for: .seconds(1)) } catch { return }
+            }
+          }
       }
     } else if let error = error ?? transport.issue {
       Text(error).padding()
@@ -256,41 +269,44 @@ struct LivePlayer: View {
       ProgressView().frame(maxWidth: .infinity, minHeight: 130)
     }
   }
-  private var controls: some View {
-    WrappingActions {
-      Menu {
-        SessionPlaybackSettings(session: preferences)
-        Toggle("仅播放音频", isOn: $audioOnly)
-        Button("重新连接") { reload += 1 }
-        Button("播放信息") { showFacts = true }
+  /// 更多 at the end of the input bar: everything the room page used to lay out as a row of
+  /// buttons — bullets and SuperChat, playback (audio only, reconnect, quality, line, sleep timer)
+  /// and the room (anchor, ranking, sharing).
+  private var moreMenu: some View {
+    Menu {
+      Section {
         Toggle("显示直播弹幕", isOn: preferences.binding(\.liveBullets))
-        Button("醒目留言设置") { paidSettings = true }
+        if paidMode != 2, identity != nil { Button("醒目留言", systemImage: "star.bubble") { showPaid = true } }
+        Button("醒目留言设置", systemImage: "gearshape") { paidSettings = true }
         if identity != nil, accounts.state.active != nil {
-          Button("管理屏蔽规则") { editShield = true }
+          Button("管理屏蔽规则", systemImage: "eye.slash") { editShield = true }
         }
-      } label: {
-        Label("直播弹幕", systemImage: "text.bubble").piliFont(.headline)
       }
-      SleepTimerButton(live: true).labelStyle(.iconOnly)
-      if paidMode != 2, identity != nil {
-        Button {
-          showPaid = true
-        } label: {
-          Image(systemName: "star.bubble").accessibilityLabel("醒目留言")
+      Section {
+        if !options.isEmpty {
+          Menu("画质 · \(qualityName(current))") {
+            ForEach(options, id: \.self) { n in Button(qualityName(n)) { qn = n } }
+          }
         }
+        if !transport.variants.isEmpty { Menu("直播线路") { lineItems } }
+        Toggle("仅播放音频", isOn: $audioOnly)
+        Button("重新连接", systemImage: "arrow.clockwise") { reload += 1 }
+        Button("定时停止", systemImage: "moon.zzz") { sleepTimer = true }
+        Button("播放信息", systemImage: "info.circle") { showFacts = true }
+        SessionPlaybackSettings(session: preferences)
       }
       if let identity {
-        LiveLikeButton(room: identity, owner: accounts.state.owner(.role(.heartbeat)))
-          .id("\(identity.room_id):\(accounts.state.owner(.role(.heartbeat)) ?? "")")
-        Menu {
-          NavigationLink("主播主页") { DeferredPage { CreatorSpace(mid: identity.uid, name: liveCard?.author ?? "主播") } }
+        Section {
+          NavigationLink { DeferredPage { CreatorSpace(mid: identity.uid, name: liveCard?.author ?? "主播") } } label: {
+            Label("主播主页", systemImage: "person.crop.circle")
+          }
+          Button("贡献榜", systemImage: "list.number") { ranks = true }
           if headerUnavailable { Button("重新读取直播间资料") { headerRevision += 1 } }
-          Button("贡献榜") { ranks = true }
-          if enlarged { Button("直播聊天") { expandedChat = true } }
+          if enlarged { Button("直播聊天", systemImage: "text.bubble") { expandedChat = true } }
           if let url = URL(string: "https://live.bilibili.com/\(identity.room_id)") {
-            Button("复制直播间链接") { UIPasteboard.general.url = url }
+            Button("复制直播间链接", systemImage: "link") { UIPasteboard.general.url = url }
             ShareLink("分享直播间", item: url)
-            Link("用浏览器打开", destination: url)
+            Link(destination: url) { Label("用浏览器打开", systemImage: "safari") }
           }
           IMShareButton(
             card: liveCard
@@ -298,12 +314,15 @@ struct LivePlayer: View {
                 .live, id: String(identity.room_id), title: title,
                 authorID: String(identity.uid))
           )
-        } label: {
-          Image(systemName: "ellipsis.circle").accessibilityLabel("直播间选项")
         }
       }
-      if !transport.variants.isEmpty {
-        Menu {
+    } label: {
+      Image(systemName: "ellipsis").font(.system(size: 20, weight: .medium))
+        .frame(width: 36, height: 36).contentShape(Rectangle())
+    }
+    .accessibilityLabel("更多")
+  }
+  @ViewBuilder private var lineItems: some View {
           if let host = transport.currentHost { Text("当前线路：" + host) }
           Section("直播格式") {
             Button("自动选择") { transport.clearPreference() }
@@ -346,17 +365,46 @@ struct LivePlayer: View {
               }
             }
           }
-        } label: {
-          Label("直播线路", systemImage: "point.3.connected.trianglepath.dotted").labelStyle(
-            .iconOnly)
-        }
+  }
+  /// The room's input bar (LiveInputBar): bullets, compose, emotes, like and 更多.
+  private var inputBar: some View {
+    LiveInputBar(showBullets: preferences.binding(\.liveBullets),
+      compose: { keyboardChat = true }, emotes: { keyboardChat = true }) {
+      if let identity {
+        LiveLikeButton(room: identity, owner: accounts.state.owner(.role(.heartbeat)))
+          .id("\(identity.room_id):\(accounts.state.owner(.role(.heartbeat)) ?? "")")
       }
-      if !options.isEmpty {
-        Menu("画质 · \(qualityName(current))") {
-          ForEach(options, id: \.self) { n in Button(qualityName(n)) { qn = n } }
+    } more: {
+      moreMenu
+    }
+  }
+  /// The room's chat on its dark background (or on bubbles over a portrait stream).
+  private func chatFeed(bubbles: Bool) -> some View {
+    VStack(spacing: 0) {
+      if let err = chat.status {
+        HStack(spacing: 8) {
+          Text(err).font(.footnote).foregroundStyle(.white.opacity(0.6)).lineLimit(2)
+          Button("重新连接弹幕") { chatReload += 1 }.font(.footnote.weight(.medium))
         }
+        .padding(.horizontal, 14).padding(.vertical, 6)
       }
-    }.padding(.horizontal)
+      LiveChatFeed(lines: visible, anchor: identity?.uid, bubbles: bubbles) { line in
+        guard let room = identity?.room_id, line.room == room else { return }
+        let paid = line.paidID.flatMap { id in
+          chat.paid.items.first { $0.id == id && $0.uid == line.uid }
+        }
+        selectedMessage = .init(line: line, paid: paid, room: room, owner: accounts.state.active)
+      }
+    }
+  }
+  @ViewBuilder private var anchorBar: some View {
+    if let identity {
+      LiveAnchorBar(room: identity, info: header, watched: chat.watched, online: chat.online,
+        started: liveStarted) { ranks = true }
+    } else if let resolvingError {
+      Button("重新读取房间") { resolveAttempt += 1 }.accessibilityHint(resolvingError)
+        .foregroundStyle(.white).padding(12)
+    }
   }
   @ViewBuilder private var conversation: some View {
     let visible = self.visible
@@ -410,49 +458,73 @@ struct LivePlayer: View {
       Button("重新读取房间") { resolveAttempt += 1 }.accessibilityHint(resolvingError)
     }
   }
+  /// The room after the original client and PiliPlus: a dark page over the stream's blurred cover.
+  /// Portrait, the picture on top, then the anchor, the chat and the input bar; a portrait stream
+  /// fills the page with the chat laid over its lower part; landscape (`_buildBodyH`), the
+  /// picture on the left and chat on the right, at most 400 pt wide.
   private var screen: some View {
     GeometryReader { geometry in
     let w = geometry.size.width, h = geometry.size.height
     let pictureHeight = min(w * 9 / 16, max(80, h * 0.38))
-    if !enlarged, h > 0, w / h >= 1.2, w >= 540 {
-      // The original's landscape room (`_buildBodyH`): the picture on the left, chat on the
-      // right at most 400 pt wide. Used on iPad, the unfolded iPhone Duo and phones held sideways.
-      let chatWidth = min(400, w - min(0.7, max(0.56, h / w * 1.08)) * w)
-      let pictureWidth = w - chatWidth
-      HStack(alignment: .top, spacing: 0) {
-        VStack(alignment: .leading, spacing: 8) {
-          theater.frame(height: min(pictureWidth * 9 / 16, max(120, h - 96))).clipped().background(.black)
-          ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-              if let identity { LiveAnchorLine(room: identity, info: header, watched: chat.watched) }
-              controls
-            }.frame(maxWidth: .infinity, alignment: .leading)
-          }.scrollBounceBehavior(.basedOnSize)
-        }.frame(width: pictureWidth)
-        Divider()
-        VStack(alignment: .leading, spacing: 8) { conversation }.frame(width: chatWidth)
-          .frame(maxHeight: .infinity, alignment: .top)
-      }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    } else {
-    VStack(alignment: .leading, spacing: 8) {
-      theater.frame(height: enlarged ? nil : pictureHeight).clipped().background(.black)
-      if enlarged && !locked {
-        HStack {
-          Text(roomTitle).font(.caption.bold()).lineLimit(1)
-          if let count = chat.online { Text("在线 " + count.formatted()).font(.caption) }
-          LiveStartedLabel(timestamp:liveStarted)
-          Spacer()
-          if let player, allowCapture, !audioOnly { CaptureButton(player:player) }
-          if identity != nil { Button { expandedChat = true } label:{Label("聊天",systemImage:"text.bubble")} }
-        }.padding(.horizontal)
-        controls
-      } else if !enlarged {
-        if let identity { LiveAnchorLine(room: identity, info: header, watched: chat.watched) }
-        controls
-        conversation
+    ZStack {
+      if !enlarged, h > 0, w / h >= 1.2, w >= 540 {
+        let chatWidth = min(400, w - min(0.7, max(0.56, h / w * 1.08)) * w)
+        let pictureWidth = w - chatWidth
+        HStack(alignment: .top, spacing: 0) {
+          VStack(alignment: .leading, spacing: 0) {
+            theater.frame(height: min(pictureWidth * 9 / 16, max(120, h - 96))).clipped().background(.black)
+            anchorBar
+            Spacer(minLength: 0)
+          }.frame(width: pictureWidth)
+          Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5)
+          VStack(spacing: 0) {
+            chatFeed(bubbles: false)
+            inputBar
+          }
+          .frame(width: chatWidth).frame(maxHeight: .infinity)
+        }
+      } else if !enlarged, h > w, streamSize.height > streamSize.width {
+        // A portrait stream: the picture fills the page, chat over its lower third, 55 pt left
+        // above the input bar for the player's own row (PiliPlus's `_buildPP`).
+        ZStack(alignment: .top) {
+          theater.frame(width: w, height: max(1, h - 58)).clipped().background(.black)
+          VStack(spacing: 0) {
+            anchorBar
+              .background(LinearGradient(colors: [.black.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom))
+            Spacer(minLength: 0)
+            chatFeed(bubbles: true)
+              .frame(height: h * 0.32)
+              .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.18)],
+                startPoint: .top, endPoint: .bottom))
+            Color.clear.frame(height: 55).allowsHitTesting(false)
+            inputBar
+          }
+        }
+      } else {
+        VStack(spacing: 0) {
+          theater.frame(height: enlarged ? nil : pictureHeight).clipped().background(.black)
+          if enlarged && !locked {
+            HStack {
+              Text(roomTitle).font(.caption.bold()).lineLimit(1)
+              if let count = chat.online { Text("在线 " + count.formatted()).font(.caption) }
+              LiveStartedLabel(timestamp:liveStarted)
+              Spacer()
+              if let player, allowCapture, !audioOnly { CaptureButton(player:player) }
+              if identity != nil { Button { expandedChat = true } label:{Label("聊天",systemImage:"text.bubble")} }
+              moreMenu
+            }.padding(.horizontal).padding(.vertical, 4)
+          } else if !enlarged {
+            anchorBar
+            Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5)
+            chatFeed(bubbles: false)
+            inputBar
+          }
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
       }
-    }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
+    .frame(width: w, height: h)
+    .background { if !enlarged { LiveRoomBackdrop(url: header?.room_info?.cover.flatMap(httpsURL)) } }
+    .environment(\.colorScheme, enlarged ? colorScheme : .dark)
     }.overlay(alignment:.topTrailing){
       if enlarged && (allowLock || locked) {
         Button {TouchFeedback.light(); locked.toggle()} label:{
@@ -465,7 +537,11 @@ struct LivePlayer: View {
       .onChange(of:enlarged){ _,on in if !on{locked=false} }
       .modifier(PlaybackEdgeInsets(fullscreen: enlarged))
       .toolbar(enlarged ? .hidden : .automatic, for: .navigationBar, .tabBar)
+      // The bar sits on the room's dark backdrop.
+      .toolbarBackground(.hidden, for: .navigationBar)
+      .toolbarColorScheme(.dark, for: .navigationBar)
       .navigationTitle(roomTitle)
+      .navigationBarTitleDisplayMode(.inline)
       .task(id: "\(identity?.room_id ?? 0):\(accounts.state.active ?? "")") {
         shield = nil
         guard let identity, let user = accounts.state.active else { return }
@@ -525,6 +601,9 @@ struct LivePlayer: View {
     }
     .piliSheet(isPresented:$keyboardChat){
       if let room=identity?.room_id{PiliNavigationStack{VStack{LiveComposer(room:room,reply:$replyTo,focusOnEntry:true);Spacer()}.navigationTitle("直播弹幕").toolbar{Button("完成"){keyboardChat=false}}}.presentationDetents([.medium])}
+    }
+    .piliSheet(isPresented: $sleepTimer) {
+      PiliNavigationStack { SleepTimerForm(live: true) }.presentationDetents([.medium, .large])
     }
     .piliSheet(isPresented: $paidSettings) {
       PiliNavigationStack { SuperChatSettings().toolbar { Button("完成") { paidSettings = false } } }

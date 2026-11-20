@@ -78,6 +78,11 @@ public enum LivePackets {
   }
   private static func unpack(_ input: Data, brotli: Bool, limit: Int) throws -> Data {
     guard limit > 0, !input.isEmpty else { throw WireError.invalid("直播压缩帧为空") }
+    #if canImport(Compression)
+      // Apple's one-shot decoder answers 0, not the buffer size, when a Brotli frame doesn't fit,
+      // so it can't grow its own output; the streaming decoder can.
+      if brotli { return try brotliStream(input, limit: limit) }
+    #endif
     let maxSize = limit + 1
     var size = min(maxSize, max(2048, input.count * 2))
     return try input.withUnsafeBytes { source in
@@ -87,12 +92,7 @@ public enum LivePackets {
         var written = size
         var short = false
         if brotli {
-          #if canImport(Compression)
-            written = compression_decode_buffer(
-              &output, size, src, input.count, nil, COMPRESSION_BROTLI)
-            guard written > 0 else { throw WireError.invalid("Brotli 直播帧无效") }
-            short = written == size
-          #elseif canImport(CBrotli)
+          #if canImport(CBrotli) && !canImport(Compression)
             // The streaming API distinguishes truncated input from an output buffer that filled up.
             guard let state = BrotliDecoderCreateInstance(nil, nil, nil) else {
               throw WireError.invalid("无法解压直播帧")
@@ -133,4 +133,35 @@ public enum LivePackets {
       throw WireError.invalid("直播弹幕数据过大")
     }
   }
+  #if canImport(Compression)
+    private static func brotliStream(_ input: Data, limit: Int) throws -> Data {
+      let stream = UnsafeMutablePointer<compression_stream>.allocate(capacity: 1)
+      defer { stream.deallocate() }
+      guard compression_stream_init(stream, COMPRESSION_STREAM_DECODE, COMPRESSION_BROTLI) == COMPRESSION_STATUS_OK
+      else { throw WireError.invalid("无法解压直播帧") }
+      defer { compression_stream_destroy(stream) }
+      let chunk = 32 * 1024
+      let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: chunk)
+      defer { buffer.deallocate() }
+      var output = Data()
+      return try input.withUnsafeBytes { (source: UnsafeRawBufferPointer) -> Data in
+        stream.pointee.src_ptr = source.bindMemory(to: UInt8.self).baseAddress!
+        stream.pointee.src_size = source.count
+        while true {
+          let unread = stream.pointee.src_size
+          stream.pointee.dst_ptr = buffer
+          stream.pointee.dst_size = chunk
+          let status = compression_stream_process(stream, Int32(COMPRESSION_STREAM_FINALIZE.rawValue))
+          let produced = chunk - stream.pointee.dst_size
+          output.append(buffer, count: produced)
+          guard output.count <= limit else { throw WireError.invalid("直播弹幕数据过大") }
+          if status == COMPRESSION_STATUS_END, !output.isEmpty { return output }
+          // Still decoding only while it makes progress; a truncated frame stops here.
+          guard status == COMPRESSION_STATUS_OK, produced > 0 || stream.pointee.src_size < unread else {
+            throw WireError.invalid("Brotli 直播帧无效")
+          }
+        }
+      }
+    }
+  #endif
 }

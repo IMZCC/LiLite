@@ -77,7 +77,10 @@ struct BulletOverlay: View {
         do { plan = try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() } }
         catch { return }
         guard !Task.isCancelled else { return }
-        layout = BulletScene(plan: plan, style: config, point: point, scale: scale)
+        var shape = Hasher()
+        shape.combine(size.width); shape.combine(size.height); shape.combine(area); shape.combine(keywords)
+        shape.combine(owner); shape.combine(cloud.revision)
+        layout = BulletScene(plan: plan, style: config, point: point, scale: scale, rules: shape.finalize())
         if opacity <= 0 { inspector?.locate = nil; inspector?.snapshot=nil;inspector?.clearTimeline() }
         if let inspector, opacity > 0 {
           let clock = self.clock

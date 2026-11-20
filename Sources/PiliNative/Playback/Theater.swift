@@ -248,7 +248,10 @@ struct TheaterSheet: View {
       picture: model.engine.playbackSize, entry: entry, closing: closing,
       inline: { InlinePlayerFrame.current(model.engine) }, covered: covered, finish: { dismiss() }) {
       TheaterWorkspace(open: drawer && !locked) { playback } panel: {
-        TheaterTools(model: model, subject: subject, playlist: playlist, close: { drawer = false },
+        // Closed once the tap has finished: its own button goes with the panel (see
+        // Theater.afterTouch).
+        TheaterTools(model: model, subject: subject, playlist: playlist,
+          close: { DispatchQueue.main.async { drawer = false } },
           bulletSnapshot: { bulletInspector.snapshot?() ?? [] },
           engagement: actionsEnabled ? engagement : nil).id(subject?.type)
       }
@@ -307,7 +310,8 @@ struct TheaterSheet: View {
         }
         PlayerSpeedMenu(model: model, word: true)
       })
-    s.lock = allowLock ? { toggleLock() } : nil
+    s.lock = allowLock || locked ? { toggleLock() } : nil
+    s.locked = locked
     return s
   }
   /// The header icons: cast, bullets, send a bullet, picture in picture, capture, picture fit,
@@ -368,7 +372,10 @@ struct TheaterSheet: View {
                 clock: model.engine, inspector: bulletInspector,
                 fullscreen: true)
             }
-          }), showsControls: !locked,
+          }),
+        // Locked, the player swaps its controls for the closed lock itself (slots.locked);
+        // turning its controls off altogether left nothing on screen that took a tap.
+        showsControls: true,
         interaction: AnyView(
           ZStack {
             if model.ready && !locked {
@@ -390,28 +397,8 @@ struct TheaterSheet: View {
       if !locked{VStack{Spacer();HStack{EpisodeClipPrompt(model:model);Spacer()}.padding(.leading,10)}.padding(.bottom,66)}
       if !locked,let continueBadge{VStack{Spacer();HStack{continueBadge;Spacer()}.padding(.leading,10)}.padding(.bottom,66)}
       if model.storyEnded { StoryFinish(model: model).onAppear { locked = false } }
-      if locked {
-        Color.clear.contentShape(Rectangle()).ignoresSafeArea().accessibilityHidden(true)
-      }
-      if locked {
-        // Controls are hidden while locked; the closed lock sits where it was offered.
-        GeometryReader { frame in
-          VStack {
-            Spacer(minLength: 0)
-            HStack {
-              Button { toggleLock() } label: {
-                Image(systemName: "lock").font(.system(size: 22, weight: .medium)).foregroundStyle(.white)
-                  .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
-                  .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-              }
-              .buttonStyle(PlayerPressStyle()).accessibilityLabel("解锁播放控件")
-              Spacer(minLength: 0)
-            }
-          }
-          .padding(.horizontal, frame.size.width < frame.size.height ? 16 : 0)
-        }
-        .transition(.opacity)
-      }
+      // Locked, the player itself draws the closed lock where play was, takes the taps and says
+      // how to unlock (Theater.lockedControls).
     }
     .animation(.smooth(duration: 0.25), value: locked)
     .onAppear { if model.streamInfo != nil { showInfo() } }

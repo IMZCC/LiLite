@@ -46,7 +46,9 @@ struct Theater: View {
   @State private var scrub: Double?
   @State private var lockExpired = false
   @State private var lockPulse = 0
-  private enum LeadGlyph: Equatable { case none, play, lock }
+  /// Locked: a tap on the picture shows how to unlock for a moment.
+  @State private var lockNotice = 0
+  @State private var lockNoticeShown = false
   /// A menu opened from the chrome (speed, fit, subtitles) keeps it up until this uptime: hiding
   /// the chrome takes the menu's anchor away and closes it.
   @State private var holdUntil = 0.0
@@ -163,9 +165,15 @@ struct Theater: View {
             }.padding(.top, 4)
           } else if fullscreen && slots.close != nil {
             // Pages that fill the new chrome's slots (the theater); the offline file player
-            // keeps its own navigation bar and the classic bars.
-            fullscreenControls(size: size, safe: safe, insets: insets,
-              picture: shownWidth(chosen, frame: frame, source: clock.pictureSize))
+            // keeps its own navigation bar and the classic bars. Locked, the same place shows
+            // only the closed lock (and takes every tap).
+            let picture = shownWidth(chosen, frame: frame, source: clock.pictureSize)
+            if slots.locked {
+              lockedControls(edges: chromeEdges(safe: safe, insets: insets, picture: picture))
+                .transition(.opacity)
+            } else {
+              fullscreenControls(size: size, safe: safe, insets: insets, picture: picture)
+            }
           } else if !fullscreen && safe.width < 500 {
             compactControls().padding(insets)
           } else {
@@ -215,7 +223,7 @@ struct Theater: View {
     } message: { Text(pipError ?? "") }
   }
   var body: some View {
-    stage
+    lockOfferTiming(stage)
     .onReceive(NotificationCenter.default.publisher(for: .piliStartPictureInPicture)) { n in
       if (n.object as AnyObject?) === player { resetZoom() }
     }
@@ -269,13 +277,28 @@ struct Theater: View {
     .onChange(of: touch.horizontalSeek == nil) { _, ended in
       if ended, visible, !voiceOver, panel == nil { visible = false }
     }
-    // Back from fullscreen: the inline controls come up for their 3 s, as on entering it.
-    .onChange(of: detached) { _, covered in
-      if !covered {
-        visible = true
-        wake()
-      }
+    .modifier(lockFollowing)
+  }
+  /// The lock offer and the locked state (split from `body` for the type checker).
+  private var lockFollowing: LockFollowing {
+    LockFollowing(detached: detached, locked: slots.locked) { revealed in
+      visible = revealed
+      wake()
     }
+  }
+  private struct LockFollowing: ViewModifier {
+    let detached: Bool, locked: Bool
+    let set: (Bool) -> Void
+    func body(content: Content) -> some View {
+      content
+        // Back from fullscreen: the inline controls come up for their 3 s, as on entering it.
+        .onChange(of: detached) { _, covered in if !covered { set(true) } }
+        // Locked, the controls are down; unlocking brings them back for their 3 s.
+        .onChange(of: locked) { _, now in set(!now) }
+    }
+  }
+  private func lockOfferTiming<V: View>(_ content: V) -> some View {
+    content
     .onChange(of: visible) { _, shown in
       guard fullscreen else { return }
       if shown {
@@ -314,11 +337,77 @@ struct Theater: View {
   }
   /// `size` is the whole screen (the shades cover it); `safe` and `insets` are the safe area the
   /// controls keep to.
+  /// Where the fullscreen chrome's rows end: the safe area, narrowed to the picture's sides.
+  private func chromeEdges(safe: CGSize, insets: EdgeInsets, picture: CGFloat) -> EdgeInsets {
+    let side = (safe.width < safe.height ? 16 : 0) + Self.pictureInset(size: safe, picture: picture)
+    return EdgeInsets(top: insets.top, leading: insets.leading + side, bottom: insets.bottom,
+      trailing: insets.trailing + side)
+  }
+  /// Locked: the closed lock stays exactly where play and the open lock were, and any tap on the
+  /// picture says how to unlock — before, the lock sat out in the margin and taps did nothing, so a
+  /// lock hit by accident (it is offered where pause was) looked like a frozen player.
+  ///
+  /// One gesture takes every tap and decides by where it landed: a Button for the lock over the
+  /// full-screen catcher never received its taps here (the catcher got them all), so the player
+  /// could not be unlocked.
+  private func lockedControls(edges: EdgeInsets) -> some View {
+    ZStack {
+      GeometryReader { area in
+        // The lock's cell (as drawn below), with some slack around it.
+        let cell = CGRect(x: edges.leading - 12, y: area.size.height - edges.bottom - 48 - 12,
+          width: 44 + 24, height: 48 + 24)
+        Color.clear.contentShape(Rectangle())
+          .onTapGesture(coordinateSpace: .local) { point in
+            if cell.contains(point) {
+              afterTouch { slots.lock?() }
+            } else {
+              lockNotice &+= 1
+            }
+          }
+      }
+      .accessibilityElement()
+      .accessibilityLabel("解锁播放控件")
+      .accessibilityAddTraits(.isButton)
+      .accessibilityAction { afterTouch { slots.lock?() } }
+      if lockNoticeShown {
+        VStack {
+          PlayerHUDCapsule {
+            HStack(spacing: 6) {
+              Image(systemName: "lock.fill").font(.system(size: 13, weight: .semibold))
+              Text("屏幕已锁定，点左下角的锁解锁").font(.system(size: 14, weight: .medium))
+            }
+          }
+          Spacer(minLength: 0)
+        }
+        .padding(.top, edges.top + 26)
+      }
+      VStack(spacing: 0) {
+        Spacer(minLength: 0)
+        HStack(spacing: 0) {
+          Image(systemName: "lock").font(.system(size: 22, weight: .medium))
+            .frame(width: 44, height: 48, alignment: .leading)
+            .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+          Spacer(minLength: 0)
+        }
+      }
+      .padding(edges)
+      .allowsHitTesting(false)
+      .accessibilityHidden(true)
+    }
+    .foregroundStyle(.white)
+    .environment(\.colorScheme, .dark)
+    .animation(PlayerChromeMotion.fade, value: lockNoticeShown)
+    .onAppear { lockNotice &+= 1 }
+    .task(id: lockNotice) {
+      guard lockNotice > 0 else { return }
+      lockNoticeShown = true
+      do { try await Task.sleep(for: .seconds(2)) } catch { return }
+      lockNoticeShown = false
+    }
+  }
   @ViewBuilder private func fullscreenControls(size: CGSize, safe: CGSize, insets: EdgeInsets, picture: CGFloat) -> some View {
     let open = slots.panels.first { $0.id == panel }
-    let side = (safe.width < safe.height ? 16 : 0) + Self.pictureInset(size: safe, picture: picture)
-    let edges = EdgeInsets(top: insets.top, leading: insets.leading + side, bottom: insets.bottom,
-      trailing: insets.trailing + side)
+    let edges = chromeEdges(safe: safe, insets: insets, picture: picture)
     ZStack {
       if visible {
         fullscreenShade(open: open != nil, height: size.height).transition(.opacity)
@@ -362,10 +451,12 @@ struct Theater: View {
           .allowsHitTesting(false).transition(.opacity)
         }
       }
-      // Play / pause, and the lock it turns into when the controls go: one button that stays
-      // put while the rows fade around it, crossfading its glyph in place (the reference
-      // player's clear-screen lock).
-      leadButton(open: open != nil).padding(edges)
+      // The reference player's clear-screen lock: as the rows fade out, the lock fades in where
+      // play / pause was (same cell, same moment — `lockExpired` is already false when the
+      // controls go), and stays 3 s.
+      if !visible, !lockExpired, slots.lock != nil {
+        lockOffer.padding(edges).transition(.opacity)
+      }
       // The format chip plays on its own whether or not the controls are up: under the header
       // while they are, sliding up into its place when they go (as the reference player).
       if let info = slots.info, panel == nil {
@@ -432,49 +523,29 @@ struct Theater: View {
     // The first and last glyphs line up with the bars' edges, not their 44 pt cells.
     .padding(.horizontal, -11)
   }
-  private func leadButton(open: Bool) -> some View {
-    let lead: LeadGlyph = visible
-      ? (open ? .none : .play)
-      : (!lockExpired && showsControls && slots.lock != nil ? .lock : .none)
-    return VStack(spacing: 0) {
+  private var lockOffer: some View {
+    VStack(spacing: 0) {
       Spacer(minLength: 0)
       HStack(spacing: 0) {
-        Button {
-          if lead == .lock {
-            slots.lock?()
-          } else if lead == .play {
-            playPause()
-            wake()
-          }
-        } label: {
-          ZStack(alignment: .leading) {
-            Image(systemName: clock.playing ? "pause.fill" : "play.fill")
-              .font(.system(size: 27, weight: .medium))
-              .contentTransition(.symbolEffect(.replace))
-              .opacity(lead == .play ? 1 : 0)
-              .scaleEffect(lead == .lock ? 0.8 : 1, anchor: .leading)
-            Image(systemName: "lock.open")
-              .font(.system(size: 22, weight: .medium))
-              .opacity(lead == .lock ? 1 : 0)
-              .scaleEffect(lead == .play ? 0.8 : 1, anchor: .leading)
-          }
-          .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
-          .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+        Button { afterTouch { slots.lock?() } } label: {
+          Image(systemName: "lock.open").font(.system(size: 22, weight: .medium))
+            .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
+            .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
         }
-        .disabled(lead == .play && !clock.ready)
-        .allowsHitTesting(lead != .none)
-        .accessibilityLabel(lead == .lock ? "锁定播放控件" : clock.playing ? "暂停" : "播放")
-        .accessibilityHidden(lead == .none)
+        .accessibilityLabel("锁定播放控件")
         Spacer(minLength: 0)
       }
-      .frame(height: 48)
     }
-    .animation(PlayerChromeMotion.fade, value: lead)
   }
   private var fullscreenButtons: some View {
     HStack(spacing: 0) {
-      // Play / pause itself is `leadButton`, drawn over this place.
-      Color.clear.frame(width: 44, height: 48).accessibilityHidden(true)
+      Button { playPause(); wake() } label: {
+        Image(systemName: clock.playing ? "pause.fill" : "play.fill")
+          .font(.system(size: 27, weight: .medium))
+          .frame(width: 44, height: 48, alignment: .leading).contentShape(Rectangle())
+          .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+          .contentTransition(.symbolEffect(.replace))
+      }.accessibilityLabel(clock.playing ? "暂停" : "播放").disabled(!clock.ready)
       if let next = slots.next {
         Button { next(); wake() } label: {
           Image(systemName: "forward.end.fill")
@@ -499,8 +570,10 @@ struct Theater: View {
         ForEach(slots.panels) { p in
           Button {
             TouchFeedback.light()
-            withAnimation(PlayerChromeMotion.panel) { panel = p.id }
-            wake()
+            afterTouch {
+              withAnimation(PlayerChromeMotion.panel) { panel = p.id }
+              wake()
+            }
           } label: { PlayerWordGlyph(text: p.title) }
         }
         if let menus = slots.menus { menus.simultaneousGesture(TapGesture().onEnded { holdChrome() }) }
@@ -514,8 +587,17 @@ struct Theater: View {
     wake()
   }
   private func closePanel() {
-    withAnimation(PlayerChromeMotion.panel) { panel = nil }
-    wake()
+    afterTouch {
+      withAnimation(PlayerChromeMotion.panel) { panel = nil }
+      wake()
+    }
+  }
+  /// Runs a change that removes the control being tapped once the touch has finished. Removing
+  /// it from inside its own action left its gesture recognizers detached while still "possible",
+  /// and every other gesture on the player then waited on them for ever: fullscreen stopped
+  /// taking any tap (the lock, 4K / 选集 and tapping a panel away all did this).
+  private func afterTouch(_ change: @escaping @MainActor () -> Void) {
+    DispatchQueue.main.async { change() }
   }
   /// The original client's player chrome: a header (back/title left, tools right) and a bottom
   /// bar (progress, then play/time left and menus/fullscreen right), each on a 75 % black

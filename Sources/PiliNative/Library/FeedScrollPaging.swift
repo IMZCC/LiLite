@@ -16,6 +16,15 @@ import Foundation
     return contentHeight - visible.maxY <= visible.height * 1.5
   }
 
+  /// The end of the list is on screen or within half a screen of it, including a first page too
+  /// short to scroll. While it is, pages keep loading by themselves, as the original's endless
+  /// feed does (a drag still asks earlier, at a screen and a half).
+  var atEnd = true
+  nonisolated static func reachedEnd(visible: CGRect, contentHeight: CGFloat) -> Bool {
+    guard visible.height > 0 else { return false }
+    return contentHeight - visible.maxY <= visible.height * 0.5
+  }
+
   func beginDrag() { canLoad = true }
   func endDrag() { canLoad = false }
 

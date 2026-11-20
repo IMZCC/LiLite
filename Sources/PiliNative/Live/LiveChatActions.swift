@@ -9,7 +9,8 @@ struct LiveMessageRow: View {
   let line: LiveLine
   var anchor: Int64? = nil
   @AppStorage("live.medal") private var medal = true
-  private var nodes: [RichNode] {
+  /// The message as text and emote nodes (LiveChatLine draws them too).
+  var nodes: [RichNode] {
     func node(_ token: String, _ raw: String) -> RichNode {
       guard let url = GalleryPicture.source(raw) else { return .init(text: token) }
       return .init(

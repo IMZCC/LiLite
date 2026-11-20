@@ -76,6 +76,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
   /// settles, so building the next neighbour (a whole feed) happens on a still screen rather
   /// than in the frames that finish the swipe.
   @State private var center:Choice?
+  @State private var pageWidth: CGFloat = 0
   init(choices:[Choice], selection:Binding<Choice>, swipe:Bool=true, progress:Binding<CGFloat>?=nil,
        viewport: CGSize? = nil, onProgress:((CGFloat)->Void)?=nil,
        @ViewBuilder content:@escaping (Choice)->Content) {
@@ -106,6 +107,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
         // A paging ScrollView instead of a page TabView: it reports a continuous offset (the
         // TabView only changed selection after the swipe settled, so the chips jumped), and
         // a tapped channel slides across instead of cutting.
+        ScrollViewReader { proxy in
         ScrollView(.horizontal) {
           HStack(spacing: 0) {
             ForEach(choices, id: \.self) { choice in
@@ -113,6 +115,14 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
                 .id(choice)
             }
           }.scrollTargetLayout()
+        }
+        // A new page width (interface scale, rotation, split view) kept the old offset, which
+        // then sat between two pages: re-align on the selected one.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+          defer { pageWidth = width }
+          guard pageWidth > 0, abs(pageWidth - width) > 0.5 else { return }
+          var still = Transaction(); still.disablesAnimations = true
+          withTransaction(still) { proxy.scrollTo(selection, anchor: .leading) }
         }
         .background { LeadingEdgeNavigation(fullWidth: selection == choices.first).frame(width: 0, height: 0) }
         .scrollIndicators(.hidden)
@@ -133,6 +143,7 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
         .onChange(of: selection) { _, value in
           guard scrolled != value else { return }
           withAnimation(.smooth(duration: 0.32)) { scrolled = value }
+        }
         }
       } else {
         ZStack {

@@ -115,6 +115,7 @@ struct FeedView: View {
   @State private var channelMotion = PagerIndicatorMotion()
   @State private var windowInsets = FeedHeaderInsets()
   @Environment(\.collapseHomeSearch) private var collapseSearch
+  @Environment(\.interfaceScaled) private var interfaceScaled
   @State private var reserved = FeedHeaderInsets()
   @State private var searchHeight: CGFloat = 54
   @State private var headerHeight: CGFloat = 0
@@ -170,7 +171,9 @@ struct FeedView: View {
         .ignoresSafeArea(.container, edges: [.top, .bottom])
         .padding(.top, reserved.top)
         .onGeometryChange(for: FeedHeaderInsets.self) { proxy in
-          guard #available(iOS 27.1, *) else { return FeedHeaderInsets() }
+          // Scaled, the regions come in unscaled coordinates: the Dynamic Island landed inside
+          // the header and pushed it, with the feed under it, off to the right edge.
+          guard #available(iOS 27.1, *), !interfaceScaled else { return FeedHeaderInsets() }
           let regions = proxy.reservedRegions(kind: .division) + proxy.reservedRegions(kind: .occlusion)
           return FeedHeaderInsets.avoiding(width: proxy.size.width, height: headerHeight + top,
             regions: regions.filter(\.isActive).map(\.frame))
@@ -540,10 +543,15 @@ private struct MobileFeedAuthorizationTip: View {
   }
 }
 
-/// The feed's loading / retry / load-more footer: the only part that follows `busy`.
+/// The feed's loading / retry footer: the only part that follows `busy`. Reaching it loads the
+/// next page by itself, as the original's endless feed does; the button only stays for a feed
+/// that stopped after several pages came back empty.
 private struct ShelfFooter: View {
   let model: FeedModel
   let start: (_ retry: Bool) -> Void
+  /// Asks for the next page if the end of the list is (still) on screen.
+  let more: () -> Void
+  @Environment(\.activeCatalogPage) private var active
   var body: some View {
     if let error = model.error {
       VStack(spacing: 12) {
@@ -552,6 +560,10 @@ private struct ShelfFooter: View {
       }.frame(maxWidth: .infinity).padding(.vertical, 24)
     } else if model.busy {
       ProgressView().frame(maxWidth: .infinity).padding(.vertical, model.videos.isEmpty ? 120 : 16)
+    } else if !model.finished && model.autoCursor != nil {
+      // A page too short to fill the screen asks again once it lands (its count changes).
+      ProgressView().frame(maxWidth: .infinity).padding(.vertical, 16)
+        .task(id: "\(model.videos.count):\(active)") { if active { more() } }
     } else if !model.finished {
       Button("加载更多") { start(false) }.piliGlassButton().frame(maxWidth: .infinity)
     } else if model.videos.isEmpty {
@@ -628,7 +640,7 @@ private struct VideoShelf: View, Equatable {
             if let featured { archiveCard(featured, featured: true).padding(.bottom, 8) }
           }.frame(maxWidth: .infinity, alignment: .leading).id("discover.feed.top")
         } footer: {
-          if split == nil { ShelfFooter(model: model) { startLoad(retry: $0) } }
+          if split == nil { ShelfFooter(model: model, start: { startLoad(retry: $0) }, more: loadMore) }
         }
         if let split {
           Section {
@@ -636,7 +648,7 @@ private struct VideoShelf: View, Equatable {
           } header: {
             refreshPrevious(proxy)
           } footer: {
-            ShelfFooter(model: model) { startLoad(retry: $0) }
+            ShelfFooter(model: model, start: { startLoad(retry: $0) }, more: loadMore)
           }
         }
       }.padding(.horizontal, HomeCardStyle.gap).padding(.top, 4).modifier(HomeFeedBottomPadding(extra: 16))
@@ -644,6 +656,12 @@ private struct VideoShelf: View, Equatable {
     .environment(\.homeFeedBottomClearance, 0)
     .piliOnScrollGeometryChange(for: Bool.self) { nearEnd($0) } action: { _, near in
       autoPage(nearEnd: near)
+    }
+    .piliOnScrollGeometryChange(for: Bool.self) { g in
+      FeedScrollPaging.reachedEnd(visible: g.visibleRect, contentHeight: g.contentSize.height)
+    } action: { _, end in
+      paging.atEnd = end
+      if end { loadMore() }
     }
     .piliOnScrollPhaseChange { _, phase, geometry in
       switch phase {
@@ -666,6 +684,13 @@ private struct VideoShelf: View, Equatable {
 
   private func nearEnd(_ geometry: PiliScrollGeometry) -> Bool {
     FeedScrollPaging.nearEnd(visible: geometry.visibleRect, contentHeight: geometry.contentSize.height)
+  }
+
+  /// The footer is reached: load on, as long as the end stays in reach (a short page asks again).
+  private func loadMore() {
+    guard paging.active, paging.atEnd, !model.busy, model.error == nil, model.autoCursor != nil,
+      !model.finished else { return }
+    startLoad()
   }
 
   private func autoPage(nearEnd: Bool) {

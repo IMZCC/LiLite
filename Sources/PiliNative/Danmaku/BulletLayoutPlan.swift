@@ -68,12 +68,12 @@ struct BulletLayoutPlan: Sendable {
   }
   let rows: [Placement], special: [Bullet]
   private let rowIndex: BulletWindowIndex, effectIndex: BulletWindowIndex
-  func regular(at time: Double, ahead: Double = 0) -> [Int] {
-    rowIndex.window(now: time, ahead: ahead, limit: 96, start: { rows[$0].bullet.time },
+  func regular(at time: Double, ahead: Double = 0, limit: Int = 96) -> [Int] {
+    rowIndex.window(now: time, ahead: ahead, limit: limit, start: { rows[$0].bullet.time },
       end: { rows[$0].bullet.time + rows[$0].duration })
   }
-  func effects(at time: Double, ahead: Double = 0) -> [Int] {
-    effectIndex.window(now: time, ahead: ahead, limit: 24, start: { special[$0].time },
+  func effects(at time: Double, ahead: Double = 0, limit: Int = 24) -> [Int] {
+    effectIndex.window(now: time, ahead: ahead, limit: limit, start: { special[$0].time },
       end: { special[$0].time + (special[$0].special?.duration ?? 0) })
   }
   static func prepare(
