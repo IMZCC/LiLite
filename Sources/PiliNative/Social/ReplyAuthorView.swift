@@ -57,7 +57,8 @@ struct ReplyAvatar: View {
       }
       // Drawn over the pendant at the avatar's own bottom-right corner, as PendantAvatar does.
       let d = frame == nil ? size : size * 0.84
-      let side = max(12, size * 0.4)
+      // The original's sizes: 14pt on list avatars (34–45pt), 20pt on the space's big one.
+      let side: CGFloat = size >= 60 ? 20 : max(12, min(14, size * 0.4))
       badge(side).offset(x: (d - side) / 2 + 1, y: (d - side) / 2 + 1).allowsHitTesting(false)
     }.frame(width: size * 1.18, height: size * 1.25).accessibilityHidden(true)
   }
