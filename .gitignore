@@ -3,8 +3,13 @@ __pycache__/
 *.py[cod]
 .swiftpm/
 .bsp/
-xtool/
 dist/
+# Xcode build output and staged inputs (./build.sh --prepare)
+/build/
+/FirebaseSDK/
+/MediaKit/Vendor/
+xcuserdata/
+.DS_Store
 *.ipa
 *.mobileprovision
 *.p12

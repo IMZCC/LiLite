@@ -4,8 +4,12 @@ import Foundation
 
 import PackageDescription
 
+// build.sh merges the static FFmpeg / dav1d / libass / HarfBuzz / FriBidi / FreeType / mpv /
+// libplacebo builds into Vendor/PiliMediaVendor.xcframework (iphoneos + iphonesimulator slices),
+// and stages their headers once in Vendor/include (both slices are arm64 builds of one recipe).
 let vendor = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent(
   "Vendor")
+let vendorHeaders: [CSetting] = [.unsafeFlags(["-I" + vendor.appendingPathComponent("include").path])]
 let package = Package(
   name: "PiliMedia", platforms: [.iOS(.v17)],
   products: [
@@ -13,23 +17,17 @@ let package = Package(
     .library(name: "CMPV", targets: ["CMPV"])
   ],
   targets: [
+    .binaryTarget(name: "PiliMediaVendor", path: "Vendor/PiliMediaVendor.xcframework"),
     .target(name: "CMPV", dependencies: ["CLiveRemux"], publicHeadersPath: "include",
-      cSettings: [.unsafeFlags(["-I" + vendor.appendingPathComponent("include").path])],
+      cSettings: vendorHeaders,
       linkerSettings: [
-        .unsafeFlags(["-L" + vendor.appendingPathComponent("lib").path]),
-        .linkedLibrary("mpv"), .linkedLibrary("placebo"),
         .linkedFramework("OpenGLES"), .linkedFramework("QuartzCore"),
         .linkedFramework("AVFoundation"), .linkedFramework("Security"),
       ]),
     .target(
-      name: "CLiveRemux", publicHeadersPath: "include",
-      cSettings: [.unsafeFlags(["-I" + vendor.appendingPathComponent("include").path])],
+      name: "CLiveRemux", dependencies: ["PiliMediaVendor"], publicHeadersPath: "include",
+      cSettings: vendorHeaders,
       linkerSettings: [
-        .unsafeFlags(["-L" + vendor.appendingPathComponent("lib").path]),
-        .linkedLibrary("avformat"), .linkedLibrary("avfilter"), .linkedLibrary("avcodec"),
-        .linkedLibrary("swscale"), .linkedLibrary("swresample"),
-        .linkedLibrary("avutil"), .linkedLibrary("dav1d"),
-        .linkedLibrary("ass"), .linkedLibrary("harfbuzz"),.linkedLibrary("fribidi"),.linkedLibrary("freetype"),
         .linkedLibrary("iconv",.when(platforms:[.iOS])),.linkedLibrary("c++",.when(platforms:[.iOS])),.linkedLibrary("z"),
         .linkedFramework("CoreText",.when(platforms:[.iOS])),
         .linkedFramework("MediaToolbox", .when(platforms: [.iOS])),

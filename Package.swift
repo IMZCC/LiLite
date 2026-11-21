@@ -2,36 +2,38 @@
 import PackageDescription
 import Foundation
 
-// The Linux Swift driver otherwise stamps the deployment target as the linked SDK.
-// Keep the deployment target at iOS 17 while passing the SDK actually used by build.sh.
-// Without the real SDK version iOS 26+ runs the app in the legacy (pre-Liquid Glass) compatibility appearance.
-let linkedSDK = ProcessInfo.processInfo.environment["PILI_IOS_SDK_VERSION"]
-let sdkLinkFlags: [LinkerSetting] = linkedSDK.map {
-  [.unsafeFlags(["-Xlinker", "-platform_version", "-Xlinker", "ios", "-Xlinker", "17.0", "-Xlinker", $0], .when(platforms: [.iOS]))]
-} ?? []
+// Built by LiLite.xcodeproj (the app target) for iphoneos or iphonesimulator; see build.sh.
 // Development device builds (`build.sh --sign-dev`) keep -O but compile in parallel batches and
 // incrementally instead of one single-threaded whole-module job; delivery builds are unchanged.
 let fastBuild = ProcessInfo.processInfo.environment["PILI_FAST_BUILD"] == "1"
 let developmentFlags: [SwiftSetting] = fastBuild ? [.unsafeFlags(["-no-whole-module-optimization"])] : []
 
-// build.sh stages the official arm64 device frameworks for xtool's cross-linker.
-let firebaseDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+// `build.sh --prepare` packs Firebase's official static frameworks (device + simulator slices)
+// into static-library XCFrameworks in FirebaseSDK/xcframeworks (Tools/firebase_sdk.py); each one
+// is a binary target here. Framework headers are identical for both slices: -F FirebaseSDK/iphoneos.
+let firebaseSDK = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
   .appendingPathComponent("FirebaseSDK")
-let firebaseFrameworks = (try? FileManager.default.contentsOfDirectory(atPath: firebaseDirectory.path)) ?? []
-let firebaseLinkFlags = firebaseFrameworks.sorted().filter { $0.hasSuffix(".framework") }
-  .flatMap { ["-framework", String($0.dropLast(".framework".count))] }
+let firebaseXCFrameworks = firebaseSDK.appendingPathComponent("xcframeworks")
+let firebaseNames = ((try? FileManager.default.contentsOfDirectory(atPath: firebaseXCFrameworks.path)) ?? [])
+  .filter { $0.hasSuffix(".xcframework") }.map { String($0.dropLast(".xcframework".count)) }.sorted()
+let firebaseTargets: [Target] = firebaseNames.map {
+  .binaryTarget(name: $0, path: "FirebaseSDK/xcframeworks/\($0).xcframework")
+}
 
 let package = Package(
   name: "PiliNative",
   platforms: [.iOS("17.0")],
   products: [.library(name: "PiliNative", targets: ["PiliNative"])],
   dependencies: [.package(path: "Wire"), .package(path: "ArchiveKit"), .package(path: "MediaKit"), .package(path: "ColorKit")],
-  targets: [
+  targets: firebaseTargets + [
     .target(
       name: "CFirebaseTelemetry",
-      cSettings: [.unsafeFlags(["-F", firebaseDirectory.path])],
+      dependencies: firebaseNames.map { .target(name: $0) },
+      // -fno-modules: textual #import of the plain ObjC headers. Importing the framework modules
+      // would pull in the per-slice *-Swift.h headers, which differ between device and simulator.
+      cSettings: [.unsafeFlags(["-F", firebaseSDK.appendingPathComponent("iphoneos").path, "-fno-modules"])],
       linkerSettings: [
-        .unsafeFlags(["-F", firebaseDirectory.path, "-Xlinker", "-ObjC"] + firebaseLinkFlags),
+        .unsafeFlags(["-Xlinker", "-ObjC"]),
         .linkedLibrary("sqlite3"), .linkedLibrary("z"), .linkedLibrary("c++"),
         .linkedFramework("SystemConfiguration"), .linkedFramework("Security")
       ]),
@@ -46,7 +48,6 @@ let package = Package(
         .product(name: "CMPV", package: "MediaKit"),
       ],
       resources: [.copy("Notices"), .copy("UpscaleAssets")],
-      swiftSettings: developmentFlags,
-      linkerSettings: sdkLinkFlags)
+      swiftSettings: developmentFlags)
   ]
 )

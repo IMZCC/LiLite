@@ -4,7 +4,10 @@ set -euo pipefail
 version=9.0.2
 sha=8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e
 mode=${1:-ios}
-case "$mode" in ios|host) ;; *) echo 'usage: build-ffmpeg.sh ios|host' >&2;exit 2;; esac
+case "$mode" in ios|iossim|host) ;; *) echo 'usage: build-ffmpeg.sh ios|iossim|host' >&2;exit 2;; esac
+# iossim: arm64 iOS Simulator build of the same configuration (macOS host only).
+sdkname=iphoneos; triple=arm64-apple-ios17.0
+if [[ "$mode" == iossim ]];then sdkname=iphonesimulator; triple=arm64-apple-ios17.0-simulator; fi
 base="${PILI_MEDIA_CACHE:-$HOME/.cache/piliplus-native/tools/ffmpeg-$version}"
 mkdir -p "$base/download"
 # Keep configure, make and install paired when verification and IPA packaging use one cache.
@@ -43,12 +46,12 @@ config=(--disable-everything --disable-autodetect --enable-network --disable-doc
  --enable-static --disable-shared --enable-pic --disable-iconv --enable-zlib --disable-bzlib --disable-lzma
  --enable-libdav1d --enable-decoder=h264,hevc,vp9,libdav1d,aac,alac,flac,opus,mp3,ac3,eac3,ass,ssa,subrip,webvtt,png,mjpeg --enable-demuxer=flv,mov,mpegts,aac,mp3,ac3,eac3,hls,matroska,ogg,flac,ass,srt,webvtt --enable-muxer=hls,mp4,mpegts,image2 --enable-protocol=file,http,https,tcp,tls,crypto,data --enable-bsf=aac_adtstoasc,extract_extradata,h264_mp4toannexb
  --enable-parser=h264,hevc,aac,av1,vp9,mpegaudio,ac3,opus --pkg-config-flags=--static --extra-cflags="-I$dav/include" --extra-ldflags="-L$dav/lib")
-if [[ "$mode" == ios ]];then
+if [[ "$mode" == ios || "$mode" == iossim ]];then
   config+=(--enable-securetransport)
-  if [[ $(uname -s) == Darwin ]];then sdk=$(xcrun --sdk iphoneos --show-sdk-path);cc=$(xcrun -f clang);ar=$(xcrun -f ar);nm=$(xcrun -f nm);ranlib=$(xcrun -f ranlib)
+  if [[ $(uname -s) == Darwin ]];then sdk=$(xcrun --sdk $sdkname --show-sdk-path);cc=$(xcrun -f clang);ar=$(xcrun -f ar);nm=$(xcrun -f nm);ranlib=$(xcrun -f ranlib)
   else sdk="${PILI_IOS_SDK:-$HOME/.swiftpm/swift-sdks/darwin.artifactbundle/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk}";cc=$(command -v clang);ar=$(command -v llvm-ar);nm=$(command -v llvm-nm);ranlib=$(command -v llvm-ranlib);fi
   [[ -d "$sdk/usr/include" ]] || { echo "iOS SDK not found: $sdk" >&2;exit 1; }
-  config+=(--enable-videotoolbox --enable-decoder=av1 --enable-hwaccel=h264_videotoolbox,hevc_videotoolbox,vp9_videotoolbox,av1_videotoolbox --enable-encoder=h264_videotoolbox,hevc_videotoolbox --enable-cross-compile --target-os=darwin --arch=aarch64 --cpu=generic --cc="$cc" --ar="$ar" --nm="$nm" --ranlib="$ranlib" --sysroot="$sdk" --extra-cflags="-target arm64-apple-ios17.0" --extra-ldflags="-target arm64-apple-ios17.0")
+  config+=(--enable-videotoolbox --enable-decoder=av1 --enable-hwaccel=h264_videotoolbox,hevc_videotoolbox,vp9_videotoolbox,av1_videotoolbox --enable-encoder=h264_videotoolbox,hevc_videotoolbox --enable-cross-compile --target-os=darwin --arch=aarch64 --cpu=generic --cc="$cc" --ar="$ar" --nm="$nm" --ranlib="$ranlib" --sysroot="$sdk" --extra-cflags="-target $triple" --extra-ldflags="-target $triple")
   if [[ $(uname -s) != Darwin ]];then
     iosld="${PILI_IOS_LINKER:-$HOME/.swiftpm/swift-sdks/darwin.artifactbundle/toolset/bin/ld64.lld}"
     sdkversion=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["Version"])' "$sdk/SDKSettings.json")

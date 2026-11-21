@@ -3,7 +3,10 @@ set -euo pipefail
 version=1.5.4
 digest=686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5
 mode=${1:-ios}
-case "$mode" in ios|host) ;; *) exit 2;; esac
+case "$mode" in ios|iossim|host) ;; *) exit 2;; esac
+# iossim: arm64 iOS Simulator build of the same recipe (macOS host only).
+sdkname=iphoneos; triple=arm64-apple-ios17.0
+if [[ "$mode" == iossim ]]; then sdkname=iphonesimulator; triple=arm64-apple-ios17.0-simulator; fi
 base="${PILI_DECODER_CACHE:-$HOME/.cache/piliplus-native/tools/decoder-build}"
 mkdir -p "$base"
 archive="$base/dav1d-$version.tar.xz"
@@ -27,8 +30,8 @@ if [[ ! -f "$out/.ready" ]]; then
   for tool in meson ninja; do command -v "$tool" >/dev/null || { echo "Install Meson and Ninja to rebuild dav1d" >&2; exit 1; }; done
   mkdir -p "$out/vendor"
   options=(-Ddefault_library=static -Db_staticpic=true -Denable_tests=false -Denable_tools=false -Denable_examples=false -Denable_docs=false -Dbuildtype=release --libdir=lib --prefix="$out/vendor")
-  if [[ "$mode" == ios ]]; then
-    if [[ $(uname -s) == Darwin ]]; then sdk=$(xcrun --sdk iphoneos --show-sdk-path); cc=$(xcrun -f clang); ar=$(xcrun -f ar); strip=$(xcrun -f strip); ldargs=''
+  if [[ "$mode" == ios || "$mode" == iossim ]]; then
+    if [[ $(uname -s) == Darwin ]]; then sdk=$(xcrun --sdk $sdkname --show-sdk-path); cc=$(xcrun -f clang); ar=$(xcrun -f ar); strip=$(xcrun -f strip); ldargs=''
     else sdk="${PILI_IOS_SDK:-$HOME/.swiftpm/swift-sdks/darwin.artifactbundle/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk}"; cc=$(command -v clang); ar=$(command -v llvm-ar); strip=$(command -v llvm-strip || command -v true)
       linker="${PILI_IOS_LINKER:-$HOME/.swiftpm/swift-sdks/darwin.artifactbundle/toolset/bin/ld64.lld}"
       sdkversion=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["Version"])' "$sdk/SDKSettings.json")
@@ -47,8 +50,8 @@ endian = 'little'
 [properties]
 needs_exe_wrapper = true
 [built-in options]
-c_args = ['-target','arm64-apple-ios17.0','-isysroot','$sdk']
-c_link_args = ['-target','arm64-apple-ios17.0','-isysroot','$sdk'$ldargs]
+c_args = ['-target','$triple','-isysroot','$sdk']
+c_link_args = ['-target','$triple','-isysroot','$sdk'$ldargs]
 EOF
     options+=(--cross-file "$out/cross.ini")
   elif ! command -v nasm >/dev/null; then options+=(-Denable_asm=false); fi

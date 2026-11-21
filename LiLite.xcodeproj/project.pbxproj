@@ -1,0 +1,330 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1A1000000000000000000B01 /* AppTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A1000000000000000000F01 /* AppTarget.swift */; };
+		1A1000000000000000000B02 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A1000000000000000000F02 /* Assets.xcassets */; };
+		1A1000000000000000000B03 /* PiliNative in Frameworks */ = {isa = PBXBuildFile; productRef = 1A1000000000000000000D01 /* PiliNative */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1A1000000000000000000F01 /* AppTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTarget.swift; sourceTree = "<group>"; };
+		1A1000000000000000000F02 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1A1000000000000000000F03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1A1000000000000000000F04 /* PiliPlus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PiliPlus.entitlements; sourceTree = "<group>"; };
+		1A1000000000000000000F05 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		1A1000000000000000000F06 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		1A1000000000000000000F07 /* build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build.sh; sourceTree = "<group>"; };
+		1A1000000000000000000F10 /* PiliNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PiliNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1A1000000000000000000902 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A1000000000000000000B03 /* PiliNative in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1A1000000000000000000800 = {
+			isa = PBXGroup;
+			children = (
+				1A1000000000000000000F06 /* Package.swift */,
+				1A1000000000000000000F07 /* build.sh */,
+				1A1000000000000000000801 /* App */,
+				1A1000000000000000000802 /* Resources */,
+				1A1000000000000000000803 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1A1000000000000000000801 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				1A1000000000000000000F01 /* AppTarget.swift */,
+				1A1000000000000000000F02 /* Assets.xcassets */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		1A1000000000000000000802 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1A1000000000000000000F03 /* Info.plist */,
+				1A1000000000000000000F04 /* PiliPlus.entitlements */,
+				1A1000000000000000000F05 /* GoogleService-Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		1A1000000000000000000803 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1A1000000000000000000F10 /* PiliNative.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1A1000000000000000000701 /* LiLite */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1A1000000000000000000402 /* Build configuration list for PBXNativeTarget "LiLite" */;
+			buildPhases = (
+				1A1000000000000000000901 /* Sources */,
+				1A1000000000000000000902 /* Frameworks */,
+				1A1000000000000000000903 /* Resources */,
+				1A1000000000000000000904 /* Embed Firebase resources */,
+				1A1000000000000000000905 /* Stamp build info */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiLite;
+			packageProductDependencies = (
+				1A1000000000000000000D01 /* PiliNative */,
+			);
+			productName = PiliNative;
+			productReference = 1A1000000000000000000F10 /* PiliNative.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1A1000000000000000000600 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2710;
+				LastUpgradeCheck = 2710;
+				TargetAttributes = {
+					1A1000000000000000000701 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+				};
+			};
+			buildConfigurationList = 1A1000000000000000000401 /* Build configuration list for PBXProject "LiLite" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				"zh-Hans",
+				en,
+			);
+			mainGroup = 1A1000000000000000000800;
+			packageReferences = (
+				1A1000000000000000000501 /* XCLocalSwiftPackageReference "." */,
+			);
+			productRefGroup = 1A1000000000000000000803 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1A1000000000000000000701 /* LiLite */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1A1000000000000000000903 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A1000000000000000000B02 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		1A1000000000000000000904 /* Embed Firebase resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed Firebase resources";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\n# Tools/firebase_sdk.py stages FirebaseSDK/ (run ./build.sh --prepare once).\nsdk=\"$SRCROOT/FirebaseSDK\"\nif [[ ! -f \"$sdk/GoogleService-Info.plist\" ]]; then\n  echo \"error: FirebaseSDK is not staged; run ./build.sh --prepare\" >&2\n  exit 1\nfi\ndst=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nfor bundle in \"$sdk/$PLATFORM_NAME\"/*.framework/*.bundle; do\n  rsync -a --delete \"$bundle\" \"$dst/\"\ndone\ncp \"$sdk/Firebase-NOTICES.txt\" \"$sdk/GoogleService-Info.plist\" \"$dst/\"\n";
+		};
+		1A1000000000000000000905 /* Stamp build info */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Stamp build info";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\nsource_plist=\"$INFOPLIST_FILE\"\n[[ $source_plist == /* ]] || source_plist=\"$SRCROOT/$source_plist\"\n/usr/bin/python3 \"$SRCROOT/Tools/build_stamp.py\" --root \"$SRCROOT\" --plist \"$TARGET_BUILD_DIR/$INFOPLIST_PATH\" --source \"$source_plist\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1A1000000000000000000901 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A1000000000000000000B01 /* AppTarget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1A1000000000000000000C01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		1A1000000000000000000C02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		1A1000000000000000000C03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/PiliPlus.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.liuliuya.PiliNative;
+				PRODUCT_MODULE_NAME = LiLiteApp;
+				PRODUCT_NAME = PiliNative;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1A1000000000000000000C04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/PiliPlus.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.liuliuya.PiliNative;
+				PRODUCT_MODULE_NAME = LiLiteApp;
+				PRODUCT_NAME = PiliNative;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1A1000000000000000000401 /* Build configuration list for PBXProject "LiLite" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A1000000000000000000C01 /* Debug */,
+				1A1000000000000000000C02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1A1000000000000000000402 /* Build configuration list for PBXNativeTarget "LiLite" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A1000000000000000000C03 /* Debug */,
+				1A1000000000000000000C04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		1A1000000000000000000501 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1A1000000000000000000D01 /* PiliNative */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PiliNative;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 1A1000000000000000000600 /* Project object */;
+}

@@ -1,5 +1,0 @@
-version: 1
-bundleID: com.liuliuya.PiliNative
-infoPath: Resources/Info.plist
-entitlementsPath: Resources/PiliPlus.entitlements
-iconPath: Resources/AppIcon.png

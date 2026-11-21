@@ -67,20 +67,21 @@
 
 ## 构建
 
-构建在 Windows 的 WSL 中完成，不需要 Mac：
+在 macOS 上用 Xcode 原生构建：
 
-- WSL 发行版 `SwiftUI-Noble`
-- Swift 6.4 与 Darwin iPhoneOS SDK
-- [xtool](https://github.com/xtool-org/xtool) 1.24
+- Xcode 27 与 iPhoneOS SDK
+- 用于编译 FFmpeg、libass、mpv 的 Meson、Ninja 和 pkg-config（需在 `PATH` 或 `~/.local/bin` 中），libplacebo 还需要 Python 的 jinja2
 
 在仓库根目录运行：
 
 | 命令 | 作用 |
 |---|---|
-| `build.cmd` | 调试构建，输出 `dist/PiliNative.ipa` |
-| `build.cmd --release-personal` | 使用个人签名权限的 Release 未签名 IPA |
-| `build.cmd --sign-personal` | 用本机开发者身份签名 |
-| `build.cmd --release` | 带 SSDP 组播能力的 Release 未签名 IPA |
+| `./build.sh --sim` | 为 iOS 模拟器构建调试版，安装到已启动的模拟器并打开（可用 `PILI_SIM` 指定设备） |
+| `./build.sh --prepare` | 编译真机与模拟器两套媒体依赖并准备 Firebase SDK，之后可直接用 Xcode 打开 `LiLite.xcodeproj` 运行 |
+| `./build.sh` | 调试构建，输出 `dist/PiliNative.ipa` |
+| `./build.sh --release-personal` | 使用个人签名权限的 Release 未签名 IPA |
+| `./build.sh --sign-personal` | 用 Xcode 中登录的开发者账号签名（需设置 `PILI_TEAM`） |
+| `./build.sh --release` | 带 SSDP 组播能力的 Release 未签名 IPA |
 
 首次构建会编译 FFmpeg、libass、mpv 等依赖，耗时较长；之后为增量构建。Apple 账号、令牌、证书和描述文件都不会进入仓库。
 

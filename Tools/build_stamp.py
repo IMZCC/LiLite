@@ -36,10 +36,14 @@ def revision(native, env):
         return subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
     except (OSError, subprocess.CalledProcessError): return None
 
-def stamp(native, dest, sdk=None, compiled_sdk=None):
+def stamp(native, dest, sdk=None, compiled_sdk=None, source=None):
     if compiled_sdk is not None and (sdk is None or sdk.resolve() != compiled_sdk.resolve()):
         raise ValueError("PILI_IOS_SDK differs from the SDK selected for Swift compilation")
     with dest.open("rb") as f: values=plistlib.load(f)
+    if source is not None:
+        # Xcode's generated Info.plist overrides some authored keys (version, development region);
+        # Resources/Info.plist stays the single source of truth for every key it declares.
+        with source.open("rb") as f: values.update(plistlib.load(f))
     rev=revision(native, os.environ)
     if rev: values["PiliNativeSourceRevision"]=rev
     else: values.pop("PiliNativeSourceRevision",None)
@@ -58,7 +62,8 @@ if __name__=="__main__":
     ap.add_argument("--sdk",type=Path)
     ap.add_argument("--compiled-sdk",type=Path)
     ap.add_argument("--print-sdk-version",action="store_true")
+    ap.add_argument("--source",type=Path,help="authored Info.plist whose keys override the processed one")
     args=ap.parse_args()
     if args.print_sdk_version and args.sdk is None: ap.error("--print-sdk-version requires --sdk")
-    version=stamp(args.root,args.plist,args.sdk,args.compiled_sdk)
+    version=stamp(args.root,args.plist,args.sdk,args.compiled_sdk,args.source)
     if args.print_sdk_version: print(version)
