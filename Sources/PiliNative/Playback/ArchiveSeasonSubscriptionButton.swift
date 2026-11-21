@@ -2,22 +2,53 @@ import SwiftUI
 
 struct ArchiveSeasonSubscriptionButton: View {
   let item: Int64?, catalog: Int64?, currentBV: String
+  /// The collection panel's capsule ("订阅" / "已订阅") rather than a list row.
+  var compact = false
   @EnvironmentObject private var accounts: AccountContext
   var body: some View {
     if let uid = accounts.state.active,
       let scope = ArchiveSeasonSubscription(
         item: item, catalog: catalog, bvid: currentBV, owner: uid)
     {
-      ButtonContent(scope: scope).id(uid + ":" + currentBV + ":" + String(scope.season))
+      ButtonContent(scope: scope, compact: compact).id(uid + ":" + currentBV + ":" + String(scope.season))
     }
   }
   private struct ButtonContent: View {
     let scope: ArchiveSeasonSubscription
+    let compact: Bool
     @EnvironmentObject private var accounts: AccountContext
     @State private var following: Bool?
     @State private var busy = false
     @State private var issue: String?
     var body: some View {
+      if compact { capsule } else { row }
+    }
+    private var capsule: some View {
+      let d = OfficialIntro.d
+      let on = following == true
+      return Button {
+        if let following { Task { await change(following) } } else { Task { await load() } }
+      } label: {
+        HStack(spacing: d(3)) {
+          if busy && following == nil {
+            ProgressView().controlSize(.mini)
+          } else {
+            Image(systemName: on ? "checkmark" : "plus").font(.system(size: d(10), weight: .bold))
+          }
+          Text(on ? "已订阅" : "订阅").font(OfficialIntro.font(12, .medium))
+        }
+        .foregroundStyle(on ? OfficialIntro.ga5 : Color.white)
+        .padding(.horizontal, d(10)).frame(height: d(26))
+        .background(on ? AnyShapeStyle(OfficialIntro.ga1) : AnyShapeStyle(Color.accentColor), in: Capsule())
+        .contentShape(Capsule())
+        .animation(.easeOut(duration: 0.15), value: on)
+      }
+      .buttonStyle(.plain)
+      .disabled(busy)
+      .accessibilityLabel(on ? "已订阅合集，轻点取消订阅" : (issue == nil ? "订阅合集" : "订阅状态加载失败，轻点重试"))
+      .task { await load() }
+    }
+    private var row: some View {
       VStack(alignment: .leading) {
         if let following {
           Button {

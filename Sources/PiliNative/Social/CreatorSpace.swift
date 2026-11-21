@@ -236,9 +236,10 @@ struct CreatorSpace: View {
         withAnimation(.smooth(duration: 0.32)) { paged = value }
       }
     }
-    // On the first section a swipe to the right anywhere goes Back; elsewhere only the edge does,
-    // and the rest of the width pages between sections.
-    .background { LeadingEdgeNavigation(fullWidth: current == list.first?.param).frame(width: 0, height: 0) }
+    // A swipe to the right anywhere goes Back, as the system's content swipe does: past the first
+    // section the pager takes it back a section first (it can still scroll back), and the header
+    // above the pager always goes Back.
+    .background { LeadingEdgeNavigation(fullWidth: true).frame(width: 0, height: 0) }
   }
 
   @ViewBuilder private func sectionPage(_ tab: CreatorSpaceRecord.Tab?, _ space: CreatorSpaceRecord, index: Int,

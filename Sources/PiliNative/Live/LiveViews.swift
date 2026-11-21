@@ -211,8 +211,12 @@ struct LivePlayer: View {
   @State private var matchStore: LiveMatchStore?
   /// 0 is 互动; the match tabs follow.
   @State private var roomTab = 0
+  /// The match tab under the picture in the wide layout (赛程 first).
+  @State private var sideMatchTab = 0
   /// Whether the fullscreen player shows its controls (the room's row follows them).
-  @State private var fullscreenControls = true
+  /// Whether the player shows its controls. A class read only by `LiveChromeFade`: the controls
+  /// come and go every few seconds and must not re-render the whole room (chat list included).
+  @State private var chrome = PlayerChromeVisibility()
   @Environment(\.dismiss) private var dismiss
   @State private var panelToken = UUID()
   @State private var showFacts = false
@@ -412,8 +416,7 @@ struct LivePlayer: View {
     .padding(.trailing, 8)
     .background(LinearGradient(colors: [.black.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom)
       .allowsHitTesting(false))
-    .opacity(fullscreenControls ? 1 : 0)
-    .animation(.easeOut(duration: 0.2), value: fullscreenControls)
+    .modifier(LiveChromeFade(chrome: chrome))
   }
   /// The room's secondary pages, each opened as a panel in the room (`LiveRoomPanelFrame`).
   private enum RoomPanel: Equatable { case actions, ranks, paid, paidSettings, shield, facts, sleep, chat }
@@ -651,17 +654,23 @@ struct LivePlayer: View {
   private var screen: some View {
     GeometryReader { geometry in
     let w = geometry.size.width, h = geometry.size.height
-    let pictureHeight = min(w * 9 / 16, max(80, h * 0.38))
-    let wide = h > 0 && w / h >= 1.2 && w >= 540
+    // A partly folded iPhone Duo: split at the hinge, as the video page does, so neither the
+    // picture nor a list runs across it.
+    let fold = enlarged ? nil : PlayerPageLayout.partition(width: w, height: h, fold: DeviceFold.division(in: geometry))
+    let gap = fold?.gap ?? 0
+    let tabletop = fold?.mode == .tabletop ? fold?.edge : nil
+    let pictureHeight = tabletop ?? min(w * 9 / 16, max(80, h * 0.45))
+    let wide = fold.map { $0.mode == .side } ?? (h > 0 && w / h >= 1.2 && w >= 540)
     // The chat column keeps room for its tabs and input bar (about 340 pt) on narrow wide windows
     // such as an open iPhone Duo; the picture takes the rest, up to two thirds.
-    let chatWidth = min(400, max(min(340, w * 0.42), w - min(0.66, max(0.56, h / w * 1.08)) * w))
-    let sideHeight = min((w - chatWidth) * 9 / 16, max(120, h - 96))
-    let portraitStream = h > w && streamSize.height > streamSize.width
+    let chatWidth = fold?.mode == .side ? max(1, w - fold!.edge - gap)
+      : min(400, max(min(340, w * 0.42), w - min(0.66, max(0.56, h / w * 1.08)) * w))
+    let sideHeight = min((w - chatWidth - gap) * 9 / 16, max(120, h - 96))
+    let portraitStream = tabletop == nil && h > w && streamSize.height > streamSize.width
     // Where the picture goes in each layout. The player itself is always the first child of the
     // same stack: moving it between branches rebuilt it, which undid entering fullscreen.
     let picture: CGSize = enlarged ? CGSize(width: w, height: h)
-      : wide ? CGSize(width: w - chatWidth, height: sideHeight)
+      : wide ? CGSize(width: w - chatWidth - gap, height: sideHeight)
       : portraitStream ? CGSize(width: w, height: max(1, h - 58))
       : CGSize(width: w, height: pictureHeight)
     let bottomInset = enlarged ? 0 : geometry.safeAreaInsets.bottom
@@ -673,22 +682,32 @@ struct LivePlayer: View {
       if enlarged {
         // Fullscreen: the picture takes the whole screen; the room's row lies over its top on a
         // shade and comes and goes with the player's controls.
-        if !locked && fullscreenControls {
-          fullscreenInfo.frame(width: w).transition(.opacity)
+        if !locked {
+          fullscreenInfo.frame(width: w).modifier(LiveChromeFade(chrome: chrome))
         }
       } else if wide {
         HStack(alignment: .top, spacing: 0) {
           VStack(alignment: .leading, spacing: 0) {
             playerTopBar.frame(height: picture.height, alignment: .top)
             anchorBar
-            Spacer(minLength: 0)
+            // Wide, a match room's 赛程 · 回放 · 选手评分 fill the space under the picture and the
+            // column beside it keeps the chat.
+            if let matchStore {
+              LiveRoomTabs(titles: LiveMatchTab.allCases.map(\.rawValue), selected: $sideMatchTab)
+              LiveMatchPane(store: matchStore, tab: LiveMatchTab.allCases[min(sideMatchTab, LiveMatchTab.allCases.count - 1)]) {
+                transport.player?.pause()
+              }
+              .frame(maxHeight: .infinity)
+            } else {
+              Spacer(minLength: 0)
+            }
           }.frame(width: picture.width)
-          Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5)
+          if gap > 0 { Color.clear.frame(width: gap) } else { Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5) }
           VStack(spacing: 0) {
-            roomBody
+            chatFeed(bubbles: false)
             bottomBar
           }
-          .frame(width: chatWidth - 0.5).frame(maxHeight: .infinity)
+          .frame(width: chatWidth - (gap > 0 ? 0 : 0.5)).frame(maxHeight: .infinity)
         }
       } else if portraitStream {
         // A portrait stream: the picture fills the page, chat over its lower third, 55 pt left
@@ -712,6 +731,7 @@ struct LivePlayer: View {
         // The official room: picture, anchor, the room's tabs, their page and the input bar.
         VStack(spacing: 0) {
           playerTopBar.frame(height: picture.height, alignment: .top)
+          if gap > 0 { Color.clear.frame(height: gap) }
           anchorBar
           if matchStore == nil { Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5) }
           roomBody
@@ -722,14 +742,14 @@ struct LivePlayer: View {
       if enlarged, keyboardChat, let room = identity?.room_id {
         composerBar(room: room).frame(width: w).frame(maxHeight: .infinity, alignment: .bottom)
       }
-      panelLayer(w: w, h: h + bottomInset, picture: picture, wide: wide, portraitStream: portraitStream)
+      panelLayer(w: w, h: h + bottomInset, picture: CGSize(width: picture.width + (wide ? gap : 0), height: picture.height + (wide ? 0 : gap)),
+        wide: wide, portraitStream: portraitStream)
     }
-    .animation(.easeOut(duration: 0.2), value: fullscreenControls)
     .animation(.snappy(duration: 0.3), value: roomPanel)
     .animation(.snappy(duration: 0.25), value: keyboardChat)
     .frame(width: w, height: h)
-    .onPreferenceChange(PlayerControlsVisibleKey.self) { shown in
-      if fullscreenControls != shown { fullscreenControls = shown }
+    .onPreferenceChange(PlayerControlsVisibleKey.self) { [chrome] shown in
+      if chrome.shown != shown { chrome.shown = shown }
     }
     // The status bar over the picture stays black, as in the official room.
     .background(alignment: .top) {
@@ -748,6 +768,13 @@ struct LivePlayer: View {
     }.onChange(of:allowLock){ _,on in if !on {locked=false} }
       .onChange(of:enlarged){ _,on in if !on{locked=false} }
       .modifier(PlaybackEdgeInsets(fullscreen: enlarged))
+      // The hidden bar takes the system's back swipes with it: the room brings its own, across
+      // the whole page (a live picture has no seeking to keep sideways drags for). Fullscreen
+      // leaves by its own controls, never by a swipe that drops the room.
+      .background {
+        LeadingEdgeNavigation(fullWidth: !enlarged).frame(width: 0, height: 0)
+        NavigationPopBlock(active: enlarged).frame(width: 0, height: 0)
+      }
       .toolbar(enlarged ? .hidden : .automatic, for: .tabBar)
       // The bar sits on the room's dark backdrop.
       .toolbarBackground(.hidden, for: .navigationBar)
@@ -888,5 +915,18 @@ struct LivePlayer: View {
   }
   private func qualityName(_ q: Int) -> String {
     PlaybackOption.liveName(q)
+  }
+}
+
+/// Shows the room's rows over the picture only while the player shows its controls. Its own view,
+/// so only it re-renders when they toggle.
+private struct LiveChromeFade: ViewModifier {
+  let chrome: PlayerChromeVisibility
+  func body(content: Content) -> some View {
+    let shown = chrome.shown
+    content
+      .opacity(shown ? 1 : 0)
+      .allowsHitTesting(shown)
+      .animation(.easeOut(duration: 0.2), value: shown)
   }
 }

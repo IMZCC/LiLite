@@ -13,13 +13,17 @@ enum LaunchWarmup {
     "hand.thumbsup", "hand.thumbsup.fill", "hand.thumbsdown", "bubble.left", "text.bubble",
     "arrowshape.turn.up.right", "chevron.right", "chevron.down", "person.crop.circle.fill",
     "heart", "heart.fill", "square.and.pencil", "arrow.clockwise", "play.fill", "pause.fill",
-    "arrow.left", "house", "headphones", "airplayvideo", "pip.enter", "list.bullet",
+    "arrow.left", "headphones", "airplayvideo", "pip.enter", "list.bullet",
     "arrow.up.left.and.arrow.down.right", "checkmark.circle.fill", "eye.slash.fill",
     // 我的: shortcuts and the library / social / account rows.
     "doc.text.fill", "graduationcap.fill", "play.rectangle.fill", "rectangle.stack.fill",
     "bubble.left.and.bubble.right.fill", "text.bubble.fill", "person.2.fill", "iphone.gen3", "key.fill",
     "hand.raised.fill", "bitcoinsign.circle.fill", "chart.line.uptrend.xyaxis", "location.fill",
     "gearshape.fill", "person.crop.circle.badge.xmark", "circle.circle", "folder.badge.plus",
+    // A card's long-press menu: its items are made, glyphs and all, as the finger goes down on
+    // the card, so a cold glyph there delays the tap that opens the video (~45 ms measured).
+    "doc.on.doc", "person.crop.circle", "text.quote", "person.slash", "photo",
+    "square.and.arrow.down", "clock",
   ]
   /// Point sizes the symbols are drawn at (rows, shortcuts, cards).
   private static let symbolSizes: [(CGFloat, UIImage.SymbolWeight)] = [(16, .semibold), (19, .semibold), (17, .medium), (13, .regular)]

@@ -206,14 +206,19 @@ struct LiveMatchPane: View {
             .disabled(store.loading).listRowBackground(Color.clear)
         }
         ForEach(store.days, id: \.day) { day in
-          Section(day.day.formatted(.dateTime.month().day().weekday(.abbreviated))) {
-            ForEach(day.rows) { row in
-              NavigationLink { MatchDetailView(id: row.id).onAppear(perform: pauseLive) } label: {
-                EsportsContestRow(contest: row, current: row.id == store.contest.id)
-              }
-              .id(row.id)
-              .listRowBackground(row.id == store.contest.id ? Color.white.opacity(0.06) : Color.clear)
+          // The day as a quiet line in the list (a pinned header drew a band over the room).
+          Text(day.day.formatted(.dateTime.month().day().weekday(.abbreviated)))
+            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            .padding(.top, 6)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+          ForEach(day.rows) { row in
+            NavigationLink { MatchDetailView(id: row.id).onAppear(perform: pauseLive) } label: {
+              EsportsContestRow(contest: row, current: row.id == store.contest.id)
             }
+            .id(row.id)
+            .listRowBackground(row.id == store.contest.id ? Color.white.opacity(0.06) : Color.clear)
+            .listRowSeparatorTint(.white.opacity(0.08))
           }
         }
         if store.later != nil {
@@ -346,11 +351,17 @@ private struct EsportsGradeBoard: View {
         PageFailure(message: issue) { Task { await load() } }.listRowBackground(Color.clear)
       }
       ForEach(grades?.teams ?? []) { team in
-        Section(team.name ?? "") {
-          if team.players.isEmpty { Text("暂无评分").foregroundStyle(.secondary) }
-          ForEach(team.players) { player in EsportsPlayerRow(player: player) }
+        HStack(spacing: 8) {
+          SiteThumbnail(url: EsportsContest.image(team.logo)) { $0.resizable().scaledToFit() } placeholder: { Color.clear }
+            .frame(width: 20, height: 20).accessibilityHidden(true)
+          Text(team.name ?? "").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
         }
-        .listRowBackground(Color.clear)
+        .padding(.top, 6)
+        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+        if team.players.isEmpty { Text("暂无评分").foregroundStyle(.secondary).listRowBackground(Color.clear) }
+        ForEach(team.players) { player in
+          EsportsPlayerRow(player: player).listRowBackground(Color.clear).listRowSeparatorTint(.white.opacity(0.08))
+        }
       }
       if loading && grades == nil { ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear) }
     }

@@ -82,6 +82,8 @@ import UIKit
     transition.direction = rtl ? -1 : 1
     return transition
   }
+  /// How far a finger travels to fold a page all the way into its card.
+  static func dragSpan(_ width: CGFloat) -> CGFloat { max(1, min(width, 600)) }
   /// A page is still opening: a swipe back waits for it (a tap on Back turns it round at once).
   static var busy: Bool { opening != nil }
   private static let systemPages = NSHashTable<UIViewController>.weakObjects()
@@ -473,7 +475,26 @@ private struct ZoomSpring {
     else { return 0 }
     return CGFloat(value.doubleValue)
   }
-  private static func key(_ size: CGSize) -> String { "\(Int(size.width))x\(Int(size.height))" }
+  /// A page size, and the fold's position: an open Duo flat and half-open are the same size but
+  /// lay the video page out differently.
+  private static func key(_ size: CGSize) -> String {
+    let fold = WindowCanvas.shared.fold.map {
+      "|\(Int($0.minX)),\(Int($0.minY)),\(Int($0.width)),\(Int($0.height))"
+    } ?? ""
+    return "\(Int(size.width))x\(Int(size.height))" + fold
+  }
+  /// Where a video page of this size will put its player (see `PlayerPageLayout.expectedPlayer`).
+  private lazy var expected: CGRect = {
+    let defaults = UserDefaults.standard
+    let window = stage.window
+    let top = defaults.bool(forKey: "player.edgeToEdge") ? 0 : (window?.safeAreaInsets.top ?? 0)
+    let horizontal = (defaults.object(forKey: "layout.horizontal") as? Bool) ?? WindowCanvas.shared.large
+    let fold = WindowCanvas.shared.fold.map { stage.convert($0, from: nil).offsetBy(dx: -home.minX, dy: -home.minY) }
+    return PlayerPageLayout.expectedPlayer(
+      page: home.size, topInset: top, bottomInset: window?.safeAreaInsets.bottom ?? 0, fold: fold,
+      horizontal: horizontal
+    ).offsetBy(dx: home.minX, dy: home.minY)
+  }()
   private static func count(_ view: UIView, upTo limit: Int) -> Int {
     var total = 1
     for sub in view.subviews where total < limit { total += count(sub, upTo: limit - total) }
@@ -492,12 +513,10 @@ private struct ZoomSpring {
     return Self.count(page, upTo: 9) >= 9
   }
   /// Where the card's picture lands on the page: the marked hero, where the last page of this
-  /// size had its hero while this one is still being built, or else a strip of the picture's
-  /// shape across the top of the page.
+  /// size had its hero while this one is still being built, or else where a video page of this
+  /// size puts its player (most cards open one; on a phone that is a strip across the top).
   func landing(for cover: CGRect) -> CGRect {
-    marked ?? CardZoom.heroes[Self.key(home.size)] ?? CGRect(
-      x: home.minX, y: home.minY, width: home.width,
-      height: min(home.height, home.width * cover.height / max(1, cover.width)))
+    marked ?? CardZoom.heroes[Self.key(home.size)] ?? expected
   }
   /// Where the card's picture comes to rest while the page opens: on the hero, and up to the
   /// page's top edge when only a strip (the status bar's) lies above it, so the sheet shows no
@@ -529,7 +548,9 @@ private struct ZoomSpring {
   /// the screen's edges.
   func dragPose(_ translation: CGPoint, touch: CGPoint, direction: CGFloat) -> (pose: ZoomPose, progress: CGFloat) {
     let along = max(0, translation.x * direction)
-    let progress = min(1, along / max(1, home.width))
+    // Measured against a phone's reach, not the page's width: on an iPad or an open Duo the page
+    // shrinks under the finger as fast as on a phone, instead of barely moving for a long swipe.
+    let progress = min(1, along / CardZoom.dragSpan(home.width))
     let k = max(0.4, 1 - 0.85 * progress)
     let rise = min(1, progress / 0.12)
     let map = CGAffineTransform(

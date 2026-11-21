@@ -26,7 +26,27 @@ struct NavigationTabBarProbe: UIViewControllerRepresentable {
     }
     override func viewWillAppear(_ animated: Bool) { super.viewWillAppear(animated); observe() }
     override func viewWillDisappear(_ animated: Bool) { super.viewWillDisappear(animated); observe() }
-    override func viewDidAppear(_ animated: Bool) { super.viewDidAppear(animated); settle() }
+    override func viewDidAppear(_ animated: Bool) {
+      super.viewDidAppear(animated)
+      settle()
+      if let nav = navigationController, let root = nav.viewControllers.first, nav.topViewController === root {
+        _ = shelf(on: root)
+      }
+    }
+    /// A plain view on the root page that holds the bar's picture. SwiftUI's hosting view logs a
+    /// fault, with a backtrace, for every subview added to it directly (52 ms on the main thread
+    /// at the start of a swipe back): the shelf is added once while the page is at rest.
+    private weak var shelfView: UIView?
+    private func shelf(on root: UIViewController) -> UIView? {
+      guard let page = root.viewIfLoaded else { return nil }
+      if let shelfView, shelfView.superview === page { return shelfView }
+      let shelf = UIView(frame: .zero)
+      shelf.isUserInteractionEnabled = false
+      shelf.accessibilityElementsHidden = true
+      page.addSubview(shelf)
+      shelfView = shelf
+      return shelf
+    }
 
     private func observe() {
       guard let nav = navigationController, let tabs = nav.tabBarController,
@@ -133,10 +153,14 @@ struct NavigationTabBarProbe: UIViewControllerRepresentable {
     }
     /// Puts the picture on the root page, where the bar sits once the page is in place.
     private func pinGhost(on root: UIViewController, nav: UINavigationController, tabs: UITabBarController) -> UIView? {
-      guard let ghost, ghost.size == tabs.view.bounds.size, let page = root.viewIfLoaded else { return nil }
+      guard let ghost, ghost.size == tabs.view.bounds.size, let page = root.viewIfLoaded,
+        let shelf = shelf(on: root) else { return nil }
+      // Above the page's own content, which SwiftUI may have added since.
+      page.bringSubviewToFront(shelf)
+      shelf.frame = CGRect(origin: .zero, size: .zero)
       let origin = tabs.view.convert(CGPoint.zero, from: nav.view)
       ghost.view.frame = ghost.frame.offsetBy(dx: -origin.x, dy: -origin.y)
-      page.addSubview(ghost.view)
+      shelf.addSubview(ghost.view)
       return ghost.view
     }
     private func settle() {

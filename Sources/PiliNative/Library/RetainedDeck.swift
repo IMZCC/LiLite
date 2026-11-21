@@ -124,7 +124,9 @@ struct RetainedDeck<Choice:Hashable,Content:View>:View {
           var still = Transaction(); still.disablesAnimations = true
           withTransaction(still) { proxy.scrollTo(selection, anchor: .leading) }
         }
-        .background { LeadingEdgeNavigation(fullWidth: selection == choices.first).frame(width: 0, height: 0) }
+        // Back from anywhere: past the first page the pager, which can still scroll back, takes
+        // the swipe first.
+        .background { LeadingEdgeNavigation(fullWidth: true).frame(width: 0, height: 0) }
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(.paging)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)

@@ -93,10 +93,12 @@ private struct GestureCanvas:View{
             }
           }
           .onLongPressGesture(
-            // The official client's long-press timeout.
-            minimumDuration: 0.40, maximumDistance: 15,
+            // The official client's (BBPlayerGestureService, 8.89): 0.25 s, within UIKit's default
+            // 10 pt; a finger that travels farther first is a slide instead.
+            minimumDuration: 0.25, maximumDistance: PlayerSlide.decisionDistance,
             perform: {
-              if model.ready && model.playing {
+              // A finger already sliding (seek, brightness, volume) keeps sliding.
+              if model.ready && model.playing && axis == nil {
                 TouchFeedback.light()
                 boost = true
                 boostedItem = model.player.playbackItem
@@ -121,8 +123,17 @@ private struct GestureCanvas:View{
                 feedback = nil
                 return
               }
+              // Holding for double speed owns the touch until the finger lifts: moving it while
+              // held never turns into a seek, as in the official client.
+              if boost {
+                if start != nil || axis != nil { start = nil; axis = nil; scrub = nil; levelTracker = nil; level = nil }
+                return
+              }
               let dx = v.translation.width, dy = v.translation.height
               if axis == nil {
+                // A resting finger trembles a few points: the direction is only read once it has
+                // really moved.
+                guard hypot(dx, dy) >= PlayerSlide.decisionDistance else { return }
                 axis = PlayerSlide.axis(dx: dx, dy: dy, x: v.startLocation.x, width: g.size.width, levels: slide, screen: screenSwipe)
               }
               guard let axis else { return }

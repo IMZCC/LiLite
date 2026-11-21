@@ -14,6 +14,10 @@ import UIKit
   private(set) var large: Bool
   /// Wider than tall; stored apart for the same reason as `large`.
   private(set) var landscape: Bool
+  /// The fold's division in window coordinates while the device stands partly folded (see
+  /// `DeviceFold`). Read by UIKit code (一镜到底's landing), so no view observes it.
+  @ObservationIgnored private(set) var fold: CGRect?
+  func updateFold(_ next: CGRect?) { if next != fold { fold = next } }
   private init() {
     let initial = WindowCanvas.keyWindowSize ?? CGSize(width: 390, height: 844)
     size = initial
@@ -51,7 +55,18 @@ private struct WindowCanvasProbe: ViewModifier {
   func body(content: Content) -> some View {
     content.background {
       Color.clear.ignoresSafeArea()
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { WindowCanvas.shared.update($0) }
+        // The whole window, safe areas included: on an iPhone Duo the status area moves between
+        // the side and the top as pages change, and measuring inside it made the open Duo
+        // (951×669) read as a 951×553 phone on the video page, which then fell back to the
+        // phone's stacked layout.
+        .onGeometryChange(for: CGSize.self) { g in
+          let inset = g.safeAreaInsets
+          return CGSize(width: g.size.width + inset.leading + inset.trailing,
+            height: g.size.height + inset.top + inset.bottom)
+        } action: { WindowCanvas.shared.update($0) }
+        .onGeometryChange(for: CGRect?.self) { DeviceFold.division(in: $0) } action: {
+          WindowCanvas.shared.updateFold($0)
+        }
         .allowsHitTesting(false).accessibilityHidden(true)
     }
   }

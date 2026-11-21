@@ -327,7 +327,13 @@ struct EpisodePlayer: View {
         guard accounts.state.active != nil, episode.cid > 0 else { return }
         withAnimation(.snappy(duration: 0.25)) { composeBullet = true }
       } label: {
-        Text("点我发弹幕").font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
+        // Shortened rather than cut off when a narrow column leaves it little room.
+        ViewThatFits(in: .horizontal) {
+          Text("点我发弹幕").fixedSize()
+          Text("发弹幕").fixedSize()
+          Image(systemName: "pencil.line").accessibilityLabel("发弹幕")
+        }
+        .font(.system(size: 13)).foregroundStyle(.secondary)
           .padding(.leading, 14).padding(.trailing, 10).frame(height: 30)
           .contentShape(Rectangle())
       }.buttonStyle(.plain).disabled(accounts.state.active == nil || episode.cid <= 0)

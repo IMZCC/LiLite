@@ -82,6 +82,9 @@ struct PlaybackTabBar<Accessory: View>: View {
             .anchorPreference(key: TabBounds.self, value: .bounds) { [item.id: $0] }
         }
       }
+      // The titles keep their width; in a narrow column it is the trailing accessory that gives way.
+      .fixedSize(horizontal: true, vertical: false)
+      .layoutPriority(1)
       .overlayPreferenceValue(TabBounds.self) { anchors in
         GeometryReader { g in
           let lower = Int(position), upper = min(lower + 1, items.count - 1)
@@ -235,8 +238,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       wantsList = false
     }
   }
-  /// The original header's left side: back, then home. Drawn here (not in the player) so it is
-  /// there before the video is ready too.
+  /// The original header's left side: back. Drawn here (not in the player) so it is there before
+  /// the video is ready too.
   private var headerButtons: some View { PlayerPageHeaderButtons(chrome: chrome) }
   /// Sizes and tabs for one window size.
   private struct Plan {
@@ -304,6 +307,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .recordsInlinePlayerFrame(model.engine)
       .overlay(alignment: .topLeading) { headerButtons }
       .opacity(inlinePlayerCovered ? 0 : 1).background(.black)
+      .backSwipeExclusion()
       // The cover of the card that opened the page lands here (一镜到底).
       .cardZoomHero()
   }
@@ -493,8 +497,8 @@ private struct PageFrame: Equatable {
   var shown = true
 }
 
-/// Back and home over the player's corner, fading with the player's controls. Its own view, so
-/// only it re-renders when they toggle.
+/// Back over the player's corner, fading with the player's controls. Its own view, so only it
+/// re-renders when they toggle.
 private struct PlayerPageHeaderButtons: View {
   let chrome: PlayerChromeVisibility
   @Environment(\.dismiss) private var dismiss
@@ -509,7 +513,6 @@ private struct PlayerPageHeaderButtons: View {
         PlayerGlyph(symbol: "chevron.left", size: 20)
       }
       .accessibilityLabel("返回")
-      PlayerHomeButton()
     }
     .buttonStyle(PlayerPressStyle())
     .padding(.leading, 4).padding(.top, 4)

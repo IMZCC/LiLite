@@ -37,6 +37,8 @@ struct TheaterPanelPage: ViewModifier {
       .safeAreaInset(edge: .top, spacing: 0) {
         if let title { TheaterPanelHeader(title: title) }
       }
+      // A hidden bar turns off the stack's edge swipe: a page past the first goes back by its own.
+      .background { LeadingEdgeNavigation(fullWidth: true).frame(width: 0, height: 0) }
       .piliClearNavigationBackground()
   }
 }

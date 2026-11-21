@@ -52,7 +52,6 @@ struct DetailView: View {
   @State private var descendingParts = false
   @State private var reversedSections = Set<Int64>()
   /// The collection's episode panel (from IntroSeasonRow).
-  @State private var collectionOpen = false
   @AppStorage("play.reverseFirst") private var jumpOnReverse = true
   @State private var visited: [String] = []
   @State private var lastOpened: Int64?
@@ -442,19 +441,16 @@ struct DetailView: View {
       // UgcSimpleSeasonRow, right under the action row.
       if let detail, let cid, let catalog = detail.ugc_season, !(catalog.sections ?? []).isEmpty {
         let entries = (catalog.sections ?? []).flatMap { $0.episodes ?? [] }
-        IntroSeasonRow(title: catalog.title ?? "视频合集",
-          position: entries.firstIndex { $0.bvid == detail.bvid }.map { "\($0 + 1)/\(entries.count)" }) {
-            collectionOpen = true
-          }
-          .piliSheet(isPresented: $collectionOpen) {
-            ArchiveCollectionPanel(
-              catalog: catalog, current: detail.bvid, currentCID: cid, owner: detail.owner?.name,
-              canReverse: queueEnd == nil, subscriptionID: detail.season_id, reversed: $reversedSections,
-              play: { next, part in
-                if next.bvid == video.bvid { if let part { pickPart.wrappedValue = part } }
-                else { sidebarPart = part.map { (next.bvid, $0) }; following = next }
-              })
-          }
+        let play: (Video, Int64?) -> Void = { next, part in
+          if next.bvid == video.bvid { if let part { pickPart.wrappedValue = part } }
+          else { sidebarPart = part.map { (next.bvid, $0) }; following = next }
+        }
+        IntroCollectionEntry(
+          list: ArchiveCollectionList(
+            catalog: catalog, current: detail.bvid, currentCID: cid, owner: detail.owner?.name,
+            canReverse: queueEnd == nil, subscriptionID: detail.season_id, reversed: $reversedSections,
+            play: play, close: {}),
+          position: entries.firstIndex { $0.bvid == detail.bvid }.map { "\($0 + 1)/\(entries.count)" })
       }
       if let pages = detail?.pages, pages.count > 1 {
         ArchivePartStrip(pages: pages, current: cid, descending: descendingParts) { picked in
@@ -533,7 +529,13 @@ struct DetailView: View {
         bulletAt = model.seconds
         withAnimation(.snappy(duration: 0.25)) { composeBullet = true }
       } label: {
-        Text("点我发弹幕").font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
+        // Shortened rather than cut off when a narrow column leaves it little room.
+        ViewThatFits(in: .horizontal) {
+          Text("点我发弹幕").fixedSize()
+          Text("发弹幕").fixedSize()
+          Image(systemName: "pencil.line").accessibilityLabel("发弹幕")
+        }
+        .font(.system(size: 13)).foregroundStyle(.secondary)
           .padding(.leading, 14).padding(.trailing, 10).frame(height: 30)
           .contentShape(Rectangle())
       }.buttonStyle(.plain).disabled(accounts.state.active == nil || cid == nil)

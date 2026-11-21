@@ -33,6 +33,24 @@ extension EnvironmentValues {
   }
 }
 
+/// Closes the panel a view sits in: a pick in a panel's list (a collection's video) leaves it,
+/// as the original's panels do. Never `dismiss`, which would close the video page under it.
+struct ReplyPanelDismiss: Equatable {
+  let id: UUID
+  let action: @MainActor () -> Void
+  @MainActor func callAsFunction() { action() }
+  nonisolated static func == (a: Self, b: Self) -> Bool { a.id == b.id }
+}
+private struct ReplyPanelDismissKey: EnvironmentKey {
+  static let defaultValue: ReplyPanelDismiss? = nil
+}
+extension EnvironmentValues {
+  var replyPanelDismiss: ReplyPanelDismiss? {
+    get { self[ReplyPanelDismissKey.self] }
+    set { self[ReplyPanelDismissKey.self] = newValue }
+  }
+}
+
 struct ReplyPanelStack: View {
   @Binding var items: [ReplyPanelItem]
   var body: some View {
@@ -41,7 +59,7 @@ struct ReplyPanelStack: View {
         ReplyPanelChrome(title: item.title) {
           close(item.id)
         } content: {
-          item.content
+          item.content.environment(\.replyPanelDismiss, ReplyPanelDismiss(id: item.id) { close(item.id) })
         }
         .zIndex(Double(index))
         .transition(.move(edge: .bottom))

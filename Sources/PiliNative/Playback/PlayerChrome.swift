@@ -81,7 +81,6 @@ enum GlyphOptics {
   /// `PlayerGlyph`: symbols drawn at their font size.
   static func inline(_ symbol: String) -> CGFloat {
     switch symbol {
-    case "house": -1.2
     case "headphones": -0.6
     case "pip.enter", "pip.exit": -0.4
     case "airplayvideo": 0.5
@@ -286,19 +285,6 @@ struct PlayerMoreButton: View {
       PlayerGlyph(symbol: "ellipsis", size: 18).rotationEffect(.degrees(90))
     }
     .accessibilityLabel("更多设置")
-  }
-}
-
-/// "返回主页": closes every page back to the home tab.
-struct PlayerHomeButton: View {
-  var body: some View {
-    Button {
-      TouchFeedback.light()
-      NotificationCenter.default.post(name: AppLinkPage.returnHome, object: nil)
-    } label: {
-      PlayerGlyph(symbol: "house", size: 16)
-    }
-    .accessibilityLabel("返回主页")
   }
 }
 

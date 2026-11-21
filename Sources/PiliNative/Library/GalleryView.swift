@@ -171,6 +171,10 @@ struct GalleryViewer: View {
   let close: () -> Void
   @State private var page: Int
   @State private var chrome = true
+  /// How far a swipe to the right has carried the first picture: past the threshold it closes
+  /// the viewer (and only the viewer: the page under it stays as it was).
+  @State private var swipe: CGFloat = 0
+  @State private var swiping: Bool?
   @StateObject private var owner = GalleryOwner()
   @StateObject private var edges = GalleryPagingEdges()
   init(_ photos: [GalleryPicture], index: Int, close: @escaping () -> Void) {
@@ -178,16 +182,39 @@ struct GalleryViewer: View {
     self.close = close
     _page = State(initialValue: min(max(0, index), max(0, photos.count - 1)))
   }
+  private var swipeClose: some Gesture {
+    DragGesture(minimumDistance: 12)
+      .onChanged { v in
+        let x = v.translation.width, y = v.translation.height
+        if swiping == nil {
+          // The first picture, at rest at its leading edge: nothing to page or pan back to.
+          swiping = x > 0 && x > abs(y) * 1.2 && page == 0 && edges.allows(x)
+        }
+        if swiping == true { swipe = max(0, x) }
+      }
+      .onEnded { v in
+        defer { swiping = nil }
+        guard swiping == true else { return }
+        if v.translation.width > 90 || v.predictedEndTranslation.width > 240 {
+          close()
+        } else {
+          withAnimation(.snappy(duration: 0.25)) { swipe = 0 }
+        }
+      }
+  }
   var body: some View {
     ZStack {
-      Color.black.ignoresSafeArea()
+      Color.black.opacity(1 - min(0.6, swipe / 600)).ignoresSafeArea()
       if !photos.isEmpty {
         ThresholdPager(count: photos.count, page: $page, allows: edges.allows) { i in
           GalleryPage(photo: photos[i], assets: owner.assets, active: i == page, edges: edges, tapped: close)
         }
         .ignoresSafeArea()
+        .offset(x: swipe)
+        .scaleEffect(1 - min(0.12, swipe / 2400))
       }
     }
+    .simultaneousGesture(swipeClose)
     .overlay(alignment: .top) {
       HStack {
         Button(action: close) {

@@ -45,6 +45,9 @@ enum PlayerSlide {
   /// On (the default): a horizontal swipe moves by `seekSpan`, as the official client. Off: the
   /// fixed "横滑整屏" seconds or percentage.
   static let seekCurveKey = "player.seekCurve"
+  /// How far a finger travels from where it went down before its slide's direction is decided,
+  /// as in the official client (`singlePan:`, 10 pt), which is also how far a long press allows.
+  static let decisionDistance: Double = 10
   static func axis(dx: Double, dy: Double, x: Double, width: Double, levels: Bool, screen: Bool) -> Axis? {
     guard width > 0 else { return nil }
     if abs(dx) > 3 * abs(dy) { return .seek }
