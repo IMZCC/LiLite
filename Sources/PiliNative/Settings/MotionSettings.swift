@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MotionSettings: View {
   @AppStorage(PageMotion.key) private var motion = PageMotion.native.rawValue
+  @AppStorage(CardZoomStyle.key) private var zoomStyle = CardZoomStyle.system.rawValue
   @State private var mode = 0
   @State private var spring = ScrollSpring.current()
   @State private var a = ""
@@ -17,6 +18,14 @@ struct MotionSettings: View {
         } label: {
           SettingsRowLabel(title: "过渡效果", symbol: "rectangle.portrait.on.rectangle.portrait", color: .indigo)
         }.settingAnchor("MotionSettings/过渡效果")
+        if #available(iOS 18, *) {
+          // How a page opened from a card grows out of it (一镜到底); before iOS 18 only ours.
+          Picker(selection: $zoomStyle) {
+            ForEach(CardZoomStyle.allCases, id: \.rawValue) { item in Text(item.title).tag(item.rawValue) }
+          } label: {
+            SettingsRowLabel(title: "卡片展开", symbol: "rectangle.expand.vertical", color: .indigo)
+          }.settingAnchor("MotionSettings/卡片展开")
+        }
         NavigationLink {
           ContentUnavailableView("页面切换预览", systemImage: "rectangle.portrait.on.rectangle.portrait",
             description: Text("返回时观察当前的过渡效果"))

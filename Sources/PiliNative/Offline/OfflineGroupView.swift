@@ -164,12 +164,13 @@ struct OfflineGroupView: View {
   }
   @ViewBuilder private var trackListing: some View {
     let list = rows
-    let archives = list.reduce(into: [OfflineVideo]()) { seen, v in
-      if !seen.contains(where: { $0.bvid == v.bvid }) { seen.append(v) }
-    }
-    if archiveFilter == nil && groupID.hasPrefix("ugc:") && archives.count > 1 && !selecting
-      && query.isEmpty
-    {
+    let summarize = archiveFilter == nil && groupID.hasPrefix("ugc:") && !selecting && query.isEmpty
+    var counts = [String: Int]()
+    let archives = summarize ? list.filter { v in
+      counts[v.bvid, default: 0] += 1
+      return counts[v.bvid] == 1
+    } : []
+    if archives.count > 1 {
       ForEach(archives) { v in
         NavigationLink {
           OfflineGroupView(groupID: groupID, initialTitle: v.title, archiveFilter: v.bvid)
@@ -178,13 +179,13 @@ struct OfflineGroupView: View {
             OfflineCoverCell(row: v)
             VStack(alignment: .leading, spacing: 4) {
               Text(v.title).font(.subheadline.weight(.medium)).lineLimit(2)
-              Text("\(list.filter { $0.bvid == v.bvid }.count) 个分集").font(.caption).foregroundStyle(.secondary)
+              Text("\(counts[v.bvid, default: 0]) 个分集").font(.caption).foregroundStyle(.secondary)
             }
           }
         }
       }
     } else {
-      ForEach(rows) { v in
+      ForEach(list) { v in
         if selecting {
           Button {
             if !checked.insert(v.token).inserted { checked.remove(v.token) }

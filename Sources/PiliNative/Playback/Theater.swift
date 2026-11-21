@@ -247,13 +247,12 @@ struct TheaterSheet: View {
     FullscreenStage(mode: FullscreenMode(rawValue: orientation) ?? .video,
       picture: model.engine.playbackSize, entry: entry, closing: closing,
       inline: { InlinePlayerFrame.current(model.engine) }, covered: covered, finish: { dismiss() }) {
-      TheaterWorkspace(open: drawer && !locked) { playback } panel: {
+      TheaterWorkspace(open: drawer && !locked, close: closeDrawer) { playback } panel: {
         // Closed once the tap has finished: its own button goes with the panel (see
         // Theater.afterTouch).
         TheaterTools(model: model, subject: subject, playlist: playlist,
-          close: { DispatchQueue.main.async { drawer = false } },
-          bulletSnapshot: { bulletInspector.snapshot?() ?? [] },
-          engagement: actionsEnabled ? engagement : nil).id(subject?.type)
+          close: closeDrawer,
+          bulletSnapshot: { bulletInspector.snapshot?() ?? [] }).id(subject?.type)
       }
     }
     .ignoresSafeArea()
@@ -273,6 +272,16 @@ struct TheaterSheet: View {
   private func showInfo() {
     infoShown = true
     infoPulse &+= 1
+  }
+  /// Both once the tap that asked has finished: opening puts the controls (and the button) away,
+  /// and removing a control from inside its own action leaves its gestures stuck (see
+  /// Theater.afterTouch).
+  /// The panel animates itself (TheaterWorkspace).
+  private func openDrawer() {
+    DispatchQueue.main.async { drawer = true }
+  }
+  private func closeDrawer() {
+    DispatchQueue.main.async { drawer = false }
   }
   private func toggleLock() {
     TouchFeedback.light()
@@ -304,14 +313,13 @@ struct TheaterSheet: View {
       HStack(spacing: 18) {
         // Lists without covers (the library queue) keep the side panel.
         if episodes.count <= 1, playlist != nil {
-          Button {
-            withAnimation(.snappy(duration: 0.3)) { drawer = true }
-          } label: { PlayerWordGlyph(text: "选集") }
+          Button { openDrawer() } label: { PlayerWordGlyph(text: "选集") }
         }
         PlayerSpeedMenu(model: model, word: true)
       })
     s.lock = allowLock || locked ? { toggleLock() } : nil
     s.locked = locked
+    s.suspended = drawer && !locked
     return s
   }
   /// The header icons: cast, bullets, send a bullet, picture in picture, capture, picture fit,
@@ -335,7 +343,7 @@ struct TheaterSheet: View {
       }
       .accessibilityLabel(showBullets ? "关闭弹幕" : "开启弹幕")
       .contextMenu {
-        Button("弹幕设置", systemImage: "text.bubble.badge.gearshape") { bulletSettings = true }
+        Button("弹幕设置", systemImage: "slider.horizontal.3") { bulletSettings = true }
       }
       if let cid = subject?.cid, let bvid = subject?.bvid {
         EpisodeBulletAction(cid: cid, bvid: bvid, model: model, glyph: true)
@@ -347,16 +355,17 @@ struct TheaterSheet: View {
         PlayerCaptionMenu(session: model.captions, tool: true)
       }
       Button {
-        withAnimation(.snappy(duration: 0.3)) { drawer.toggle() }
+        TouchFeedback.light()
+        openDrawer()
       } label: {
         PlayerToolGlyph(symbol: "ellipsis.circle")
       }
-      .accessibilityLabel(drawer ? "关闭播放面板" : "更多")
+      .accessibilityLabel("更多")
       .contextMenu {
         Button(showTimeline ? "隐藏时间轴" : "显示时间轴", systemImage: "timeline.selection") {
           withAnimation(.snappy(duration: 0.3)) { showTimeline.toggle() }
         }
-        Button("弹幕设置", systemImage: "text.bubble.badge.gearshape") { bulletSettings = true }
+        Button("弹幕设置", systemImage: "slider.horizontal.3") { bulletSettings = true }
       }
     }
   }

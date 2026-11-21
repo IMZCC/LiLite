@@ -13,6 +13,7 @@ struct Video: Decodable, Identifiable, Hashable {
   var recommendationReason: String? = nil, recommendLink: String? = nil,
     recommendGoto: String? = nil
   var recommendResource: Int64? = nil, recommendMenu: [FeedMenu]? = nil
+  var recommendationOpensVideo: Bool? = nil
   struct Argue: Decodable, Hashable { let argue_msg: String? }
   struct IntroLine: Decodable, Hashable {
     let raw_text: String?, type: Int?, bizId: Int64?

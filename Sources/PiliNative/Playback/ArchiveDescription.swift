@@ -16,7 +16,7 @@ struct ArchiveDescription: View {
   var body: some View {
     Group {
       if let expanded {
-        content.lineLimit(expanded ? nil : 3).foregroundStyle(.secondary)
+        content.lineLimit(expanded ? nil : 3)
           .frame(maxWidth: .infinity, alignment: .leading)
       } else {
         DisclosureGroup(
@@ -45,7 +45,9 @@ struct ArchiveDescription: View {
     }
   }
   private var content: some View {
-      Text(Self.cachedDescription(video)).piliFont(.subheadline).lineSpacing(3).foregroundStyle(.secondary)
+      // The official intro's text: 13 sp in Ga7.
+      LinkedDescription(input: .init(video)).font(OfficialIntro.font(13)).lineSpacing(OfficialIntro.d(4))
+        .foregroundStyle(OfficialIntro.ga7)
         .textSelection(.enabled)
         .environment(
           \.openURL,
@@ -70,24 +72,55 @@ struct ArchiveDescription: View {
             return .discarded
           })
   }
+}
+
+private struct DescriptionInput: Equatable {
+  let bvid: String
+  let text: String
+  let lines: [Video.IntroLine]
+
+  init(_ video: Video) {
+    bvid = video.bvid
+    text = video.desc ?? ""
+    lines = video.desc_v2 ?? []
+  }
+
+  var hasLines: Bool { lines.contains { !($0.raw_text ?? "").isEmpty } }
+  var plainText: String {
+    guard hasLines else { return text }
+    return lines.compactMap { line in
+      line.raw_text.map { line.type == 2 && !$0.hasPrefix("@") ? "@" + $0 : $0 }
+    }.joined()
+  }
+}
+
+private struct LinkedDescription: View {
+  let input: DescriptionInput
+  @State private var rendered: (input: DescriptionInput, text: AttributedString)?
+  var body: some View {
+    Group {
+      if let rendered, rendered.input == input { Text(rendered.text) }
+      else { Text(verbatim: input.plainText) }
+    }.task(id: input) {
+      guard !Task.isCancelled, let text = await DescriptionLinks.shared.text(for: input),
+        !Task.isCancelled else { return }
+      rendered = (input, text)
+    }
+  }
+}
+
+private actor DescriptionLinks {
+  static let shared = DescriptionLinks()
+  private var cache: [String: (DescriptionInput, AttributedString)] = [:]
   private static let detector = try? NSDataDetector(
     types: NSTextCheckingResult.CheckingType.link.rawValue)
   private static let pattern = try? NSRegularExpression(
     pattern:
       #"(?<![A-Za-z0-9:])(?:BV[A-Za-z0-9]{10}|av[0-9]+|(?:[0-9]{1,3}:)?[0-9]{1,3}:[0-5][0-9])(?![A-Za-z0-9:])"#
   )
-  /// The linked text, built once per description: link detection over a long description takes
-  /// tens of milliseconds, and the expanded intro re-renders with every change of the player.
-  private static var built: [String: AttributedString] = [:]
-  static func cachedDescription(_ v: Video) -> AttributedString {
-    let key = v.bvid + "|" + String((v.desc ?? "").hashValue) + "|" + String(v.desc_v2?.count ?? 0)
-    if let hit = built[key] { return hit }
-    let made = description(v)
-    if built.count > 40 { built.removeAll() }
-    built[key] = made
-    return made
-  }
-  static func description(_ v: Video) -> AttributedString {
+  func text(for input: DescriptionInput) -> AttributedString? {
+    guard !Task.isCancelled else { return nil }
+    if let entry = cache[input.bvid], entry.0 == input { return entry.1 }
     let result = NSMutableAttributedString(string: "")
     func append(_ text: String, mention: Int64? = nil) {
       let piece = NSMutableAttributedString(string: text)
@@ -97,13 +130,13 @@ struct ArchiveDescription: View {
           piece.addAttribute(.link, value: url, range: all)
         }
       } else {
-        let external = detector?.matches(in: text, range: all) ?? []
+        let external = Self.detector?.matches(in: text, range: all) ?? []
         for r in external {
           if let u = r.url, ["http", "https", "bilibili"].contains(u.scheme?.lowercased() ?? "") {
             piece.addAttribute(.link, value: u, range: r.range)
           }
         }
-        for r in pattern?.matches(in: text, range: all) ?? []
+        for r in Self.pattern?.matches(in: text, range: all) ?? []
         where !external.contains(where: { NSIntersectionRange($0.range, r.range).length > 0 }) {
           let s = (text as NSString).substring(with: r.range)
           let u: URL?
@@ -119,8 +152,9 @@ struct ArchiveDescription: View {
       }
       result.append(piece)
     }
-    if let lines = v.desc_v2, lines.contains(where: { !($0.raw_text ?? "").isEmpty }) {
-      for line in lines {
+    if input.hasLines {
+      for line in input.lines {
+        guard !Task.isCancelled else { return nil }
         guard let text = line.raw_text else { continue }
         if line.type == 2 {
           append(text.hasPrefix("@") ? text : "@" + text, mention: line.bizId)
@@ -129,8 +163,12 @@ struct ArchiveDescription: View {
         }
       }
     } else {
-      append(v.desc ?? "")
+      append(input.text)
     }
-    return AttributedString(result)
+    guard !Task.isCancelled else { return nil }
+    let text = AttributedString(result)
+    if cache.count >= 40, cache[input.bvid] == nil, let key = cache.keys.first { cache[key] = nil }
+    cache[input.bvid] = (input, text)
+    return text
   }
 }

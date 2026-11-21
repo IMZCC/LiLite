@@ -53,7 +53,11 @@ actor ArtworkStore {
     let value = n.doubleValue
     return value.isFinite && value >= 0 && value <= Double(maximum) ? Int(value) : standard
   }
-  private static func session(_ cache: URLCache?) -> URLSession {
+  private struct Connection {
+    let session: URLSession
+    let transfer: ArtworkTransfer
+  }
+  private static func session(_ cache: URLCache?) -> Connection {
     let config = cache == nil ? URLSessionConfiguration.ephemeral : URLSessionConfiguration.default
     APIProxy.current().apply(to: config)
     config.httpCookieStorage = nil
@@ -62,9 +66,9 @@ actor ArtworkStore {
     config.urlCache = cache
     config.requestCachePolicy =
       cache == nil ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy
-    return URLSession(
-      configuration: config, delegate: APIRedirectPolicy(publicArtwork: cache != nil),
-      delegateQueue: nil)
+    let transfer = ArtworkTransfer(publicArtwork: cache != nil)
+    return Connection(session: URLSession(configuration: config, delegate: transfer, delegateQueue: nil),
+      transfer: transfer)
   }
   static func cachedImage(_ url: URL?, pixels: Int, maximum: Int = 16 * ArtworkStore.mib) -> UIImage? {
     // Only admitted public responses are inserted; disabling the cache empties it.
@@ -87,8 +91,8 @@ actor ArtworkStore {
   private func syncLimit() {
     let setting = APIProxy.current()
     if setting != activeProxy {
-      cachedSession.finishTasksAndInvalidate()
-      privateSession.finishTasksAndInvalidate()
+      cachedSession.session.finishTasksAndInvalidate()
+      privateSession.session.finishTasksAndInvalidate()
       cachedSession = Self.session(cache)
       privateSession = Self.session(nil)
       activeProxy = setting
@@ -108,7 +112,7 @@ actor ArtworkStore {
     return (cache.currentDiskUsage, cache.currentMemoryUsage + pixels)
   }
   func clear() {
-    cachedSession.invalidateAndCancel()
+    cachedSession.session.invalidateAndCancel()
     cache.removeAllCachedResponses()
     decoded.removeAllObjects()
     cachedImages.removeAll()
@@ -175,24 +179,13 @@ actor ArtworkStore {
     if flight.waiters.isEmpty { flight.task.cancel(); flights[key] = nil }
     else { flights[key] = flight }
   }
-  private static func decode(_ url: URL, session s: URLSession, pixels: Int, maximum: Int)
+  private static func decode(_ url: URL, session connection: Connection, pixels: Int, maximum: Int)
     async throws -> Decoded
   {
     var req = URLRequest(url: url, timeoutInterval: 20)
     req.httpShouldHandleCookies = false
     req.setValue("https://www.bilibili.com/", forHTTPHeaderField: "Referer")
-    let (bytes, response) = try await s.bytes(for: req)
-    guard let http = response as? HTTPURLResponse, http.statusCode == 200,
-      response.expectedContentLength <= maximum
-    else { throw URLError(.badServerResponse) }
-    var data = Data()
-    if response.expectedContentLength > 0 {
-      data.reserveCapacity(Int(response.expectedContentLength))
-    }
-    for try await b in bytes {
-      guard data.count < maximum else { throw URLError(.dataLengthExceedsMaximum) }
-      data.append(b)
-    }
+    let (data, http) = try await connection.transfer.read(req, from: connection.session, limit: maximum)
     try Task.checkCancellation()
     guard let source = CGImageSourceCreateWithData(data as CFData, nil),
       let image = CGImageSourceCreateThumbnailAtIndex(
@@ -217,15 +210,15 @@ actor ArtworkStore {
 /// Decodes artwork ahead of the rows that will show it, one picture at a time at low priority,
 /// so a row scrolling in draws its picture in its first frame instead of a placeholder that
 /// fades (and renders again) once the image arrives.
-@MainActor final class ArtworkPrefetch {
+actor ArtworkPrefetch {
   static let shared = ArtworkPrefetch()
   private var queue: [(url: URL, pixels: Int)] = []
   private var requested = Set<String>()
   private var running = false
-  func prefetch(_ videos: ArraySlice<Video>, pixels: Int, quality: Int) {
-    for video in videos {
-      let key = "\(pixels)|\(quality)|\(video.pic)"
-      guard !requested.contains(key), let cover = video.cover else { continue }
+  func prefetch(_ pictures: [String], pixels: Int, quality: Int) async {
+    for picture in pictures {
+      let key = "\(pixels)|\(quality)|\(picture)"
+      guard !requested.contains(key), let cover = httpsURL(picture) else { continue }
       let url = GalleryPicture(cover).display(quality: quality)
       guard ArtworkStore.cachedImage(url, pixels: pixels) == nil else { continue }
       requested.insert(key)
@@ -236,12 +229,10 @@ actor ArtworkStore {
     if queue.count > 16 { queue.removeFirst(queue.count - 16) }
     guard !running, !queue.isEmpty else { return }
     running = true
-    Task(priority: .utility) {
-      while !queue.isEmpty {
-        let next = queue.removeFirst()
-        _ = try? await ArtworkStore.shared.image(next.url, pixels: next.pixels)
-      }
-      running = false
+    defer { running = false }
+    while !queue.isEmpty {
+      let next = queue.removeFirst()
+      _ = try? await ArtworkStore.shared.image(next.url, pixels: next.pixels)
     }
   }
 }
@@ -306,6 +297,7 @@ struct RemoteArtwork<Content: View>: View {
     // Do not begin a provisional 384px request before geometry supplies the actual bucket.
     guard let pixels = load.pixels else { return }
     guard let url else { load.cancel(); return }
+    if let running = load.running, running.url != url { load.cancel() }
     if delivered == url, phase.image != nil, deliveredPixels >= pixels { return }
     if let warm = ArtworkStore.cachedImage(url, pixels: pixels) {
       // What the body drew before the size was known: the held image or the cache's pick.
@@ -334,7 +326,7 @@ struct RemoteArtwork<Content: View>: View {
           phase = .failure(error); delivered = url
         }
       }
-      if load.running?.url == url { load.running = nil }
+      if !Task.isCancelled { load.running = nil }
     }
   }
 }

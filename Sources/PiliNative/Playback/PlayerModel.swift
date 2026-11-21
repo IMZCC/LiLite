@@ -1338,7 +1338,11 @@ final class PlayerModel: ObservableObject {
       let time = engine.currentTime().seconds
       pageReturn = (memoryID, activeVideoOwner, time.isFinite ? max(0, time) : seconds, playing)
     }
+    // These callbacks capture the page's bindings. A returning page installs them again.
+    queueEnd = nil
+    clearStory()
     stop()
+    (engine as? MPVPlayer)?.renderer.setPageReleased(true)
   }
   private func restorePageOrStart(memory: String, owner: String, start: Double?, autoplay: Bool) {
     let returning = pageReturn.flatMap { $0.memory == memory && $0.owner == owner ? $0 : nil }

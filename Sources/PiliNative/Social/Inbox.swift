@@ -329,9 +329,7 @@ struct PlainRowLink<Destination: View, Label: View>: View {
     } else {
       // Cards in grids and feeds: highlight under an iPad / Duo trackpad pointer, and the page
       // grows out of the card (CardZoom).
-      NavigationLink { DeferredPage { DeferredPage(destination) } } label: {
-        label().modifier(CardZoomSource())
-      }.buttonStyle(.plain)
+      CardZoomLink { DeferredPage(destination) } label: { label() }.buttonStyle(.plain)
         .contentShape(.hoverEffect, .rect(cornerRadius: 12)).hoverEffect(.highlight)
     }
   }

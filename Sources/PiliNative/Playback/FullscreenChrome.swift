@@ -436,6 +436,9 @@ struct FullscreenSeekBar: View {
   @Binding var scrub: Double?
   /// The inline player's smaller version: 12 pt times and a 4 pt bar.
   var compact = false
+  @State private var detents = SlideDetents()
+  /// Where the drag began, as a fraction of the length.
+  @State private var origin: Double?
   private var time: Double { scrub ?? external ?? readout.seconds }
   var body: some View {
     HStack(spacing: compact ? 10 : 12) {
@@ -463,11 +466,18 @@ struct FullscreenSeekBar: View {
         .gesture(
           DragGesture(minimumDistance: 0).onChanged { v in
             guard clock.duration > 0 else { return }
-            if scrub == nil { TouchFeedback.light(); editing(true) }
-            scrub = min(1, max(0, v.location.x / w)) * clock.duration
+            if scrub == nil {
+              TouchFeedback.light(); editing(true)
+              origin = min(1, max(0, readout.seconds / clock.duration))
+            }
+            let f = min(1, max(0, v.location.x / w))
+            scrub = f * clock.duration
+            detents.move(f, origin: origin)
           }.onEnded { v in
             if clock.duration > 0 { seek(min(1, max(0, v.location.x / w)) * clock.duration) }
             scrub = nil
+            origin = nil
+            detents.finish()
             editing(false)
           })
         .animation(.easeOut(duration: 0.15), value: scrub == nil)

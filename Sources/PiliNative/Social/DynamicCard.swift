@@ -471,12 +471,10 @@ struct DynamicCard: View {
     .accessibilityLabel("更多操作")
   }
 
+  private static let fullDateFormatter = MediaStats.dateFormatter("yyyy年M月d日 HH:mm")
   static func fullDate(_ entry: DynamicEntry) -> String {
     guard let stamp = entry.timestamp else { return entry.date }
-    let f = DateFormatter()
-    f.locale = Locale(identifier: "zh_CN")
-    f.dateFormat = "yyyy年M月d日 HH:mm"
-    return f.string(from: Date(timeIntervalSince1970: TimeInterval(stamp)))
+    return fullDateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(stamp)))
   }
 
   // MARK: Actions

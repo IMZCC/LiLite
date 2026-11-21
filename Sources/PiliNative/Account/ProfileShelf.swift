@@ -59,6 +59,7 @@ extension BiliAPI {
 
 struct ProfileShelf: View {
   let field: MineSection, uid: String
+  @Environment(\.activeCatalogPage) private var active
   @ObservedObject private var model: ProfileShelfState
   init(field: MineSection, uid: String) {
     self.field = field; self.uid = uid
@@ -114,7 +115,9 @@ struct ProfileShelf: View {
               }.buttonStyle(.plain)
             }
             if cursor != nil && issue == nil {
-              ProgressView().padding(.horizontal, 16).task(id: cursor) { await model.loadMore() }
+              ProgressView().padding(.horizontal, 16).task(id: active ? cursor : nil) {
+                if active { await model.loadMore() }
+              }
             }
           }
         }.scrollIndicators(.hidden)
@@ -145,8 +148,8 @@ struct ProfileShelf: View {
         }
         .font(.subheadline.weight(.semibold))
       }
-    }.task(id: identity) {
-      await model.refresh()
+    }.task(id: active ? identity : nil) {
+      if active { await model.refresh() }
     }
   }
   @ViewBuilder private var destination: some View {

@@ -122,6 +122,9 @@ struct ViewportSeekBar: View {
   var scrubbed: ((Double?) -> Void)? = nil
   @AppStorage("player.seekPreview") private var previews=true
   @State private var drag: Double?
+  @State private var detents = SlideDetents()
+  /// Where the drag began, as a fraction of the length.
+  @State private var origin: Double?
   private var time: Double { drag ?? external ?? readout.seconds }
   var body: some View {
     GeometryReader { g in
@@ -175,12 +178,19 @@ struct ViewportSeekBar: View {
         .gesture(
           DragGesture(minimumDistance: 0).onChanged { v in
             guard clock.duration > 0 else { return }
-            if drag == nil { TouchFeedback.light(); editing(true) }
-            drag = min(1, max(0, v.location.x / w)) * clock.duration
+            if drag == nil {
+              TouchFeedback.light(); editing(true)
+              origin = min(1, max(0, readout.seconds / clock.duration))
+            }
+            let f = min(1, max(0, v.location.x / w))
+            drag = f * clock.duration
+            detents.move(f, origin: origin)
             scrubbed?(drag)
           }.onEnded { v in
             if clock.duration > 0 { seek(min(1, max(0, v.location.x / w)) * clock.duration) }
             drag = nil
+            origin = nil
+            detents.finish()
             scrubbed?(nil)
             editing(false)
           })

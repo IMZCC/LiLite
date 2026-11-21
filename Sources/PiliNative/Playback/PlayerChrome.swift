@@ -40,6 +40,8 @@ struct PlayerChromeSlots {
   var lock: (() -> Void)? = nil
   /// The controls are locked: only the closed lock (in the same place) and a hint on tap.
   var locked = false
+  /// A panel lies over the player (fullscreen 更多): the controls stay down until it goes.
+  var suspended = false
 }
 private struct PlayerChromeKey: EnvironmentKey { static let defaultValue = PlayerChromeSlots() }
 extension EnvironmentValues {
@@ -83,7 +85,7 @@ enum GlyphOptics {
     case "headphones": -0.6
     case "pip.enter", "pip.exit": -0.4
     case "airplayvideo": 0.5
-    case "captions.bubble", "captions.bubble.fill", "text.bubble.badge.gearshape": 1.0
+    case "captions.bubble", "captions.bubble.fill": 1.0
     default: 0
     }
   }

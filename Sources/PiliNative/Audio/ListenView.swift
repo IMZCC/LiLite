@@ -9,7 +9,6 @@ struct ListenView: View {
   @ObservedObject private var catalog = ListenQueue.shared.catalog
   @AppStorage("listen.repeat") private var mode = AudioSequence.list.rawValue
   @EnvironmentObject private var accounts: AccountContext
-  @State private var scrub: Double?
   @State private var local = false
   @State private var clear = false
   @State private var showInfo = false
@@ -49,7 +48,6 @@ struct ListenView: View {
     .navigationBarTitleDisplayMode(.inline)
     .onAppear { local = !queue.serviceQueue }
     .onChange(of: queue.serviceQueue) { _, v in local = !v }
-    .onChange(of: queue.current?.id) { _, _ in scrub = nil }
     .toolbar {
       OutputRouteButton(video: false).frame(width: 34, height: 32)
       SleepTimerButton().labelStyle(.iconOnly)
@@ -117,27 +115,7 @@ struct ListenView: View {
   }
   private var transport: some View {
     VStack(spacing: 14) {
-      VStack(spacing: 4) {
-        Slider(
-          value: Binding(
-            get: { queue.duration > 0 ? max(0, min(scrub ?? queue.clock, queue.duration)) : 0 },
-            set: { scrub = $0 }),
-          in: 0...max(1, queue.duration)
-        ) { edit in
-          if !edit, let scrub {
-            queue.seek(scrub)
-            self.scrub = nil
-          }
-        }.disabled(queue.duration <= 0)
-        if !queue.segments.isEmpty {
-          SponsorMarkers(rows: queue.segments, duration: queue.duration, rules: .current())
-        }
-        HStack {
-          Text(clockText(scrub ?? queue.clock))
-          Spacer()
-          Text(clockText(queue.duration))
-        }.font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-      }
+      ListenTimeline(queue: queue, progress: queue.progress)
       HStack {
         Menu {
           Picker("播放模式", selection: $mode) {
@@ -333,6 +311,35 @@ private struct ListenSegments: View {
         try await SponsorAPI().vote(s.id, type: type, category: category)
         message = "已提交反馈"
       } catch { message = error.localizedDescription }
+    }
+  }
+}
+
+private struct ListenTimeline: View {
+  @ObservedObject var queue: ListenQueue
+  @ObservedObject var progress: PlaybackProgress
+  @State private var scrub: Double?
+  var body: some View {
+    VStack(spacing: 4) {
+      Slider(
+        value: Binding(
+          get: { queue.duration > 0 ? max(0, min(scrub ?? progress.seconds, queue.duration)) : 0 },
+          set: { scrub = $0 }),
+        in: 0...max(1, queue.duration)
+      ) { edit in
+        if !edit, let scrub {
+          queue.seek(scrub)
+          self.scrub = nil
+        }
+      }.disabled(queue.duration <= 0)
+      if !queue.segments.isEmpty {
+        SponsorMarkers(rows: queue.segments, duration: queue.duration, rules: .current())
+      }
+      HStack {
+        Text(clockText(scrub ?? progress.seconds))
+        Spacer()
+        Text(clockText(queue.duration))
+      }.font(.caption.monospacedDigit()).foregroundStyle(.secondary)
     }
   }
 }

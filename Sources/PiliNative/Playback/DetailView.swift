@@ -40,6 +40,7 @@ struct DetailView: View {
   var initialSeconds: Double? = nil
   var libraryPoint: ArchiveStart? = nil
   @EnvironmentObject private var accounts: AccountContext
+  @AppStorage("detail.online") private var onlineViewers = false
   @Environment(\.listenOrigin) private var listenOrigin
   @AppStorage("play.continuePart") private var continuePart = true
   @State private var startHint: ArchiveStart?
@@ -50,6 +51,8 @@ struct DetailView: View {
   @State private var following: Video?
   @State private var descendingParts = false
   @State private var reversedSections = Set<Int64>()
+  /// The collection's episode panel (from IntroSeasonRow).
+  @State private var collectionOpen = false
   @AppStorage("play.reverseFirst") private var jumpOnReverse = true
   @State private var visited: [String] = []
   @State private var lastOpened: Int64?
@@ -80,7 +83,9 @@ struct DetailView: View {
   @State private var listen = false
   @State private var listenHandoff: UUID?
   @State private var sponsorPanel = false
-  @State private var introExpanded = false
+  /// Whether the intro is open, read by the intro itself (see IntroExpansion).
+  @State private var intro = IntroExpansion()
+  private var introExpanded: Bool { intro.open }
   @State private var composeBullet = false
   @State private var bulletSettings = false
   @State private var bulletAt = 0.0
@@ -314,7 +319,7 @@ struct DetailView: View {
         }),
       headerWide: AnyView(
         HStack(spacing: 0) {
-          Button { bulletSettings = true } label: { PlayerGlyph(symbol: "text.bubble.badge.gearshape") }
+          Button { bulletSettings = true } label: { PlayerGlyph(symbol: "slider.horizontal.3") }
             .accessibilityLabel("弹幕设置")
           PlayerPiPButton(player: model.engine)
         }),
@@ -341,30 +346,56 @@ struct DetailView: View {
     let pickPart = $cid
     let refreshPart = $retryPlayback
     let hasDescription = !(video.desc ?? "").isEmpty || !(video.desc_v2 ?? []).isEmpty
-    return LazyVStack(alignment: .leading, spacing: 18) {
+    let d = OfficialIntro.d
+    // The official intro's modules in its order, each keeping its own margins (OfficialIntro):
+    // the creator or the team, the headline, the action row, the collection, then related videos.
+    return LazyVStack(alignment: .leading, spacing: 0) {
       // One plain stack for the head of the intro: inside the lazy stack, expanding the intro
       // jumped (lazy rows don't animate their insertion or a row growing); as one row it opens
       // smoothly and the rows below glide down with it.
-      VStack(alignment: .leading, spacing: 18) {
-      creatorRow(video)
-      VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 0) {
+      creatorModule(video)
+      VStack(alignment: .leading, spacing: 0) {
         ArchiveMetadata(video:video,labels:sponsorEnabled ? Array(Set(model.sponsor.compactMap{
           $0.valid && $0.segment==[0,0] && model.sponsorRules.mode($0) != 4 ? $0.detail?.title:nil
         })).sorted():[], expanded: introExpanded, toggle: {
-          withAnimation(.snappy(duration: 0.32)) { introExpanded.toggle() }
-        })
-        OnlineViewers(timeline:model.timeline,fallback:cid.map{.init(bvid:video.bvid,aid:video.aid,cid:$0)})
-          .font(.footnote).foregroundStyle(.secondary)
+          withAnimation(OfficialIntro.expand) { intro.open.toggle() }
+        }, trailing: onlineViewers ? AnyView(
+          OnlineViewers(timeline:model.timeline,fallback:cid.map{.init(bvid:video.bvid,aid:video.aid,cid:$0)}, inline: true)
+        ) : nil)
+        // NeutralityLabel: a 16 dp glyph and 12 sp, 3 dp under the counts.
         if showArgue, let text = video.argue_info?.argue_msg, !text.isEmpty {
-          Label(text, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(.orange)
+          HStack(spacing: d(3)) {
+            Image(systemName: "exclamationmark.circle").font(.system(size: d(12)))
+            Text(text).lineLimit(1)
+          }
+          .font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+          .frame(height: d(16)).padding(.top, d(3))
         }
-        if hasDescription && introExpanded {
-          ArchiveDescription(video: video, wide: wideViewport, cid:cid, duration:model.duration > 0 ? model.duration : video.pages?.first(where:{$0.cid == cid})?.duration.map(Double.init), seek: { t in
-            if model.ready && model.duration > 0 { model.seek(min(t, model.duration)) }
-          }, expanded: true).id(video.bvid)
-            .transition(.opacity.combined(with: .move(edge: .top)))
+        // The description and the tags open with the title, revealed rather than inserted.
+        if hasDescription || cid != nil {
+          HeightReveal(open: introExpanded) {
+            VStack(alignment: .leading, spacing: 0) {
+              if hasDescription {
+                ArchiveDescription(video: video, wide: wideViewport, cid:cid, duration:model.duration > 0 ? model.duration : video.pages?.first(where:{$0.cid == cid})?.duration.map(Double.init), seek: { t in
+                  if model.ready && model.duration > 0 { model.seek(min(t, model.duration)) }
+                }, expanded: true).id(video.bvid)
+                  .padding(.top, d(8))
+              }
+              if let cid {
+                ArchiveTagRow(bvid: video.bvid, cid: cid, owner: accounts.state.active ?? "")
+                  .padding(.top, d(8))
+              }
+            }
+          }
         }
       }
+      .padding(.horizontal, d(12)).padding(.top, d(6))
+      .task(id: "\(video.bvid):\(cid ?? 0):\(accounts.state.active ?? "")") {
+        // The tags shown with the expanded intro, read ahead so they open with it.
+        if let cid { await ArchiveTagStore.load(video.bvid, cid, owner: accounts.state.active ?? "") }
+      }
+      // KingPositionContent: five equal columns, 58 dp tall.
       EngagementBar(
         item: .init(bvid: video.bvid, aid: video.aid, episode: nil, copyright: video.copyright),
         counts: .init(like: video.stat?.like, coin: video.stat?.coin, favorite: video.stat?.favorite),
@@ -373,9 +404,11 @@ struct DetailView: View {
             video: d, cid: c, model: model, seconds: { model.seconds },
             onBullet: { model.didPost($0, cid: c) }, openComments: { panelOverride = true }))
         } })
+        .padding(.horizontal, d(12)).padding(.top, d(10))
       }
       // The original has no tool row under the intro: these live in the player's 更多 sheet.
-      Color.clear.frame(height: 0)
+      // Hung behind the head of the intro: a row of their own took a gap of the stack's spacing.
+      .background { Color.clear
         .piliSheet(isPresented: $playbackOptions) { ArchivePlaybackOptions(model: model, actions: moreActions) }
         .piliSheet(isPresented: $bulletSettings) {
           PiliNavigationStack {
@@ -394,14 +427,34 @@ struct DetailView: View {
         }
         .onChange(of: sponsorEnabled) { _, _ in Task { await model.reloadSponsors() } }
         .onChange(of: blockRules) { _, _ in Task { await model.reloadSponsors() } }
+      }
       if let error = model.bulletError, showBullets {
-        HStack {
-          Text(error).piliFont(.caption).foregroundStyle(.secondary)
-          Button("重试") { model.retryBullets() }.piliGlassButton().controlSize(.small)
+        HStack(spacing: d(8)) {
+          Text(error).foregroundStyle(OfficialIntro.ga5)
+          Button("重试") { model.retryBullets() }.foregroundStyle(Color.accentColor)
         }
+        .font(OfficialIntro.font(12)).padding(.horizontal, d(12)).padding(.top, d(6))
       }
       if let error = model.qualityError {
-        Text(error).piliFont(.caption).foregroundStyle(.secondary)
+        Text(error).font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+          .padding(.horizontal, d(12)).padding(.top, d(6))
+      }
+      // UgcSimpleSeasonRow, right under the action row.
+      if let detail, let cid, let catalog = detail.ugc_season, !(catalog.sections ?? []).isEmpty {
+        let entries = (catalog.sections ?? []).flatMap { $0.episodes ?? [] }
+        IntroSeasonRow(title: catalog.title ?? "视频合集",
+          position: entries.firstIndex { $0.bvid == detail.bvid }.map { "\($0 + 1)/\(entries.count)" }) {
+            collectionOpen = true
+          }
+          .piliSheet(isPresented: $collectionOpen) {
+            ArchiveCollectionPanel(
+              catalog: catalog, current: detail.bvid, currentCID: cid, owner: detail.owner?.name,
+              canReverse: queueEnd == nil, subscriptionID: detail.season_id, reversed: $reversedSections,
+              play: { next, part in
+                if next.bvid == video.bvid { if let part { pickPart.wrappedValue = part } }
+                else { sidebarPart = part.map { (next.bvid, $0) }; following = next }
+              })
+          }
       }
       if let pages = detail?.pages, pages.count > 1 {
         ArchivePartStrip(pages: pages, current: cid, descending: descendingParts) { picked in
@@ -413,60 +466,42 @@ struct DetailView: View {
             cid = next.cid
           }
         }
+        .padding(.horizontal, d(12)).padding(.vertical, d(8))
       }
-      if let detail, let cid {
-        VideoExtras(
-          video: detail, cid: cid, jump: { model.seek($0) },
-          choose: {
-            pickPart.wrappedValue = $0
-            refreshPart.wrappedValue += 1
-          }, model: model, story: interactiveStory, reversedSections: $reversedSections,
-          canReverseCollection: queueEnd == nil, playCollection:{next,part in
-            if next.bvid==video.bvid{if let part{pickPart.wrappedValue=part}}else{sidebarPart=part.map{(next.bvid,$0)};following=next}
-          },
-          showOwner: useMemberPanel ? { sideAuthor = video.owner } : nil)
+      // Only with something to show: an empty block still took a gap of the stack's spacing.
+      if interactiveStory.node != nil || interactiveStory.error != nil {
+        VideoExtras(choose: {
+          pickPart.wrappedValue = $0
+          refreshPart.wrappedValue += 1
+        }, story: interactiveStory)
+        .padding(.horizontal, d(12)).padding(.vertical, d(8))
       }
       if let error = detailError {
-        VStack(spacing: 10) {
-          Text(error).foregroundStyle(.secondary).multilineTextAlignment(.center)
-          Button("重新加载详情") { reload += 1 }.piliGlassButton()
-        }.frame(maxWidth: .infinity)
+        VStack(spacing: d(8)) {
+          Text(error).font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5).multilineTextAlignment(.center)
+          Button("加载失败，点击重试") { reload += 1 }.font(OfficialIntro.font(13)).foregroundStyle(Color.accentColor)
+        }.frame(maxWidth: .infinity).padding(.vertical, d(16))
       }
       if detail != nil {
         IntroRelated {
-          Divider()
-          ArchiveRelatedList(bvid: video.bvid)
+          ArchiveRelatedList(bvid: video.bvid).padding(.top, d(8))
         }
       }
-    }.padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 24)
+    }.padding(.bottom, 24)
       .animation(.easeOut(duration: 0.25), value: detail?.bvid)
-      .animation(.snappy(duration: 0.3), value: introExpanded)
   }
-  @ViewBuilder private func creatorRow(_ video: Video) -> some View {
-    if let owner = video.owner?.name {
-      // The original: the avatar, then the name (pink for 大会员) over "3.3万粉丝  540视频".
-      let identity = HStack(spacing: 10) {
-        ProfileAvatar(url: video.owner?.avatar, size: 36)
-        CreatorCardLine(mid: video.owner?.mid, name: owner)
+  /// OwnerCard, or StaffsContent when the video has a team.
+  @ViewBuilder private func creatorModule(_ video: Video) -> some View {
+    let staff = (detail?.staff ?? video.staff ?? []).filter { $0.mid > 0 }
+    let ownerMid = video.owner?.mid
+    let panel = IntroCreatorOpen.panel({ sideAuthor = video.owner })
+    if staff.count > 1 {
+      IntroStaffs(staff: staff) { member -> IntroCreatorOpen in
+        useMemberPanel && member.mid == ownerMid ? panel : .space
       }
-      HStack(spacing: 12) {
-        if useMemberPanel, video.owner?.mid != nil {
-          Button {
-            TouchFeedback.light()
-            sideAuthor = video.owner
-          } label: { identity }.buttonStyle(.plain)
-        } else if let mid = video.owner?.mid {
-          LazyLink {
-            CreatorSpace(mid: mid, name: owner)
-          } label: { identity }.buttonStyle(.plain).piliTapFeedback()
-        } else {
-          identity
-        }
-        Spacer(minLength: 8)
-        if (video.staff ?? []).isEmpty, let mid = video.owner?.mid {
-          CreatorQuickRelation(mid: mid).controlSize(.small)
-        }
-      }
+    } else if let owner = video.owner?.name {
+      IntroOwnerRow(mid: ownerMid, name: owner, avatar: video.owner?.avatar,
+        open: useMemberPanel && ownerMid != nil ? panel : .space)
     }
   }
   /// Secondary tools on one horizontally scrolling line of quiet chips.
@@ -770,7 +805,7 @@ struct DetailView: View {
         }
       }
       .onChange(of: source.bvid) { _, _ in
-        introExpanded = false; bulletDraft = ""; commentCount = nil; composeBullet = false
+        intro.open = false; bulletDraft = ""; commentCount = nil; composeBullet = false
       }
       .piliSheet(isPresented: $sponsorPanel) {
         PiliNavigationStack {

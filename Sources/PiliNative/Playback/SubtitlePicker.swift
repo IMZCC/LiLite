@@ -27,6 +27,33 @@ struct SubtitleButton: View {
     }
   }
 }
+/// A subtitle file picked by the person, read and added to the session.
+enum SubtitleImport {
+  static var types: [UTType] {
+    SubtitleFileFormat.allCases.compactMap { UTType(filenameExtension: $0.rawValue, conformingTo: .data) }
+  }
+  /// Leaves the session alone if it moved on to another video while the file was being read.
+  @MainActor static func load(_ url: URL, into session: SubtitleSession) async throws {
+    let key = session.epoch
+    let (data, size) = try await Task.detached(priority: .userInitiated) {
+      let opened = url.startAccessingSecurityScopedResource()
+      defer { if opened { url.stopAccessingSecurityScopedResource() } }
+      guard let f = SubtitleFileFormat(rawValue: url.pathExtension.lowercased()) else {
+        throw ServiceError("不支持这个字幕格式")
+      }
+      let h = try FileHandle(forReadingFrom: url)
+      defer { try? h.close() }
+      let bytes = try h.read(upToCount: SubtitleDocument.maxBytes + 1) ?? Data()
+      let doc = try SubtitleDocument(bytes, format: f)
+      if let ass = doc.assPayload, !ASSImportCheck.valid(ass) {
+        throw ServiceError("无效的 ASS 字幕")
+      }
+      return (doc, bytes.count)
+    }.value
+    guard key == session.epoch else { return }
+    try await session.add(data, name: url.deletingPathExtension().lastPathComponent, bytes: size)
+  }
+}
 private struct SubtitleOutput: FileDocument {
   static var readableContentTypes: [UTType] { [.data] }
   let bytes: Data
@@ -38,9 +65,11 @@ private struct SubtitleOutput: FileDocument {
     FileWrapper(regularFileWithContents: bytes)
   }
 }
-private struct SubtitlePanel: View {
+struct SubtitlePanel: View {
   @ObservedObject var session: SubtitleSession
   let title: String, cid: Int64?, refresh: (() -> Void)?
+  /// A sheet ends with 完成; a pushed page goes back instead.
+  var done = true
   @Environment(\.dismiss) private var dismiss
   @State private var importing = false
   @State private var saving = false
@@ -123,33 +152,15 @@ private struct SubtitlePanel: View {
     }
     .navigationTitle("字幕").navigationBarTitleDisplayMode(.inline)
     .presentationDetents([.medium, .large])
-    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+    .toolbar { if done { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } } }
       .fileImporter(isPresented: $importing, allowedContentTypes: allowed) { answer in
         do {
           let url = try answer.get()
-          let key = session.epoch
           Task {
             working = true
             defer { working = false }
             do {
-              let (data, size) = try await Task.detached(priority: .userInitiated) {
-                let opened = url.startAccessingSecurityScopedResource()
-                defer { if opened { url.stopAccessingSecurityScopedResource() } }
-                guard let f = SubtitleFileFormat(rawValue: url.pathExtension.lowercased()) else {
-                  throw ServiceError("不支持这个字幕格式")
-                }
-                let h = try FileHandle(forReadingFrom: url)
-                defer { try? h.close() }
-                let bytes = try h.read(upToCount: SubtitleDocument.maxBytes + 1) ?? Data()
-                let doc = try SubtitleDocument(bytes, format: f)
-                if let ass = doc.assPayload, !ASSImportCheck.valid(ass) {
-                  throw ServiceError("无效的 ASS 字幕")
-                }
-                return (doc, bytes.count)
-              }.value
-              guard key == session.epoch else { return }
-              try await session.add(
-                data, name: url.deletingPathExtension().lastPathComponent, bytes: size)
+              try await SubtitleImport.load(url, into: session)
               message = nil
             } catch { if !Task.isCancelled { message = error.localizedDescription } }
           }

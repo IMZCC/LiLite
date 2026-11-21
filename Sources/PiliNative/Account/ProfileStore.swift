@@ -112,26 +112,31 @@ struct ProfileStatistics: Decodable {
   @Published private(set) var issue: String?
   private var requested: Date?
   private var failedReset = false
-  private var flight: (id: UUID, reset: Bool, task: Task<Void, Never>)?
+  private typealias Flight = (id: UUID, reset: Bool, task: Task<Void, Never>)
+  private var flight: Flight?
+  private var waiters = Set<UUID>()
   init(field: MineSection, uid: String) { self.field = field; self.uid = uid }
 
   func invalidate() {
     flight?.task.cancel(); flight = nil
+    waiters.removeAll()
     requested = nil
     loading = false
   }
 
   func refresh(force: Bool = false) async {
+    guard !Task.isCancelled else { return }
     if force { invalidate() }
-    if let flight { await flight.task.value; return }
+    if let flight { await wait(for: flight); return }
     if let requested, Date().timeIntervalSince(requested) < 60 { return }
     requested = Date()
     await load(reset: true)
   }
 
   func loadMore() async {
+    guard !Task.isCancelled else { return }
     if let flight {
-      await flight.task.value
+      await wait(for: flight)
       // After a first-page refresh, the cursor may have changed under a visible pagination row.
       if flight.reset, !Task.isCancelled { await loadMore() }
       return
@@ -151,16 +156,18 @@ struct ProfileStatistics: Decodable {
     loading = true; issue = nil
     let task = Task {
       defer {
-        if flight?.id == id { flight = nil; loading = false }
+        if flight?.id == id { flight = nil; waiters.removeAll(); loading = false }
       }
       do {
         // Network decoding and mapping run on BiliAPI's actor, not the UI actor.
         let page = try await BiliAPI.shared.profileShelf(field, uid: uid, cursor: next)
-        let merged = await Task.detached(priority: .utility) {
+        try Task.checkCancellation()
+        let merge = Task.detached(priority: .utility) {
           var seen = Set(previous.map(\.id))
-          let added = page.items.filter { seen.insert($0.id).inserted }
+          let added = page.items.filter { !Task.isCancelled && seen.insert($0.id).inserted }
           return (previous + added, added.isEmpty ? nil : page.next)
-        }.value
+        }
+        let merged = await withTaskCancellationHandler { await merge.value } onCancel: { merge.cancel() }
         guard !Task.isCancelled, flight?.id == id else { return }
         rows = merged.0; cursor = merged.1
         if reset || page.reportedTotal != nil { total = page.reportedTotal }
@@ -173,7 +180,22 @@ struct ProfileStatistics: Decodable {
         }
       }
     }
-    flight = (id, reset, task)
-    await task.value
+    let request: Flight = (id, reset, task)
+    flight = request
+    await wait(for: request)
+  }
+
+  private func wait(for request: Flight) async {
+    let waiter = UUID()
+    waiters.insert(waiter)
+    await withTaskCancellationHandler {
+      await request.task.value
+    } onCancel: {
+      Task { @MainActor in
+        guard self.flight?.id == request.id else { return }
+        self.waiters.remove(waiter)
+        if self.waiters.isEmpty { self.invalidate() }
+      }
+    }
   }
 }

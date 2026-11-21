@@ -140,6 +140,7 @@ import UIKit
   }
   func load(video: String, audio: String?, reference: URL, start: Double, autoplay: Bool,
             volume: AudioMeasurements? = nil) {
+    renderer.setPageReleased(false)
     request = (video, audio, reference, volume)
     cancelInterruption()
     currentItem = Item(url: video)

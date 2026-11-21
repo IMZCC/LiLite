@@ -1,6 +1,6 @@
 import Foundation
 
-final class APIRedirectPolicy: CertificateSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
+class APIRedirectPolicy: CertificateSessionDelegate, URLSessionDataDelegate, @unchecked Sendable {
   private let publicArtwork: Bool
   init(publicArtwork: Bool = false) {
     self.publicArtwork = publicArtwork

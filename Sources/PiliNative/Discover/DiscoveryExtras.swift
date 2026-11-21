@@ -30,6 +30,8 @@ extension BiliAPI {
 struct OnlineViewers: View {
   @ObservedObject var timeline: TimelineState
   var fallback:TimelineSource?=nil
+  /// The official counts line's "N人正在看", in the line's own font and colour.
+  var inline = false
   @Environment(\.scenePhase) private var scene
   @EnvironmentObject private var accounts: AccountContext
   @AppStorage("detail.online") private var enabled = false
@@ -40,7 +42,14 @@ struct OnlineViewers: View {
       on: enabled && scene == .active, source:fallback ?? timeline.source, uid: accounts.state.owner(.role(.heartbeat)))
     VStack(alignment: .leading, spacing: 0) {
       if enabled, let count, !count.isEmpty {
-        Label(count + " 人正在观看", systemImage: "eye").piliFont(.caption).foregroundStyle(.secondary)
+        if inline {
+          HStack(spacing: OfficialIntro.d(3)) {
+            Image(systemName: "person.2").font(.system(size: OfficialIntro.d(11)))
+            Text(count + "人正在看")
+          }
+        } else {
+          Label(count + " 人正在观看", systemImage: "eye").piliFont(.caption).foregroundStyle(.secondary)
+        }
       }
     }
     .task(id: key) {

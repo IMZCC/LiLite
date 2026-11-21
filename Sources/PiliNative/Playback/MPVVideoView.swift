@@ -16,6 +16,7 @@ final class MPVRenderer: @unchecked Sendable {
   private var updates: DispatchSourceUserDataAdd?
   private var surfaces: [UUID: Surface] = [:]
   private var suspended = false
+  private var pageReleased = false
   private var closed = false
   private var textureCache: CVOpenGLESTextureCache?
   private var frames: MPVPiPFrames?
@@ -80,7 +81,8 @@ final class MPVRenderer: @unchecked Sendable {
     surface.dirty = true
   }
   private func draw(force: Bool = false) {
-    guard !closed, context != nil || !surfaces.isEmpty || frames?.active == true, initialize(), let context else { return }
+    guard !closed, !pageReleased, context != nil || !surfaces.isEmpty || frames?.active == true,
+      initialize(), let context else { return }
     if !suspended { EAGLContext.setCurrent(gl) }
     defer { if !suspended { EAGLContext.setCurrent(nil) } }
     let flags = mpv_render_context_update(context)
@@ -172,6 +174,15 @@ final class MPVRenderer: @unchecked Sendable {
   }
   func resetPiP() { queue.async { [self] in frames?.reset() } }
   func refreshPiP() { queue.async { [self] in draw(force: true) } }
+  /// A covered navigation page can stay alive after playback has stopped. Drop its render
+  /// targets, then recreate the context on the render queue if that player is used again.
+  func setPageReleased(_ released: Bool) {
+    queue.async { [self] in
+      guard !closed, pageReleased != released else { return }
+      pageReleased = released
+      if released { releaseContext() } else { draw(force: true) }
+    }
+  }
   func setSuspended(_ value: Bool) {
     // Complete and release all GPU resources BEFORE willResignActive returns.
     // mpv allows one context per core, so replace it and reselect vid on the client queue.
@@ -179,6 +190,7 @@ final class MPVRenderer: @unchecked Sendable {
       guard suspended != value, !closed else { return }
       releaseContext()
       suspended = value
+      guard !pageReleased else { return }
       _ = initialize()
       if !value { EAGLContext.setCurrent(nil) }
     }

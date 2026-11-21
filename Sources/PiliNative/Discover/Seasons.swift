@@ -220,7 +220,7 @@ struct EpisodePlayer: View {
         }),
       headerWide: AnyView(
         HStack(spacing: 0) {
-          Button { bulletSettings = true } label: { PlayerGlyph(symbol: "text.bubble.badge.gearshape") }
+          Button { bulletSettings = true } label: { PlayerGlyph(symbol: "slider.horizontal.3") }
             .accessibilityLabel("弹幕设置")
           PlayerPiPButton(player: model.engine)
         }),

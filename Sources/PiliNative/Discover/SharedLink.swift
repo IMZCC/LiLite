@@ -25,6 +25,14 @@ enum SharedLink: Hashable {
   case match(Int64)
   case vote(Int64), contextVote(Int64, Int64)
   case replies(Int64, Int, Int64, Int64?)
+  var opensVideoDetail: Bool {
+    switch self {
+    case .video, .archive, .replies(_, 1, _, _): true
+    case .positioned(let page, _), .archivePart(let page, _), .commentOn(let page, _, _):
+      page.opensVideoDetail
+    default: false
+    }
+  }
   static func parse(_ input: String) -> Self? {
     let raw = input.trimmingCharacters(in: .whitespacesAndNewlines)
     let input: String

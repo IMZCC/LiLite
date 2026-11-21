@@ -86,7 +86,7 @@ extension MediaRow where Accessory == EmptyView {
 enum MediaStats {
   private static let monthDay = dateFormatter("MM-dd")
   private static let yearMonthDay = dateFormatter("yyyy-MM-dd")
-  private static func dateFormatter(_ format: String) -> DateFormatter {
+  static func dateFormatter(_ format: String) -> DateFormatter {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "zh_CN")
     formatter.timeZone = .autoupdatingCurrent

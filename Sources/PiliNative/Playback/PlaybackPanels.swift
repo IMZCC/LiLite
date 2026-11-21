@@ -17,6 +17,11 @@ import Combine
     let s = window?.safeAreaInsets ?? .zero
     return EdgeInsets(top: s.top, leading: s.left, bottom: s.bottom, trailing: s.right)
   }
+  /// In landscape, whether the island (or notch) is at the right of the screen. The safe area is
+  /// as wide on both sides; only that side needs it.
+  static var housingAtTrailing: Bool {
+    window?.windowScene?.interfaceOrientation == .landscapeLeft
+  }
   /// Brightness of the screen the window is on (not `UIScreen.main`: on iPhone Duo the inner
   /// and outer displays are different screens).
   static var brightness: CGFloat {
@@ -127,7 +132,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   @State private var replyLink: SharedLink?
   @State private var gallery: GalleryRailRequest?
   @State private var fold = PanelFold()
-  @State private var actions = PanelActions()
+  @State private var actionToken = UUID()
   /// Comment threads opened from the comments, shown as panels under the player.
   @State private var replyPanels: [ReplyPanelItem] = []
   /// False while another page is pushed over this one, so stray threads open as pages there.
@@ -166,16 +171,18 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .ignoresSafeArea(.container, edges: .bottom)
       // Fullscreen covers this page; it keeps the size it had (see `frozen`).
       .frame(width: size.width, height: size.height, alignment: .topLeading)
-      // The same closure instances on every render (only their targets are refreshed), so the
-      // intro, the comments and every list under them are not invalidated whenever the player
-      // publishes a change and this page re-renders.
-      .environment(\.replyOpenLink, actions.target { replyLink = $0 }.openLinkEntry)
-      .environment(\.presentGalleryRail, wide && galleryEnabled ? actions.target(gallery: { gallery = $0 }).galleryEntry : nil)
-      .environment(\.replyPanelPresenter, actions.target(push: { title, content in
-        guard onScreen else { return false }
-        replyPanels.append(ReplyPanelItem(title: title, content: content))
+      // Compare actions by page identity. Capturing just the bindings lets the page and its
+      // player go away even when a child keeps an environment action.
+      .environment(\.replyOpenLink, StableAction(actionToken) { [link = $replyLink] in link.wrappedValue = $0 })
+      .environment(\.presentGalleryRail, wide && galleryEnabled ? StableAction(actionToken) {
+        [rail = $gallery] in rail.wrappedValue = $0
+      } : nil)
+      .environment(\.replyPanelPresenter, ReplyPanelPresenter(token: actionToken) {
+        [visible = $onScreen, panels = $replyPanels] title, content in
+        guard visible.wrappedValue else { return false }
+        panels.wrappedValue.append(ReplyPanelItem(title: title, content: content))
         return true
-      }).presenter)
+      })
       .overlay {
         if wide && galleryEnabled, let gallery { GalleryRailPanel(request: gallery) { self.gallery = nil } }
       }
@@ -297,6 +304,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       .recordsInlinePlayerFrame(model.engine)
       .overlay(alignment: .topLeading) { headerButtons }
       .opacity(inlinePlayerCovered ? 0 : 1).background(.black)
+      // The cover of the card that opened the page lands here (一镜到底).
+      .cardZoomHero()
   }
   /// The original's landscape page: player (and intro, when it fits) on the left, tabs on the right.
   private func sideLayout(_ p: Plan) -> some View {
@@ -348,7 +357,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         .environment(\.panelTopInset, header)
         // Only changes inside the fold range are published, so a fully folded player stops
         // invalidating on every scroll frame.
-        .environment(\.panelScroll, actions.scroll(fold))
+        .environment(\.panelScroll, fold.scrollAction)
       FoldingHeader(fold: fold, active: !playback.playing) {
         VStack(spacing: 0) {
           playerSurface(p)
@@ -405,7 +414,8 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
             case 2: list
             case 3:
               if let related {
-                ScrollView { related.padding(.horizontal, 16).padding(.vertical, 12) }.reportsScrollCollapse()
+                // The cards keep their own margins (IntroRelateRow).
+                ScrollView { related.padding(.vertical, 4) }.reportsScrollCollapse()
               }
             default: info()
             }
@@ -438,6 +448,7 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
         .recordsInlinePlayerFrame(model.engine)
         .overlay(alignment: .topLeading) { headerButtons }
         .opacity(inlinePlayerCovered ? 0 : 1).background(.black)
+        .cardZoomHero()
       HStack(alignment: .top, spacing: 0) {
         squareColumn(0, trailing: true) { info() }
         if canDiscuss {
@@ -534,29 +545,6 @@ struct IntroRelated<Content: View>: View {
   var body: some View { if !hoisted { content() } }
 }
 
-/// Closures handed to the panels through the environment, created once per page. A closure
-/// literal in `body` is a new value on every render, and every view reading it re-renders.
-@MainActor private final class PanelActions {
-  private let token = UUID()
-  private var openLink: (SharedLink) -> Void = { _ in }
-  private var showGallery: (GalleryRailRequest) -> Void = { _ in }
-  private var push: (String, AnyView) -> Bool = { _, _ in false }
-  private weak var fold: PanelFold?
-  lazy var openLinkEntry = StableAction<SharedLink>(token) { [unowned self] in self.openLink($0) }
-  lazy var galleryEntry = StableAction<GalleryRailRequest>(token) { [unowned self] in self.showGallery($0) }
-  lazy var presenter = ReplyPanelPresenter(token: token) { [unowned self] in self.push($0, $1) }
-  private lazy var scrollEntry: @MainActor (CGFloat, CGFloat) -> Void = { [unowned self] old, new in
-    self.fold?.scrolled(from: old, to: new)
-  }
-  func target(_ link: @escaping (SharedLink) -> Void) -> Self { openLink = link; return self }
-  func target(gallery: @escaping (GalleryRailRequest) -> Void) -> Self { showGallery = gallery; return self }
-  func target(push: @escaping (String, AnyView) -> Bool) -> Self { self.push = push; return self }
-  func scroll(_ fold: PanelFold) -> @MainActor (CGFloat, CGFloat) -> Void {
-    self.fold = fold
-    return scrollEntry
-  }
-}
-
 private struct PanelPlaybackState: Equatable {
   var playing = false
   var hasPlayed = false
@@ -574,6 +562,9 @@ private struct ActivePlaybackPanel<Content: View>: View {
 
 /// Scroll offset of the visible detail panel; only the folding views observe it.
 @MainActor @Observable final class PanelFold {
+  @ObservationIgnored fileprivate lazy var scrollAction: @MainActor (CGFloat, CGFloat) -> Void = { [weak self] in
+    self?.scrolled(from: $0, to: $1)
+  }
   var offset: CGFloat = 0 {
     didSet {
       let f = offset > limit * 0.6

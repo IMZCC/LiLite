@@ -99,6 +99,7 @@ MediaProfilePanel/视频编码优先顺序
 MediaProfilePanel/音质
 MediaProfilePanel/默认清晰度
 MotionSettings/参数
+MotionSettings/卡片展开
 MotionSettings/滚动回弹
 MotionSettings/过渡效果
 MotionSettings/页面切换

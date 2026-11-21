@@ -53,7 +53,11 @@ struct ListenTrack: Codable, Identifiable, Equatable {
   static let shared = ListenQueue()
   @Published private(set) var tracks: [ListenTrack] = []
   @Published private(set) var current: ListenTrack?
-  @Published private(set) var clock = 0.0
+  let progress = PlaybackProgress()
+  private(set) var clock: Double {
+    get { progress.seconds }
+    set { progress.update(newValue, immediate: true) }
+  }
   @Published private(set) var duration = 0.0
   @Published private(set) var playing = false
   @Published private(set) var loading = false
@@ -247,7 +251,8 @@ struct ListenTrack: Codable, Identifiable, Equatable {
         let r = try await SponsorAPI().segments(t.bvid, t.cid)
         try Task.checkCancellation()
         guard gen == epoch else { return }
-        segments = r.filter { SponsorRules.current().mode($0) != 4 }
+        let rules = SponsorRules.current()
+        segments = r.filter { rules.mode($0) != 4 }
       } catch { if !Task.isCancelled && gen == epoch { segmentError = error.localizedDescription } }
     }
   }
@@ -507,16 +512,21 @@ struct ListenTrack: Codable, Identifiable, Equatable {
           Task { @MainActor in
             guard let self, self.epoch == token, !self.loading, t.seconds.isFinite else { return }
             self.clock = t.seconds
-            self.playing = self.player.rate > 0
+            let playing = self.player.rate > 0
+            if self.playing != playing { self.playing = playing }
             if self.playing {
               self.persist(final: false)
-              if let seg = self.visits.next(self.segments, time: t.seconds, rules: .current()) {
+            }
+            if playing, !self.segments.isEmpty {
+              let rules = SponsorRules.current()
+              if let seg = self.visits.next(self.segments, time: t.seconds, rules: rules) {
                 self.skip(seg)
               }
-              self.requestedSkip = self.segments.first {
-                $0.valid && SponsorRules.current().mode($0) == 2 && $0.segment[0] <= t.seconds
+              let request = self.segments.first {
+                $0.valid && rules.mode($0) == 2 && $0.segment[0] <= t.seconds
                   && t.seconds < $0.segment[1]
               }
+              if request?.id != self.requestedSkip?.id { self.requestedSkip = request }
             }
             self.metadata()
           }

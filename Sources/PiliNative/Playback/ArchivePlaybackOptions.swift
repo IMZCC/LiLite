@@ -104,7 +104,7 @@ struct ArchivePlaybackOptions: View {
         }
         Section {
           if let open = actions.danmakuList { row("list.bullet", "弹幕列表") { close(open) } }
-          if let open = actions.danmakuSettings { row("text.bubble.badge.gearshape", "弹幕设置") { close(open) } }
+          if let open = actions.danmakuSettings { row("slider.horizontal.3", "弹幕设置") { close(open) } }
           SubtitlePicker(model: model)
           SpokenTrackPicker(model: model)
           if let video = actions.video, let cid = actions.cid {

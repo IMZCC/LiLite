@@ -34,6 +34,11 @@ extension View {
   @ViewBuilder func piliTabBarBackground() -> some View {
     if #available(iOS 26, *) { self } else { toolbarBackground(.visible, for: .tabBar) }
   }
+  /// A navigation stack that lets its host's background show through (iOS 18); before, the
+  /// stack keeps the system background.
+  @ViewBuilder func piliClearNavigationBackground() -> some View {
+    if #available(iOS 18, *) { containerBackground(.clear, for: .navigation) } else { self }
+  }
   /// The tab bar's minimize-on-scroll behaviour (iOS 26).
   @ViewBuilder func piliTabBarMinimize(onScrollDown: Bool) -> some View {
     if #available(iOS 26, *) {

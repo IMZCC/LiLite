@@ -281,13 +281,13 @@ struct Theater: View {
   }
   /// The lock offer and the locked state (split from `body` for the type checker).
   private var lockFollowing: LockFollowing {
-    LockFollowing(detached: detached, locked: slots.locked) { revealed in
+    LockFollowing(detached: detached, locked: slots.locked, suspended: slots.suspended) { revealed in
       visible = revealed
       wake()
     }
   }
   private struct LockFollowing: ViewModifier {
-    let detached: Bool, locked: Bool
+    let detached: Bool, locked: Bool, suspended: Bool
     let set: (Bool) -> Void
     func body(content: Content) -> some View {
       content
@@ -295,6 +295,8 @@ struct Theater: View {
         .onChange(of: detached) { _, covered in if !covered { set(true) } }
         // Locked, the controls are down; unlocking brings them back for their 3 s.
         .onChange(of: locked) { _, now in set(!now) }
+        // A panel over the player (更多) takes the controls away; they come back when it goes.
+        .onChange(of: suspended) { _, covered in set(!covered) }
     }
   }
   private func lockOfferTiming<V: View>(_ content: V) -> some View {
@@ -454,7 +456,7 @@ struct Theater: View {
       // The reference player's clear-screen lock: as the rows fade out, the lock fades in where
       // play / pause was (same cell, same moment — `lockExpired` is already false when the
       // controls go), and stays 3 s.
-      if !visible, !lockExpired, slots.lock != nil {
+      if !visible, !lockExpired, slots.lock != nil, !slots.suspended {
         lockOffer.padding(edges).transition(.opacity)
       }
       // The format chip plays on its own whether or not the controls are up: under the header
@@ -471,7 +473,7 @@ struct Theater: View {
         .allowsHitTesting(false)
       }
       // Paused with the controls put away: the reference player's play mark in a glass bubble.
-      if !visible, panel == nil, clock.ready, !clock.playing {
+      if !visible, panel == nil, clock.ready, !clock.playing, !slots.suspended {
         PlayerPausedBubble { playPause(); wake() }
           .transition(.opacity.combined(with: .scale(scale: 1.15)))
       }

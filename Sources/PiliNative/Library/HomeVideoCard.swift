@@ -39,6 +39,7 @@ struct HomeVideoCard: View {
         }
         .overlay(alignment: .bottom) { stats }
         .clipped()
+        .cardZoomCover(radius: HomeCardStyle.radius)
       VStack(alignment: .leading, spacing: 6) {
         Text(video.title).font(.subheadline).foregroundStyle(.primary)
           .lineLimit(2, reservesSpace: true).multilineTextAlignment(.leading)

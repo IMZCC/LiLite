@@ -39,6 +39,7 @@ InteractionScaleOptions/指示器高度	refreshDisplacement 刷新指示器高�
 InteractionScaleOptions/起始距离	touchSlopH 当前:「 」，系统默认值 横向滑动阈值	gesture.horizontalThreshold	24.0
 MediaProfilePanel/直播	liveQualityCellular 当前画质 蜂窝网络直播默认画质 liveQuality 直播默认画质
 MediaProfilePanel/音质	defaultAudioQaCellular 当前音质 蜂窝网络音质 defaultAudioQa 默认音质
+MotionSettings/卡片展开	一镜到底 缩放转场 系统缩放
 MotionSettings/过渡效果	pageTransition 页面过渡动画
 NavigationLayoutPanel/底部导航栏	hideTabBar
 NavigationLayoutPanel/首页搜索栏	hideSearchBar

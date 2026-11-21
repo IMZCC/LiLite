@@ -4,7 +4,7 @@ import SwiftUI
 struct DownloadsView: View { var body: some View { OfflineShelfView() } }
 struct DownloadRow: View {
   let v: OfflineVideo, play: (OfflineVideo) -> Void
-  @ObservedObject private var downloads = Downloads.shared
+  private let downloads = Downloads.shared
   private var playable: Bool { v.cacheOwner != nil && v.phase == .saved }
   var body: some View {
     HStack(alignment: .top, spacing: 12) {
@@ -58,14 +58,7 @@ struct DownloadRow: View {
           Text("正在获取地址")
         }.font(.caption).foregroundStyle(.secondary)
       case .transferring:
-        let value = downloads.progress[v.id] ?? 0
-        HStack(spacing: 8) {
-          ProgressView(value: value).tint(.accentColor)
-          Text("\(Int((value * 100).rounded()))%").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-          Button { Task { await downloads.pause(v) } } label: {
-            Image(systemName: "pause.circle.fill").font(.title3).symbolRenderingMode(.hierarchical)
-          }.accessibilityLabel("暂停")
-        }
+        TransferIndicator(video: v)
       case .paused:
         HStack(spacing: 8) {
           Text("已暂停").font(.caption).foregroundStyle(.secondary)
@@ -92,6 +85,21 @@ struct DownloadRow: View {
     }
   }
 }
+private struct TransferIndicator: View {
+  let video: OfflineVideo
+  var body: some View {
+    let downloads = Downloads.shared
+    let value = downloads.progress.values[video.id] ?? 0
+    HStack(spacing: 8) {
+      ProgressView(value: value).tint(.accentColor)
+      Text("\(Int((value * 100).rounded()))%").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+      Button { Task { await downloads.pause(video) } } label: {
+        Image(systemName: "pause.circle.fill").font(.title3).symbolRenderingMode(.hierarchical)
+      }.accessibilityLabel("暂停")
+    }
+  }
+}
+
 struct OfflinePlayer: View {
   @StateObject private var upscale = UpscaleSession()
   @StateObject private var systemMedia = SystemMediaControls()

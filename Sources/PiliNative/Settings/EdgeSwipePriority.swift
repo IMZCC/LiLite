@@ -41,6 +41,8 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
       guard visible, driver == nil, let nav = navigationController, nav.viewControllers.count > 1,
         let owner = nav.topViewController, let host = owner.viewIfLoaded,
         view.isDescendant(of: host) else { return }
+      // A page the system's zoom opened goes back by the zoom's own gestures.
+      guard !CardZoom.systemZoom(owner) else { detach(); return }
       didAttach(nav)
       if self.owner !== owner || pan == nil {
         detach()
@@ -79,7 +81,7 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
     func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
       guard let pan = gesture as? UIPanGestureRecognizer, let host = pan.view,
         let nav, let owner, nav.topViewController === owner, nav.viewControllers.count > 1,
-        !NavigationPopBlock.blocks(owner),
+        !NavigationPopBlock.blocks(owner), !CardZoom.busy, !CardZoom.systemZoom(owner),
         nav.transitionCoordinator == nil, driver == nil, nav.presentedViewController == nil,
         owner.presentedViewController == nil else { return false }
       let velocity = pan.velocity(in: host)
@@ -93,23 +95,30 @@ struct LeadingEdgeNavigation: UIViewControllerRepresentable {
     @objc private func drag(_ pan: UIPanGestureRecognizer) {
       guard let nav, let container = nav.viewIfLoaded else { return }
       let direction = sign(container)
-      let progress = min(1, max(0, direction * pan.translation(in: container).x / max(1, container.bounds.width)))
+      let translation = pan.translation(in: container)
+      let progress = min(1, max(0, direction * translation.x / max(1, container.bounds.width)))
       switch pan.state {
       case .began:
         let transition = LeadingPopTransition()
         driver = transition
-        transition.begin(in: nav, rtl: direction < 0) { [self] in
+        let finger = pan.location(in: container)
+        transition.begin(
+          in: nav, rtl: direction < 0, touch: CGPoint(x: finger.x - translation.x, y: finger.y - translation.y)
+        ) { [self] in
           driver = nil
           if let owner, nav.topViewController === owner { attach() } else { detach() }
         }
       case .changed:
-        driver?.interaction.update(progress)
+        driver?.update(progress, translation: translation)
       case .ended:
-        let speed = pan.velocity(in: container).x * direction
-        if speed > 500 || (progress >= 0.4 && speed > -300) { driver?.interaction.finish() }
-        else { driver?.interaction.cancel() }
+        let velocity = pan.velocity(in: container), speed = velocity.x * direction
+        // A page held under the finger (一镜到底) lets go sooner than one that slides.
+        let through = driver?.zooming == true
+          ? speed > 300 || (progress >= 0.25 && speed > -200)
+          : speed > 500 || (progress >= 0.4 && speed > -300)
+        driver?.end(finish: through, velocity: velocity)
       case .failed, .cancelled:
-        driver?.interaction.cancel()
+        driver?.end(finish: false, velocity: .zero)
       default: break
       }
     }
@@ -175,15 +184,27 @@ struct NavigationPopBlock: UIViewControllerRepresentable {
 /// Supply the animator and its interaction only for this pop. SwiftUI continues receiving the
 /// navigation delegate callbacks that keep its stack in sync when the user finishes or cancels.
 @MainActor final class LeadingPopTransition: NSObject, UINavigationControllerDelegate {
-  let interaction = UIPercentDrivenInteractiveTransition()
+  private let interaction = UIPercentDrivenInteractiveTransition()
   private weak var original: UINavigationControllerDelegate?
   private var animator: UIViewControllerAnimatedTransitioning?
+  /// Set for a page opened from a card: it goes back into the card under the finger (一镜到底),
+  /// driving itself. Other pages slide, scrubbed by `interaction`.
+  private var zoom: CardZoomTransition?
+  var zooming: Bool { zoom != nil }
 
-  func begin(in nav: UINavigationController, rtl: Bool, completion: @escaping () -> Void) {
+  func update(_ progress: CGFloat, translation: CGPoint) {
+    if let zoom { zoom.drag(translation) } else { interaction.update(progress) }
+  }
+  func end(finish: Bool, velocity: CGPoint) {
+    if let zoom { zoom.end(finish: finish, velocity: velocity) }
+    else if finish { interaction.finish() }
+    else { interaction.cancel() }
+  }
+  /// `touch` is where the finger went down, in the navigation controller's view.
+  func begin(in nav: UINavigationController, rtl: Bool, touch: CGPoint, completion: @escaping () -> Void) {
     original = nav.delegate
-    // A page opened from a card shrinks back into it under the finger (一镜到底); others slide.
-    animator = nav.topViewController.flatMap { CardZoom.popAnimator(from: $0) }
-      ?? MotionAnimator(mode: rtl ? .fromLeft : .fromRight, opening: false)
+    zoom = nav.topViewController.flatMap { CardZoom.interactivePop(from: $0, touch: touch, rtl: rtl) }
+    animator = zoom ?? MotionAnimator(mode: rtl ? .fromLeft : .fromRight, opening: false)
     interaction.completionCurve = .easeOut
     nav.delegate = self
     let popped = nav.popViewController(animated: true)
@@ -210,7 +231,7 @@ struct NavigationPopBlock: UIViewControllerRepresentable {
   }
   func navigationController(_ nav: UINavigationController,
     interactionControllerFor animation: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-    if animation === animator { return interaction }
+    if animation === animator { return zoom.map { $0 as UIViewControllerInteractiveTransitioning } ?? interaction }
     return original?.navigationController?(nav, interactionControllerFor: animation)
   }
 }

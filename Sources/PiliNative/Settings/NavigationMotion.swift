@@ -14,22 +14,26 @@ extension EnvironmentValues {
 struct PiliNavigationStack<Content: View>: View {
   private let content: Content
   @Environment(\.incomingTabLink) private var incoming
+  @AppStorage(CardZoomStyle.key) private var zoomStyle = CardZoomStyle.system.rawValue
   @State private var tabBarHidden = false
   init(@ViewBuilder content: () -> Content) { self.content = content() }
   var body: some View {
     SwiftUI.NavigationStack {
-      content.environment(\.incomingTabLink, nil)
+      content
         .navigationDestination(item: incoming ?? .constant(nil)) { request in
-          LinkDestination(item: request.link).environment(\.incomingTabLink, nil)
+          LinkDestination(item: request.link)
         }
         .background(MotionProbe().frame(width: 0, height: 0))
         .background(NavigationTabBarProbe { hidden in
           if tabBarHidden != hidden { tabBarHidden = hidden }
         }.frame(width: 0, height: 0))
     }.toolbar(tabBarHidden || incoming?.wrappedValue != nil ? .hidden : .visible, for: .tabBar)
+      .environment(\.cardZoomStyle, CardZoomStyle(rawValue: zoomStyle) ?? .system)
       .piliTabBarBackground()
       // One set of card-menu sheets and dialogs for every page of this stack.
       .modifier(ArchiveCoverPresenter())
+      // Only this stack consumes the tab's route. Pushed pages and their sheets can host stacks of their own.
+      .environment(\.incomingTabLink, nil)
   }
 }
 
@@ -106,7 +110,11 @@ private let debugAnimationSpeed = ProcessInfo.processInfo.environment["PILI_ANIM
     // 一镜到底: a page opened from a card grows out of it, and a tap on Back shrinks it back in.
     // The system's own edge swipe keeps its finger-following slide.
     if operation == .push, let zoom = CardZoom.pushAnimator(to: toVC) { return zoom }
+    // The system's zoom (卡片展开 → 系统缩放) carries its pages both ways.
+    if CardZoom.systemZoom(operation == .push ? toVC : fromVC) { return nil }
     if operation == .pop, !interactive, let zoom = CardZoom.popAnimator(from: fromVC) { return zoom }
+    // Any other motion starts from pages at rest.
+    CardZoom.settle()
     if !mode.custom(reduced: UIAccessibility.isReduceMotionEnabled, interactivePop: interactive) { return nil }
     return MotionAnimator(mode: mode, opening: operation != .pop)
   }

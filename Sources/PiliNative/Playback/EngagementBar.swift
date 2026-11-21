@@ -80,21 +80,23 @@ struct ArchiveActionColumn: View {
         .foregroundStyle(tint)
     }
   }
-  /// The official action row's solid grey glyphs (pink when done) over small grey counts, each
-  /// on its own glass disc.
+  /// KingActionItem: a 58 dp column — 3 dp, the glyph in a 30 dp box (Ga7, lit when done), 3 dp,
+  /// then the count or name in 10 sp Ga5.
   private var column: some View {
-    VStack(spacing: 5) {
-      glyph(size: 22, tint: active ? Color.accentColor : Color.primary.opacity(0.62))
+    let d = OfficialIntro.d
+    return VStack(spacing: d(3)) {
+      glyph(size: d(25.5), tint: active ? Color.accentColor : OfficialIntro.ga7)
         .modifier(ActionPop(pulse: pulse, lit: active))
-        .frame(width: 44, height: 44)
-        .piliGlass(in: Circle(), interactive: true)
-      Text(title).font(.caption).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
-        .foregroundStyle(active ? Color.accentColor : Color.secondary)
+        .frame(width: d(30), height: d(30))
+      Text(title).font(OfficialIntro.font(10)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+        .foregroundStyle(active ? Color.accentColor : OfficialIntro.ga5)
         .contentTransition(.numericText())
     }
+    .padding(.top, d(3))
     .animation(.easeOut(duration: 0.2), value: active)
     .animation(.snappy(duration: 0.25), value: title)
-    .frame(minWidth: 56, maxWidth: fills ? .infinity : 64, minHeight: 64).contentShape(Rectangle())
+    .frame(minWidth: 56, maxWidth: fills ? .infinity : 64)
+    .frame(height: d(58), alignment: .top).contentShape(Rectangle())
   }
 }
 

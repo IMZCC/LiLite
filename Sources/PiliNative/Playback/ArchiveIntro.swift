@@ -62,36 +62,8 @@ struct ArchivePartStrip: View {
   }
 }
 
-/// One tappable card for a collection; the full list opens in the existing panel.
-struct ArchiveCollectionCard: View {
-  let catalog: VideoCollection
-  let currentBVID: String
-  let open: () -> Void
-  var body: some View {
-    let entries = (catalog.sections ?? []).flatMap { $0.episodes ?? [] }
-    let index = entries.firstIndex { $0.bvid == currentBVID }
-    Button(action: open) {
-      HStack(spacing: 12) {
-        Image(systemName: "rectangle.stack.fill").font(.system(size: 18, weight: .semibold))
-          .foregroundStyle(.white).frame(width: 40, height: 40)
-          .iconGradient(.accentColor, cornerRadius: 11)
-        VStack(alignment: .leading, spacing: 3) {
-          Text(catalog.title ?? "视频合集").font(.subheadline.weight(.semibold)).lineLimit(1)
-          Text(index.map { "第 \($0 + 1) 个 · 共 \(entries.count) 个视频" } ?? "共 \(entries.count) 个视频")
-            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-        }
-        Spacer(minLength: 8)
-        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-      }
-      .padding(12)
-      .background(Color(uiColor: .secondarySystemBackground),
-        in: RoundedRectangle(cornerRadius: NativeGlass.cardRadius, style: .continuous))
-      .contentShape(RoundedRectangle(cornerRadius: NativeGlass.cardRadius, style: .continuous))
-    }.buttonStyle(.plain)
-  }
-}
-
-/// Related videos shown inline below the introduction, as in the original client.
+/// Related videos under the intro, as the official client's: no heading, a hairline, then the
+/// cards (IntroRelateRow).
 struct ArchiveRelatedList: View {
   let bvid: String
   @EnvironmentObject private var accounts: AccountContext
@@ -103,16 +75,18 @@ struct ArchiveRelatedList: View {
     // Always keep a concrete container: an empty Group would never run the load task. Lazy, so
     // the forty rows (cover, link and menu each) are built as they scroll in, not all at once
     // with the page.
-    LazyVStack(alignment: .leading, spacing: 14) {
+    LazyVStack(alignment: .leading, spacing: 0) {
       if enabled {
-        Text("相关推荐").font(.headline)
+        Rectangle().fill(OfficialIntro.ga2).frame(height: 0.5).padding(.horizontal, OfficialIntro.d(12))
         if failed && items.isEmpty {
-          Button("重新加载相关推荐") { failed = false; Task { await load() } }
-            .piliGlassButton().frame(maxWidth: .infinity)
+          Button("加载失败，点击重试") { failed = false; Task { await load() } }
+            .font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5)
+            .frame(maxWidth: .infinity).padding(.vertical, 24)
         } else if !loaded {
           ProgressView().frame(maxWidth: .infinity).padding(.vertical, 24)
         } else if items.isEmpty {
-          Text("暂无相关视频").font(.footnote).foregroundStyle(.secondary)
+          Text("暂无相关视频").font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5)
+            .frame(maxWidth: .infinity).padding(.vertical, 24)
         }
         ForEach(items) { video in
           ArchiveRelatedRow(video: video)
@@ -152,12 +126,9 @@ struct ArchiveRelatedRow: View {
     LazyLink {
       DetailView(initial: video)
     } label: {
-      MediaRow(
-        cover: video.cover, title: video.title,
-        duration: video.duration.map { clockText(Double($0)) },
-        subtitle: video.owner?.name,
-        detail: MediaStats.line(views: video.stat?.view, danmaku: video.stat?.danmaku))
+      IntroRelateRow(video: video)
     }.buttonStyle(PressPrefetchStyle { ArchiveDetailPrefetch.shared.warm(video.bvid) }).archiveCover(video)
+      .overlay(alignment: .bottomTrailing) { IntroRelateRow.more(video) }
   }
 }
 

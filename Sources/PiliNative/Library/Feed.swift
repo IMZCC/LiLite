@@ -609,6 +609,10 @@ private struct VideoShelf: View, Equatable {
     a.shelf == b.shelf && (a.openRank == nil) == (b.openRank == nil)
   }
   @Environment(\.horizontalSizeClass) private var sizeClass
+  @Environment(\.displayScale) private var displayScale
+  @Environment(\.imageDisplay) private var imageDisplay
+  @AppStorage("grid.recommendWidth") private var recommendedWidth = 240.0
+  @AppStorage("grid.cardWidth") private var cardWidth = 240.0
   struct Feedback {
     let video: Video, group: String, reason: Video.FeedReason, uid: String, index: Int
   }
@@ -754,7 +758,7 @@ private struct VideoShelf: View, Equatable {
   }
   /// The official client's double-column card on the grouped background.
   private func gridCard(_ v: Video) -> some View {
-    LazyLink { destination(v) } label: {
+    LazyLink(zoomStyle: zoomStyle(for: v)) { destination(v) } label: {
       HomeVideoCard(video: v)
     }
     .buttonStyle(PressPrefetchStyle { if v.recommendLink == nil { ArchiveDetailPrefetch.shared.warm(v.bvid) } })
@@ -762,6 +766,10 @@ private struct VideoShelf: View, Equatable {
     .overlay(alignment: .bottomTrailing) { moreMenu(v) }
     .archiveCover(v) { feedbackMenus(v) }
     .disabled(sending)
+  }
+  private func zoomStyle(for video: Video) -> CardZoomStyle? {
+    let opensVideo = video.recommendationOpensVideo ?? video.recommendLink.flatMap(SharedLink.parse)?.opensVideoDetail ?? true
+    return opensVideo ? .custom : nil
   }
   @ViewBuilder private func destination(_ v: Video) -> some View {
     if let link = v.recommendLink.flatMap(SharedLink.parse) {
@@ -830,7 +838,7 @@ private struct VideoShelf: View, Equatable {
   }
   /// The optional large first card.
   private func archiveCard(_ v: Video, featured: Bool) -> some View {
-        LazyLink {
+        LazyLink(zoomStyle: zoomStyle(for: v)) {
           destination(v)
         } label: {
           VStack(alignment: .leading, spacing: featured ? 10 : 8) {
@@ -851,6 +859,7 @@ private struct VideoShelf: View, Equatable {
                 }
               }
               .clipShape(RoundedRectangle(cornerRadius: featured ? NativeGlass.panelRadius : NativeGlass.cardRadius, style: .continuous))
+              .cardZoomCover(radius: featured ? NativeGlass.panelRadius : NativeGlass.cardRadius)
             VStack(alignment: .leading, spacing: 4) {
               Text(v.title).piliFont(featured ? .title3 : .subheadline, weight: .semibold)
                 .lineLimit(2).multilineTextAlignment(.leading)
@@ -875,13 +884,17 @@ private struct VideoShelf: View, Equatable {
     guard !ahead.isEmpty else { return }
     let gap = HomeCardStyle.gap
     let window = Double(WindowCanvas.shared.size.width)
-    let desired = UserDefaults.standard.object(forKey: "grid.recommendWidth") as? Double ?? 240
+    let desired = min(500, max(150, shelf == .recommended ? recommendedWidth : cardWidth))
     let columns = Double(max(1, InterfacePresentation.columns(
       width: window - 2 * gap, gap: gap, desired: desired, accessible: false)))
     let width = (window - 2 * gap - gap * (columns - 1)) / columns
     let pixels = ArtworkCacheRules.pixels(
-      width: width, height: width / Double(HomeCardStyle.coverAspect), scale: Double(UIScreen.main.scale))
-    ArtworkPrefetch.shared.prefetch(ahead, pixels: pixels, quality: ImageDisplay.stored.quality)
+      width: width, height: width / Double(HomeCardStyle.coverAspect), scale: Double(displayScale))
+    let quality = (imageDisplay ?? .stored).quality
+    let pictures = ahead.map(\.pic)
+    Task(priority: .utility) {
+      await ArtworkPrefetch.shared.prefetch(pictures, pixels: pixels, quality: quality)
+    }
   }
   @MainActor private func send(_ item: Feedback, undo: Bool) async {
     guard !sending, accounts.state.owner(.role(.recommend)) == item.uid else { return }

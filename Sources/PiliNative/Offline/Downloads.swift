@@ -1,5 +1,6 @@
 import AVKit
 import CryptoKit
+import Observation
 import SwiftUI
 
 private final class DownloadEvents: CertificateSessionDelegate, URLSessionDownloadDelegate, @unchecked Sendable {
@@ -11,9 +12,15 @@ private final class DownloadEvents: CertificateSessionDelegate, URLSessionDownlo
     totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64
   ) {
     guard let key = downloadTask.taskDescription, totalBytesExpectedToWrite > 0 else { return }
+    let response = downloadTask.response as? HTTPURLResponse
+    let slice = response?.statusCode == 206 ? OfflinePieces.Slice(
+      range: response?.value(forHTTPHeaderField: "Content-Range"),
+      requested: downloadTask.originalRequest?.value(forHTTPHeaderField: "Range"),
+      expected: totalBytesExpectedToWrite, etag: nil) : nil
+    let transferred = slice.map { $0.start + min($0.length, totalBytesWritten) } ?? totalBytesWritten
+    let total = slice?.total ?? totalBytesExpectedToWrite
     Task { @MainActor in
-      owner?.advance(
-        key, task: downloadTask.taskIdentifier, totalBytesWritten, totalBytesExpectedToWrite)
+      owner?.advance(key, task: downloadTask.taskIdentifier, transferred, total)
     }
   }
   func urlSession(
@@ -96,11 +103,16 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
     _ = Downloads.shared
   }
 }
+/// Byte-count updates only invalidate the visible transfer indicators.
+@MainActor @Observable final class DownloadProgress {
+  var values: [String: Double] = [:]
+}
+
 @MainActor final class Downloads: ObservableObject {
   static let shared = Downloads()
   static let sessionID = "com.liuliuya.PiliNative.offline.v1"
   @Published private(set) var list: [OfflineVideo] = []
-  @Published var progress: [String: Double] = [:]
+  let progress = DownloadProgress()
   @Published var issue: String?
   @Published private(set) var moving = Set<String>()
   private var holdingForExit = false, exitCheckpointFailed = false
@@ -306,8 +318,12 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
     }.value
     var interrupted = [OfflineVideo]()
     var changed = needsIndexRewrite
-    for v in list {
-      guard let i = list.firstIndex(where: { $0.token == v.token }) else { continue }
+    for (index, v) in list.enumerated() {
+      // The list can change while a legacy track is being prepared.
+      let i: Int
+      if list.indices.contains(index), list[index].token == v.token { i = index }
+      else if let moved = list.firstIndex(where: { $0.token == v.token }) { i = moved }
+      else { continue }
       guard observed[v.id] == (v.generation?.uuidString ?? "") else { continue }
       if v.location != .app { continue }
       guard let disk = files[v.token] else { continue }
@@ -534,7 +550,7 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
       }
     }
     list.insert(row, at: 0)
-    progress[row.id] = nil
+    progress.values[row.id] = nil
     save()
     let generation = row.generation
     if let previous {
@@ -629,14 +645,10 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
       return
     }
     let v = list[i]
-    if let p = v.components.first(where: { v.key($0) == key }), let receipt = pieces(v, p).state() {
-      metrics[key] = (min(receipt.total, receipt.committed + n), receipt.total)
-    } else {
-      metrics[key] = (n, total)
-    }
+    metrics[key] = (n, total)
     let samples = v.components.compactMap { metrics[v.key($0)] }
     let sum = samples.reduce(0.0) { $0 + Double($1.1) }
-    if sum > 0 { progress[v.id] = min(0.999, samples.reduce(0.0) { $0 + Double($1.0) } / sum) }
+    if sum > 0 { progress.values[v.id] = min(0.999, samples.reduce(0.0) { $0 + Double($1.0) } / sum) }
   }
   private var finalizing = Set<String>()
   private func completeIfReady(_ v: OfflineVideo) async {
@@ -659,7 +671,7 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
     else { return }
     list[i].mediaBytes = v.components.compactMap { try? OfflinePackage.size(file(v, $0)) }.reduce(
       0, +)
-    list[i].phase = .saved; list[i].error = nil; progress[v.id] = nil
+    list[i].phase = .saved; list[i].error = nil; progress.values[v.id] = nil
     for p in v.components { metrics[v.key(p)] = nil }
     save(); let row = list[i];
     Task { await refreshExtras(row, mode: row.includeExtras == true ? .all : .minimal) };
@@ -774,7 +786,7 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
     guard let (i, _) = lookup(key) else { return }
     list[i].phase = .failed
     list[i].error = message
-    progress[list[i].id] = nil
+    progress.values[list[i].id] = nil
     save()
   }
   func suspendOtherOwners(_ owner: String) async {
@@ -867,7 +879,7 @@ final class DownloadLifecycle: NSObject, UIApplicationDelegate {
         if FileManager.default.fileExists(atPath: dir.path) {
           try FileManager.default.removeItem(at: dir)
         }
-        progress[v.id] = nil
+        progress.values[v.id] = nil
         erased.insert(v.token)
       } catch {
         let note = "未能移除缓存：" + error.localizedDescription

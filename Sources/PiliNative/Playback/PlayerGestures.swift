@@ -52,6 +52,8 @@ private struct GestureCanvas:View{
   @State private var scrub: Double?
   @AppStorage("player.seekPreview") private var preview = true
   @State private var levelTracker: PlayerSlide.LevelTracker?
+  /// Detents felt while sliding the position, brightness or volume.
+  @State private var detents = SlideDetents()
   /// Off by default: the official client's double tap pauses or resumes anywhere on the picture.
   @AppStorage("player.quickDouble") private var quick = false
   @AppStorage(PlayerSlide.seekCurveKey) private var seekCurve = true
@@ -138,7 +140,11 @@ private struct GestureCanvas:View{
                 if PlayerSlide.cancelsSeek(v.location, size: g.size) {
                   scrub = nil; feedback = "松开手指，取消进退"
                 } else {
-                  scrub = target(dx, width: g.size.width); feedback = nil
+                  let t = target(dx, width: g.size.width)
+                  scrub = t; feedback = nil
+                  if model.duration > 0 {
+                    detents.move(t / model.duration, origin: (start ?? t) / model.duration)
+                  }
                 }
               case .fullscreen:
                 scrub = nil; feedback = nil
@@ -150,10 +156,12 @@ private struct GestureCanvas:View{
                 guard let n = levelTracker?.level(-dy / max(1, g.size.height)) else { break }
                 WindowMetrics.brightness = n
                 level = (PlayerLevelPill.brightnessSymbol(n), Int((n * 100).rounded()))
+                detents.move(n)
               case .volume:
                 guard let n = levelTracker?.level(-dy / max(1, g.size.height)) else { break }
                 model.player.presentationVolume = Float(n)
                 level = (PlayerLevelPill.volumeSymbol(n), Int((n * 100).rounded()))
+                detents.move(n)
               }
             }.onEnded { v in
               guard viewportTouch?.acceptsPan != false else {
@@ -169,6 +177,7 @@ private struct GestureCanvas:View{
               start = nil; axis = nil; levelTracker = nil
               scrub = nil
               level = nil
+              detents.finish()
               hint(nil)
             })
         if burst != 0 {
@@ -217,7 +226,7 @@ private struct GestureCanvas:View{
       .onReceive(model.player.itemPublisher.dropFirst()){_ in cancel()}
       .onDisappear{cancel()}
   }
-  private func cancel(){level=nil;viewportTouch?.horizontalSeek=nil;clear?.cancel();burstEnd?.cancel();echoEnd?.cancel();echo=nil;burst=0;start=nil;axis=nil;scrub=nil;feedback=nil;endBoost()}
+  private func cancel(){detents.finish();level=nil;viewportTouch?.horizontalSeek=nil;clear?.cancel();burstEnd?.cancel();echoEnd?.cancel();echo=nil;burst=0;start=nil;axis=nil;scrub=nil;feedback=nil;endBoost()}
   private func accumulate(_ delta: Double) {
     guard let item = model.player.playbackItem, model.ready, delta.isFinite, delta != 0 else { return }
     burstEnd?.cancel()

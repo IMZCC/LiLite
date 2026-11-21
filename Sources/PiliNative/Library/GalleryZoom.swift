@@ -6,8 +6,6 @@ struct GalleryZoom: UIViewRepresentable {
   var paging: GalleryPagingEdges? = nil, active = true
   /// A single tap (not the first of a double tap): the full-screen viewer closes on it.
   var tapped: (() -> Void)? = nil
-  /// 0 = let the system pick the frame rate.
-  private let fps = 0
   final class ImageScroll: UIScrollView {
     let canvas = UIImageView()
     var resized: (() -> Void)?
@@ -20,19 +18,17 @@ struct GalleryZoom: UIViewRepresentable {
     weak var scroll: ImageScroll?
     var tapped: (() -> Void)?
     @objc func singleTap(_ tap: UITapGestureRecognizer) { tapped?() }
-    var url: URL?, source: CGImageSource?, link: CADisplayLink?, frame = 0, next = 0.0,
-      lastSize = CGSize.zero
+    private var file: URL?
+    private var frames: GalleryFrames?
+    private var firstLoad: Task<Void, Never>?
+    private var animation: Task<Void, Never>?
+    private var active = false
+    private var frame = 0
+    private var count = 0
+    private var delay = 0.1
+    private var lastSize = CGSize.zero
     private var pixel = CGSize.zero
-    private var requested = 0
-    func rate(_ value: Int) {
-      requested = value
-      guard let link else { return }
-      let cap = scroll?.window?.windowScene?.screen.maximumFramesPerSecond ?? 60
-      let target = Float(min(max(1, cap), max(1, value)))
-      link.preferredFrameRateRange =
-        value > 0
-        ? CAFrameRateRange(minimum: min(24, target), maximum: target, preferred: target) : .default
-    }
+
     func viewForZooming(in scrollView: UIScrollView) -> UIView? { scroll?.canvas }
     func scrollViewDidZoom(_ scrollView: UIScrollView) { center() }
     func center() {
@@ -71,66 +67,60 @@ struct GalleryZoom: UIViewRepresentable {
       let h = s.bounds.height / target
       s.zoom(to: CGRect(x: loc.x - w / 2, y: loc.y - h / 2, width: w, height: h), animated: true)
     }
-    func load(_ file: URL) {
-      guard url != file else { return }
-      stop()
-      url = file
-      guard let src = CGImageSourceCreateWithURL(file as CFURL, nil), CGImageSourceGetCount(src) > 0
-      else { return }
-      source = src
-      frame = 0
-      next = 0
-      lastSize = .zero
-      if let image = decoded(src, 0) {
-        scroll?.canvas.image = image
-        pixel = image.size
-        layout()
-      }
-      if CGImageSourceGetCount(src) > 1 {
-        let l = CADisplayLink(target: self, selector: #selector(tick(_:)))
-        l.add(to: .main, forMode: .common)
-        link = l
-        rate(requested)
-      }
-    }
-    private func decoded(_ s: CGImageSource, _ i: Int) -> UIImage? {
-      let count = CGImageSourceGetCount(s)
-      let opts =
-        [
-          kCGImageSourceCreateThumbnailFromImageAlways: true,
-          kCGImageSourceCreateThumbnailWithTransform: true,
-          kCGImageSourceThumbnailMaxPixelSize: count == 1 ? 8192 : 1600,
-          kCGImageSourceShouldCacheImmediately: true,
-        ] as CFDictionary
-      return CGImageSourceCreateThumbnailAtIndex(s, i, opts).map { UIImage(cgImage: $0) }
-    }
-    private func delay(_ s: CGImageSource, _ i: Int) -> Double {
-      let p = (CGImageSourceCopyPropertiesAtIndex(s, i, nil) as? [String: Any]) ?? [:]
-      for v in p.values {
-        if let o = v as? [String: Any],
-          let d = (o["UnclampedDelayTime"] ?? o["DelayTime"]) as? NSNumber
-        {
-          return d.doubleValue < 0.011 ? 0.1 : min(60, d.doubleValue)
-        }
-      }
-      return 0.1
-    }
-    @objc func tick(_ l: CADisplayLink) {
-      guard let s = source else { return }
-      if next == 0 {
-        next = l.timestamp + delay(s, frame)
+    func load(_ file: URL, active: Bool) {
+      if self.file == file {
+        guard self.active != active else { return }
+        self.active = active
+        updateAnimation()
         return
       }
-      guard l.timestamp >= next else { return }
-      frame = (frame + 1) % CGImageSourceGetCount(s)
-      if let image = decoded(s, frame) { scroll?.canvas.image = image }
-      next = l.timestamp + delay(s, frame)
+      stop()
+      self.file = file
+      self.active = active
+      let frames = GalleryFrames(file: file)
+      self.frames = frames
+      firstLoad = Task { [weak self] in
+        guard let first = await frames.read(0), !Task.isCancelled, let self else { return }
+        count = first.count
+        delay = first.delay
+        if let image = first.image {
+          let still = UIImage(cgImage: image)
+          scroll?.canvas.image = still
+          pixel = still.size
+          layout()
+        }
+        updateAnimation()
+      }
     }
+
+    private func updateAnimation() {
+      animation?.cancel()
+      animation = nil
+      guard active, count > 1, let frames else { return }
+      animation = Task { [weak self] in
+        while !Task.isCancelled {
+          guard let self else { return }
+          let deadline = ContinuousClock.now + .seconds(delay)
+          let next = (frame + 1) % count
+          guard let decoded = await frames.read(next), !Task.isCancelled else { return }
+          do { try await Task.sleep(until: deadline, clock: .continuous) } catch { return }
+          guard !Task.isCancelled else { return }
+          if let image = decoded.image { scroll?.canvas.image = UIImage(cgImage: image) }
+          frame = next
+          delay = decoded.delay
+        }
+      }
+    }
+
     func stop() {
-      link?.invalidate()
-      link = nil
-      source = nil
-      url = nil
+      firstLoad?.cancel()
+      animation?.cancel()
+      firstLoad = nil
+      animation = nil
+      file = nil
+      frames = nil
+      count = 0
+      frame = 0
       pixel = .zero
       lastSize = .zero
       scroll?.canvas.image = nil
@@ -157,11 +147,47 @@ struct GalleryZoom: UIViewRepresentable {
   func updateUIView(_ view: ImageScroll, context: Context) {
     context.coordinator.tapped = tapped
     if active { paging?.scroll = view } else if paging?.scroll === view { paging?.scroll = nil }
-    context.coordinator.load(file)
-    context.coordinator.rate(fps)
+    context.coordinator.load(file, active: active)
   }
   static func dismantleUIView(_ view: ImageScroll, coordinator: Coordinator) {
     view.resized = nil
     coordinator.stop()
+  }
+}
+
+/// One reader per file. ImageIO access is serialized, including when a swipe cancels a decode.
+private actor GalleryFrames {
+  struct Frame {
+    let image: CGImage?
+    let count: Int
+    let delay: Double
+  }
+
+  let file: URL
+  private lazy var source = CGImageSourceCreateWithURL(file as CFURL, nil)
+  init(file: URL) { self.file = file }
+
+  func read(_ index: Int) -> Frame? {
+    guard !Task.isCancelled, let source else { return nil }
+    let count = CGImageSourceGetCount(source)
+    guard index < count else { return nil }
+    let options: [CFString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+      kCGImageSourceThumbnailMaxPixelSize: count == 1 ? 8192 : 1600,
+      kCGImageSourceShouldCacheImmediately: true,
+    ]
+    let image = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary)
+    var delay = 0.1
+    if count > 1, let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [String: Any] {
+      for case let values as [String: Any] in properties.values {
+        if let seconds = (values["UnclampedDelayTime"] ?? values["DelayTime"]) as? NSNumber {
+          let value = seconds.doubleValue
+          if value.isFinite, value >= 0.011 { delay = min(60, value) }
+          break
+        }
+      }
+    }
+    return Frame(image: image, count: count, delay: delay)
   }
 }

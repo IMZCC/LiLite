@@ -37,20 +37,20 @@ struct StableContent<Key: Equatable, Content: View>: View, Equatable {
 /// `NavigationLink { destination } label: { label }` whose destination is built on push. Outside
 /// list rows the label is a card its page grows out of (`CardZoom`).
 struct LazyLink<Destination: View, Label: View>: View {
+  private let zoomStyle: CardZoomStyle?
   let destination: () -> Destination
   let label: Label
-  @Environment(\.cardZoom) private var zoom
   @Environment(\.inListRows) private var inList
-  @Environment(\.interfaceScaled) private var scaled
-  init(@ViewBuilder destination: @escaping () -> Destination, @ViewBuilder label: () -> Label) {
+  init(zoomStyle: CardZoomStyle? = nil, @ViewBuilder destination: @escaping () -> Destination, @ViewBuilder label: () -> Label) {
+    self.zoomStyle = zoomStyle
     self.destination = destination
     self.label = label()
   }
   var body: some View {
-    if zoom && !inList && !scaled {
-      NavigationLink { DeferredPage(destination) } label: { label.modifier(CardZoomSource()) }
-    } else {
+    if inList {
       NavigationLink { DeferredPage(destination) } label: { label }
+    } else {
+      CardZoomLink(preferredStyle: zoomStyle, destination: destination) { label }
     }
   }
 }

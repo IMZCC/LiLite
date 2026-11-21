@@ -204,6 +204,24 @@ private struct ArchiveCoverLocalHost<Extra: View>: ViewModifier {
   }
 }
 
+/// A list row's "⋮": the same menu as a card's long press, from a button.
+struct ArchiveCoverMoreButton<Label: View>: View {
+  let video: Video
+  @ViewBuilder let label: () -> Label
+  @Environment(\.archiveCoverHost) private var host
+  @State private var local = ArchiveCoverHost()
+  var body: some View {
+    if let host {
+      Menu { ArchiveCoverItems(video: video, host: host, extra: EmptyView()) } label: { label() }
+        .accessibilityLabel("更多")
+    } else {
+      Menu { ArchiveCoverItems(video: video, host: local, extra: EmptyView()) } label: { label() }
+        .accessibilityLabel("更多")
+        .modifier(ArchiveCoverPresentations(host: local))
+    }
+  }
+}
+
 extension View {
   func archiveCover<Extra: View>(_ video: Video, @ViewBuilder extra: () -> Extra) -> some View {
     modifier(ArchiveCoverMenu(video: video, extra: extra()))

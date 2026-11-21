@@ -1,3 +1,4 @@
+import ImageIO
 import SwiftUI
 
 struct OfflineShelfView: View {
@@ -11,16 +12,14 @@ struct OfflineShelfView: View {
   @State private var playing: OfflineVideo?
   @State private var updater: OfflineBatchRequest?
   private var owner: String { accounts.state.owner(.role(.video)) ?? "" }
-  private var matching: [OfflineVideo] {
-    OfflineShelfFilter.rows(downloads.list, search: query, shelf: shelf, owner: owner)
-  }
-  private var choices: [OfflineVideo] { matching.filter { checked.contains($0.token) } }
   var body: some View {
+    let matching = OfflineShelfFilter.rows(downloads.list, search: query, shelf: shelf, owner: owner)
     List {
       if downloads.indexUnavailable { Button("重新读取缓存清单") { Task { await downloads.retryIndex() } } }
       if let msg = downloads.issue { Text(msg).font(.caption).foregroundStyle(.secondary) }
       if selecting {
         Button(checked.isSuperset(of: matching.map(\.token)) ? "取消全选" : "全选") { toggle(matching) }
+        let choices = matching.filter { checked.contains($0.token) }
         if !choices.isEmpty { actions(choices) }
       }
       if matching.isEmpty {
@@ -207,8 +206,13 @@ struct OfflineBatchPanel: View {
 struct OfflineCoverCell: View {
   let row: OfflineVideo
   var size = CGSize(width: 72, height: 44)
+  @Environment(\.displayScale) private var scale
   @State private var image: UIImage?
+  private struct Request: Equatable {
+    let token: String, stamp: UUID?, pixels: Int
+  }
   var body: some View {
+    let pixels = Int(ceil(max(size.width, size.height) * scale))
     Group {
       if let image {
         Image(uiImage: image).resizable().scaledToFill()
@@ -221,10 +225,20 @@ struct OfflineCoverCell: View {
     }
     .frame(width: size.width, height: size.height).clipped()
     .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
-    .task(id: row.token + ":" + (row.attachmentStamp?.uuidString ?? "")) {
-      image = UIImage(
-        contentsOfFile: Downloads.shared.extraDirectory(row).appendingPathComponent("cover.jpg")
-          .path)
+    .task(id: Request(token: row.token, stamp: row.attachmentStamp, pixels: pixels)) {
+      image = nil
+      let file = Downloads.shared.extraDirectory(row).appendingPathComponent("cover.jpg")
+      let decode = Task.detached(priority: .utility) { () -> CGImage? in
+        guard !Task.isCancelled, let source = CGImageSourceCreateWithURL(file as CFURL, nil) else { return nil }
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+          kCGImageSourceCreateThumbnailFromImageAlways: true,
+          kCGImageSourceCreateThumbnailWithTransform: true,
+          kCGImageSourceThumbnailMaxPixelSize: max(1, pixels),
+          kCGImageSourceShouldCacheImmediately: true,
+        ] as CFDictionary)
+      }
+      let cover = await withTaskCancellationHandler { await decode.value } onCancel: { decode.cancel() }
+      if !Task.isCancelled, let cover { image = UIImage(cgImage: cover) }
     }
   }
 }

@@ -74,6 +74,7 @@ struct SearchHitRow: View {
                       }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: NativeGlass.thumbRadius, style: .continuous))
+                    .cardZoomCover(radius: NativeGlass.thumbRadius)
                   Text(v.title).font(.caption).lineLimit(2).multilineTextAlignment(.leading)
                 }.frame(width: 148)
               }.buttonStyle(.plain)

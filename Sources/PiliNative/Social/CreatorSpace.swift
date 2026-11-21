@@ -997,14 +997,14 @@ private struct SpaceArchiveRow: View {
       Text(n.formatted(.number.notation(.compactName))).monospacedDigit()
     }
   }
+  private static let monthDay = MediaStats.dateFormatter("M月d日")
+  private static let yearMonthDay = MediaStats.dateFormatter("yyyy年M月d日")
   /// Within a day relative ("8分钟前"), then "11月13日" this year and "2024年3月19日" before.
   static func date(_ stamp: Int64?) -> String? {
     guard let stamp, stamp > 0 else { return nil }
     let date = Date(timeIntervalSince1970: TimeInterval(stamp))
     if Date().timeIntervalSince(date) < 86_400 { return MediaStats.published(stamp) }
-    let f = DateFormatter()
-    f.locale = Locale(identifier: "zh_CN")
-    f.dateFormat = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year) ? "M月d日" : "yyyy年M月d日"
+    let f = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year) ? monthDay : yearMonthDay
     return f.string(from: date)
   }
 }
@@ -1106,7 +1106,7 @@ private struct SpaceLinkRow<Destination: View>: View {
   let title: String, symbol: String
   @ViewBuilder let destination: () -> Destination
   var body: some View {
-    NavigationLink(destination: destination) {
+    NavigationLink { DeferredPage(destination) } label: {
       HStack(spacing: 10) {
         Image(systemName: symbol).foregroundStyle(.tint).frame(width: 24)
         Text(title).foregroundStyle(.primary)
@@ -1129,7 +1129,7 @@ struct SpaceHomeSection: View {
   let data: CreatorSpaceRecord, mid: Int64, owner: Bool
   let openUploads: () -> Void
   var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
+    LazyVStack(alignment: .leading, spacing: 0) {
       if let room = data.room { liveCard(room).padding(.horizontal, 12).padding(.top, 12) }
       ForEach(data.groups) { group in
         header(group).padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 10)
@@ -1228,7 +1228,7 @@ struct SpaceHomeSection: View {
 private struct SpaceVideoCard: View {
   let row: CreatorSpaceRecord.Media
   var body: some View {
-    NavigationLink {
+    CardZoomLink(radius: 8) {
       CreatorMediaDestination(row: row)
     } label: {
       VStack(alignment: .leading, spacing: 0) {
@@ -1259,6 +1259,7 @@ private struct SpaceVideoCard: View {
             .background(LinearGradient(colors: [.clear, .black.opacity(0.5)], startPoint: .top, endPoint: .bottom))
           }
           .clipped()
+          .cardZoomCover(radius: 8)
         Text(row.title).font(.subheadline).foregroundStyle(.primary)
           .lineLimit(2, reservesSpace: true).multilineTextAlignment(.leading)
           .padding(.horizontal, 8).padding(.vertical, 8)
@@ -1267,7 +1268,6 @@ private struct SpaceVideoCard: View {
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       .shadow(color: .black.opacity(0.06), radius: 3, y: 1)
       .contentShape(Rectangle())
-      .modifier(CardZoomSource())
     }
     .buttonStyle(.plain)
   }

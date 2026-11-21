@@ -1,13 +1,25 @@
 import SwiftUI
 
+/// How a follow button is drawn.
+enum RelationButtonStyle {
+  /// A glass button (lists, the live room).
+  case glass
+  /// The video page's owner button, as the official client's (72 × 24 dp, 12 dp corners): "＋ 关注"
+  /// in the accent, then a grey "≡ 已关注".
+  case capsule
+  /// The official 创作团队 row's pill (30 × 22 dp): a "＋", then a grey tick once followed.
+  case pill
+}
+
 struct CreatorQuickRelation: View {
   let mid: Int64
   var knownFollowing = false
   var keyboard:PlayerKeyTicket?=nil
+  var style = RelationButtonStyle.glass
   @EnvironmentObject private var accounts: AccountContext
   var body: some View {
     if mid > 0, let uid = accounts.state.active, uid != String(mid) {
-      QuickRelationButton(mid:mid,uid:uid,knownFollowing:knownFollowing,keyboard:keyboard)
+      QuickRelationButton(mid:mid,uid:uid,knownFollowing:knownFollowing,keyboard:keyboard,style:style)
         .id(uid + ":" + String(mid))
     }
   }
@@ -15,6 +27,7 @@ struct CreatorQuickRelation: View {
 private struct QuickRelationButton: View {
   let mid: Int64, uid: String, knownFollowing: Bool
   var keyboard:PlayerKeyTicket?=nil
+  var style = RelationButtonStyle.glass
   @EnvironmentObject private var accounts: AccountContext
   @State private var relation: CreatorRelation?
   @State private var busy = false
@@ -24,6 +37,8 @@ private struct QuickRelationButton: View {
   private var followed: Bool { relation?.followed ?? knownFollowing }
   var body: some View {
     Group{if keyboard != nil{ Color.clear.frame(width:1,height:1).accessibilityHidden(true) }
+      else if style == .capsule { capsuleButton }
+      else if style == .pill { pillButton }
       else if followed || relation?.attribute == 128 { relationButton.piliGlassButton() }
       else { relationButton.piliGlassButton(prominent: true) }
     }.controlSize(.regular).disabled(busy)
@@ -56,11 +71,54 @@ private struct QuickRelationButton: View {
         Text(issue ?? "")
       }
   }
+  private func tap() {
+    guard !busy, uid == accounts.state.active else { return }
+    if relation?.attribute != 128 { TouchFeedback.light() }
+    Task { await press() }
+  }
+  /// OwnerFollowButton: 72 × 24, 12 corners, T13 text after a 16 dp glyph; followed, Ga5 on Ga2.
+  private var capsuleButton: some View {
+    let blocked = relation?.attribute == 128
+    let quiet = followed || blocked
+    return Button(action: tap) {
+      HStack(spacing: OfficialIntro.d(2)) {
+        if !blocked {
+          Image(systemName: followed ? "line.3.horizontal" : "plus")
+            .font(.system(size: OfficialIntro.d(11), weight: .bold))
+            .frame(width: OfficialIntro.d(16), height: OfficialIntro.d(16))
+        }
+        Text(blocked ? "移出黑名单" : followed ? "已关注" : "关注").font(OfficialIntro.font(13))
+      }
+      .foregroundStyle(quiet ? OfficialIntro.ga5 : Color.white)
+      .lineLimit(1)
+      .padding(.horizontal, OfficialIntro.d(6))
+      .frame(minWidth: OfficialIntro.d(72), minHeight: OfficialIntro.d(24), maxHeight: OfficialIntro.d(24))
+      .background(quiet ? OfficialIntro.ga2 : Color.accentColor,
+        in: RoundedRectangle(cornerRadius: OfficialIntro.d(12), style: .continuous))
+      .contentShape(Rectangle())
+      .animation(.snappy(duration: 0.25), value: followed)
+    }
+    .buttonStyle(ActionPressStyle())
+  }
+  /// FollowPill: 30 × 22.
+  private var pillButton: some View {
+    let quiet = followed || relation?.attribute == 128
+    return Button(action: tap) {
+      Image(systemName: quiet ? "checkmark" : "plus")
+        .font(.system(size: OfficialIntro.d(12), weight: .bold))
+        .foregroundStyle(quiet ? OfficialIntro.ga5 : Color.white)
+        .frame(width: OfficialIntro.d(30), height: OfficialIntro.d(22))
+        .background(quiet ? OfficialIntro.ga2 : Color.accentColor, in: Capsule())
+        .contentShape(Rectangle())
+        .contentTransition(.symbolEffect(.replace))
+        .animation(.snappy(duration: 0.25), value: quiet)
+    }
+    .buttonStyle(ActionPressStyle())
+    .accessibilityLabel(followed ? "已关注" : "关注")
+  }
   private var relationButton: some View {
     Button {
-      guard !busy, uid == accounts.state.active else { return }
-      if relation?.attribute != 128 { TouchFeedback.light() }
-      Task { await press() }
+      tap()
     } label: {
       Text(relation?.attribute == 128 ? "移出黑名单" : followed ? "已关注" : "关注")
         .font(.subheadline.weight(.semibold)).padding(.horizontal, 4)

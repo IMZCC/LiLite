@@ -69,11 +69,20 @@ import SwiftUI
 }
 struct PlaybackTrackSwitch: View {
   let player: any PlaybackEngine
+  var body: some View {
+    AudioOnlySwitch(player: player) { Toggle("仅播放音频", isOn: $0) }
+  }
+}
+/// The audio-only switch drawn by the caller (`row` gets the binding); nothing while the
+/// current item has no picture to turn off.
+struct AudioOnlySwitch<Row: View>: View {
+  let player: any PlaybackEngine
+  @ViewBuilder let row: (Binding<Bool>) -> Row
   @State private var audioOnly = false
   var body: some View {
-    if let native = player.nativePlayer { AVPlaybackTrackSwitch(player: native) }
+    if let native = player.nativePlayer { AVPlaybackTrackSwitch(player: native, row: row) }
     else if let mpv = player as? MPVPlayer {
-      Toggle("仅播放音频", isOn: Binding(get: { audioOnly }, set: {
+      row(Binding(get: { audioOnly }, set: {
         TouchFeedback.light()
         audioOnly = $0
         mpv.audioOnly = $0
@@ -81,12 +90,16 @@ struct PlaybackTrackSwitch: View {
     }
   }
 }
-private struct AVPlaybackTrackSwitch: View {
+private struct AVPlaybackTrackSwitch<Row: View>: View {
   @ObservedObject private var state: PlaybackTrackSwitchState
-  init(player: AVPlayer) { state = .shared(player) }
+  let row: (Binding<Bool>) -> Row
+  init(player: AVPlayer, row: @escaping (Binding<Bool>) -> Row) {
+    state = .shared(player)
+    self.row = row
+  }
   var body: some View {
     if state.available {
-      Toggle("仅播放音频", isOn: Binding(get: { state.audioOnly }, set: { state.set($0) }))
+      row(Binding(get: { state.audioOnly }, set: { state.set($0) }))
     }
   }
 }

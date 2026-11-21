@@ -46,12 +46,13 @@ struct SponsorRules: Codable, Equatable {
     }
     return r
   }
+  private static let decoded = DecodedSettingCache<Self?>()
   static func current(_ d: UserDefaults = .standard) -> Self {
-    if let raw = d.data(forKey: key), let r = try? JSONDecoder().decode(Self.self, from: raw),
-      (try? r.validate()) != nil
-    {
-      return r
-    }
+    if let raw = d.data(forKey: key), let rule = decoded.value(for: raw, decode: { bytes -> Self? in
+      guard let rule = try? JSONDecoder().decode(Self.self, from: bytes),
+        (try? rule.validate()) != nil else { return nil }
+      return rule
+    }) { return rule }
     return legacy(d.object(forKey: "sponsor.auto") as? Bool)
   }
   func validate() throws {

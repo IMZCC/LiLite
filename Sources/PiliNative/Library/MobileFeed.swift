@@ -58,6 +58,7 @@ struct MobileFeed: Decodable {
       row.tname = args?.tname
       if !followed, reason != "竖屏" { row.recommendationReason = reason }
       row.recommendLink = dest == nil ? nil : uri
+      row.recommendationOpensVideo = dest?.opensVideoDetail
       row.recommendGoto = goto
       row.recommendResource = param
       row.recommendMenu = try? c.decode([Video.FeedMenu].self, forKey: .three_point_v2)

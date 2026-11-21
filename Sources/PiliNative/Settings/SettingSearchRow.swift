@@ -124,8 +124,12 @@ struct SettingSearchRow: Identifiable {
       let row = entry.row
       let t = entry.title
       let section = entry.section
-      let haystack = entry.text + " " + normalized(SettingSearchTerms.value(for: row.anchor, defaults: defaults))
-      guard words.allSatisfy(haystack.contains) else { return nil }
+      if !words.allSatisfy(entry.text.contains) {
+        let value = SettingSearchTerms.value(for: row.anchor, defaults: defaults)
+        guard !value.isEmpty else { return nil }
+        let state = normalized(value)
+        guard words.allSatisfy({ entry.text.contains($0) || state.contains($0) }) else { return nil }
+      }
       let score = t == q ? 0 : t.hasPrefix(q) ? 1 : t.contains(q) ? 2 : section == q ? 3 : 4
       return (score,row)
     }.sorted { l,r in
