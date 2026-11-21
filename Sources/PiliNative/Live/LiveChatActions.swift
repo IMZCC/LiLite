@@ -63,14 +63,19 @@ struct LiveChatActions: View {
   @Binding var shield: LiveShield?
   var reply: ((LiveReplyTarget) -> Void)? = nil
   @EnvironmentObject private var accounts: AccountContext
-  @Environment(\.dismiss) private var dismiss
+  @Environment(\.dismiss) private var systemDismiss
+  @Environment(\.roomPanelClose) private var panelClose
   @State private var confirm = false
   @State private var busy = false
   @State private var issue: String?
   private var line: LiveLine { selection.line }
+  /// In the room's panel, closing closes the panel (dismiss would leave the room).
+  private func dismiss() { if let panelClose { panelClose(()) } else { systemDismiss() } }
   private var owner: String? { selection.owner == accounts.state.active ? selection.owner : nil }
   var body: some View {
-    PiliNavigationStack {
+    if panelClose != nil { form } else { PiliNavigationStack { form } }
+  }
+  private var form: some View {
       Form {
         Section {
           Text(line.name).font(.headline)
@@ -129,7 +134,6 @@ struct LiveChatActions: View {
           }
           Button("取消", role: .cancel) {}
         }
-    }
   }
 }
 private struct LiveReportForm: View {

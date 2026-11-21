@@ -201,15 +201,31 @@ struct BulletLayerSurface: UIViewRepresentable {
     func close() {
       detachItem(); itemWatch = nil; picks = nil; inspector = nil; scene = nil; player = nil
     }
+    /// mpv's position arrives in steps and is extrapolated in between, so it wobbles by tens of
+    /// milliseconds. Re-anchoring the bullets' timebase to it on every tick (four times a second,
+    /// and on every state change) moved every bullet on screen by that wobble: dense episodes
+    /// shook and flickered. The timebase now runs on its own and is re-anchored only when the
+    /// speed changes (play, pause, rate) or it has really drifted from the picture.
     private func syncClock() {
       guard let player, player.engineKind == .mpv, let sync else { return }
+      let speed: Float = player.timeControlStatus == .playing ? player.rate : 0
+      let target = player.currentTime().seconds
+      guard target.isFinite else { return }
+      if sync.speed == speed, sync.beginTime != 0 {
+        let shown = sync.convertTime(CACurrentMediaTime(), from: nil)
+        if abs(shown - target) < Self.clockTolerance { return }
+      }
       CATransaction.begin()
       CATransaction.setDisableActions(true)
-      sync.speed = player.timeControlStatus == .playing ? player.rate : 0
-      sync.timeOffset = player.currentTime().seconds
+      sync.speed = speed
+      sync.timeOffset = target
       sync.beginTime = CACurrentMediaTime()
       CATransaction.commit()
     }
+    /// How far the bullets may run from the player's clock before they are pulled back to it.
+    private static let clockTolerance = 0.15
+    /// A step back smaller than this is the clock's wobble, not a seek (seeks also post a jump).
+    private static let backwardJump = 0.5
     private func refresh() {
       guard let scene, let item = boundItem, item === player?.playbackItem, bounds.width > 0 else { return }
       syncClock()
@@ -217,7 +233,7 @@ struct BulletLayerSurface: UIViewRepresentable {
       guard now.isFinite else { return }
       let plan = scene.plan
       // A jump (seek, scrub, a skipped intro) or an empty screen fills from the newest rows.
-      let jumped = now < lastNow - 0.05 || now > lastNow + 2
+      let jumped = now < lastNow - Self.backwardJump || now > lastNow + 2
       lastNow = now
       dropOrphans(before: jumped ? .infinity : now)
       let fresh = jumped || (wanted.isEmpty && orphans.isEmpty)

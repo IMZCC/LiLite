@@ -207,6 +207,14 @@ struct LivePlayer: View {
   @State private var streamSize = CGSize.zero
   @Environment(\.colorScheme) private var colorScheme
   @State private var expandedChat = false
+  /// The season an official match room carries, for its 赛程 · 回放 · 选手评分 tabs.
+  @State private var matchStore: LiveMatchStore?
+  /// 0 is 互动; the match tabs follow.
+  @State private var roomTab = 0
+  /// Whether the fullscreen player shows its controls (the room's row follows them).
+  @State private var fullscreenControls = true
+  @Environment(\.dismiss) private var dismiss
+  @State private var panelToken = UUID()
   @State private var showFacts = false
   @State private var liveStarted: Int64?
   @AppStorage("live.paidMode") private var paidMode = 0
@@ -301,6 +309,12 @@ struct LivePlayer: View {
             Label("主播主页", systemImage: "person.crop.circle")
           }
           Button("贡献榜", systemImage: "list.number") { ranks = true }
+          if matchStore != nil {
+            Button("赛程、回放与选手评分", systemImage: "trophy") {
+              if enlarged { expand() }
+              roomTab = 1
+            }
+          }
           if headerUnavailable { Button("重新读取直播间资料") { headerRevision += 1 } }
           if enlarged { Button("直播聊天", systemImage: "text.bubble") { expandedChat = true } }
           if let url = URL(string: "https://live.bilibili.com/\(identity.room_id)") {
@@ -378,6 +392,147 @@ struct LivePlayer: View {
       moreMenu
     }
   }
+  /// Back and the room's title over the top of the picture, fading with the player's controls.
+  private var playerTopBar: some View {
+    HStack(spacing: 2) {
+      Button {
+        TouchFeedback.light()
+        dismiss()
+      } label: {
+        Image(systemName: "chevron.left").font(.system(size: 19, weight: .medium))
+          .frame(width: 44, height: 40).contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("返回")
+      Text(roomTitle).font(.system(size: 15, weight: .medium)).lineLimit(1)
+      Spacer(minLength: 12)
+    }
+    .foregroundStyle(.white)
+    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+    .padding(.trailing, 8)
+    .background(LinearGradient(colors: [.black.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom)
+      .allowsHitTesting(false))
+    .opacity(fullscreenControls ? 1 : 0)
+    .animation(.easeOut(duration: 0.2), value: fullscreenControls)
+  }
+  /// The room's secondary pages, each opened as a panel in the room (`LiveRoomPanelFrame`).
+  private enum RoomPanel: Equatable { case actions, ranks, paid, paidSettings, shield, facts, sleep, chat }
+  /// The panel on screen: a message's actions over whatever else is open, then the rest.
+  private var roomPanel: RoomPanel? {
+    if selectedMessage != nil { return .actions }
+    if ranks { return .ranks }
+    if showPaid { return .paid }
+    if paidSettings { return .paidSettings }
+    if editShield { return .shield }
+    if showFacts { return .facts }
+    if sleepTimer { return .sleep }
+    if expandedChat { return .chat }
+    return nil
+  }
+  private func closePanel(_ panel: RoomPanel) {
+    switch panel {
+    case .actions: selectedMessage = nil
+    case .ranks: ranks = false
+    case .paid: showPaid = false
+    case .paidSettings: paidSettings = false
+    case .shield: editShield = false
+    case .facts: showFacts = false
+    case .sleep: sleepTimer = false
+    case .chat: expandedChat = false
+    }
+  }
+  @ViewBuilder private func panelContent(_ panel: RoomPanel) -> some View {
+    switch panel {
+    case .actions: if let selectedMessage { actions(selectedMessage) }
+    case .ranks: if let identity { LiveContributionRank(room: identity) }
+    case .paid: if let identity { SuperChatFeed(chat: chat, room: identity.room_id, shield: $shield) }
+    case .paidSettings: SuperChatSettings()
+    case .shield:
+      if let identity, let user = accounts.state.active {
+        LiveShieldView(room: identity.room_id, user: user, rules: $shield)
+      }
+    case .facts: LiveProgramInfo(transport: transport, started: liveStarted, audioOnly: audioOnly)
+    case .sleep: SleepTimerForm(live: true)
+    case .chat: VStack(spacing: 0) { conversation }.navigationTitle("直播聊天")
+    }
+  }
+  private func panelTitle(_ panel: RoomPanel) -> String {
+    switch panel {
+    case .actions: "留言操作"
+    case .ranks: "高能用户"
+    case .paid: "醒目留言"
+    case .paidSettings: "醒目留言设置"
+    case .shield: "弹幕屏蔽"
+    case .facts: "播放信息"
+    case .sleep: "定时停止"
+    case .chat: "直播聊天"
+    }
+  }
+  /// Where a panel goes: under the picture, over the chat column, or a drawer in fullscreen.
+  private func panelFrame(w: CGFloat, h: CGFloat, picture: CGSize, wide: Bool, portraitStream: Bool) -> CGRect {
+    if enlarged {
+      let width = min(420, max(300, w * 0.42))
+      return CGRect(x: w - width, y: 0, width: width, height: h)
+    }
+    if wide { return CGRect(x: picture.width + 0.5, y: 0, width: max(1, w - picture.width - 0.5), height: h) }
+    if portraitStream { return CGRect(x: 0, y: h * 0.36, width: w, height: h * 0.64) }
+    return CGRect(x: 0, y: picture.height, width: w, height: max(1, h - picture.height))
+  }
+  @ViewBuilder private func panelLayer(w: CGFloat, h: CGFloat, picture: CGSize, wide: Bool, portraitStream: Bool) -> some View {
+    if let panel = roomPanel {
+      let rect = panelFrame(w: w, h: h, picture: picture, wide: wide, portraitStream: portraitStream)
+      LiveRoomPanelFrame(title: panelTitle(panel), side: enlarged || wide, close: { closePanel(panel) }) {
+        panelContent(panel)
+      }
+      .environment(\.roomPanelClose, StableAction(panelToken) { _ in closePanel(panel) })
+      .frame(width: rect.width, height: rect.height)
+      .offset(x: rect.minX, y: rect.minY)
+      .transition(.move(edge: enlarged || wide ? .trailing : .bottom))
+      .id(panel)
+    }
+  }
+  /// The input bar, or while writing, the composer in its place (the keyboard lifts it).
+  @ViewBuilder private var bottomBar: some View {
+    if keyboardChat, let room = identity?.room_id {
+      composerBar(room: room)
+    } else {
+      inputBar
+    }
+  }
+  private func composerBar(room: Int64) -> some View {
+    HStack(spacing: 2) {
+      LiveComposer(room: room, reply: $replyTo, focusOnEntry: true)
+      Button {
+        keyboardChat = false
+      } label: {
+        Image(systemName: "chevron.down").font(.system(size: 17, weight: .semibold))
+          .frame(width: 40, height: 40).contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("收起输入框")
+    }
+    .foregroundStyle(.white)
+    .padding(.trailing, 8).padding(.vertical, 6)
+    .background(Color(white: 0.1).ignoresSafeArea(edges: .bottom))
+    .environment(\.colorScheme, .dark)
+  }
+  /// Under the anchor: the chat, or in a match room the tabs and whichever page is chosen.
+  @ViewBuilder private var roomBody: some View {
+    VStack(spacing: 0) {
+      if let matchStore {
+        LiveRoomTabs(titles: ["互动"] + LiveMatchTab.allCases.map(\.rawValue), selected: $roomTab)
+        if roomTab > 0, LiveMatchTab.allCases.indices.contains(roomTab - 1) {
+          LiveMatchPane(store: matchStore, tab: LiveMatchTab.allCases[roomTab - 1]) { transport.player?.pause() }
+            .frame(maxHeight: .infinity)
+        } else {
+          chatFeed(bubbles: false)
+        }
+      } else {
+        chatFeed(bubbles: false)
+      }
+    }
+    .frame(maxHeight: .infinity)
+  }
   /// The room's chat on its dark background (or on bubbles over a portrait stream).
   private func chatFeed(bubbles: Bool) -> some View {
     VStack(spacing: 0) {
@@ -396,6 +551,37 @@ struct LivePlayer: View {
         selectedMessage = .init(line: line, paid: paid, room: room, owner: accounts.state.active)
       }
     }
+  }
+  /// The room's row over the top of the fullscreen picture: title, audience and the room's tools,
+  /// clear of the island and of the lock in the top trailing corner.
+  private var fullscreenInfo: some View {
+    let insets = WindowMetrics.safeInsets
+    return HStack(spacing: 14) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(roomTitle).font(.subheadline.weight(.semibold)).lineLimit(1)
+        HStack(spacing: 8) {
+          if let count = chat.online { Text("在线 " + count.formatted()) }
+          LiveStartedLabel(timestamp: liveStarted)
+        }
+        .font(.caption).foregroundStyle(.white.opacity(0.75))
+      }
+      Spacer(minLength: 12)
+      if let player, allowCapture, !audioOnly { CaptureButton(player: player) }
+      if identity != nil {
+        Button { expandedChat = true } label: { Image(systemName: "text.bubble") }.accessibilityLabel("聊天")
+      }
+      moreMenu
+    }
+    .font(.system(size: 18, weight: .medium))
+    .foregroundStyle(.white)
+    .tint(.white)
+    .padding(.leading, max(16, insets.leading))
+    // Clear of the player's own clock and battery at the top trailing edge, and of the lock.
+    .padding(.trailing, max(16, insets.trailing) + 84 + (allowLock ? 48 : 0))
+    .padding(.top, max(10, insets.top))
+    .padding(.bottom, 26)
+    .background(LinearGradient(colors: [.black.opacity(0.6), .clear], startPoint: .top, endPoint: .bottom))
+    .environment(\.colorScheme, .dark)
   }
   @ViewBuilder private var anchorBar: some View {
     if let identity {
@@ -466,63 +652,89 @@ struct LivePlayer: View {
     GeometryReader { geometry in
     let w = geometry.size.width, h = geometry.size.height
     let pictureHeight = min(w * 9 / 16, max(80, h * 0.38))
-    ZStack {
-      if !enlarged, h > 0, w / h >= 1.2, w >= 540 {
-        let chatWidth = min(400, w - min(0.7, max(0.56, h / w * 1.08)) * w)
-        let pictureWidth = w - chatWidth
+    let wide = h > 0 && w / h >= 1.2 && w >= 540
+    // The chat column keeps room for its tabs and input bar (about 340 pt) on narrow wide windows
+    // such as an open iPhone Duo; the picture takes the rest, up to two thirds.
+    let chatWidth = min(400, max(min(340, w * 0.42), w - min(0.66, max(0.56, h / w * 1.08)) * w))
+    let sideHeight = min((w - chatWidth) * 9 / 16, max(120, h - 96))
+    let portraitStream = h > w && streamSize.height > streamSize.width
+    // Where the picture goes in each layout. The player itself is always the first child of the
+    // same stack: moving it between branches rebuilt it, which undid entering fullscreen.
+    let picture: CGSize = enlarged ? CGSize(width: w, height: h)
+      : wide ? CGSize(width: w - chatWidth, height: sideHeight)
+      : portraitStream ? CGSize(width: w, height: max(1, h - 58))
+      : CGSize(width: w, height: pictureHeight)
+    let bottomInset = enlarged ? 0 : geometry.safeAreaInsets.bottom
+    ZStack(alignment: .topLeading) {
+      theater.frame(width: picture.width, height: picture.height).clipped().background(.black)
+        // No bar over the room: back and the title sit on the picture, as in the official room.
+        // Set here, not on the page, so the panels' own stacks keep their bars.
+        .toolbar(.hidden, for: .navigationBar)
+      if enlarged {
+        // Fullscreen: the picture takes the whole screen; the room's row lies over its top on a
+        // shade and comes and goes with the player's controls.
+        if !locked && fullscreenControls {
+          fullscreenInfo.frame(width: w).transition(.opacity)
+        }
+      } else if wide {
         HStack(alignment: .top, spacing: 0) {
           VStack(alignment: .leading, spacing: 0) {
-            theater.frame(height: min(pictureWidth * 9 / 16, max(120, h - 96))).clipped().background(.black)
+            playerTopBar.frame(height: picture.height, alignment: .top)
             anchorBar
             Spacer(minLength: 0)
-          }.frame(width: pictureWidth)
+          }.frame(width: picture.width)
           Rectangle().fill(.white.opacity(0.08)).frame(width: 0.5)
           VStack(spacing: 0) {
-            chatFeed(bubbles: false)
-            inputBar
+            roomBody
+            bottomBar
           }
-          .frame(width: chatWidth).frame(maxHeight: .infinity)
+          .frame(width: chatWidth - 0.5).frame(maxHeight: .infinity)
         }
-      } else if !enlarged, h > w, streamSize.height > streamSize.width {
+      } else if portraitStream {
         // A portrait stream: the picture fills the page, chat over its lower third, 55 pt left
         // above the input bar for the player's own row (PiliPlus's `_buildPP`).
-        ZStack(alignment: .top) {
-          theater.frame(width: w, height: max(1, h - 58)).clipped().background(.black)
-          VStack(spacing: 0) {
-            anchorBar
-              .background(LinearGradient(colors: [.black.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom))
-            Spacer(minLength: 0)
-            chatFeed(bubbles: true)
-              .frame(height: h * 0.32)
-              .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.18)],
-                startPoint: .top, endPoint: .bottom))
-            Color.clear.frame(height: 55).allowsHitTesting(false)
-            inputBar
-          }
-        }
-      } else {
         VStack(spacing: 0) {
-          theater.frame(height: enlarged ? nil : pictureHeight).clipped().background(.black)
-          if enlarged && !locked {
-            HStack {
-              Text(roomTitle).font(.caption.bold()).lineLimit(1)
-              if let count = chat.online { Text("在线 " + count.formatted()).font(.caption) }
-              LiveStartedLabel(timestamp:liveStarted)
-              Spacer()
-              if let player, allowCapture, !audioOnly { CaptureButton(player:player) }
-              if identity != nil { Button { expandedChat = true } label:{Label("聊天",systemImage:"text.bubble")} }
-              moreMenu
-            }.padding(.horizontal).padding(.vertical, 4)
-          } else if !enlarged {
+          VStack(spacing: 0) {
+            playerTopBar
             anchorBar
-            Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5)
-            chatFeed(bubbles: false)
-            inputBar
           }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+          .background(LinearGradient(colors: [.black.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom))
+          Spacer(minLength: 0)
+          chatFeed(bubbles: true)
+            .frame(height: h * 0.32)
+            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.18)],
+              startPoint: .top, endPoint: .bottom))
+          Color.clear.frame(height: 55).allowsHitTesting(false)
+          bottomBar
+        }
+        .frame(width: w, height: h)
+      } else {
+        // The official room: picture, anchor, the room's tabs, their page and the input bar.
+        VStack(spacing: 0) {
+          playerTopBar.frame(height: picture.height, alignment: .top)
+          anchorBar
+          if matchStore == nil { Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5) }
+          roomBody
+          bottomBar
+        }
+        .frame(width: w, height: h, alignment: .top)
       }
+      if enlarged, keyboardChat, let room = identity?.room_id {
+        composerBar(room: room).frame(width: w).frame(maxHeight: .infinity, alignment: .bottom)
+      }
+      panelLayer(w: w, h: h + bottomInset, picture: picture, wide: wide, portraitStream: portraitStream)
     }
+    .animation(.easeOut(duration: 0.2), value: fullscreenControls)
+    .animation(.snappy(duration: 0.3), value: roomPanel)
+    .animation(.snappy(duration: 0.25), value: keyboardChat)
     .frame(width: w, height: h)
+    .onPreferenceChange(PlayerControlsVisibleKey.self) { shown in
+      if fullscreenControls != shown { fullscreenControls = shown }
+    }
+    // The status bar over the picture stays black, as in the official room.
+    .background(alignment: .top) {
+      if !enlarged { Color.black.frame(height: 1).ignoresSafeArea(edges: .top) }
+    }
     .background { if !enlarged { LiveRoomBackdrop(url: header?.room_info?.cover.flatMap(httpsURL)) } }
     .environment(\.colorScheme, enlarged ? colorScheme : .dark)
     }.overlay(alignment:.topTrailing){
@@ -536,7 +748,7 @@ struct LivePlayer: View {
     }.onChange(of:allowLock){ _,on in if !on {locked=false} }
       .onChange(of:enlarged){ _,on in if !on{locked=false} }
       .modifier(PlaybackEdgeInsets(fullscreen: enlarged))
-      .toolbar(enlarged ? .hidden : .automatic, for: .navigationBar, .tabBar)
+      .toolbar(enlarged ? .hidden : .automatic, for: .tabBar)
       // The bar sits on the room's dark backdrop.
       .toolbarBackground(.hidden, for: .navigationBar)
       .toolbarColorScheme(.dark, for: .navigationBar)
@@ -555,7 +767,7 @@ struct LivePlayer: View {
     }
   }
   private var panels: some View {
-    screen.piliSheet(item:Binding(get:{ expandedChat ? nil:selectedMessage },set:{ selectedMessage=$0 })) { selection in actions(selection) }
+    screen
     .onChange(
       of:
         "\(identity?.room_id ?? 0):\(accounts.state.active ?? ""):\(accounts.state.owner(.role(.heartbeat)) ?? "")"
@@ -577,51 +789,21 @@ struct LivePlayer: View {
       else { return }
       selectedMessage = .init(line: line, paid: nil, room: room, owner: accounts.state.active)
     }
-    .piliSheet(isPresented: $expandedChat) {
-      PiliNavigationStack { VStack { conversation }.navigationTitle("直播聊天")
-        .toolbar { Button("完成"){expandedChat=false} }
-        .piliSheet(item:$selectedMessage){ selection in actions(selection) } }
-    }
-    .piliSheet(isPresented: $showFacts) {
-      PiliNavigationStack { LiveProgramInfo(transport:transport,started:liveStarted,audioOnly:audioOnly)
-        .toolbar { Button("完成"){showFacts=false} } }
-    }
-    .piliSheet(isPresented: $editShield) {
-      if let identity, let user = accounts.state.active {
-        PiliNavigationStack {
-          LiveShieldView(room: identity.room_id, user: user, rules: $shield).toolbar {
-            Button("关闭") { editShield = false }
-          }
-        }
-      }
-    }
     .onChange(of: paidMode, initial: true) { _, mode in
       chat.configurePaid(SuperChatDisplay(rawValue: mode) ?? .current)
       if mode == 2 { showPaid = false }
     }
-    .piliSheet(isPresented:$keyboardChat){
-      if let room=identity?.room_id{PiliNavigationStack{VStack{LiveComposer(room:room,reply:$replyTo,focusOnEntry:true);Spacer()}.navigationTitle("直播弹幕").toolbar{Button("完成"){keyboardChat=false}}}.presentationDetents([.medium])}
-    }
-    .piliSheet(isPresented: $sleepTimer) {
-      PiliNavigationStack { SleepTimerForm(live: true) }.presentationDetents([.medium, .large])
-    }
-    .piliSheet(isPresented: $paidSettings) {
-      PiliNavigationStack { SuperChatSettings().toolbar { Button("完成") { paidSettings = false } } }
-    }
-    .piliSheet(isPresented: $showPaid) {
-      if let identity {
-        PiliNavigationStack {
-          SuperChatFeed(chat: chat, room: identity.room_id, shield: $shield).toolbar {
-            Button("关闭") { showPaid = false }
-          }
-        }
+    .task(id: "\(identity?.room_id ?? 0):\(header?.room_info?.parent_area_id ?? 0)") {
+      // Official match rooms sit under 赛事; find the season they carry for the match tabs.
+      guard let room = identity?.room_id, header?.room_info?.parent_area_id == 13 else {
+        matchStore = nil; roomTab = 0
+        return
       }
-    }
-    .piliSheet(isPresented: $ranks) {
-      if let identity {
-        PiliNavigationStack {
-          LiveContributionRank(room: identity).toolbar { Button("关闭") { ranks = false } }
-        }
+      if matchStore.map({ $0.contest.liveRoom == room }) == true { return }
+      let found = try? await EsportsService.contest(forRoom: room)
+      if !Task.isCancelled, identity?.room_id == room {
+        matchStore = found.map { LiveMatchStore(contest: $0) }
+        roomTab = 0
       }
     }
   }

@@ -40,8 +40,13 @@ struct ViewportAspect: Layout {
   let expanded: Bool
   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
     let w = max(1, proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? 320)
+    if expanded {
+      // Fullscreen takes whatever height it is offered, down to none: answering 16:9 to a zero
+      // proposal made a stack measure it as rigid and give it only its share of the screen.
+      return CGSize(width: w, height: proposal.height.flatMap { $0.isFinite ? max(0, $0) : nil } ?? (w * 9 / 16))
+    }
     let h = proposal.height.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? (w * 9 / 16)
-    return CGSize(width: w, height: expanded ? h : min(h, w * 9 / 16))
+    return CGSize(width: w, height: min(h, w * 9 / 16))
   }
   func placeSubviews(
     in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
@@ -60,6 +65,6 @@ struct PlaybackEdgeInsets: ViewModifier {
     content.ignoresSafeArea(
       .container, edges: fullscreen ? .all : edges ? [.top, .horizontal] : []
     )
-    .statusBarHidden(edges)
+    .statusBarHidden(edges || fullscreen)
   }
 }

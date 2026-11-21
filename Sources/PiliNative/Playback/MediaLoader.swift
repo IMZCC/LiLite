@@ -8,11 +8,13 @@ final class MediaLoader: NSObject, AVAssetResourceLoaderDelegate, @unchecked Sen
   private let authorize:(@Sendable() async throws -> Void)?
   private let queue = DispatchQueue(label: "pilinative.media")
   private let transport = RangeTransport(), buffer = MediaBufferSession()
+  private let client: MediaClientChoice
   private var active: [ObjectIdentifier: Task<Void, Never>] = [:]
   private var total: Int64?, contentType: String?, stopped = false
   init(url: URL, reference: URL, audioOnly: Bool = false,authorize:(@Sendable() async throws -> Void)?=nil) {
     self.authorize=authorize
     self.url = url
+    self.client = MediaClientChoice(url)
     self.reference = reference
     self.audioOnly = audioOnly
   }
@@ -34,16 +36,26 @@ final class MediaLoader: NSObject, AVAssetResourceLoaderDelegate, @unchecked Sen
       self.contentType = nil
     }
   }
-  private func request(_ from: Int64, _ to: Int64) -> URLRequest {
+  private func request(_ from: Int64, _ to: Int64, as identity: MediaClientIdentity) -> URLRequest {
     var r = URLRequest(url: url)
     r.httpShouldHandleCookies = false
-    r.setValue(reference.absoluteString, forHTTPHeaderField: "Referer")
+    identity.apply(to: &r, reference: reference)
     r.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
     r.setValue("bytes=\(from)-\(to)", forHTTPHeaderField: "Range")
-    r.setValue(
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
-      forHTTPHeaderField: "User-Agent")
     return r
+  }
+  /// One range, as the address's client; a 403 retries once as the other one.
+  private func response(_ from: Int64, _ to: Int64, limit: Int, acceptsShortResource: Bool = false)
+    async throws -> RangeTransport.Response
+  {
+    let identity = client.current
+    do {
+      return try await transport.response(
+        request(from, to, as: identity), limit: limit, acceptsShortResource: acceptsShortResource)
+    } catch let error where MediaClientIdentity.refused(error) && client.refused(identity) {
+      return try await transport.response(
+        request(from, to, as: client.current), limit: limit, acceptsShortResource: acceptsShortResource)
+    }
   }
   private func onQueue<T>(_ f: @escaping () throws -> T) async throws -> T {
     try await withCheckedThrowingContinuation { continuation in
@@ -70,8 +82,7 @@ final class MediaLoader: NSObject, AVAssetResourceLoaderDelegate, @unchecked Sen
           length = known
           uti = type
         } else {
-          let first = try await transport.response(
-            request(0, 1), limit: 2, acceptsShortResource: true)
+          let first = try await response(0, 1, limit: 2, acceptsShortResource: true)
           length = first.total
           uti =
             audioOnly
@@ -113,7 +124,7 @@ final class MediaLoader: NSObject, AVAssetResourceLoaderDelegate, @unchecked Sen
               lane: 0, from: next, through: through, endOfMedia: length - 1
             ) { a, b in
               try await self.authorize?()
-              let got = try await self.transport.response(self.request(a, b), limit: Int(b - a + 1))
+              let got = try await self.response(a, b, limit: Int(b - a + 1))
               guard got.total == length else { throw URLError(.badServerResponse) }
               return got.data
             }

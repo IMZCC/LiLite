@@ -241,11 +241,20 @@ final class DashBridge: PictureTimingSource, @unchecked Sendable {
       try Task.checkCancellation()
       try await authorize()
       do {
-        var r = URLRequest(url: url)
-        r.setValue(ref.absoluteString, forHTTPHeaderField: "Referer")
-        r.setValue("bytes=\(span.lower)-\(span.upper)", forHTTPHeaderField: "Range")
-        r.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-        let bytes = try await transport.read(r, limit: Int(span.count))
+        func read(as identity: MediaClientIdentity) async throws -> Data {
+          var r = URLRequest(url: url)
+          // Web addresses keep the request they always made (Referer, the session's own agent).
+          if identity == .appPlayer { identity.apply(to: &r, reference: ref) }
+          else { r.setValue(ref.absoluteString, forHTTPHeaderField: "Referer") }
+          r.setValue("bytes=\(span.lower)-\(span.upper)", forHTTPHeaderField: "Range")
+          r.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+          return try await transport.read(r, limit: Int(span.count))
+        }
+        // App-issued addresses (the listener's audio) want the app player; a 403 tries the other.
+        let identity = MediaClientIdentity.expected(for: url)
+        let bytes: Data
+        do { bytes = try await read(as: identity) }
+        catch let error where MediaClientIdentity.refused(error) { bytes = try await read(as: identity.other) }
         try await authorize()
         return bytes
       } catch { last = error }

@@ -107,16 +107,18 @@ struct ListenView: View {
   private func symbol(_ m: AudioSequence) -> String {
     switch m {
     case .pause: "pause.circle"
-    case .list: "arrow.right"
+    case .list: "text.line.first.and.arrowtriangle.forward"
     case .one: "repeat.1"
     case .all: "repeat"
     case .shuffle: "shuffle"
     }
   }
+  /// Play order, play / pause and the queue: one big button between two matching round ones.
+  /// The seek-style ⏪ ⏩ are gone (the queue and the lock screen still step between tracks).
   private var transport: some View {
     VStack(spacing: 14) {
       ListenTimeline(queue: queue, progress: queue.progress)
-      HStack {
+      HStack(spacing: 0) {
         Menu {
           Picker("播放模式", selection: $mode) {
             ForEach(AudioSequence.allCases, id: \.self) { m in
@@ -124,14 +126,12 @@ struct ListenView: View {
             }
           }
         } label: {
-          Image(systemName: symbol(sequence)).font(.title3).frame(width: 44, height: 44)
-            .contentTransition(.symbolEffect(.replace))
+          VStack(spacing: 4) {
+            sideGlyph(symbol(sequence)).contentTransition(.symbolEffect(.replace))
+            Text(sequence.rawValue).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+          }.frame(width: 76)
         }.accessibilityLabel("播放模式").accessibilityValue(sequence.rawValue)
-        Spacer()
-        Button { queue.step(-1) } label: {
-          Image(systemName: "backward.fill").font(.title2).frame(width: 52, height: 52)
-        }.accessibilityLabel("上一首")
-        Spacer()
+        Spacer(minLength: 12)
         Button {
           if queue.playing { queue.pause() } else { queue.resume() }
         } label: {
@@ -139,23 +139,25 @@ struct ListenView: View {
             if queue.loading {
               ProgressView().tint(.white)
             } else {
-              Image(systemName: queue.playing ? "pause.fill" : "play.fill").font(.title)
+              Image(systemName: queue.playing ? "pause.fill" : "play.fill").font(.system(size: 30, weight: .semibold))
                 .foregroundStyle(.white).contentTransition(.symbolEffect(.replace))
+                // play.fill reads off-centre; nudge it onto the circle's optical centre.
+                .offset(x: queue.playing ? 0 : 2)
             }
           }
-          .frame(width: 70, height: 70)
+          .frame(width: 72, height: 72)
           .background(Color.accentColor, in: Circle())
           .shadow(color: Color.accentColor.opacity(0.35), radius: 10, y: 4)
         }.accessibilityLabel(queue.playing ? "暂停" : "播放")
-        Spacer()
-        Button { queue.step(1) } label: {
-          Image(systemName: "forward.fill").font(.title2).frame(width: 52, height: 52)
-        }.accessibilityLabel("下一首")
-        Spacer()
+        Spacer(minLength: 12)
         Button { showQueue = true } label: {
-          Image(systemName: "list.bullet").font(.title3).frame(width: 44, height: 44)
+          VStack(spacing: 4) {
+            sideGlyph("music.note.list")
+            Text("播放列表").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+          }.frame(width: 76)
         }.accessibilityLabel("播放列表")
       }
+      .padding(.horizontal, 8)
       .buttonStyle(PlayerPressStyle()).foregroundStyle(.primary)
       HStack(spacing: 10) {
         Menu {
@@ -177,6 +179,11 @@ struct ListenView: View {
       }
       if let hint = queue.skipHint { Text(hint).font(.caption).foregroundStyle(.secondary) }
     }
+  }
+  private func sideGlyph(_ name: String) -> some View {
+    Image(systemName: name).font(.system(size: 19, weight: .medium))
+      .frame(width: 48, height: 48)
+      .background(Color(uiColor: .tertiarySystemFill), in: Circle())
   }
   private var playbackSettings: some View {
     Section("播放设置") {

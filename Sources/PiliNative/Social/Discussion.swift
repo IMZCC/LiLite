@@ -316,7 +316,6 @@ struct Discussion: View {
   @Environment(\.replyOpenLink) private var playerOpenLink
   @State private var linkToken = UUID()
   @Environment(\.panelTopInset) private var panelInset
-  @Environment(\.panelBottomInset) private var panelBottom
   @Environment(\.replyPlayback) private var playback
   @Environment(\.replyPanelPresenter) private var panelPresenter
   @Environment(\.pendingReplyThread) private var pendingThread
@@ -614,22 +613,12 @@ struct Discussion: View {
     .overlay(alignment: .bottomTrailing) {
       // Embedded under a player there is no navigation bar of our own: offer a floating composer.
       if embeddedTitle != nil, accounts.state.active != nil {
-        Button {
+        ReplyComposeFab(
+          hidden: (composerHidden && composerAutoHide) || writing, disabled: inputDisabled
+        ) {
           if let active = accounts.state.active { begin(nil, owner: active) }
-        } label: {
-          Image(systemName: "square.and.pencil").font(.system(size: 20, weight: .semibold))
-            .foregroundStyle(.white)
-            .frame(width: 46, height: 46)
-            .piliGlass(in: Circle(), interactive: true, tint: .accentColor)
-            .frame(width: 56, height: 56).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .disabled(inputDisabled).accessibilityLabel("发表评论")
-        .padding(.trailing, 14).padding(.bottom, 12 + panelBottom)
-        .offset(y: composerHidden && composerAutoHide ? 120 + panelBottom : 0)
-        .opacity(composerHidden && composerAutoHide ? 0 : 1)
-        .allowsHitTesting(!(composerHidden && composerAutoHide))
-        .transition(.scale.combined(with: .opacity))
+        .transition(.opacity)
       }
     }
     .toolbar {
@@ -1414,5 +1403,45 @@ private struct ThreadFirstFloor: ViewModifier {
       value = (try? JSONDecoder().decode(ReplyFilterRules.self, from: data))?.lines ?? 6
     }
     return value
+  }
+}
+
+/// The floating 发评论 button of comments embedded under a player. It sits in the screen's
+/// bottom trailing corner as far from the side as from the bottom, following the display's
+/// rounded corner like the original client's; it always leaves downwards (scrolling down, the
+/// composer opening or any keyboard rising) and never rides up on the keyboard.
+private struct ReplyComposeFab: View {
+  let hidden: Bool
+  let disabled: Bool
+  let action: () -> Void
+  @State private var keyboard = false
+  /// Space between the visible circle and the screen's side and bottom.
+  private var inset: CGFloat { WindowMetrics.homeIndicator > 0 ? 26 : 16 }
+  var body: some View {
+    let away = hidden || keyboard
+    // The 46 pt circle sits centred in a 56 pt target.
+    let pad = inset - 5
+    Button(action: action) {
+      Image(systemName: "square.and.pencil").font(.system(size: 20, weight: .semibold))
+        .foregroundStyle(.white)
+        .frame(width: 46, height: 46)
+        .piliGlass(in: Circle(), interactive: true, tint: .accentColor)
+        .frame(width: 56, height: 56).contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .disabled(disabled).accessibilityLabel("发表评论")
+    .padding(.trailing, pad).padding(.bottom, pad)
+    .offset(y: away ? 56 + pad + 12 : 0)
+    .opacity(away ? 0 : 1)
+    .allowsHitTesting(!away)
+    .accessibilityHidden(away)
+    .animation(.easeInOut(duration: 0.18), value: away)
+    .ignoresSafeArea(.keyboard)
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+      if !keyboard { keyboard = true }
+    }
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+      if keyboard { keyboard = false }
+    }
   }
 }

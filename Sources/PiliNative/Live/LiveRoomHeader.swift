@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct LiveRoomHeader: Decodable {
-  struct Room: Decodable { let title: String?, cover: String? }
+  struct Room: Decodable {
+    let title: String?, cover: String?
+    /// 13 is 赛事, the parent area of the official esports rooms.
+    let area_id: Int?, parent_area_id: Int?
+  }
   struct Anchor: Decodable {
     struct Info: Decodable { let uname: String?, face: String? }
     let base_info: Info?

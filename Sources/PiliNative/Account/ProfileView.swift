@@ -119,52 +119,38 @@ struct ProfileView: View {
       }.accessibilityLabel("离线缓存")
     }.buttonStyle(.plain)
   }
+  /// Only what no other control on this page or the tab bar reaches: the 收藏 shortcut already
+  /// holds 追番、追剧、专栏、笔记、话题 and 课堂, the header counts open 关注 and 粉丝 (whose page
+  /// carries 分组 and 黑名单), the home bell opens 消息中心 and the ⋯ menu 我的评论.
   @ViewBuilder private var libraryLinks: some View {
+    let layout = NavigationLayout.read(pageLayout)
     Section("资料库") {
       NavigationLink { DeferredPage { ListenView() } } label: {
         SettingsRowLabel(title: "听视频", symbol: "headphones", color: .pink)
       }
       if let active = accounts.state.active {
-        NavigationLink { DeferredPage { SavedReadings(uid: active) } } label: {
-          SettingsRowLabel(title: "图文、话题和笔记", symbol: "doc.text.fill", color: .blue)
+        if !layout.mineTabs.contains(.subscribed) {
+          NavigationLink { DeferredPage { Subscriptions(uid: active) } } label: {
+            SettingsRowLabel(title: "我的订阅", symbol: "rectangle.stack.fill", color: .orange)
+          }
         }
-        NavigationLink { DeferredPage { CoursesView(mid: active, favorites: true) } } label: {
-          SettingsRowLabel(title: "收藏的课程", symbol: "graduationcap.fill", color: .indigo)
+        // The bell lives in the home header; without that tab this is its only way in.
+        if !layout.tabs.contains(.home) {
+          NavigationLink { DeferredPage { Inbox() } } label: {
+            HStack {
+              SettingsRowLabel(title: "消息中心", symbol: "bubble.left.and.bubble.right.fill", color: .blue)
+              Spacer(minLength: 8)
+              if let unread = UnreadTotals.label(indicators.count(for: active, messages: true), mode: messageMode) {
+                Text(verbatim: unread).font(.caption.weight(.bold)).monospacedDigit().foregroundStyle(.white)
+                  .padding(.horizontal, 7).frame(minWidth: 22, minHeight: 22)
+                  .background(Color.red, in: Capsule())
+              }
+            }
+          }
         }
       }
     }
     if let active = accounts.state.active {
-      Section("订阅") {
-        NavigationLink { DeferredPage { FollowedSeasons(uid: active) } } label: {
-          SettingsRowLabel(title: "追番追剧", symbol: "play.rectangle.fill", color: .pink)
-        }
-        NavigationLink { DeferredPage { Subscriptions(uid: active) } } label: {
-          SettingsRowLabel(title: "我的订阅", symbol: "rectangle.stack.fill", color: .orange)
-        }
-      }
-      Section("社交") {
-        NavigationLink { DeferredPage { Inbox() } } label: {
-          HStack {
-            SettingsRowLabel(title: "消息中心", symbol: "bubble.left.and.bubble.right.fill", color: .blue)
-            Spacer(minLength: 8)
-            if let unread = UnreadTotals.label(indicators.count(for: active, messages: true), mode: messageMode) {
-              Text(verbatim: unread).font(.caption.weight(.bold)).monospacedDigit().foregroundStyle(.white)
-                .padding(.horizontal, 7).frame(minWidth: 22, minHeight: 22)
-                .background(Color.red, in: Capsule())
-            }
-          }
-        }
-        NavigationLink { DeferredPage { MyReplies(uid: active) } } label: {
-          SettingsRowLabel(title: "我的评论", symbol: "text.bubble.fill", color: .teal)
-        }
-        NavigationLink { DeferredPage { RelationsList(uid: active, fans: false) } } label: {
-          SettingsRowLabel(title: "我的关注", symbol: "person.2.fill", color: .indigo)
-        }
-        NavigationLink { DeferredPage { RelationsList(uid: active, fans: true) } } label: {
-          SettingsRowLabel(title: "我的粉丝", symbol: "heart.fill", color: .pink)
-        }
-        CreatorLinks(uid: active, extrasOnly: true)
-      }
       Section("账号与隐私") {
         NavigationLink { ProfileEditor(uid: active) { Task { await refresh() } } } label: {
           SettingsRowLabel(title: "账号资料", symbol: "person.crop.circle.fill", color: .blue)

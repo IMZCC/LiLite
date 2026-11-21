@@ -214,7 +214,10 @@ struct SleepTimerForm: View {
   @State private var custom = false
   @State private var hour = 0
   @State private var minute = 30
-  @Environment(\.dismiss) var dismiss
+  @Environment(\.dismiss) private var systemDismiss
+  @Environment(\.roomPanelClose) private var panelClose
+  /// In the live room's panel, closing closes the panel (dismiss would leave the room).
+  private func dismiss() { if let panelClose { panelClose(()) } else { systemDismiss() } }
   private var action: PlaybackSleepTimer.FinishAction {
     PlaybackSleepTimer.FinishAction(rawValue: actionRaw) ?? .pause
   }
@@ -269,7 +272,7 @@ struct SleepTimerForm: View {
     .navigationTitle("定时关闭").navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) { countdown }
-      ToolbarItem(placement: .topBarLeading) { Button("关闭") { dismiss() } }
+      if panelClose == nil { ToolbarItem(placement: .topBarLeading) { Button("关闭") { dismiss() } } }
     }
     .sheet(isPresented: $custom) {
       NavigationStack {

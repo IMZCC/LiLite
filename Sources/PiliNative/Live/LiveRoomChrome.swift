@@ -75,6 +75,48 @@ struct LiveAnchorBar: View {
   }
 }
 
+/// The room's tabs under the anchor, as the official room has them: 互动, and in a match room
+/// 赛程 · 回放 · 选手评分. Words on the dark page; the current one white with the accent underline.
+struct LiveRoomTabs: View {
+  let titles: [String]
+  @Binding var selected: Int
+  @Namespace private var underline
+  var body: some View {
+    // One line each, scrolling sideways when the column is too narrow for all of them.
+    ScrollView(.horizontal, showsIndicators: false) {
+    HStack(spacing: 26) {
+      ForEach(titles.indices, id: \.self) { i in
+        let on = i == selected
+        Button {
+          guard !on else { return }
+          TouchFeedback.light()
+          selected = i
+        } label: {
+          Text(titles[i])
+            .font(.system(size: 15, weight: on ? .semibold : .regular))
+            .lineLimit(1).fixedSize()
+            .foregroundStyle(on ? Color.white : Color.white.opacity(0.55))
+            .frame(height: 40)
+            .overlay(alignment: .bottom) {
+              if on {
+                Capsule().fill(Color.accentColor).frame(width: 18, height: 3)
+                  .matchedGeometryEffect(id: "line", in: underline)
+              }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+      }
+    }
+    .padding(.horizontal, 16)
+    }
+    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+    .animation(.snappy(duration: 0.25), value: selected)
+    .overlay(alignment: .bottom) { Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5) }
+  }
+}
+
 /// "已播 1:23" beside the watched count.
 struct LiveDurationText: View {
   let timestamp: Int64?
@@ -253,7 +295,7 @@ struct LiveInputBar<Like: View, More: View>: View {
       }
       .accessibilityLabel(showBullets ? "关闭直播弹幕" : "开启直播弹幕")
       Button(action: compose) {
-        Text("发个弹幕呗~").font(.system(size: 14)).foregroundStyle(.white.opacity(0.55))
+        Text("发个弹幕呗~").font(.system(size: 14)).foregroundStyle(.white.opacity(0.55)).lineLimit(1)
           .frame(maxWidth: .infinity, alignment: .leading)
           .padding(.horizontal, 14).frame(height: 36)
           .background(.white.opacity(0.1), in: Capsule())
@@ -284,5 +326,61 @@ struct LiveInputBar<Like: View, More: View>: View {
         }
         .ignoresSafeArea(edges: .bottom)
     }
+  }
+}
+
+// MARK: - Room panels
+
+private struct RoomPanelCloseKey: EnvironmentKey {
+  static let defaultValue: StableAction<Void>? = nil
+}
+extension EnvironmentValues {
+  /// Closes the live room's panel. Views shown both as sheets and as the room's panels call it in
+  /// place of `dismiss`, which inside a panel would leave the room itself.
+  var roomPanelClose: StableAction<Void>? {
+    get { self[RoomPanelCloseKey.self] }
+    set { self[RoomPanelCloseKey.self] = newValue }
+  }
+}
+
+/// A page of the room (高能榜, 醒目留言, 屏蔽, 播放信息…) opened in the room itself, as the official
+/// room's half-screen panels are: under the picture in portrait, over the chat column beside it,
+/// and as a drawer from the trailing edge in fullscreen — never a sheet laid over the stream.
+struct LiveRoomPanelFrame<Content: View>: View {
+  let title: String
+  /// A drawer from the trailing edge rather than from the bottom.
+  let side: Bool
+  let close: () -> Void
+  @ViewBuilder let content: () -> Content
+  var body: some View {
+    // The panel's own header: a stack nested in the room's is folded into the room's (hidden) bar.
+    VStack(spacing: 0) {
+      HStack(spacing: 8) {
+        Text(title).font(.system(size: 16, weight: .semibold)).lineLimit(1)
+          .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 8)
+        Button(action: close) {
+          Image(systemName: "xmark").font(.system(size: 13, weight: .bold))
+            .frame(width: 30, height: 30)
+            .background(.white.opacity(0.1), in: Circle())
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("关闭")
+      }
+      .foregroundStyle(.white)
+      .padding(.leading, 16).padding(.trailing, 12)
+      .frame(height: 50)
+      .overlay(alignment: .bottom) { Rectangle().fill(.white.opacity(0.08)).frame(height: 0.5) }
+      content()
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    .background(Color(white: 0.09))
+    .clipShape(side
+      ? UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 18, style: .continuous)
+      : UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18, style: .continuous))
+    .shadow(color: .black.opacity(0.35), radius: 12, x: side ? -2 : 0, y: side ? 0 : -2)
+    .environment(\.colorScheme, .dark)
   }
 }

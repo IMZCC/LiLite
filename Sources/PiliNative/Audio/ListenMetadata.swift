@@ -106,13 +106,9 @@ struct ListenMetadata: View {
         Button("手动选择收藏夹") { showFolders = true }
       }
   }
-  private func column(_ symbol: String, _ value: String, active: Bool = false) -> some View {
-    VStack(spacing: 5) {
-      Image(systemName: symbol).font(.title3)
-        .foregroundStyle(active ? Color.accentColor : Color.primary)
-        .contentTransition(.symbolEffect(.replace))
-      Text(value).font(.caption).foregroundStyle(.secondary).monospacedDigit().lineLimit(1)
-    }.frame(maxWidth: .infinity).contentShape(Rectangle())
+  /// The video page's own action column (KingActionItem): the official glyphs, sizes and tints.
+  private func column(_ symbol: String, _ value: String, active: Bool = false, icon: BiliIcon? = nil) -> some View {
+    ArchiveActionColumn(symbol: symbol, title: value, active: active, icon: icon)
   }
   private func short<N: BinaryInteger>(_ n: N) -> String {
     n > 0 ? Int64(n).formatted(.number.notation(.compactName)) : ""
@@ -123,19 +119,25 @@ struct ListenMetadata: View {
     HStack(spacing: 0) {
       if accounts.state.active != nil {
         Button { act(.like(!(stat?.hasLike_p ?? false))) } label: {
-          column(stat?.hasLike_p == true ? "hand.thumbsup.fill" : "hand.thumbsup",
-            stat.map { short($0.like) }.flatMap { $0.isEmpty ? nil : $0 } ?? "点赞", active: stat?.hasLike_p == true)
+          column("hand.thumbsup",
+            stat.map { short($0.like) }.flatMap { $0.isEmpty ? nil : $0 } ?? "点赞", active: stat?.hasLike_p == true,
+            icon: .likeFill)
         }
+        .accessibilityLabel("点赞")
         .contextMenu { Button("三连", systemImage: "sparkles") { showTriple = true } }
         Button { showCoins = true } label: {
-          column("bitcoinsign.circle", stat.map { short($0.coin) }.flatMap { $0.isEmpty ? nil : $0 } ?? "投币")
+          column(ArchiveActionColumn.coin, stat.map { short($0.coin) }.flatMap { $0.isEmpty ? nil : $0 } ?? "投币",
+            icon: .coinFill)
         }
+        .accessibilityLabel("投币")
         Button {
           if quick { favorite(remove: false) } else { showFolders = true }
         } label: {
-          column(stat?.hasFav_p == true ? "star.fill" : "star",
-            stat.map { short($0.favourite) }.flatMap { $0.isEmpty ? nil : $0 } ?? "收藏", active: stat?.hasFav_p == true)
+          column("star",
+            stat.map { short($0.favourite) }.flatMap { $0.isEmpty ? nil : $0 } ?? "收藏", active: stat?.hasFav_p == true,
+            icon: .starFill)
         }
+        .accessibilityLabel("收藏")
         .contextMenu {
           Button("选择收藏夹", systemImage: "folder") { showFolders = true }
           Button("三连", systemImage: "sparkles") { showTriple = true }
@@ -143,6 +145,7 @@ struct ListenMetadata: View {
       }
       NavigationLink { DeferredPage { Discussion(oid: oid, type: track.songID == nil ? 1 : 14) } } label: {
         column("text.bubble", stat.map { short($0.reply) }.flatMap { $0.isEmpty ? nil : $0 } ?? "评论")
+          .accessibilityLabel("评论")
       }
       if let u = reference {
         Menu {
@@ -157,11 +160,14 @@ struct ListenMetadata: View {
                 authorID: track.ownerID.map(String.init), thumb: httpsURL(track.cover)))
           }
         } label: {
-          column("arrowshape.turn.up.right", stat.map { short($0.share) }.flatMap { $0.isEmpty ? nil : $0 } ?? "分享")
+          column("arrowshape.turn.up.right", stat.map { short($0.share) }.flatMap { $0.isEmpty ? nil : $0 } ?? "分享",
+            icon: .shareFill)
         }
+        .accessibilityLabel("分享")
       }
     }
-    .buttonStyle(PlayerPressStyle()).disabled(busy)
+    .environment(\.engagementFills, true)
+    .buttonStyle(ActionPressStyle()).disabled(busy)
   }
   /// Lyrics, MV, report and the archive number as small glass capsules.
   @ViewBuilder private var extras: some View {
