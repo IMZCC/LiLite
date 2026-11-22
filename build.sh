@@ -14,11 +14,14 @@ case "$mode" in
     *) echo "Usage: build.sh [--sim | --prepare | --release | --release-personal | --sign | --sign-personal | --sign-dev]" >&2; exit 2 ;;
 esac
 [[ $(uname -s) == Darwin ]] || { echo "LiLite builds natively on macOS with Xcode." >&2; exit 1; }
-export PATH="$HOME/.local/bin:$PATH"   # meson / ninja / pkg-config for the MediaKit libraries
+export PATH="$PATH:$HOME/.local/bin"   # meson / ninja / pkg-config for the MediaKit libraries
 mkdir -p "$root/build" "$root/dist"
 # One build at a time: staging, DerivedData and dist/ are shared.
 exec 9>"$root/build/.pili-build.lock"
-/usr/bin/python3 -c 'import fcntl; fcntl.flock(9, fcntl.LOCK_EX)'
+python3 -c 'import fcntl; fcntl.flock(9, fcntl.LOCK_EX)'
+# Local features live in patches/*.patch; re-apply them after every upstream merge.
+# PILI_SKIP_PATCHES=1 builds the unpatched tree.
+bash "$root/Tools/apply_patches.sh"
 
 # --- MediaKit C libraries -> MediaKit/Vendor/PiliMediaVendor.xcframework + Vendor/include.
 # The device slice is always built (cached after the first run), so every build links a
@@ -33,8 +36,8 @@ mkdir -p "$vendor/include"
 for media in "${media_modes[@]}"; do
   sdkname=iphoneos; [[ $media == iossim ]] && sdkname=iphonesimulator
   ffmpeg_prefix=$(bash "$root/MediaKit/build-ffmpeg.sh" "$media")
-  caption_prefix=$(/usr/bin/python3 "$root/MediaKit/build-subtitles.py" "$media")
-  mpv_prefix=$(/usr/bin/python3 "$root/MediaKit/build-mpv.py" "$media")
+  caption_prefix=$(python3 "$root/MediaKit/build-subtitles.py" "$media")
+  mpv_prefix=$(python3 "$root/MediaKit/build-mpv.py" "$media")
   slice="$vendor/$sdkname"
   rm -rf "$slice"; mkdir -p "$slice"
   libs=()
@@ -59,7 +62,7 @@ rm -rf "$vendor/PiliMediaVendor.xcframework"
 xcodebuild -create-xcframework "${slices[@]}" -output "$vendor/PiliMediaVendor.xcframework" >/dev/null
 
 # --- Firebase static frameworks (device + simulator slices) and resources -> FirebaseSDK/.
-firebase=$(/usr/bin/python3 "$root/Tools/firebase_sdk.py" "$root")
+firebase=$(python3 "$root/Tools/firebase_sdk.py" "$root")
 if [[ $mode == --prepare ]]; then
   echo "Prepared. Open LiLite.xcodeproj in Xcode, or run ./build.sh --sim."
   exit 0
@@ -104,7 +107,7 @@ rm -rf "$staging"; mkdir -p "$staging/Resources"
 cp "$root/Resources/Info.plist" "$root/Resources/PiliPlus.entitlements" "$staging/Resources/"
 if [[ $discovery == personal ]]; then
   # Personal teams cannot hold the multicast entitlement: Bonjour + directed DLNA/IP discovery instead.
-  /usr/bin/python3 "$root/Tools/personal_profile.py" "$staging"
+  python3 "$root/Tools/personal_profile.py" "$staging"
 fi
 settings=(INFOPLIST_FILE="$staging/Resources/Info.plist" CODE_SIGN_ENTITLEMENTS="$staging/Resources/PiliPlus.entitlements")
 if [[ $signed == 1 ]]; then
@@ -135,7 +138,7 @@ package="$root/build/package"
 rm -rf "$package"; mkdir -p "$package/Payload"
 ditto "$app" "$package/Payload/PiliNative.app"
 (cd "$package" && zip -qry PiliNative.ipa Payload)
-inspect=(/usr/bin/python3 "$root/Tools/inspect_ipa.py" --firebase-plist "$firebase/GoogleService-Info.plist" --discovery "$discovery")
+inspect=(python3 "$root/Tools/inspect_ipa.py" --firebase-plist "$firebase/GoogleService-Info.plist" --discovery "$discovery")
 if [[ $signed == 1 ]]; then inspect+=(--signed); fi
 "${inspect[@]}" "$package/PiliNative.ipa"
 cp "$package/PiliNative.ipa" "$root/dist/$outfile"

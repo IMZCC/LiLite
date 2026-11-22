@@ -292,6 +292,7 @@ struct SettingsView: View {
         Section("播放") {
           NavigationLink { DeferredPage { PlaybackEngineSettings() } } label: { Label("播放器内核", systemImage: "play.circle.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/播放器内核")
           NavigationLink { DeferredPage { PlaybackOptionsView() } } label: { Label("画面与音轨", systemImage: "play.rectangle.fill").labelStyle(SettingsIconLabelStyle(color: .blue)) }.settingAnchor("SettingsView/画面与音轨")
+          NavigationLink { DeferredPage { HighQualityPlaybackSettings() } } label: { Label("高画质解析设置", systemImage: "sparkles.rectangle.stack.fill").labelStyle(SettingsIconLabelStyle(color: .purple)) }.settingAnchor("SettingsView/高画质解析设置")
           NavigationLink { DeferredPage { PlayerPreferencePanel() } } label: { Label("详情与播放控制", systemImage: "slider.horizontal.3").labelStyle(SettingsIconLabelStyle(color: .gray)) }.settingAnchor("SettingsView/详情与播放控制")
           Picker(selection: $rate) {
             ForEach(SpeedPresets.decode(speedData), id: \.self) { Text("\($0.formatted())×").tag($0) }

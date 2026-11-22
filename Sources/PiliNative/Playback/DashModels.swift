@@ -127,6 +127,7 @@ struct DashFormats: Decodable {
   var spoken: [SpokenTrack] = []
   var selectedLanguage: String? = nil
   var volume: AudioMeasurements? = nil
+  var duration: Int? = nil
   func withLanguages(
     _ catalog: SpokenCatalog?, _ selection: String?, volume: AudioMeasurements? = nil
   ) -> Self {
@@ -167,7 +168,7 @@ struct DashFormats: Decodable {
   }
   private struct Dolby: Decodable { let audio: [Stream]? }
   private struct Flac: Decodable { let audio: Stream? }
-  enum Keys: String, CodingKey { case video, audio, dolby, flac }
+  enum Keys: String, CodingKey { case video, audio, dolby, flac, duration }
   init(from decoder: Decoder) throws {
     let c = try decoder.container(keyedBy: Keys.self)
     video = try c.decode([Stream].self, forKey: .video).compactMap(\.value)
@@ -176,5 +177,11 @@ struct DashFormats: Decodable {
     let surround = try c.decodeIfPresent(Dolby.self, forKey: .dolby)?.audio ?? []
     advertisedAudio = !base.isEmpty || lossless != nil || !surround.isEmpty
     audio = (base + [lossless].compactMap { $0 } + surround).compactMap(\.value)
+    duration = try c.decodeIfPresent(Int.self, forKey: .duration)
+  }
+  init(video: [DashStream], audio: [DashStream]? = nil) {
+    self.video = video.sorted { $0.id > $1.id }
+    self.audio = audio
+    advertisedAudio = !(audio ?? []).isEmpty
   }
 }

@@ -485,7 +485,7 @@ final class PlayerModel: ObservableObject {
         return
       }
       var options = raw.withLanguages(info.language, info.cur_language, volume: info.volume)
-      options.isPreview = e.preview || info.preview
+      options.isPreview = info.highQualityResolved ? false : (e.preview || info.preview)
       adoptFormats(options)
       guard let id = preferences.preferredQuality(availableQualities) else {
         throw ServiceError("本集没有可播放的视频流")

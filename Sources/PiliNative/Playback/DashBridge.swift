@@ -39,6 +39,9 @@ extension BiliAPI {
       } catch { try Task.checkCancellation() }
     }
     guard (try await AccountJar.shared.current(.role(.video))?.id ?? "") == owner else { throw ServiceError("视频账号已切换") }
+    if !forCache {
+      result = await HighQualityPlayback.applyUGCN(result, fields: f, owner: owner)
+    }
     return result
   }
 }

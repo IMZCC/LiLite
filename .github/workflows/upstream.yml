@@ -1,0 +1,71 @@
+name: 同步上游并应用补丁
+
+# 每天检查上游是否有新提交；有则合并、重新应用 patches/*.patch，
+# 干净则推送到 sync/upstream 分支并开 PR，让“构建验证”跑一遍。
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 拉取上游
+        run: |
+          set -euo pipefail
+          upstream="${{ vars.UPSTREAM_REPO || 'IMZCC/LiLite' }}"
+          git remote add upstream "https://github.com/$upstream.git"
+          git fetch --quiet upstream main
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "上游无新提交"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        id: fetch
+
+      - name: 合并上游
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git merge --no-edit upstream/main; then
+            echo "::error::上游合并冲突，需手动处理"
+            git merge --abort || true
+            exit 1
+          fi
+
+      - name: 重新应用补丁
+        if: steps.fetch.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          if ! bash Tools/apply_patches.sh; then
+            echo "::error::补丁无法应用，请运行 Tools/apply_patches.sh --regen 更新 patches/"
+            exit 1
+          fi
+          git add -A
+          git commit -m 'chore: 合并上游并重新应用本地补丁'
+
+      - name: 推送分支并开 PR
+        if: steps.fetch.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="sync/upstream-$(git rev-parse --short upstream/main)"
+          git push --force-with-lease origin "HEAD:$branch"
+          if ! gh pr list --head "$branch" --json number -q '.[].number' | grep -q .; then
+            gh pr create --base main --head "$branch" \
+              --title "同步上游 $(git log -1 --format=%h upstream/main)" \
+              --body "自动合并上游并重新应用 patches/*.patch。" || true
+          fi

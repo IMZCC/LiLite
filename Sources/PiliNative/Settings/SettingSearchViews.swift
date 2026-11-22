@@ -55,6 +55,7 @@ struct NativeSettingsResults: View {
     switch item.screen {
     case "SettingsView": return AnyView(SettingsView(allowSplit:false))
     case "PlaybackOptionsView": return AnyView(PlaybackOptionsView())
+    case "HighQualityPlaybackSettings": return AnyView(HighQualityPlaybackSettings())
     case "DecoderSettings": return AnyView(DecoderSettings())
     case "GallerySettings": return AnyView(GallerySettings())
     case "SuperChatSettings": return AnyView(SuperChatSettings())

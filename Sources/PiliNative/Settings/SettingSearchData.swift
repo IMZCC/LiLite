@@ -81,6 +81,14 @@ GallerySettings/横屏时在面板中查看
 GallerySettings/缩略图质量
 GallerySettings/长按缩略图显示菜单
 GallerySettings/预览实况照片
+HighQualityPlaybackSettings/服务地址
+HighQualityPlaybackSettings/目标画质
+HighQualityPlaybackSettings/所用账号
+HighQualityPlaybackSettings/最近一次请求与响应
+HighQualityPlaybackSettings/始终采用服务端流
+HighQualityPlaybackSettings/请求状态
+HighQualityPlaybackSettings/高画质播放
+HighQualityPlaybackSettings/远端 UA
 InteractionScaleOptions/下拉刷新
 InteractionScaleOptions/应用缩放
 InteractionScaleOptions/指示器高度

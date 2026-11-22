@@ -7,7 +7,7 @@ extension BiliAPI {
     let info = try await playEpisodeInfo(e, course: course, language: language, expectedAccount: expectedAccount)
     guard let dash = info.dash, !dash.video.isEmpty else { throw ServiceError("没有可用的分轨视频流") }
     var formats = dash.withLanguages(info.language, info.cur_language, volume: info.volume)
-    formats.isPreview = e.preview || info.preview
+    formats.isPreview = info.highQualityResolved ? false : (e.preview || info.preview)
     return (formats, info.clips)
   }
   func playEpisodeInfo(_ e: SeasonInfo.Episode, course: Bool, language: String? = nil,
@@ -37,6 +37,10 @@ extension BiliAPI {
         let extra = try await request(missing)
         if extra.preview == info.preview, extra.cur_language == info.cur_language, let added = extra.dash { info.dash = dash.mergingVideo(added) }
       } catch { try Task.checkCancellation() }
+    }
+    if let upgraded = await HighQualityPlayback.upgradeEpisode(
+      info, episode: e, course: course, language: language, owner: user, requestedQn: quality) {
+      info = upgraded
     }
     guard (try await AccountJar.shared.current(.role(.video))?.id ?? "") == user else { throw ServiceError("视频账号已切换") }
     return info

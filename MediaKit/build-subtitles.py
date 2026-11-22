@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the same static ASS renderer from fixed upstream sources on the host and iOS."""
 from pathlib import Path
-import fcntl, hashlib, json, os, shutil, subprocess, sys, tarfile, tempfile, urllib.request
+import fcntl, hashlib, json, os, shutil, subprocess, sys, tarfile, tempfile
 from contextlib import contextmanager
 mode=sys.argv[1] if len(sys.argv)==2 else 'ios'
 if mode not in ('host','ios','iossim'): raise SystemExit('usage: build-subtitles.py host|ios|iossim')
@@ -42,7 +42,8 @@ def source(name,version,url,sha):
   if not archive.is_file():
    with tempfile.TemporaryDirectory(dir=base) as tmp:
     p=Path(tmp)/'download'
-    with urllib.request.urlopen(url,timeout=120) as res,p.open('wb') as f:shutil.copyfileobj(res,f)
+    subprocess.run(['curl','--proto','=https','--proto-redir','=https','-fsSL','--retry','3',
+                    '--connect-timeout','20','--max-time','600','-o',str(p),url],check=True)
     if digest(p)!=sha:raise ValueError(name+' source checksum mismatch')
     p.replace(archive)
   if digest(archive)!=sha:raise ValueError(name+' source checksum mismatch')

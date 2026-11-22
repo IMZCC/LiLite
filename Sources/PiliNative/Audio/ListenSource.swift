@@ -29,7 +29,7 @@ extension BiliAPI {
         return try ListenMedia.progressive(plan, kind: source.course ? "课程音轨" : "剧集音轨")
       }
       var media = raw.withLanguages(info.language, info.cur_language, volume: info.volume)
-      media.isPreview = ep.preview || info.preview
+      media.isPreview = info.highQualityResolved ? false : (ep.preview || info.preview)
       guard let a = PlaybackOption.chooseAudio(media.audio ?? []), !a.routes(audio: true).isEmpty
       else { throw ServiceError("本集没有可用的音轨") }
       return .init(

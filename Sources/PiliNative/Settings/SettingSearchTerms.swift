@@ -35,6 +35,14 @@ GallerySettings/横屏时在面板中查看	horizontalPreview 横屏在侧栏打
 GallerySettings/缩略图质量	defaultPicQa	images.quality	10
 GallerySettings/长按缩略图显示菜单	enableImgMenu 长按/右键显示图片菜单	images.longMenu	false
 GallerySettings/预览实况照片	enableLivePhoto 开启则以视频形式预览 Live Photo，否则预览静态图片 预览 Live Photo	images.live	true
+HighQualityPlaybackSettings/服务地址	highQualityPlaybackServer 第三方取流 解析服务 高画质 1080P 4K
+HighQualityPlaybackSettings/目标画质	highQualityPlaybackQuality 第三方取流 目标画质 1080P 高码率 4K 8K
+HighQualityPlaybackSettings/高画质播放	enableHighQualityPlayback 第三方取流 高画质播放 非大会员 解析
+HighQualityPlaybackSettings/远端 UA	highQualityPlaybackDesktopUa 桌面 Chrome User-Agent UA
+HighQualityPlaybackSettings/始终采用服务端流	highQualityPlaybackAlwaysAccept 试看 片段 时长比较
+HighQualityPlaybackSettings/请求状态	highQualityPlaybackStatus 解析状态 远端
+HighQualityPlaybackSettings/所用账号	highQualityPlaybackAccount 视频账号 等级 硬币 大会员
+HighQualityPlaybackSettings/最近一次请求与响应	highQualityPlaybackDiagnostics 诊断 请求体 响应 Cookie
 InteractionScaleOptions/指示器高度	refreshDisplacement 刷新指示器高度 当前指示器高度:  , 刷新滑动距离	list.refreshDisplacement	20.0
 InteractionScaleOptions/起始距离	touchSlopH 当前:「 」，系统默认值 横向滑动阈值	gesture.horizontalThreshold	24.0
 MediaProfilePanel/直播	liveQualityCellular 当前画质 蜂窝网络直播默认画质 liveQuality 直播默认画质

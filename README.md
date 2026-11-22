@@ -67,12 +67,18 @@
 
 ## 构建
 
-在 macOS 上用 Xcode 原生构建：
+在 macOS 上安装 Xcode 27 与随附的 iPhoneOS SDK，并确保 `pkg-config` 在 `PATH` 中（例如通过 Homebrew 安装 `pkgconf`）。iPhoneOS SDK 由 Xcode 提供；[vfox](https://vfox.dev/) 1.0+ 按 [项目配置](.vfox.toml) 管理构建用的 Python。
 
-- Xcode 27 与 iPhoneOS SDK
-- 用于编译 FFmpeg、libass、mpv 的 Meson、Ninja 和 pkg-config（需在 `PATH` 或 `~/.local/bin` 中），libplacebo 还需要 Python 的 jinja2
+在仓库根目录运行以下命令，生成可手动签名的 Release IPA：
 
-在仓库根目录运行：
+```sh
+vfox install --all
+vfox exec python -- python3 -m venv build/ipa-venv
+build/ipa-venv/bin/python3 -m pip install meson ninja Jinja2
+PATH="$PWD/build/ipa-venv/bin:$PATH" ./build.sh --release-personal
+```
+
+产物为 `dist/PiliNative-personal-unsigned.ipa`，不需要 Apple 账号、证书或描述文件即可构建。使用同一构建环境也可运行：
 
 | 命令 | 作用 |
 |---|---|

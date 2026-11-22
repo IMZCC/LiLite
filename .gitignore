@@ -1,4 +1,5 @@
 .build/
+/.vfox/
 __pycache__/
 *.py[cod]
 .swiftpm/

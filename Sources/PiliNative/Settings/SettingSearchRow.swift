@@ -32,6 +32,7 @@ struct SettingSearchRow: Identifiable {
   static let sections = [
     "SettingsView": "设置",
     "PlaybackOptionsView": "画面与音轨",
+    "HighQualityPlaybackSettings": "高画质解析",
     "DecoderSettings": "视频解码",
     "GallerySettings": "图片与实况照片",
     "SuperChatSettings": "直播醒目留言",

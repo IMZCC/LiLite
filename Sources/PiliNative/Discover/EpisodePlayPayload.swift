@@ -6,6 +6,8 @@ struct EpisodePlayPayload {
   typealias Map = [String: Any]
   struct Info: Decodable {
     var preview: Bool = false
+    /// 第三方高画质解析已拿到完整整集
+    var highQualityResolved: Bool = false
     enum CodingKeys: String, CodingKey { case dash, language, cur_language, volume, clip_info_list, durl, quality, accept_quality, support_formats }
     var dash: DashFormats?
     let language: SpokenCatalog?, cur_language: String?,

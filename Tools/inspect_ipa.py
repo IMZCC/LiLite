@@ -40,7 +40,7 @@ def application_identity(info, signed=None, profile=None):
             "Profile does not cover executable ID")
     return BASE_BUNDLE_ID
 
-def device_executable(blob, info):
+def device_executable(blob, info, *, signed_build):
     require(len(blob)>=32 and struct.unpack_from("<II",blob)==(0xFEEDFACF,0x0100000C),"Expected arm64 Mach-O")
     kind, count, size=struct.unpack_from("<III",blob,12)
     require(kind==2 and 32+size<=len(blob),"Expected a Mach-O executable")
@@ -49,6 +49,7 @@ def device_executable(blob, info):
         require(offset+8<=32+size,"Invalid load command count")
         command,length=struct.unpack_from("<II",blob,offset)
         require(length>=8 and offset+length<=32+size,"Invalid Mach-O load command length")
+        require(signed_build or command != 0x1D, "Unsigned IPA contains a signed executable")
         if command==0x32:
             require(length>=24,"Incomplete SDK metadata")
             platforms.append(struct.unpack_from("<III",blob,offset+8))
@@ -125,8 +126,12 @@ def main():
             found = [n for n in names if n.startswith(prefix) and n.endswith(".bundle/UpscaleAssets/"+resource)]
             require(bool(expected) and len(found)==1 and z.read(found[0]).replace(b"\r\n",b"\n")==expected,"Missing or changed native shader resource: "+resource)
         binary = z.read(prefix + info["CFBundleExecutable"])
-        device_executable(binary, info)
-        if not args.signed:application_identity(info)
+        device_executable(binary, info, signed_build=args.signed)
+        if not args.signed:
+            application_identity(info)
+            require(not any(n.startswith(prefix) and
+                            ("_CodeSignature" in n.split("/") or n.endswith("/embedded.mobileprovision"))
+                            for n in names), "Unsigned IPA contains signing resources or a provisioning profile")
         use_multicast = args.discovery == "full"
         require(info.get("PiliMulticastDiscovery") is use_multicast, "Discovery mode in IPA differs from build configuration")
         require(set(info.get("NSBonjourServices", [])) >= {"_upnp._tcp","_ssdp._udp"} and info.get("NSLocalNetworkUsageDescription"),"Missing local network declarations")

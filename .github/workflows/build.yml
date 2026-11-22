@@ -1,0 +1,47 @@
+name: 构建验证
+
+on:
+  push:
+    branches: [main, 'sync/**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patches:
+    name: 补丁校验
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: 校验 patches/*.patch 能应用到当前源码
+        run: bash Tools/apply_patches.sh --check
+
+  build:
+    name: 构建 IPA
+    needs: patches
+    runs-on: macos-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 缓存 MediaKit 与 Firebase 下载
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/piliplus-native
+            ~/.cache/lilite-firebase
+          key: media-${{ runner.os }}-${{ hashFiles('MediaKit/build-*.sh', 'MediaKit/build-*.py', 'Tools/firebase_sdk.py') }}
+          restore-keys: media-${{ runner.os }}-
+
+      - name: 构建
+        run: ./build.sh --release-personal
+
+      - name: 上传 IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: PiliNative-personal-unsigned
+          path: dist/PiliNative-personal-unsigned.ipa
+          if-no-files-found: error
