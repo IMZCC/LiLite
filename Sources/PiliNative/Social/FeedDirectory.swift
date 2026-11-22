@@ -41,7 +41,10 @@ struct DynamicPortal: Decodable {
   let up_list: Users?, live_users: Live?
 }
 struct CommunityFilterPanel: View {
-  @AppStorage("social.upPanelPosition") private var position = FeedPanelPosition.leftFixed.rawValue
+  @AppStorage(FeedPanelPosition.key) private var storedPosition: Int?
+  private var position: Binding<Int> {
+    Binding(get: { FeedPanelPosition.resolved(storedPosition).rawValue }, set: { storedPosition = $0 })
+  }
   @AppStorage("social.waterfall") private var waterfall: Bool?
   @AppStorage("layout.horizontal") private var horizontalPref: Bool?
   private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
@@ -60,7 +63,7 @@ struct CommunityFilterPanel: View {
   var body: some View {
     Form {
       Section("动态") {
-        Picker(selection: $position) {
+        Picker(selection: position) {
           ForEach(FeedPanelPosition.allCases) { Text($0.label).tag($0.rawValue) }
         } label: {
           SettingsRowLabel(title: "UP 主面板", symbol: "person.2.crop.square.stack", color: .blue)

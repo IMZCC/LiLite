@@ -125,7 +125,6 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
   @AppStorage("reply.openFirst") private var defaultComments = false
   @AppStorage("layout.horizontal") private var horizontalPref: Bool?
   private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
-  @AppStorage("layout.playlist") private var playlistPref: Bool?
   @AppStorage("layout.verticalMedia") private var enlarge = false
   @AppStorage("player.edgeToEdge") private var edgeToEdge = false
   @State private var wantsList = false
@@ -226,7 +225,9 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     }
     // A comment thread open under the player takes the sideways swipe: it closes the thread, not
     // the video page.
-    .background { NavigationPopBlock(active: !replyPanels.isEmpty).frame(width: 0, height: 0) }
+    // A thread panel or the side picture preview closes with the swipe that would go Back: the
+    // page stays (and keeps playing) under it.
+    .background { NavigationPopBlock(active: !replyPanels.isEmpty || gallery != nil).frame(width: 0, height: 0) }
     .onAppear { onScreen = true }
     .onDisappear { onScreen = false }
     .onChange(of: key) { _, _ in
@@ -262,7 +263,9 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
     let foldEdge = partition?.edge
     if let partition { p.mode = partition.mode; p.foldGap = partition.gap }
     let side = p.mode == .side
-    p.list = p.mode != .stacked && (playlistPref ?? horizontal) ? playlist : nil
+    // No 选集 tab or column: the intro already has the 合集 / 分P entry, and a 选集 tab beside
+    // 评论 offered the same list a second time.
+    p.list = nil
     let picture = playback.pictureSize
     let portraitVideo = picture.width > 0 && picture.height > picture.width
     let vertical = enlarge && portraitVideo
@@ -286,12 +289,15 @@ struct PlaybackPanels<Surface: View, Info: View, Replies: View>: View {
       p.playerHeight = p.mode == .tabletop ? cap : max(1, min(p.playerWidth / ratio, cap))
     }
     // In the side layout the intro sits under the player when there is room for it; the
-    // right-hand tabs are then related videos, comments and episodes.
+    // right-hand tabs are then related videos, comments and episodes. The room is what is left
+    // of this view's own height (the status strip is already outside it): taking the strip off
+    // twice left an open iPhone Duo (player 631×355 on a 553 pt page) a 198 pt black band
+    // under the picture and the intro squeezed into the side column.
     var others: [Int] = []
     if canDiscuss { others.append(1) }
     if p.list != nil { others.append(2) }
     let besideIntro: [Int] = (related != nil ? [3] : []) + others
-    p.introBelow = side && creator == nil && usable - p.playerHeight >= 160 && !besideIntro.isEmpty
+    p.introBelow = side && creator == nil && height - p.playerHeight >= 150 && !besideIntro.isEmpty
     p.tabs = p.introBelow ? besideIntro : [0] + others
     let preferred: Int
     if wantsList && p.list != nil && selection == nil { preferred = 2 }

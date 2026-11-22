@@ -162,7 +162,6 @@ PlayerPreferencePanel/显示视频章节
 PlayerPreferencePanel/显示评论入口
 PlayerPreferencePanel/显示高能进度条
 PlayerPreferencePanel/横屏时在侧栏打开 UP 主空间
-PlayerPreferencePanel/横屏时在标签栏选集
 PlayerPreferencePanel/横屏时展开简介
 PlayerPreferencePanel/横滑进度随视频时长调整
 PlayerPreferencePanel/滚轮调节音量

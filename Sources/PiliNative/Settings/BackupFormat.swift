@@ -236,7 +236,7 @@ enum BackupFormat {
     f.append(.init("systemProxyPort", ["apiProxy", "port"], .text))
     f.append(.init("enableBackgroundPlay", ["controls", "flags", "play.systemMedia"], .flag))
     for (up, key) in [
-      ("horizontalScreen", "layout.horizontal"), ("horizontalSeasonPanel", "layout.playlist"),
+      ("horizontalScreen", "layout.horizontal"),
       ("horizontalMemberPage", "layout.member"), ("enableVerticalExpand", "layout.verticalMedia"),
       ("dynamicsWaterfallFlow", "social.waterfall"),
     ] {

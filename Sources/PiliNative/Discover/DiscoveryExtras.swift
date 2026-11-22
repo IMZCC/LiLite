@@ -44,7 +44,7 @@ struct OnlineViewers: View {
       if enabled, let count, !count.isEmpty {
         if inline {
           HStack(spacing: OfficialIntro.d(3)) {
-            Image(systemName: "person.2").font(.system(size: OfficialIntro.d(11)))
+            Image(systemName: "person.2").officialSymbol(11)
             Text(count + "人正在看")
           }
         } else {

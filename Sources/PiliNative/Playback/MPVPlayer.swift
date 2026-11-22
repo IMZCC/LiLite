@@ -176,8 +176,9 @@ import UIKit
       "af": filters.isEmpty ? "" : "lavfi=[\(filters)]",
     ]
     activateAudio()
+    let ready = renderer.prepareForLoad()
     core.load(video, audio: audio, reference: reference.absoluteString, start: start,
-      paused: !autoplay, generation: item.generation, options: options)
+      paused: !autoplay, generation: item.generation, options: options, after: ready)
     updateVideoTrack()
     if autoplay { didPlay() }
   }

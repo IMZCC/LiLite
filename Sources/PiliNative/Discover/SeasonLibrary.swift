@@ -91,7 +91,7 @@ struct FollowedSeasons: View {
             } label: {
               HStack(spacing: 12) {
                 Image(systemName: selected.contains(s.id) ? "checkmark.circle.fill" : "circle")
-                  .font(.system(size: 20))
+                  .piliSymbol(size: 20)
                   .foregroundStyle(selected.contains(s.id) ? Color.accentColor : Color.secondary)
                   .contentTransition(.symbolEffect(.replace))
                 FollowedSeasonRow(season: s, cinema: type == 2) { EmptyView() }
@@ -105,7 +105,7 @@ struct FollowedSeasons: View {
                 if mine {
                   Menu { moveActions(s) } label: {
                     Image(systemName: "ellipsis").rotationEffect(.degrees(90))
-                      .font(.system(size: 15, weight: .semibold)).foregroundStyle(FollowedSeasonRow<EmptyView>.grey)
+                      .piliSymbol(size: 15, weight: .semibold).foregroundStyle(FollowedSeasonRow<EmptyView>.grey)
                       .frame(width: 30, height: 30).contentShape(Rectangle())
                   }
                   .menuStyle(.button).buttonStyle(.plain)
@@ -173,10 +173,10 @@ struct FollowedSeasons: View {
             } label: {
               VStack(spacing: 5) {
                 // The semibold title's width reserved, so the weight change never shifts the tabs.
-                Text(kind == 1 ? "追番" : "追剧").font(.system(size: 17, weight: .semibold)).hidden()
+                Text(kind == 1 ? "追番" : "追剧").piliFont(size: 17, weight: .semibold).hidden()
                   .overlay {
                     Text(kind == 1 ? "追番" : "追剧")
-                      .font(.system(size: 17, weight: current ? .semibold : .regular))
+                      .piliFont(size: 17, weight: current ? .semibold : .regular)
                       .foregroundStyle(current ? Color.primary : Color.secondary)
                   }
                 ZStack {
@@ -199,7 +199,7 @@ struct FollowedSeasons: View {
             withAnimation(.snappy(duration: 0.25)) { status = value }
           } label: {
             Text(statusText(value))
-              .font(.system(size: 13, weight: current ? .semibold : .regular))
+              .piliFont(size: 13, weight: current ? .semibold : .regular)
               .foregroundStyle(current ? Color.accentColor : Color.secondary)
               .padding(.horizontal, 12).padding(.vertical, 5)
               .background(current ? Color.accentColor.opacity(0.12) : Color(uiColor: .tertiarySystemFill), in: Capsule())
@@ -215,7 +215,7 @@ struct FollowedSeasons: View {
             }
           } label: {
             Label(selecting ? "完成" : "管理", systemImage: selecting ? "checkmark" : "list.bullet")
-              .font(.system(size: 13, weight: .medium))
+              .piliFont(size: 13, weight: .medium)
               .foregroundStyle(selecting ? Color.accentColor : Color.secondary)
               .padding(.vertical, 5).contentShape(Rectangle())
           }.buttonStyle(.plain)
@@ -284,7 +284,7 @@ struct FollowedSeasonRow<Accessory: View>: View {
       // Title and episode state from the top, the watch progress and "⋮" on the poster's
       // bottom line, so the column is as tall as the poster instead of a block at its top.
       VStack(alignment: .leading, spacing: 0) {
-        Text(season.title).font(.system(size: 16, weight: .medium)).foregroundStyle(Self.ink)
+        Text(season.title).piliFont(size: 16, weight: .medium).foregroundStyle(Self.ink)
           .lineLimit(2).multilineTextAlignment(.leading).padding(.top, 1)
         if cinema, let meta { line(meta, Self.grey).padding(.top, 5) }
         if let update { line(update, unwatched ? Self.pink : Self.grey).padding(.top, 5) }
@@ -310,7 +310,7 @@ struct FollowedSeasonRow<Accessory: View>: View {
       .overlay { SiteThumbnail(url: httpsURL(season.cover)) { $0.resizable().scaledToFill() } placeholder: { Color.clear } }
       .overlay(alignment: .topTrailing) {
         if let badge = season.badge, !badge.isEmpty {
-          Text(badge).font(.system(size: 10, weight: .medium)).foregroundStyle(.white)
+          Text(badge).piliFont(size: 10, weight: .medium).foregroundStyle(.white)
             .padding(.horizontal, 4).padding(.vertical, 0.5)
             .background(badgeColor, in: RoundedRectangle(cornerRadius: 2, style: .continuous))
             .padding(.top, 4).padding(.trailing, 4)
@@ -325,7 +325,7 @@ struct FollowedSeasonRow<Accessory: View>: View {
     return Color(red: Double(n >> 16) / 255, green: Double(n >> 8 & 255) / 255, blue: Double(n & 255) / 255)
   }
   private func line(_ text: String, _ color: Color) -> some View {
-    Text(text).font(.system(size: 13)).foregroundStyle(color).lineLimit(1)
+    Text(text).piliFont(size: 13).foregroundStyle(color).lineLimit(1)
   }
   /// 追剧: the styles, then up to three areas, as the official row shows them.
   private var meta: String? {

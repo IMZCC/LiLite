@@ -116,9 +116,9 @@ struct ArchiveCollectionList: View {
         .accessibilityLabel("合集封面")
       }
       VStack(alignment: .leading, spacing: d(3)) {
-        Text(catalog.title ?? "视频合集").font(OfficialIntro.font(15, .medium)).foregroundStyle(OfficialIntro.text1)
+        Text(catalog.title ?? "视频合集").officialFont(15, .medium).foregroundStyle(OfficialIntro.text1)
           .lineLimit(1)
-        Text("共 \(count) 个视频").font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5).monospacedDigit()
+        Text("共 \(count) 个视频").officialFont(12).foregroundStyle(OfficialIntro.ga5).monospacedDigit()
       }
       Spacer(minLength: d(8))
       ArchiveSeasonSubscriptionButton(item: subscriptionID, catalog: catalog.id, currentBV: current, compact: true)
@@ -139,7 +139,7 @@ struct ArchiveCollectionList: View {
                 TouchFeedback.light()
                 withAnimation(.snappy(duration: 0.2)) { picked = part.id }
               } label: {
-                Text(part.title ?? "合集").font(OfficialIntro.font(13, on ? .medium : .regular))
+                Text(part.title ?? "合集").officialFont(13, on ? .medium : .regular)
                   .foregroundStyle(on ? OfficialIntro.text1 : OfficialIntro.ga5)
                   .lineLimit(1).frame(minHeight: d(30)).contentShape(Rectangle())
               }
@@ -149,7 +149,7 @@ struct ArchiveCollectionList: View {
           }
         }
       } else {
-        Text(shown.title ?? "合集").font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga7).lineLimit(1)
+        Text(shown.title ?? "合集").officialFont(13).foregroundStyle(OfficialIntro.ga7).lineLimit(1)
           .frame(minHeight: d(30))
         Spacer(minLength: 0)
       }
@@ -165,8 +165,8 @@ struct ArchiveCollectionList: View {
           }
         } label: {
           HStack(spacing: d(3)) {
-            Image(systemName: "arrow.up.arrow.down").font(.system(size: d(11), weight: .medium))
-            Text(backwards ? "倒序" : "正序").font(OfficialIntro.font(12))
+            Image(systemName: "arrow.up.arrow.down").officialSymbol(11, .medium)
+            Text(backwards ? "倒序" : "正序").officialFont(12)
           }
           .foregroundStyle(OfficialIntro.ga5).frame(minHeight: d(30)).contentShape(Rectangle())
         }
@@ -192,7 +192,7 @@ struct ArchiveCollectionList: View {
             .frame(width: d(112), height: d(63))
             .overlay(alignment: .bottomTrailing) {
               if let length = video.duration, length > 0 {
-                Text(clockText(Double(length))).font(OfficialIntro.font(10)).monospacedDigit().foregroundStyle(.white)
+                Text(clockText(Double(length))).officialFont(10).monospacedDigit().foregroundStyle(.white)
                   .padding(.horizontal, d(3)).frame(height: d(16))
                   .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: d(2), style: .continuous))
                   .padding(d(4))
@@ -200,7 +200,7 @@ struct ArchiveCollectionList: View {
             }
             .overlay(alignment: .topLeading) {
               if let badge = entry.badge, !badge.isEmpty {
-                Text(badge).font(OfficialIntro.font(10, .medium)).foregroundStyle(.white)
+                Text(badge).officialFont(10, .medium).foregroundStyle(.white)
                   .padding(.horizontal, d(4)).frame(height: d(16))
                   .background(Color.accentColor, in: RoundedRectangle(cornerRadius: d(2), style: .continuous))
                   .padding(d(4))
@@ -208,20 +208,20 @@ struct ArchiveCollectionList: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: d(4), style: .continuous))
           VStack(alignment: .leading, spacing: 0) {
-            Text(video.title).font(OfficialIntro.font(14, playing ? .medium : .regular))
+            Text(video.title).officialFont(14, playing ? .medium : .regular)
               .foregroundStyle(playing ? Color.accentColor : OfficialIntro.text1)
               .lineLimit(2).multilineTextAlignment(.leading)
             Spacer(minLength: d(2))
             HStack(spacing: d(4)) {
               if playing {
-                Image(systemName: "waveform").font(.system(size: d(11), weight: .semibold))
+                Image(systemName: "waveform").officialSymbol(11, .semibold)
                   .symbolEffect(.variableColor.iterative, options: .repeating)
                 Text("正在播放")
               } else if parts.count > 1 {
                 Text("共 \(parts.count)P")
               }
             }
-            .font(OfficialIntro.font(12))
+            .officialFont(12)
             .foregroundStyle(playing ? Color.accentColor : OfficialIntro.ga5)
             .frame(height: d(17))
           }
@@ -245,7 +245,7 @@ struct ArchiveCollectionList: View {
                 if !on { play(video, part.cid) }
                 close()
               } label: {
-                Text("P\(part.page) " + part.part).font(OfficialIntro.font(12)).lineLimit(1)
+                Text("P\(part.page) " + part.part).officialFont(12).lineLimit(1)
                   .foregroundStyle(on ? Color.accentColor : OfficialIntro.text1)
                   .padding(.horizontal, d(10)).frame(height: d(30)).frame(maxWidth: d(160))
                   .background(on ? Color.accentColor.opacity(0.12) : OfficialIntro.ga1,

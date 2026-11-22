@@ -365,10 +365,10 @@ struct DetailView: View {
         // NeutralityLabel: a 16 dp glyph and 12 sp, 3 dp under the counts.
         if showArgue, let text = video.argue_info?.argue_msg, !text.isEmpty {
           HStack(spacing: d(3)) {
-            Image(systemName: "exclamationmark.circle").font(.system(size: d(12)))
+            Image(systemName: "exclamationmark.circle").officialSymbol(12)
             Text(text).lineLimit(1)
           }
-          .font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+          .officialFont(12).foregroundStyle(OfficialIntro.ga5)
           .frame(height: d(16)).padding(.top, d(3))
         }
         // The description and the tags open with the title, revealed rather than inserted.
@@ -432,10 +432,10 @@ struct DetailView: View {
           Text(error).foregroundStyle(OfficialIntro.ga5)
           Button("重试") { model.retryBullets() }.foregroundStyle(Color.accentColor)
         }
-        .font(OfficialIntro.font(12)).padding(.horizontal, d(12)).padding(.top, d(6))
+        .officialFont(12).padding(.horizontal, d(12)).padding(.top, d(6))
       }
       if let error = model.qualityError {
-        Text(error).font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+        Text(error).officialFont(12).foregroundStyle(OfficialIntro.ga5)
           .padding(.horizontal, d(12)).padding(.top, d(6))
       }
       // UgcSimpleSeasonRow, right under the action row.
@@ -474,8 +474,8 @@ struct DetailView: View {
       }
       if let error = detailError {
         VStack(spacing: d(8)) {
-          Text(error).font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5).multilineTextAlignment(.center)
-          Button("加载失败，点击重试") { reload += 1 }.font(OfficialIntro.font(13)).foregroundStyle(Color.accentColor)
+          Text(error).officialFont(13).foregroundStyle(OfficialIntro.ga5).multilineTextAlignment(.center)
+          Button("加载失败，点击重试") { reload += 1 }.officialFont(13).foregroundStyle(Color.accentColor)
         }.frame(maxWidth: .infinity).padding(.vertical, d(16))
       }
       if detail != nil {

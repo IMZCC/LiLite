@@ -80,12 +80,12 @@ struct ArchiveRelatedList: View {
         Rectangle().fill(OfficialIntro.ga2).frame(height: 0.5).padding(.horizontal, OfficialIntro.d(12))
         if failed && items.isEmpty {
           Button("加载失败，点击重试") { failed = false; Task { await load() } }
-            .font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5)
+            .officialFont(13).foregroundStyle(OfficialIntro.ga5)
             .frame(maxWidth: .infinity).padding(.vertical, 24)
         } else if !loaded {
           ProgressView().frame(maxWidth: .infinity).padding(.vertical, 24)
         } else if items.isEmpty {
-          Text("暂无相关视频").font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5)
+          Text("暂无相关视频").officialFont(13).foregroundStyle(OfficialIntro.ga5)
             .frame(maxWidth: .infinity).padding(.vertical, 24)
         }
         ForEach(items) { video in

@@ -70,7 +70,7 @@ struct ArchiveTagRow: View {
             ForEach(tags) { t in
               if let route = t.route {
                 LazyLink { LinkDestination(item: route) } label: {
-                  Text(t.label).font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga7).lineLimit(1)
+                  Text(t.label).officialFont(12).foregroundStyle(OfficialIntro.ga7).lineLimit(1)
                     .padding(.horizontal, OfficialIntro.d(10)).padding(.vertical, OfficialIntro.d(5))
                     .background(OfficialIntro.ga1, in: Capsule())
                 }.buttonStyle(.plain)
@@ -102,13 +102,13 @@ struct VideoExtras: View {
     VStack(alignment: .leading, spacing: d(10)) {
       if let node = story.node {
         Label(node.title ?? "互动视频", systemImage: "arrow.triangle.branch")
-          .font(OfficialIntro.font(14, .bold)).foregroundStyle(OfficialIntro.text1)
+          .officialFont(14, .bold).foregroundStyle(OfficialIntro.text1)
         if let prompt = node.question?.title, !prompt.isEmpty {
-          Text(prompt).font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+          Text(prompt).officialFont(12).foregroundStyle(OfficialIntro.ga5)
         }
         ForEach(node.options) { c in
           Button { story.choose(c, navigate: choose) } label: {
-            Text(c.option ?? "继续").font(OfficialIntro.font(14)).foregroundStyle(OfficialIntro.text1)
+            Text(c.option ?? "继续").officialFont(14).foregroundStyle(OfficialIntro.text1)
               .frame(maxWidth: .infinity).frame(height: d(36))
               .background(OfficialIntro.ga1, in: RoundedRectangle(cornerRadius: d(4), style: .continuous))
               .contentShape(Rectangle())
@@ -116,12 +116,12 @@ struct VideoExtras: View {
         }
         if story.canRestart {
           Button("回到故事开头") { story.restart(choose) }
-            .font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+            .officialFont(12).foregroundStyle(OfficialIntro.ga5)
         }
       }
       if let issue = story.error {
         Button("加载失败，点击重试") { story.retry() }
-          .font(OfficialIntro.font(13)).foregroundStyle(OfficialIntro.ga5).accessibilityHint(issue)
+          .officialFont(13).foregroundStyle(OfficialIntro.ga5).accessibilityHint(issue)
       }
     }
   }

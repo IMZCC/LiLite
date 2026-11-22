@@ -269,36 +269,84 @@ extension View {
 
 struct NativeGallery: View {
   let photos: [GalleryPicture]
+  /// Set where the gallery sits inside a page (the side preview): a swipe to the right on the
+  /// first picture closes it, as it closes the full-screen viewer, instead of going Back.
+  private let close: (() -> Void)?
   @State private var page: Int
+  @State private var swipe: CGFloat = 0
+  @State private var swiping: Bool?
   @StateObject private var owner = GalleryOwner()
   @StateObject private var edges = GalleryPagingEdges()
-  init(_ photos: [GalleryPicture], index: Int = 0) {
+  init(_ photos: [GalleryPicture], index: Int = 0, close: (() -> Void)? = nil) {
     self.photos = photos
+    self.close = close
     _page = State(initialValue: min(max(0, index), max(0, photos.count - 1)))
   }
-  var body: some View {
+  private var swipeClose: some Gesture {
+    DragGesture(minimumDistance: 12)
+      .onChanged { v in
+        let x = v.translation.width, y = v.translation.height
+        if swiping == nil { swiping = x > 0 && x > abs(y) * 1.2 && page == 0 && edges.allows(x) }
+        if swiping == true { swipe = max(0, x) }
+      }
+      .onEnded { v in
+        defer { swiping = nil }
+        guard swiping == true else { return }
+        if v.translation.width > 90 || v.predictedEndTranslation.width > 240 {
+          close?()
+        } else {
+          withAnimation(.snappy(duration: 0.25)) { swipe = 0 }
+        }
+      }
+  }
+  private var title: String { photos.count > 1 ? "\(page+1) / \(photos.count)" : "图片" }
+  private var pager: some View {
     Group {
       if !photos.isEmpty {
         ThresholdPager(count: photos.count, page: $page, allows: edges.allows) { i in
           GalleryPage(photo: photos[i], assets: owner.assets, active: i == page, edges: edges)
         }
-
+        .offset(x: swipe)
+        .simultaneousGesture(swipeClose, including: close == nil ? .subviews : .all)
       } else {
         ContentUnavailableView("没有图片", systemImage: "photo")
       }
-    }.navigationTitle(photos.count > 1 ? "\(page+1) / \(photos.count)" : "图片")
-      .navigationBarTitleDisplayMode(.inline).toolbar {
-        if photos.indices.contains(page) {
-          let p = photos[page]
-          Menu {
-            GalleryActions(photos: photos, index: page, owner: owner)
-            Button("复制原图地址") { UIPasteboard.general.url = p.url }
-            Link("在浏览器打开", destination: p.url)
-          } label: {
-            Image(systemName: "ellipsis.circle").accessibilityLabel("图片操作")
-          }.disabled(owner.busy)
+    }
+  }
+  @ViewBuilder private var actions: some View {
+    if photos.indices.contains(page) {
+      let p = photos[page]
+      Menu {
+        GalleryActions(photos: photos, index: page, owner: owner)
+        Button("复制原图地址") { UIPasteboard.general.url = p.url }
+        Link("在浏览器打开", destination: p.url)
+      } label: {
+        Image(systemName: "ellipsis.circle").accessibilityLabel("图片操作")
+      }.disabled(owner.busy)
+    }
+  }
+  var body: some View {
+    if let close {
+      // Inside a page (the side preview) there is no navigation bar of its own to hold the title
+      // and buttons: a stack nested in the page's would hand them to the page's (hidden) bar.
+      VStack(spacing: 0) {
+        ZStack {
+          Text(title).font(.headline).monospacedDigit()
+          HStack {
+            Button("关闭", action: close)
+            Spacer()
+            actions.font(.system(size: 19))
+          }
         }
+        .padding(.horizontal, 16).frame(height: 48)
+        Divider().opacity(0.5)
+        pager.clipped()
       }.modifier(GalleryFeedback(owner: owner))
+    } else {
+      pager.navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline).toolbar { actions }
+        .modifier(GalleryFeedback(owner: owner))
+    }
   }
 }
 private struct GalleryPage: View {

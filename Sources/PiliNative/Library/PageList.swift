@@ -36,6 +36,7 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
   @State private var busy = false
   @State private var loaded = false
   @State private var message: String?
+  @State private var siteOpen = false
   @State private var continuation:URL?
   @State private var stamp = UUID()
   @State private var boundary = PageBoundary()
@@ -83,6 +84,9 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
           }.listStyle(.plain).environment(\.inListRows, true).reportsScrollCollapse()
         }
       }.environment(\.homeFeedBottomClearance, 0)
+      .navigationDestination(isPresented: $siteOpen) {
+        if let continuation { SitePage(url: continuation, role: .recommend) }
+      }
       // The first page fades in over its spinner, and a failure or the way back from one cross-
       // fades, instead of cutting. Later pages are appended without animation (no extra work
       // while scrolling).
@@ -166,8 +170,12 @@ struct PageList<Item: Identifiable, Row: View>: View where Item.ID: Hashable {
       if let message {
         VStack(spacing: 10) {
           Text(message).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-          if let continuation { NavigationLink("在哔哩哔哩网站继续"){SitePage(url:continuation,role:.recommend)} }
-          Button("重试") { startLoad(reset: boundary.failedRefresh) }.piliGlassButton()
+          // A button, not a link: in a list a link turns the whole row into a chevron row,
+          // squeezed against 重试 under it.
+          if continuation != nil {
+            Button("在哔哩哔哩网站继续") { siteOpen = true }.buttonStyle(.borderless).font(.subheadline)
+          }
+          Button("重试") { startLoad(reset: boundary.failedRefresh) }.piliGlassButton().buttonStyle(.borderless)
         }.frame(maxWidth: .infinity).padding(.vertical, items.isEmpty ? 80 : 16)
       } else if busy {
         // First load sits in the middle of the page; later pages show a small footer spinner.

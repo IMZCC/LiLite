@@ -46,7 +46,7 @@ struct ArchiveDescription: View {
   }
   private var content: some View {
       // The official intro's text: 13 sp in Ga7.
-      LinkedDescription(input: .init(video)).font(OfficialIntro.font(13)).lineSpacing(OfficialIntro.d(4))
+      LinkedDescription(input: .init(video)).officialFont(13).lineSpacing(OfficialIntro.d(4))
         .foregroundStyle(OfficialIntro.ga7)
         .textSelection(.enabled)
         .environment(

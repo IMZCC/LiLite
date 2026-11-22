@@ -23,6 +23,17 @@ final class FeedModel {
   @ObservationIgnored private var emptyRun = 0
   private struct Request { let shelf:Shelf, reset:Bool, page:Int }
   @ObservationIgnored private var failed:Request?
+  /// A next page that came back while the list was moving, put in once it stops (or once the
+  /// reader is about to run out). Putting a page in costs 80–150 ms on an iPad's five columns,
+  /// one hitch per page right in the middle of a fling.
+  @ObservationIgnored private var held: (() -> Void)?
+  @ObservationIgnored var moving = false { didSet { if !moving { releaseHeld() } } }
+  @ObservationIgnored var nearBottom = false { didSet { if nearBottom { releaseHeld() } } }
+  private func releaseHeld() {
+    guard let apply = held else { return }
+    held = nil
+    apply()
+  }
   private func setVideos(_ value: [Video]) {
     positions.removeAll(keepingCapacity: true)
     for (index, video) in value.enumerated() { positions[video.id] = index }
@@ -46,7 +57,7 @@ final class FeedModel {
   }
   func load(_ shelf: Shelf, reset: Bool) async {
     guard !Task.isCancelled else { return }
-    if !reset && (busy || finished) { return }
+    if !reset && (busy || finished || held != nil) { return }
     await fetch(Request(shelf:shelf,reset:reset,page:reset ? 1:page+1))
   }
   func retry(_ shelf:Shelf) async {
@@ -61,17 +72,21 @@ final class FeedModel {
       : mobile ? .mobileFeed:.feed
     let t = UUID()
     token = t
+    held = nil
     busy = true
     error = nil
     failed = nil
     defer { if token == t { busy = false } }
     do {
-      let batch =
-        try await
-        (shelf == .recommended
-        ? BiliAPI.shared.recommendations(next, mobile: mobile, screen: MobileFeed.screenEdges())
-        : BiliAPI.shared.popular(next))
+      func request(_ number: Int) async throws -> (items: [Video], next: String?) {
+        let b = try await (shelf == .recommended
+          ? BiliAPI.shared.recommendations(number, mobile: mobile, screen: MobileFeed.screenEdges())
+          : BiliAPI.shared.popular(number))
+        return (b.items, b.next)
+      }
+      let batch = try await request(next)
       guard token == t, !Task.isCancelled else { return }
+      let last = next
       let previous = videos
       let revision = contentRevision
       let keepPrevious = reset && shelf == .recommended
@@ -89,16 +104,20 @@ final class FeedModel {
       }
       let result = await withTaskCancellationHandler { await filtering.value } onCancel: { filtering.cancel() }
       guard token == t, revision == contentRevision, !Task.isCancelled else { return }
-      if reset { retainedStart = result.1; emptyRun = 0 }
-      setVideos(result.0)
-      page = next
-      // The original keeps loading recommendations as the list scrolls even when a page is
-      // filtered away; stop auto-loading only after a few empty pages in a row.
-      emptyRun = result.2 ? 0 : emptyRun + 1
-      let keepGoing = shelf == .recommended ? emptyRun < 3 : result.2
-      autoCursor = keepGoing && batch.next != nil ? next + 1 : nil
-      finished = batch.next == nil
-      loaded = true
+      let apply = { [self] in
+        guard token == t, revision == contentRevision else { return }
+        if reset { retainedStart = result.1; emptyRun = 0 }
+        setVideos(result.0)
+        page = last
+        // The original keeps loading recommendations as the list scrolls even when a page is
+        // filtered away; stop auto-loading only after a few empty pages in a row.
+        emptyRun = result.2 ? 0 : emptyRun + 1
+        let keepGoing = shelf == .recommended ? emptyRun < 3 : result.2
+        autoCursor = keepGoing && batch.next != nil ? last + 1 : nil
+        finished = batch.next == nil
+        loaded = true
+      }
+      if !reset, moving, !nearBottom { held = apply } else { apply() }
     } catch { if token == t && !Task.isCancelled { failed=request;self.error=error.localizedDescription } }
   }
 }
@@ -124,6 +143,7 @@ struct FeedView: View {
   @Environment(\.collapseHomeSearch) private var collapseSearch
   @Environment(\.interfaceScaled) private var interfaceScaled
   @State private var reserved = FeedHeaderInsets()
+  @State private var pendingReserved: FeedHeaderInsets?
   @State private var searchHeight: CGFloat = 54
   @State private var headerHeight: CGFloat = 0
   var body: some View {
@@ -133,13 +153,40 @@ struct FeedView: View {
         // A wide large window has room for the channels and the search row side by side, so the
         // header is one row there and nothing needs to collapse while scrolling.
         let oneRow = channels.count > 1 && WindowCanvas.shared.large && safe.size.width >= 700
-        let travel = collapseSearch && !oneRow ? searchHeight : 0
+        // An iPhone Duo standing partly open like a book: the avatar and channels on the left
+        // page, search and messages on the right, one row as on a large screen.
+        let hinge = reserved.fold
+        let travel = collapseSearch && !oneRow && hinge == nil ? searchHeight : 0
         // The page runs under the status bar so the glass covers it too. Depending on the tab
         // container the bar is either this reader's safe area or measured by the probe.
         let top = max(windowInsets.top, safe.safeAreaInsets.top)
         VStack(spacing: 0) {
           VStack(spacing: 0) {
-            if oneRow {
+            if let hinge {
+              HStack(spacing: 0) {
+                HStack(spacing: 10) {
+                  avatarItem
+                  if channels.count > 1 {
+                    HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion, inset: 6, centered: false)
+                      .frame(maxWidth: .infinity, alignment: .leading)
+                      // Channels running on past the half fade out short of the hinge.
+                      .mask {
+                        HStack(spacing: 0) {
+                          Rectangle()
+                          LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing).frame(width: 20)
+                        }.padding(.vertical, -12)
+                      }
+                  } else {
+                    Spacer(minLength: 0)
+                  }
+                }
+                .padding(.leading, 16).padding(.trailing, 12)
+                .frame(width: max(0, hinge.lowerBound), alignment: .leading)
+                HStack(spacing: 10) { searchItem; bellItem }
+                  .padding(.leading, hinge.upperBound - hinge.lowerBound + 16).padding(.trailing, 16)
+                  .frame(maxWidth: .infinity)
+              }.padding(.top, 2).padding(.bottom, 8)
+            } else if oneRow {
               HStack(spacing: 10) {
                 avatarItem
                 HomeChannelBar(channels: channels, shelf: $shelf, motion: channelMotion, inset: 6, centered: false)
@@ -180,11 +227,28 @@ struct FeedView: View {
         .onGeometryChange(for: FeedHeaderInsets.self) { proxy in
           // Scaled, the regions come in unscaled coordinates: the Dynamic Island landed inside
           // the header and pushed it, with the feed under it, off to the right edge.
-          guard #available(iOS 27.1, *), !interfaceScaled else { return FeedHeaderInsets() }
-          let regions = proxy.reservedRegions(kind: .division) + proxy.reservedRegions(kind: .occlusion)
-          return FeedHeaderInsets.avoiding(width: proxy.size.width, height: headerHeight + top,
-            regions: regions.filter(\.isActive).map(\.frame))
-        } action: { reserved = $0 }
+          guard #available(iOS 27.1, *), !interfaceScaled else { return FeedHeaderInsets(width: proxy.size.width) }
+          var insets = FeedHeaderInsets.avoiding(width: proxy.size.width, height: headerHeight + top,
+            divisions: proxy.reservedRegions(kind: .division).filter(\.isActive).map(\.frame),
+            occlusions: proxy.reservedRegions(kind: .occlusion).filter(\.isActive).map(\.frame))
+          insets.width = proxy.size.width
+          return insets
+        } action: { next in
+          // While an iPhone Duo folds or unfolds, the regions arrive for a moment from the screen
+          // being left (or turned a quarter): the header jumped to one half, then 124 pt right,
+          // then back. What was kept clear of on another width goes at once, as does everything
+          // when there is nothing to avoid; anything else takes effect once it holds.
+          if next.width != reserved.width { reserved = FeedHeaderInsets(width: next.width) }
+          if next.isEmpty { pendingReserved = nil; reserved = next }
+          else { pendingReserved = next == reserved ? nil : next }
+        }
+        .task(id: pendingReserved) {
+          guard let next = pendingReserved else { return }
+          try? await Task.sleep(for: .milliseconds(180))
+          guard !Task.isCancelled, pendingReserved == next else { return }
+          reserved = next
+          pendingReserved = nil
+        }
         .padding(.leading, windowInsets.leading).padding(.trailing, windowInsets.trailing)
         .background {
           FeedWindowSafeArea { windowInsets = $0 }.allowsHitTesting(false).accessibilityHidden(true)
@@ -603,6 +667,18 @@ private struct HomeFeedBottomPadding: ViewModifier {
   func body(content: Content) -> some View { content.padding(.bottom, extra + clearance) }
 }
 
+/// One card of a shelf, drawn again only when its video (or the shelf's busy state) changes.
+/// Every next page of the feed re-rendered every card on screen, their menus included, since
+/// their closures never compare equal: 80–150 ms on an iPad's five columns, where a page (seven
+/// videos, under two rows) arrives about once a second of scrolling.
+private struct ShelfCell<Card: View>: View, Equatable {
+  let video: Video
+  let busy: Bool
+  @ViewBuilder let card: () -> Card
+  nonisolated static func == (a: Self, b: Self) -> Bool { a.video == b.video && a.busy == b.busy }
+  var body: some View { card() }
+}
+
 private struct VideoShelf: View, Equatable {
   /// The 排行榜 closure is rebuilt by every parent render; only whether it exists matters here.
   nonisolated static func == (a: Self, b: Self) -> Bool {
@@ -643,7 +719,9 @@ private struct VideoShelf: View, Equatable {
     return ScrollView {
       CatalogGrid(home: shelf == .recommended, gap: HomeCardStyle.gap, rowSpacing: CGFloat(HomeCardStyle.gap)) {
         Section {
-          ForEach(firstSection.dropFirst(featured == nil ? 0 : 1)) { gridCard($0) }
+          ForEach(firstSection.dropFirst(featured == nil ? 0 : 1)) { v in
+            ShelfCell(video: v, busy: sending) { gridCard(v) }.equatable()
+          }
         } header: {
           VStack(alignment: .leading, spacing: 12) {
             shelfHeader
@@ -655,7 +733,9 @@ private struct VideoShelf: View, Equatable {
         }
         if let split {
           Section {
-            ForEach(videos[split...]) { gridCard($0) }
+            ForEach(videos[split...]) { v in
+              ShelfCell(video: v, busy: sending) { gridCard(v) }.equatable()
+            }
           } header: {
             refreshPrevious(proxy)
           } footer: {
@@ -674,9 +754,11 @@ private struct VideoShelf: View, Equatable {
       FeedScrollPaging.reachedEnd(visible: g.visibleRect, contentHeight: g.contentSize.height)
     } action: { _, end in
       paging.atEnd = end
+      model.nearBottom = end
       if end { loadMore() }
     }
     .piliOnScrollPhaseChange { _, phase, geometry in
+      model.moving = phase == .interacting || phase == .decelerating
       switch phase {
       case .interacting:
         paging.beginDrag()
@@ -758,14 +840,22 @@ private struct VideoShelf: View, Equatable {
   }
   /// The official client's double-column card on the grouped background.
   private func gridCard(_ v: Video) -> some View {
-    LazyLink(zoomStyle: zoomStyle(for: v)) { destination(v) } label: {
-      HomeVideoCard(video: v)
-    }
+    cardLink(v)
     .buttonStyle(PressPrefetchStyle { if v.recommendLink == nil { ArchiveDetailPrefetch.shared.warm(v.bvid) } })
     .onAppear { prefetchCovers(after: v) }
     .overlay(alignment: .bottomTrailing) { moreMenu(v) }
     .archiveCover(v) { feedbackMenus(v) }
     .disabled(sending)
+  }
+  /// A video opens by value, through the stack's `navigationDestination(for: Video.self)`: a link
+  /// carrying its own destination per card was the heaviest part of a card to make, and an
+  /// iPad's grid makes five at a time as a row scrolls in (80–110 ms frames mid-fling).
+  @ViewBuilder private func cardLink(_ v: Video) -> some View {
+    if v.recommendLink == nil, zoomStyle(for: v) == .custom {
+      NavigationLink(value: v) { HomeVideoCard(video: v).modifier(CardZoomSource()) }
+    } else {
+      LazyLink(zoomStyle: zoomStyle(for: v)) { destination(v) } label: { HomeVideoCard(video: v) }
+    }
   }
   private func zoomStyle(for video: Video) -> CardZoomStyle? {
     let opensVideo = video.recommendationOpensVideo ?? video.recommendLink.flatMap(SharedLink.parse)?.opensVideoDetail ?? true

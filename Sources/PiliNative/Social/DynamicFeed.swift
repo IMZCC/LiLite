@@ -48,15 +48,15 @@ private struct AccountDynamicFeed: View {
   @AppStorage("social.dynamicRegex") private var regex = ""
   @AppStorage("social.hideGoods") private var goods = false
   @StateObject private var directory = FeedDirectoryState()
-  @AppStorage("social.upPanelPosition") private var positionValue = FeedPanelPosition.leftFixed
-    .rawValue
+  @AppStorage(FeedPanelPosition.key) private var positionValue: Int?
   @AppStorage("social.allFollowed") private var allFollowed = false
   @State private var expandedLive = UserDefaults.standard.bool(forKey: "social.expandLive")
   @State private var drawer = false
   @State private var destination: FeedPanelDestination?
-  private var position: FeedPanelPosition {
-    FeedPanelPosition(rawValue: positionValue) ?? .leftFixed
-  }
+  private var position: FeedPanelPosition { FeedPanelPosition.resolved(positionValue) }
+  /// A large window (iPad, an open iPhone Duo): one header row of scopes and actions, no
+  /// navigation bar above it, as the home page's.
+  private var wide: Bool { WindowCanvas.shared.large }
   var body: some View {
     VStack(spacing: 0) {
       FeedPanelHost(position: position, shown: $drawer) {
@@ -109,38 +109,29 @@ private struct AccountDynamicFeed: View {
           },
           fill: false,
           reselect: { revisions[kind, default: 0] += 1 })
+        .frame(maxWidth: .infinity, alignment: .leading)
+        if wide {
+          HStack(spacing: 10) { actions(glass: true) }.buttonStyle(.plain).padding(.horizontal, 12)
+        }
         if position == .rightDrawer { drawerButton.padding(.trailing, 12) }
+      }
+      .padding(.top, wide ? 6 : 0)
+      // An opaque bar from the top of the screen down: the cards scrolled on beneath the scopes
+      // with nothing behind them and showed through between the words.
+      .background {
+        Color(uiColor: .systemBackground).ignoresSafeArea(edges: .top)
+          .overlay(alignment: .bottom) {
+            if position != .top { Rectangle().fill(Color.primary.opacity(0.07)).frame(height: 0.5) }
+          }
       }
     }
     .animation(.snappy(duration: 0.25), value: kind)
     .navigationTitle("动态")
     .toolbarTitleDisplayMode(.inline)
     .piliRemovingToolbarTitle()
-    .toolbar {
-      Menu {
-        NavigationLink("动态筛选") { DeferredPage { CommunityFilterPanel() } }
-        NavigationLink("设置") { DeferredPage { SettingsView() } }
-        if !muted.isEmpty {
-          Menu("取消本次隐藏") {
-            ForEach(muted.keys.sorted(), id: \.self) { mid in
-              Button(muted[mid] ?? String(mid)) {
-                sessionHides.show(mid, owner: uid)
-              }
-            }
-          }
-        }
-      } label: {
-        Image(systemName: "line.3.horizontal.decrease.circle").accessibilityLabel("动态选项")
-      }
-      NavigationLink { DeferredPage { TopicDirectory() } } label: {
-        Image(systemName: "number").accessibilityLabel("话题")
-      }
-      Button {
-        compose = true
-      } label: {
-        Image(systemName: "square.and.pencil").accessibilityLabel("发布动态")
-      }
-    }.piliSheet(isPresented: $compose) { DynamicComposer { revisions[kind, default: 0] += 1 } }
+    .toolbar(wide ? .hidden : .automatic, for: .navigationBar)
+    .toolbar { if !wide { actions(glass: false) } }
+    .piliSheet(isPresented: $compose) { DynamicComposer { revisions[kind, default: 0] += 1 } }
       .onChange(of: kind, initial: true) { old, current in
         visited.insert(old)
         visited.insert(current)
@@ -157,6 +148,42 @@ private struct AccountDynamicFeed: View {
       .momentNavigation()
       .task(id: allFollowed) { await directory.configure(uid, all: allFollowed) }
       .task { await directory.profile(uid) }
+  }
+  /// 动态选项, 话题 and 发布动态: in the navigation bar on a phone, at the end of the scopes'
+  /// row on a large window.
+  @ViewBuilder private func actions(glass: Bool) -> some View {
+    Menu {
+      NavigationLink("动态筛选") { DeferredPage { CommunityFilterPanel() } }
+      NavigationLink("设置") { DeferredPage { SettingsView() } }
+      if !muted.isEmpty {
+        Menu("取消本次隐藏") {
+          ForEach(muted.keys.sorted(), id: \.self) { mid in
+            Button(muted[mid] ?? String(mid)) {
+              sessionHides.show(mid, owner: uid)
+            }
+          }
+        }
+      }
+    } label: {
+      actionGlyph("line.3.horizontal.decrease.circle", glass: glass).accessibilityLabel("动态选项")
+    }
+    NavigationLink { DeferredPage { TopicDirectory() } } label: {
+      actionGlyph("number", glass: glass).accessibilityLabel("话题")
+    }
+    Button {
+      compose = true
+    } label: {
+      actionGlyph("square.and.pencil", glass: glass).accessibilityLabel("发布动态")
+    }
+  }
+  @ViewBuilder private func actionGlyph(_ symbol: String, glass: Bool) -> some View {
+    if glass {
+      Image(systemName: symbol).font(.system(size: 17, weight: .medium)).foregroundStyle(.primary)
+        .frame(width: 40, height: 40).contentShape(Circle())
+        .piliGlass(in: Circle(), interactive: true)
+    } else {
+      Image(systemName: symbol)
+    }
   }
   private var drawerButton: some View {
     Button {

@@ -266,8 +266,8 @@ struct PlayerKeyboard: ViewModifier {
         }
         composer = true
       case .volume(let dir):
-        player.presentationVolume = min(1, max(0, player.presentationVolume + Float(dir) * 0.1))
-        hint("音量 \(Int((player.presentationVolume*100).rounded()))%")
+        let set = PlayerVolume.set(PlayerVolume.current(player) + Double(dir) * PlayerVolume.step, on: player)
+        hint("音量 \(Int((set * 100).rounded()))%")
       case .changeSpeed(let dir):
         let rates = SpeedPresets.current(.standard).sorted()
         let now = Double(player.defaultRate)

@@ -16,9 +16,8 @@ extension EnvironmentValues {
 struct GalleryRailPanel: View {
   let request: GalleryRailRequest, dismiss: () -> Void
   var body: some View {
-    PiliNavigationStack {
-      NativeGallery(request.photos, index: request.index)
-        .toolbar { ToolbarItem(placement: .topBarLeading) { Button("关闭", action: dismiss) } }
-    }.background(.background).id(request.id)
+    NativeGallery(request.photos, index: request.index, close: dismiss)
+      // Down over the home indicator too: the page under it must not show through below.
+      .background(.background).clipped().ignoresSafeArea(.container, edges: .bottom).id(request.id)
   }
 }

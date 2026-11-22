@@ -33,9 +33,9 @@ struct ArchiveSeasonSubscriptionButton: View {
           if busy && following == nil {
             ProgressView().controlSize(.mini)
           } else {
-            Image(systemName: on ? "checkmark" : "plus").font(.system(size: d(10), weight: .bold))
+            Image(systemName: on ? "checkmark" : "plus").officialSymbol(10, .bold)
           }
-          Text(on ? "已订阅" : "订阅").font(OfficialIntro.font(12, .medium))
+          Text(on ? "已订阅" : "订阅").officialFont(12, .medium)
         }
         .foregroundStyle(on ? OfficialIntro.ga5 : Color.white)
         .padding(.horizontal, d(10)).frame(height: d(26))

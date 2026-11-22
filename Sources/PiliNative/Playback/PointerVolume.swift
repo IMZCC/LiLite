@@ -16,6 +16,8 @@ struct PointerVolume: UIViewRepresentable {
   final class Marker: UIView, UIGestureRecognizerDelegate {
     weak var player: (any PlaybackEngine)?
     var changed: ((Int) -> Void)?
+    /// The level this scroll is heading for.
+    private var target: Double?
     private lazy var pan: UIPanGestureRecognizer = {
       let pan = UIPanGestureRecognizer(target: self, action: #selector(adjust(_:)))
       pan.allowedScrollTypesMask = .all
@@ -61,10 +63,14 @@ struct PointerVolume: UIViewRepresentable {
       guard let player, pan.state == .began || pan.state == .changed || pan.state == .ended else { return }
       let dy = pan.translation(in: self).y
       pan.setTranslation(.zero, in: self)
+      defer { if pan.state == .ended { target = nil } }
       guard dy.isFinite, dy != 0 else { return }
-      let volume = min(1, max(0, player.presentationVolume + Float(dy / 4000)))
-      player.presentationVolume = volume
-      changed?(Int((volume * 100).rounded()))
+      // Kept apart from the level in effect: the device's volume moves in sixteenths, which a
+      // wheel's small steps would each round back to where they started.
+      let next = min(1, max(0, (target ?? PlayerVolume.current(player)) + Double(dy / 4000)))
+      target = next
+      let set = PlayerVolume.set(next, on: player)
+      changed?(Int((set * 100).rounded()))
     }
     func detach() { pan.view?.removeGestureRecognizer(pan) }
   }

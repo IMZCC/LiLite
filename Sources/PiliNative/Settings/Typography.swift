@@ -29,17 +29,7 @@ extension TypefaceChoice {
     case .footnote: ui = .footnote
     default: ui = .body
     }
-    var selectedName: String?
-    if !name.isEmpty {
-      if let cached = Self.resolvedNames.object(forKey: name as NSString) { selectedName = cached as String }
-      else if UIFont(name: name, size: 16) != nil { selectedName = name }
-      else {
-        let family = UIFont.fontNames(forFamilyName: name)
-        selectedName = family.first(where: { $0.hasSuffix("-Regular") }) ?? family.first
-      }
-      if let selectedName { Self.resolvedNames.setObject(selectedName as NSString, forKey: name as NSString) }
-    }
-    if let selectedName {
+    if let selectedName = resolvedName {
       let size = UIFont.preferredFont(
         forTextStyle: ui, compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
       ).pointSize
@@ -47,6 +37,35 @@ extension TypefaceChoice {
     }
     return .system(
       size: UIFont.preferredFont(forTextStyle: ui).pointSize * self.scale, weight: weight)
+  }
+  /// The chosen font's PostScript name, when one is chosen and installed.
+  private var resolvedName: String? {
+    guard !name.isEmpty else { return nil }
+    if let cached = Self.resolvedNames.object(forKey: name as NSString) { return cached as String }
+    var selected: String?
+    if UIFont(name: name, size: 16) != nil { selected = name }
+    else {
+      let family = UIFont.fontNames(forFamilyName: name)
+      selected = family.first(where: { $0.hasSuffix("-Regular") }) ?? family.first
+    }
+    if let selected { Self.resolvedNames.setObject(selected as NSString, forKey: name as NSString) }
+    return selected
+  }
+  /// How much larger than the default the reader wants text: their Dynamic Type size against
+  /// Large, times 字号. Capped, as pages drawn to a design keep fixed row heights.
+  static func readerScale(_ size: DynamicTypeSize, face: TypefaceChoice) -> CGFloat {
+    let reference = UIFontMetrics(forTextStyle: .body).scaledValue(
+      for: 17, compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size)))
+    return min(1.6, max(0.8, reference / 17)) * face.scale
+  }
+  /// A size taken from a design (the official client's pages), drawn the way every other page's
+  /// text is: in the chosen font, at the reader's size. A plain `.system(size:)` stayed put when
+  /// the reader enlarged text or changed 字号, so these pages fell out of proportion with the rest.
+  func designed(_ size: CGFloat, weight explicit: Font.Weight?, readerSize: DynamicTypeSize, symbol: Bool = false) -> Font {
+    let weight = explicit ?? Self.weights[self.weight - 1]
+    let points = size * Self.readerScale(readerSize, face: self)
+    if !symbol, let selected = resolvedName { return .custom(selected, fixedSize: points).weight(weight) }
+    return .system(size: points, weight: weight)
   }
 }
 private struct TypefaceKey: EnvironmentKey { static let defaultValue = TypefaceChoice.standard }
@@ -65,9 +84,25 @@ private struct SemanticTypeface: ViewModifier {
     return content.font(face.font(style, weight: weight))
   }
 }
+private struct DesignedTypeface: ViewModifier {
+  @Environment(\.piliTypeface) var face
+  @Environment(\.dynamicTypeSize) var size
+  let points: CGFloat, weight: Font.Weight?, symbol: Bool
+  func body(content: Content) -> some View {
+    content.font(face.designed(points, weight: weight, readerSize: size, symbol: symbol))
+  }
+}
 extension View {
   func piliFont(_ style: Font.TextStyle, weight: Font.Weight? = nil) -> some View {
     modifier(SemanticTypeface(style: style, weight: weight))
+  }
+  /// A design's point size that still follows the reader's text size, 字号 and font.
+  func piliFont(size: CGFloat, weight: Font.Weight? = nil) -> some View {
+    modifier(DesignedTypeface(points: size, weight: weight, symbol: false))
+  }
+  /// The same for an SF Symbol beside such text, so the two keep their proportion.
+  func piliSymbol(size: CGFloat, weight: Font.Weight? = nil) -> some View {
+    modifier(DesignedTypeface(points: size, weight: weight, symbol: true))
   }
 }
 

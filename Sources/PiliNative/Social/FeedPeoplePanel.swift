@@ -17,7 +17,8 @@ struct FeedPeoplePanel: View {
   var body: some View {
     ScrollView(horizontal ? .horizontal : .vertical) {
       if horizontal {
-        LazyHStack(alignment: .center, spacing: 3) { entries }.padding(.horizontal, 4)
+        // The official client's strip: round avatars with one line of name under each.
+        LazyHStack(alignment: .top, spacing: 6) { entries }.padding(.horizontal, 12).padding(.vertical, 8)
       } else {
         LazyVStack(alignment: position.drawer ? .leading : .center, spacing: 4) { entries }
           .padding(.horizontal, 4).padding(.vertical, 6)
@@ -124,7 +125,7 @@ struct FeedPeoplePanel: View {
             Image(systemName: symbol).font(.title3)
           }
         }
-        .frame(width: 31, height: 31).background(.quaternary).clipShape(Circle())
+        .frame(width: horizontal ? 42 : 31, height: horizontal ? 42 : 31).background(.quaternary).clipShape(Circle())
         .overlay {
           if active || live {
             Circle().stroke(active ? Color.accentColor : Color.pink, lineWidth: 2)
@@ -137,10 +138,10 @@ struct FeedPeoplePanel: View {
       }
       Text(name).font(.caption).fontWeight(active ? .semibold : .regular)
         .foregroundStyle(active ? Color.accentColor : Color.primary)
-        .lineLimit(position.drawer ? 1 : 2).multilineTextAlignment(
+        .lineLimit(position.drawer || horizontal ? 1 : 2).multilineTextAlignment(
           position.drawer ? .leading : .center)
     }.frame(
-      minWidth: 48, maxWidth: position.drawer ? .infinity : 68,
+      minWidth: 48, maxWidth: position.drawer ? .infinity : horizontal ? 62 : 68,
       minHeight: position.drawer ? 42 : 58, alignment: position.drawer ? .leading : .center
     )
     .padding(.horizontal, position.drawer ? 6 : 1)
@@ -159,7 +160,7 @@ struct FeedPanelHost<Panel: View, Content: View>: View {
   @ViewBuilder let panel: () -> Panel
   @ViewBuilder let content: () -> Content
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @ScaledMetric(relativeTo: .caption) private var topRailHeight: CGFloat = 74
+  @ScaledMetric(relativeTo: .caption) private var topRailHeight: CGFloat = 88
   @ScaledMetric(relativeTo: .caption) private var sideRailWidth: CGFloat = 68
   var body: some View {
     GeometryReader { geometry in

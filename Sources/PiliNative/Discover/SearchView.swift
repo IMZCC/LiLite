@@ -419,7 +419,9 @@ struct SearchView: View {
     let effective = effectiveDomain(section)
     let parameters = fields(section)
     let reader = owner
-    return PageList(empty: "没有匹配结果",autoMore:true,discoveryArchive:{(hit:SearchHit)->Video? in if case .video(let v)=hit.content{return v};return nil}) { cursor in
+    // A large window lays the results out in columns, as the official iPad app does, instead of
+    // one long row per result across the whole width.
+    return PageList(empty: "没有匹配结果",grid:WindowCanvas.shared.large,gridItemWidth:400,autoMore:true,discoveryArchive:{(hit:SearchHit)->Video? in if case .video(let v)=hit.content{return v};return nil}) { cursor in
       let page = Int(cursor ?? "1") ?? 1
       let p = try await BiliAPI.shared.searchPage(
         t, domain: effective, page: page, fields: parameters, owner: reader)

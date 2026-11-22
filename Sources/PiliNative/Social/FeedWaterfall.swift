@@ -50,7 +50,10 @@ private struct FeedWaterfallWindow<Item: Identifiable, Row: View>: View {
         ZStack(alignment: .topLeading) {
           ForEach(visible.map { FeedVisibleItem(index: $0, item: items[$0]) }) { cell in
             let rect = plan.frames[cell.index]
-            row(cell.item)
+            // In a stack, so a row that draws nothing (a moment folded under the one before it)
+            // still measures, at no height: unmeasured, it kept the 240 pt guess and left that
+            // much blank at the top of the next lanes.
+            VStack(spacing: 0) { row(cell.item) }
               .padding(.horizontal, 6)
               .frame(width: plan.width, alignment: .leading)
               .fixedSize(horizontal: false, vertical: true)

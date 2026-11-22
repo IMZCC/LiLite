@@ -88,7 +88,7 @@ struct ArchiveActionColumn: View {
       glyph(size: d(25.5), tint: active ? Color.accentColor : OfficialIntro.ga7)
         .modifier(ActionPop(pulse: pulse, lit: active))
         .frame(width: d(30), height: d(30))
-      Text(title).font(OfficialIntro.font(10)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+      Text(title).officialFont(10).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
         .foregroundStyle(active ? Color.accentColor : OfficialIntro.ga5)
         .contentTransition(.numericText())
     }

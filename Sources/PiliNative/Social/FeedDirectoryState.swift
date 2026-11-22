@@ -13,6 +13,14 @@ enum FeedPanelPosition: Int, CaseIterable, Identifiable {
     }
   }
   var drawer: Bool { self == .leftDrawer || self == .rightDrawer }
+  static let key = "social.upPanelPosition"
+  /// The reader's choice, or else: on a large window the official client's strip of followed
+  /// UP 主 across the top (a column of avatars down the side wasted a sixth of an iPad's width on
+  /// names broken over two lines); on a phone the side column, as before.
+  @MainActor static func resolved(_ stored: Int?) -> Self {
+    if let stored, let chosen = Self(rawValue: stored) { return chosen }
+    return WindowCanvas.shared.large ? .top : .leftFixed
+  }
   var leading: Bool { self == .leftFixed || self == .leftDrawer }
 }
 

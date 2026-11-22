@@ -84,10 +84,10 @@ private struct QuickRelationButton: View {
       HStack(spacing: OfficialIntro.d(2)) {
         if !blocked {
           Image(systemName: followed ? "line.3.horizontal" : "plus")
-            .font(.system(size: OfficialIntro.d(11), weight: .bold))
+            .officialSymbol(11, .bold)
             .frame(width: OfficialIntro.d(16), height: OfficialIntro.d(16))
         }
-        Text(blocked ? "移出黑名单" : followed ? "已关注" : "关注").font(OfficialIntro.font(13))
+        Text(blocked ? "移出黑名单" : followed ? "已关注" : "关注").officialFont(13)
       }
       .foregroundStyle(quiet ? OfficialIntro.ga5 : Color.white)
       .lineLimit(1)
@@ -105,7 +105,7 @@ private struct QuickRelationButton: View {
     let quiet = followed || relation?.attribute == 128
     return Button(action: tap) {
       Image(systemName: quiet ? "checkmark" : "plus")
-        .font(.system(size: OfficialIntro.d(12), weight: .bold))
+        .officialSymbol(12, .bold)
         .foregroundStyle(quiet ? OfficialIntro.ga5 : Color.white)
         .frame(width: OfficialIntro.d(30), height: OfficialIntro.d(22))
         .background(quiet ? OfficialIntro.ga2 : Color.accentColor, in: Capsule())

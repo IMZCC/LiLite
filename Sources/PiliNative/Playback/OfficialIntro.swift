@@ -5,7 +5,9 @@ import UIKit
 /// iOS), from its decompiled source: OwnerContent, StaffsContent, UgcHeadlineComponent,
 /// KingPositionContent, UgcSeasonContent and RelateSharedCardContent. Its dp and sp are drawn
 /// scaled with the screen's width against a 411 dp design (about 1.05× on a 430 pt phone, which
-/// is what its screenshots measure), so every size here goes through `d` and `font`.
+/// is what its screenshots measure), so every length here goes through `d` and every text size
+/// through `officialFont`, which then follows the reader's text size and 字号 as the rest of the
+/// app does.
 @MainActor enum OfficialIntro {
   static let scale: CGFloat = {
     let width = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.screen.bounds.size }
@@ -14,9 +16,6 @@ import UIKit
   }()
   /// A dp length, to the half point.
   static func d(_ dp: CGFloat) -> CGFloat { (dp * scale * 2).rounded() / 2 }
-  static func font(_ sp: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-    .system(size: sp * scale, weight: weight)
-  }
   // The theme's greys (day / night).
   static let ga1 = tone(0xF6F7F8, 0x1E2022)
   static let ga2 = tone(0xE3E5E7, 0x2F3134)
@@ -33,6 +32,19 @@ import UIKit
   private static func rgb(_ v: UInt32) -> UIColor {
     UIColor(red: CGFloat((v >> 16) & 0xFF) / 255, green: CGFloat((v >> 8) & 0xFF) / 255,
       blue: CGFloat(v & 0xFF) / 255, alpha: 1)
+  }
+}
+
+extension View {
+  /// Text at an sp size of the official client's page: scaled with the screen as that page is,
+  /// then to the reader's text size, 字号 and font. A fixed size here stayed put while every
+  /// other page grew with the reader's larger text, and the video page fell out of proportion.
+  func officialFont(_ sp: CGFloat, _ weight: Font.Weight? = nil) -> some View {
+    piliFont(size: sp * OfficialIntro.scale, weight: weight)
+  }
+  /// An SF Symbol beside such text, scaled with it.
+  func officialSymbol(_ sp: CGFloat, _ weight: Font.Weight? = nil) -> some View {
+    piliSymbol(size: sp * OfficialIntro.scale, weight: weight)
   }
 }
 
@@ -142,14 +154,14 @@ struct IntroOwnerRow: View {
     return HStack(spacing: 0) {
       ProfileAvatar(url: avatar, size: d(30)).frame(width: d(54), height: d(54))
       VStack(alignment: .leading, spacing: 0) {
-        Text(name).font(OfficialIntro.font(13)).lineLimit(1)
+        Text(name).officialFont(13).lineLimit(1)
           .foregroundStyle(card?.annualVIP == true ? OfficialIntro.vipName : OfficialIntro.text1)
           .frame(height: d(18), alignment: .leading)
         HStack(spacing: d(10)) {
           if let fans = card?.fans { Text(fans.formatted(.number.notation(.compactName)) + "粉丝") }
           if let videos = card?.videos { Text(videos.formatted(.number.notation(.compactName)) + "视频") }
         }
-        .font(OfficialIntro.font(10)).foregroundStyle(OfficialIntro.ga5).monospacedDigit().lineLimit(1)
+        .officialFont(10).foregroundStyle(OfficialIntro.ga5).monospacedDigit().lineLimit(1)
         .frame(height: d(18), alignment: .leading)
       }
       .padding(.top, d(11)).frame(height: d(54), alignment: .top)
@@ -171,15 +183,15 @@ struct IntroStaffs: View {
     let d = OfficialIntro.d
     VStack(alignment: .leading, spacing: 0) {
       HStack(spacing: 0) {
-        Text("创作团队").font(OfficialIntro.font(14, .bold)).foregroundStyle(OfficialIntro.text1)
+        Text("创作团队").officialFont(14, .bold).foregroundStyle(OfficialIntro.text1)
         Spacer(minLength: d(8))
         Button {
           TouchFeedback.light()
           showsAll = true
         } label: {
           HStack(spacing: d(2)) {
-            Text("共\(staff.count)位").font(OfficialIntro.font(12))
-            Image(systemName: "chevron.right").font(.system(size: d(10), weight: .semibold))
+            Text("共\(staff.count)位").officialFont(12)
+            Image(systemName: "chevron.right").officialSymbol(10, .semibold)
           }
           .foregroundStyle(OfficialIntro.ga5)
           .frame(height: d(32)).contentShape(Rectangle())
@@ -236,11 +248,11 @@ struct IntroStaffs: View {
         HStack(spacing: 0) {
           avatar(size: d(30))
           VStack(alignment: .leading, spacing: 0) {
-            Text(name ?? "创作者").font(OfficialIntro.font(13)).lineLimit(1)
+            Text(name ?? "创作者").officialFont(13).lineLimit(1)
               .foregroundStyle(isVIP ? OfficialIntro.vipStaff : OfficialIntro.text1)
               .frame(height: d(18), alignment: .leading)
             if let title, !title.isEmpty {
-              Text(title).font(OfficialIntro.font(10)).foregroundStyle(OfficialIntro.ga5).lineLimit(1)
+              Text(title).officialFont(10).foregroundStyle(OfficialIntro.ga5).lineLimit(1)
                 .frame(height: d(14), alignment: .leading)
             }
           }
@@ -269,15 +281,15 @@ struct IntroSeasonRow: View {
       open()
     } label: {
       HStack(spacing: 0) {
-        Text("合集 · " + title).font(OfficialIntro.font(14)).foregroundStyle(OfficialIntro.text1).lineLimit(1)
+        Text("合集 · " + title).officialFont(14).foregroundStyle(OfficialIntro.text1).lineLimit(1)
           .frame(maxWidth: .infinity, alignment: .leading)
-        Image(systemName: "waveform").font(.system(size: d(11), weight: .semibold))
+        Image(systemName: "waveform").officialSymbol(11, .semibold)
           .symbolEffect(.variableColor.iterative, options: .repeating)
           .frame(width: d(38), height: d(14), alignment: .trailing)
         if let position {
-          Text(position).font(OfficialIntro.font(12)).monospacedDigit().padding(.leading, d(4))
+          Text(position).officialFont(12).monospacedDigit().padding(.leading, d(4))
         }
-        Image(systemName: "chevron.right").font(.system(size: d(11), weight: .semibold))
+        Image(systemName: "chevron.right").officialSymbol(11, .semibold)
           .frame(width: d(16), height: d(16))
       }
       .foregroundStyle(OfficialIntro.ga5)
@@ -308,7 +320,7 @@ struct IntroRelateRow: View {
         .frame(width: width, height: height)
         .overlay(alignment: .bottomTrailing) {
           if let length = video.duration, length > 0 {
-            Text(clockText(Double(length))).font(OfficialIntro.font(10)).monospacedDigit().foregroundStyle(.white)
+            Text(clockText(Double(length))).officialFont(10).monospacedDigit().foregroundStyle(.white)
               .padding(.horizontal, d(3)).frame(height: d(16))
               .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: d(2), style: .continuous))
               .padding(d(5))
@@ -317,12 +329,12 @@ struct IntroRelateRow: View {
         .clipShape(RoundedRectangle(cornerRadius: d(4), style: .continuous))
         .cardZoomCover(radius: d(4))
       VStack(alignment: .leading, spacing: 0) {
-        Text(video.title).font(OfficialIntro.font(14)).foregroundStyle(OfficialIntro.text1)
+        Text(video.title).officialFont(14).foregroundStyle(OfficialIntro.text1)
           .lineLimit(2).multilineTextAlignment(.leading)
         Spacer(minLength: d(2))
         if let author = video.owner?.name, !author.isEmpty {
           HStack(spacing: d(2)) {
-            Image(systemName: "person").font(.system(size: d(10), weight: .medium)).frame(width: d(16), height: d(16))
+            Image(systemName: "person").officialSymbol(10, .medium).frame(width: d(16), height: d(16))
             Text(author).lineLimit(1)
           }
           .frame(height: d(17))
@@ -334,7 +346,7 @@ struct IntroRelateRow: View {
         }
         .frame(height: d(17))
       }
-      .font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+      .officialFont(12).foregroundStyle(OfficialIntro.ga5)
       .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
     }
     .padding(.horizontal, d(12)).padding(.vertical, d(10))
@@ -345,7 +357,7 @@ struct IntroRelateRow: View {
   }
   private func stat(_ symbol: String, _ n: Int) -> some View {
     HStack(spacing: OfficialIntro.d(2)) {
-      Image(systemName: symbol).font(.system(size: OfficialIntro.d(11)))
+      Image(systemName: symbol).officialSymbol(11)
       Text(n.formatted(.number.notation(.compactName))).monospacedDigit()
     }
   }
@@ -355,7 +367,7 @@ struct IntroRelateRow: View {
     let d = OfficialIntro.d
     return ArchiveCoverMoreButton(video: video) {
       Image(systemName: "ellipsis").rotationEffect(.degrees(90))
-        .font(.system(size: d(12), weight: .semibold)).foregroundStyle(OfficialIntro.ga5)
+        .officialSymbol(12, .semibold).foregroundStyle(OfficialIntro.ga5)
         .frame(width: d(40), height: d(28)).contentShape(Rectangle())
     }
     .padding(.bottom, d(8))

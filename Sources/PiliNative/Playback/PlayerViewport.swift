@@ -87,7 +87,8 @@ struct Theater: View {
               pipError: { pipError = $0 }
             )
             } else if let mpv = player as? MPVPlayer {
-              MPVVideoView(player: mpv, gravity: canvas.gravity)
+              // The page's picture keeps its drawable when the page changes layout around it.
+              MPVVideoView(player: mpv, gravity: canvas.gravity, slot: fullscreen ? nil : "inline")
             }
             }
             .scaleEffect(x: !system && clock.picture.mirrorX ? -1 : 1, y: !system && clock.picture.mirrorY ? -1 : 1)

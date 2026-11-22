@@ -69,6 +69,8 @@ private struct GestureCanvas:View{
   @State private var echo: (time: Double, delta: Double)?
   @State private var echoEnd: Task<Void, Never>?
   @State private var clear: Task<Void, Never>?
+  /// Hides the level shown for the volume buttons.
+  @State private var levelFade: Task<Void, Never>?
   var body: some View {
     GeometryReader { g in
       ZStack {
@@ -139,10 +141,11 @@ private struct GestureCanvas:View{
               guard let axis else { return }
               if start == nil {
                 switchedScreen = false
-                start = model.seconds; clear?.cancel()
+                start = model.seconds; clear?.cancel(); levelFade?.cancel()
                 switch axis {
                 case .brightness: levelTracker = .init(start: WindowMetrics.brightness, brightness: true)
-                case .volume: levelTracker = .init(start: Double(model.player.presentationVolume), brightness: false)
+                // The device's volume, as the official client's slide sets it.
+                case .volume: levelTracker = .init(start: PlayerVolume.current(model.player), brightness: false)
                 default: levelTracker = nil
                 }
               }
@@ -170,9 +173,9 @@ private struct GestureCanvas:View{
                 detents.move(n)
               case .volume:
                 guard let n = levelTracker?.level(-dy / max(1, g.size.height)) else { break }
-                model.player.presentationVolume = Float(n)
-                level = (PlayerLevelPill.volumeSymbol(n), Int((n * 100).rounded()))
-                detents.move(n)
+                let set = PlayerVolume.set(n, on: model.player)
+                level = (PlayerLevelPill.volumeSymbol(set), Int((set * 100).rounded()))
+                detents.move(set)
               }
             }.onEnded { v in
               guard viewportTouch?.acceptsPan != false else {
@@ -235,9 +238,20 @@ private struct GestureCanvas:View{
     }.accessibilityHidden(true).onChange(of: scrub) { _, t in viewportTouch?.horizontalSeek = t }
       .onChange(of:scene){_,state in if state != .active{cancel()}}
       .onReceive(model.player.itemPublisher.dropFirst()){_ in cancel()}
+      // The volume buttons, while the player keeps the system's HUD away: its own level, briefly.
+      .onReceive(SystemVolume.shared.external) { value in
+        guard start == nil else { return }
+        level = (PlayerLevelPill.volumeSymbol(value), Int((value * 100).rounded()))
+        levelFade?.cancel()
+        levelFade = Task {
+          try? await Task.sleep(for: .seconds(1.2))
+          if !Task.isCancelled, start == nil { level = nil }
+        }
+      }
+      .background { SystemVolumeAnchor().frame(width: 0, height: 0) }
       .onDisappear{cancel()}
   }
-  private func cancel(){detents.finish();level=nil;viewportTouch?.horizontalSeek=nil;clear?.cancel();burstEnd?.cancel();echoEnd?.cancel();echo=nil;burst=0;start=nil;axis=nil;scrub=nil;feedback=nil;endBoost()}
+  private func cancel(){detents.finish();level=nil;levelFade?.cancel();viewportTouch?.horizontalSeek=nil;clear?.cancel();burstEnd?.cancel();echoEnd?.cancel();echo=nil;burst=0;start=nil;axis=nil;scrub=nil;feedback=nil;endBoost()}
   private func accumulate(_ delta: Double) {
     guard let item = model.player.playbackItem, model.ready, delta.isFinite, delta != 0 else { return }
     burstEnd?.cancel()

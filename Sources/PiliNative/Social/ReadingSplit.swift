@@ -54,6 +54,7 @@ struct ReadingSplit<Story: View, Panel: View>: View {
           }
       }
       }.environment(\.presentGalleryRail, wide && galleryEnabled ? StableAction(railToken) { gallery = $0 } : nil)
+       .background { NavigationPopBlock(active: gallery != nil).frame(width: 0, height: 0) }
        .onChange(of: wide && galleryEnabled) { _, show in if !show { gallery = nil } }
     }
   }

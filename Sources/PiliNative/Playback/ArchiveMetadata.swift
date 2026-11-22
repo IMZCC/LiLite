@@ -29,20 +29,20 @@ struct ArchiveMetadata:View{
         title.layoutPriority(1).contextMenu{copyActions}
         if toggle != nil {
           // HeadlineArrow; copying stays on a long press.
-          Image(systemName: "chevron.down").font(.system(size: d(13), weight: .medium))
+          Image(systemName: "chevron.down").officialSymbol(13, .medium)
             .foregroundStyle(OfficialIntro.ga5)
             .rotationEffect(.degrees(expanded ? 180 : 0))
             // Centred on the first line of the title.
             .frame(width: d(20), height: oneLine > 0 ? oneLine : d(22)).accessibilityHidden(true)
         } else {
           Menu { copyActions } label: {
-            Image(systemName: "ellipsis").font(.system(size: d(14), weight: .medium)).foregroundStyle(OfficialIntro.ga5)
+            Image(systemName: "ellipsis").officialSymbol(14, .medium).foregroundStyle(OfficialIntro.ga5)
               .frame(width: d(32), height: d(32)).contentShape(Rectangle())
           }.tint(.secondary).accessibilityLabel("视频信息")
         }
       }
       summaryLine.lineLimit(1).minimumScaleFactor(0.85)
-        .font(OfficialIntro.font(12)).foregroundStyle(OfficialIntro.ga5)
+        .officialFont(12).foregroundStyle(OfficialIntro.ga5)
         .frame(height: d(16)).padding(.top, d(7))
     }
     .contentShape(Rectangle())
@@ -63,15 +63,14 @@ struct ArchiveMetadata:View{
   /// between them: changing a line limit re-flowed the text in one jump, and could not be turned
   /// round mid-way.
   private var title:some View{
-    let font=OfficialIntro.font(16, .medium)
     let measured=oneLine>0 && allLines>0
     return ZStack(alignment:.topLeading){
-      Text(video.title).font(font).lineLimit(1)
+      Text(video.title).officialFont(16, .medium).lineLimit(1)
         .onGeometryChange(for:CGFloat.self){$0.size.height} action:{oneLine=$0}
         .opacity(expanded ? 0 : 1)
       // Not selectable: selection read quick taps as a double tap (select a word), so a second
       // tap mid-way never turned the intro round. Copying is in the long-press menu.
-      Text(video.title).font(font)
+      Text(video.title).officialFont(16, .medium)
         .fixedSize(horizontal:false,vertical:true)
         .onGeometryChange(for:CGFloat.self){$0.size.height} action:{allLines=$0}
         .opacity(expanded ? 1 : 0)
@@ -105,12 +104,12 @@ struct ArchiveMetadata:View{
   /// UgcMetaText: a 15 dp glyph, 3 dp, the number.
   private func counter(_ symbol:String,_ value:String)->some View{
     HStack(spacing:OfficialIntro.d(3)){
-      Image(systemName:symbol).font(.system(size:OfficialIntro.d(11.5))).frame(width:OfficialIntro.d(15),height:OfficialIntro.d(15))
+      Image(systemName:symbol).officialSymbol(11.5).frame(width:OfficialIntro.d(15),height:OfficialIntro.d(15))
       Text(value)
     }
   }
   private func chip(_ text:String)->some View{
-    Text(text).font(OfficialIntro.font(10, .semibold)).foregroundStyle(.tint)
+    Text(text).officialFont(10, .semibold).foregroundStyle(.tint)
       .padding(.horizontal,OfficialIntro.d(6)).frame(height:OfficialIntro.d(16))
       .background(Color.accentColor.opacity(0.12),in:RoundedRectangle(cornerRadius:OfficialIntro.d(3),style:.continuous))
   }

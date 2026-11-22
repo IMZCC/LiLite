@@ -106,8 +106,11 @@ final class MPVCore: @unchecked Sendable {
     }
   }
   func load(_ url: String, audio: String?, reference: String, start: Double, paused: Bool,
-            generation: UUID, options: [String: String]) {
+            generation: UUID, options: [String: String], after ready: DispatchGroup? = nil) {
     queue.async { [weak self] in
+      // The render context first (MPVRenderer.prepareForLoad): commands stay in order, and the
+      // video output finds a context when the file opens.
+      ready?.wait()
       guard let self, !self.stopped else { return }
       if let error = self.startupError {
         self.snapshot = MPVSnapshot(generation: generation)

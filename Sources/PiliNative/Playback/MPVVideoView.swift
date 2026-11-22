@@ -64,6 +64,22 @@ final class MPVRenderer: @unchecked Sendable {
       draw(force: true)
     }
   }
+  /// Has mpv's render context made before a file is opened, whether or not a drawable has
+  /// reached the window yet. libmpv's video output only starts against an existing context: a
+  /// page that began loading first (a second video opened right after leaving one) got a failed
+  /// video output, its sound and clock running over a black picture. The client queue waits on
+  /// the returned group before `loadfile`.
+  func prepareForLoad() -> DispatchGroup {
+    let ready = DispatchGroup()
+    ready.enter()
+    queue.async { [self] in
+      defer { ready.leave() }
+      guard !closed, !pageReleased else { return }
+      _ = initialize()
+      if !suspended { EAGLContext.setCurrent(nil) }
+    }
+    return ready
+  }
   func resize(_ id: UUID) {
     queue.async { [self] in surfaces[id]?.dirty = true; draw(force: true) }
   }
@@ -113,17 +129,22 @@ final class MPVRenderer: @unchecked Sendable {
         glGetRenderbufferParameteriv(GLenum(GL_RENDERBUFFER), GLenum(GL_RENDERBUFFER_HEIGHT), &surface.height)
         glBindFramebuffer(GLenum(GL_FRAMEBUFFER), surface.fbo)
         glFramebufferRenderbuffer(GLenum(GL_FRAMEBUFFER), GLenum(GL_COLOR_ATTACHMENT0), GLenum(GL_RENDERBUFFER), surface.color)
-        surface.dirty = false
       }
-      guard surface.width > 0, surface.height > 0 else { continue }
+      // A storage taken while the layer had no size, or one that came out incomplete, stays to
+      // be made again on the next frame. Marked clean on allocation, such a drawable was skipped
+      // for the rest of playback: the sound and the bullets ran over a black picture.
+      guard surface.width > 0, surface.height > 0 else { surface.dirty = true; continue }
       glBindFramebuffer(GLenum(GL_FRAMEBUFFER), surface.fbo)
-      guard glCheckFramebufferStatus(GLenum(GL_FRAMEBUFFER)) == GLenum(GL_FRAMEBUFFER_COMPLETE) else { continue }
+      guard glCheckFramebufferStatus(GLenum(GL_FRAMEBUFFER)) == GLenum(GL_FRAMEBUFFER_COMPLETE) else {
+        surface.dirty = true
+        continue
+      }
       pili_mpv_render(context, Int32(surface.fbo), surface.width, surface.height)
       // Copy before presentRenderbuffer discards the drawable backing. ES3 blit avoids
       // a second mpv shader/render pass, and leaves the original on-screen path unchanged.
       if !fed { feed(surface, force: force); fed = true }
       glBindRenderbuffer(GLenum(GL_RENDERBUFFER), surface.color)
-      gl.presentRenderbuffer(Int(GL_RENDERBUFFER))
+      surface.dirty = !gl.presentRenderbuffer(Int(GL_RENDERBUFFER))
     }
     if !fed {
       if frames?.active == true { feed(nil, force: force) }
@@ -228,13 +249,132 @@ final class MPVRenderer: @unchecked Sendable {
 struct MPVVideoView: UIViewRepresentable {
   let player: MPVPlayer
   var gravity = "fit"
-  func makeUIView(context: Context) -> SurfaceView {
-    let view = SurfaceView(player: player)
-    view.configure(size: player.playbackSize, gravity: gravity)
-    return view
+  /// Views of one player that share a slot hand a single drawable from one to the next instead
+  /// of each starting with a black one. The page's own player is rebuilt whenever the page
+  /// switches layouts (an iPhone Duo folding or unfolding, a window resized across a threshold),
+  /// and a new drawable stays black until the renderer has drawn into it (~150 ms). `nil`
+  /// keeps a drawable of its own (fullscreen, which animates beside the page's player).
+  var slot: String? = nil
+  func makeUIView(context: Context) -> Host {
+    Host(player: player, slot: slot, gravity: gravity)
   }
-  func updateUIView(_ view: SurfaceView, context: Context) { view.configure(size: player.playbackSize, gravity: gravity) }
-  static func dismantleUIView(_ view: SurfaceView, coordinator: ()) { view.disconnect() }
+  func updateUIView(_ host: Host, context: Context) { host.configure(gravity: gravity) }
+  static func dismantleUIView(_ host: Host, coordinator: ()) { host.release() }
+
+  /// The drawable shared by a player's views in one slot, and those views.
+  @MainActor private final class Shared {
+    struct Entry { weak var host: Host? }
+    var surface: SurfaceView?
+    /// Oldest first.
+    var hosts: [Entry] = []
+    var live: [Host] { hosts.compactMap(\.host) }
+  }
+  /// Keyed by the player itself, weakly: the groups go with it, and a later player can never
+  /// find an earlier one's drawable at a reused address.
+  @MainActor private final class Slots { var named: [String: Shared] = [:] }
+  @MainActor private static let groups = NSMapTable<MPVPlayer, Slots>.weakToStrongObjects()
+  @MainActor private static func group(_ player: MPVPlayer, _ slot: String, create: Bool) -> Shared? {
+    let slots = groups.object(forKey: player) ?? (create ? Slots() : nil)
+    guard let slots else { return nil }
+    if groups.object(forKey: player) == nil { groups.setObject(slots, forKey: player) }
+    if let found = slots.named[slot] { return found }
+    guard create else { return nil }
+    let made = Shared()
+    slots.named[slot] = made
+    return made
+  }
+  @MainActor private static func drop(_ player: MPVPlayer?, _ slot: String) {
+    guard let player, let slots = groups.object(forKey: player) else { return }
+    slots.named[slot] = nil
+    if slots.named.isEmpty { groups.removeObject(forKey: player) }
+  }
+
+  /// Where SwiftUI puts the picture. The drawable inside is this host's own, or the one its slot
+  /// shares, taken over from the host it was in when this one reaches a window.
+  final class Host: UIView {
+    /// Weak, as the drawable's own: a view UIKit keeps for a moment must not keep the player.
+    private weak var player: MPVPlayer?
+    private let slot: String?
+    /// The slot's group, held here too so a host can hand its drawable on after the player went.
+    private var held: Shared?
+    private var gravity: String
+    private var own: SurfaceView?
+    init(player: MPVPlayer, slot: String?, gravity: String) {
+      self.player = player
+      self.gravity = gravity
+      self.slot = slot
+      super.init(frame: .zero)
+      isOpaque = true
+      backgroundColor = .black
+      clipsToBounds = true
+      isUserInteractionEnabled = false
+      if let slot, let group = MPVVideoView.group(player, slot, create: true) {
+        held = group
+        group.hosts = group.hosts.filter { $0.host != nil } + [Shared.Entry(host: self)]
+      } else {
+        let own = SurfaceView(player: player)
+        own.configure(size: player.playbackSize, gravity: gravity)
+        addSubview(own)
+        self.own = own
+      }
+    }
+    required init?(coder: NSCoder) { nil }
+    private var group: Shared? { held }
+    private var surface: SurfaceView? { own ?? group?.surface }
+    override func didMoveToWindow() {
+      super.didMoveToWindow()
+      if window != nil { claim() }
+    }
+    override func layoutSubviews() {
+      super.layoutSubviews()
+      if let surface, surface.superview === self { surface.frame = bounds }
+    }
+    func configure(gravity: String) {
+      self.gravity = gravity
+      if let player, let surface, surface.superview === self {
+        surface.configure(size: player.playbackSize, gravity: gravity)
+      }
+    }
+    /// On screen: the slot's drawable moves here, still showing the last picture.
+    private func claim() {
+      guard let group, let player else { return }
+      let surface = group.surface ?? SurfaceView(player: player)
+      group.surface = surface
+      guard surface.superview !== self else { return }
+      adopt(surface)
+    }
+    fileprivate func adopt(_ surface: SurfaceView) {
+      // Sized before it joins: its window callback attaches it and asks for a frame at once.
+      surface.frame = bounds
+      addSubview(surface)
+      if let player { surface.configure(size: player.playbackSize, gravity: gravity) }
+    }
+    /// Gone from the page: its drawable goes on to the newest other view of the slot (the one
+    /// replacing it, which may not have reached the window yet), or is let go with the last one.
+    func release() {
+      guard let slot, let group else { own?.disconnect(); return }
+      held = nil
+      group.hosts.removeAll { $0.host == nil || $0.host === self }
+      guard let surface = group.surface, surface.superview === self else {
+        if group.live.isEmpty {
+          group.surface?.removeFromSuperview()
+          group.surface?.disconnect()
+          group.surface = nil
+          MPVVideoView.drop(player, slot)
+        }
+        return
+      }
+      let others = group.live
+      if let next = others.last(where: { $0.window != nil }) ?? others.last {
+        next.adopt(surface)
+      } else {
+        surface.removeFromSuperview()
+        surface.disconnect()
+        group.surface = nil
+        MPVVideoView.drop(player, slot)
+      }
+    }
+  }
   final class SurfaceView: UIView {
     private let renderer: MPVRenderer
     private weak var player: MPVPlayer?
@@ -282,7 +422,20 @@ struct MPVVideoView: UIViewRepresentable {
         attached = true
         player?.preparePiP(in: window)
         renderer.attach(id, layer: drawable)
-      } else if window == nil { disconnect() }
+      } else if window != nil {
+        // Back in a window while still attached (handed between views): its storage is taken
+        // again from the layer at its next layout rather than trusted.
+        lastSize = .zero
+        setNeedsLayout()
+      } else if window == nil {
+        // Handed between views, the drawable is out of any window for a moment (the old view
+        // leaves before the new one arrives): it stays attached, still showing its picture,
+        // unless it stays out.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+          guard let self, self.window == nil else { return }
+          self.disconnect()
+        }
+      }
     }
     override func layoutSubviews() {
       super.layoutSubviews()

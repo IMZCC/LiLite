@@ -4,7 +4,6 @@ struct PlayerPreferenceValues: Codable {
   static let flags = [
     "play.guestPublicHD", "network.negotiateHTTP2", "network.allowInvalidCertificates", "decoder.hardware", "play.temporaryPreferences", "player.longControls", "player.shrink",
     "player.edgeToEdge", "play.systemMedia", "layout.horizontal", "layout.member",
-    "layout.playlist",
     "layout.verticalMedia", "social.waterfall",
     "vod.independentAudio", "vod.speedTest", "appearance.decorate", "emote.preview",
     "reply.wordSearch", "web.external", "reply.openFirst", "discovery.pgcTimeline",
@@ -109,7 +108,6 @@ struct PlayerPreferencePanel: View {
   /// or a full-screen iPad gets the side layout and a folded Duo or a narrow window does not.
   @AppStorage("layout.horizontal") private var horizontalPref: Bool?
   private var horizontal: Bool { horizontalPref ?? WindowCanvas.shared.large }
-  @AppStorage("layout.playlist") private var sideList: Bool?
   @AppStorage("layout.member") private var sideMember: Bool?
   @AppStorage("layout.verticalMedia") private var tall = false
   @AppStorage("player.quickDouble") private var quick = false
@@ -194,7 +192,6 @@ struct PlayerPreferencePanel: View {
       Section {
         NavigationLink("播放控件与画面缩放") { DeferredPage { ViewportSettings() } }.settingAnchor("PlayerPreferencePanel/播放控件与画面缩放")
         Toggle("使用横屏布局", isOn: $horizontalPref.or { WindowCanvas.shared.large }).settingAnchor("PlayerPreferencePanel/使用横屏布局")
-        Toggle("横屏时在标签栏选集", isOn: Binding(get: { sideList ?? horizontal }, set: { sideList = $0 })).settingAnchor("PlayerPreferencePanel/横屏时在标签栏选集")
         Toggle(
           "横屏时在侧栏打开 UP 主空间",
           isOn: Binding(get: { sideMember ?? horizontal }, set: { sideMember = $0 })).settingAnchor("PlayerPreferencePanel/横屏时在侧栏打开 UP 主空间")
