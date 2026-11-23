@@ -1,0 +1,6 @@
+{
+    "unifyChatProvider.commitMessageGeneration.model": {
+        "vendor": "unify-chat-provider",
+        "id": "CPA/claude-fable-5-dd-los-2.6-tpg"
+    }
+}
