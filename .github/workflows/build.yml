@@ -27,6 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.2'
+
+      - name: 安装媒体构建依赖
+        run: |
+          python3 -m pip install meson ninja Jinja2
+          command -v pkg-config >/dev/null || brew install pkgconf
+
       - name: 缓存 MediaKit 与 Firebase 下载
         uses: actions/cache@v4
         with:
